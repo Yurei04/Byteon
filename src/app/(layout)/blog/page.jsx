@@ -1,8 +1,9 @@
+import BlogPage from "@/pages/blog-page/blog-page";
 
 export default function Blog () {
     return (
-        <div className="flex flex-col p-0 m-0 items-center justify-center overflow-x-hidden">
-
+        <div className="w-full max-h-lvh">
+            <BlogPage />
         </div>
     )
 }
