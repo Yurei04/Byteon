@@ -23,9 +23,6 @@ export default function BlogCard({ title, des, image, author, hackathon, place, 
                     </div>
                     <div className="text-md text-xl justify-end">{place}</div>
                 </div>
-
-                
-
                 <div className="flex gap-2">
                     <Badge>{theme}</Badge>
                     <Badge variant="secondary">{theme}</Badge>
