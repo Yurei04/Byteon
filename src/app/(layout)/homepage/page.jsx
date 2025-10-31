@@ -1,8 +1,10 @@
+import NavBar from "@/components/navbar";
+import Home from "@/pages/home-page/home";
 
 export default function Homepage () {
     return (
-        <div className="flex flex-col p-0 m-0 items-center justify-center overflow-x-hidden">
-
+        <div className="flex flex-col items-center justify-center overflow-x-hidden">
+            <Home />
         </div>
     )
 }
