@@ -3,12 +3,12 @@
 
 export default function Footer() {
     return (
-        <footer className="bg-gradient-to-b from-purple-950 via-fuchsia-950 to-black border-t border-fuchsia-900 text-fuchsia-200 px-6 py-12 z-10">
+        <footer className="bg-linear-to-b from-purple-950 via-fuchsia-950 to-black border-t border-fuchsia-900 text-fuchsia-200 px-6 py-12 z-10">
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10">
                 
                 {/* Left Section */}
                 <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-3">
-                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-400">
+                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-fuchsia-400 to-purple-400">
                         Byteon
                     </h2>
                     <p className="text-sm text-fuchsia-300/80 leading-relaxed">

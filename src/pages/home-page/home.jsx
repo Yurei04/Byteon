@@ -16,7 +16,7 @@ export default function Home () {
                 />
             </div>
 
-            <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-purple-950/50 via-fuchsia-900/20 to-black/70" />
+            <div className="absolute inset-0 -z-10 bg-linear-to-tr from-purple-950/50 via-fuchsia-900/20 to-black/70" />
 
             <div className="container mx-auto px-6 sm:px-10 lg:px-16 flex flex-col-reverse lg:flex-row items-center justify-center gap-10 lg:gap-16">
                 {/* Text Section */}
@@ -27,13 +27,13 @@ export default function Home () {
                 className="max-w-2xl text-center lg:text-left"
                 >
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-purple-400">
+                    <span className="text-transparent bg-clip-text bg-linear-to-r from-fuchsia-400 to-purple-400">
                     Byteon
                     </span>
                 </h1>
 
                 <h2 className="mt-4 text-xl sm:text-2xl lg:text-3xl font-medium text-fuchsia-200">
-                    Empowering Student Innovators
+                    Create It, To Win It
                 </h2>
 
                 <p className="mt-3 text-sm sm:text-base text-fuchsia-300/80">
