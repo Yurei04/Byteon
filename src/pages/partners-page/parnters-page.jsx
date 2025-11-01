@@ -1,4 +1,4 @@
-import { PartnersCard } from "./partners-card"
+import { PartnersCard } from "../../components/partners/partners-card"
 
 
 const fakeData = [

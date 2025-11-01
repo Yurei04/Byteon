@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import BlogCard from "./blogCard"
-import BlogSearchBar from "./blog-search"
+import BlogCard from "../../components/blog/blogCard"
+import BlogSearchBar from "../../components/blog/blog-search"
 
 
 /* DELETE AFTER CONNECT TO THE BACKEND*/
