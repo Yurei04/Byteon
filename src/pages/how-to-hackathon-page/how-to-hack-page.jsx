@@ -4,6 +4,9 @@
 
 "use client"
 
+import { GameDialogBox } from "@/components/howToHack/gameDialogBox";
+import GameScreen from "@/components/howToHack/gameScreen";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ChartScatter } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -16,9 +19,11 @@ export default function HowToHackPage () {
     const [eventIndex, setEventIndex] = useState(0); // event index for a scenario
     const [dialogIndex, setDialogIndex] = useState(0); // Dialog index for a scenario
     const [gameCharac, setGameCharac] = useState("byteon"); // Chracter for a chapter or event
-    const [loading, setLoading] = useState(false); // for loading 
-
+    const [gameCharacPose, setGameCharacPose] = useState("standby") // For specific Character pose 
+    const [isLoading, setIsLoading] = useState(false); // for loading 
+    const [background, setBackground] = useState("") // set background depending to scenario
     // Mini game states
+    const [isMiniGame, isSetMiniGame] = useState(false) // If mini game is happening
     const [isIntroPlaying, setIsIntroPlaying] = useState(true); // Intro scene
     const [isOutroPlaying, setIsOutroPlaying] = useState(false); // Intro scene
     const [isCardGame, setIsCardGame] = useState(false); // Card Game Mini Game
@@ -26,13 +31,19 @@ export default function HowToHackPage () {
     
     //Data States
     const [gameData, setGameData] = useState(null); // Data from the jsond
+    
+    // Skeleton loader — only shows if network or assets take too long to load
+    const [slowLoading, setSlowLoading] = useState(false);
+
+    // If the screen becomes to small
+    const [tooSmall, setTooSmall] = useState(false);
 
     // Dialog/Typing States
     const [dialog, setDialog] = useState(""); // Dialog text
     const [isTyping, setIsTyping] = useState(false); // Typewriter effect
-
     const [booting, setBooting] = React.useState(true); // Check of website loading
     
+
     // Chapter Loading base on Chapter and ID
     const loadChapter = async (id) => {
         try {
@@ -45,8 +56,20 @@ export default function HowToHackPage () {
             console.error("Failed to load chapter:", error);
         } finally {
             setIsLoading(false);
-    }
-  };
+        }
+    };
+    // Checks for resize of window screen
+    useEffect(() => {
+        const handleResize = () => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        // Replace 1280x720 with your expected design size
+        setTooSmall(w < 1280 || h < 720);
+        };
+        window.addEventListener("resize", handleResize);
+        handleResize();
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     //Fetch chapter when it changes
     useEffect(() => {
@@ -82,6 +105,7 @@ export default function HowToHackPage () {
         }
     };
 
+    // Skeleton Loader if the internet is slow
     if (slowLoading) {
         return (
         <div className="w-full h-screen flex flex-col items-center justify-center bg-black text-purple-300">
@@ -98,6 +122,7 @@ export default function HowToHackPage () {
         );
     }
     
+    // Reveal if the screen size is lowered or changed
     if (tooSmall) {
         return (
             <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-purple-400 text-center">
@@ -108,16 +133,40 @@ export default function HowToHackPage () {
     }
 
     return (
-        <div className="w-full h-screen flex flex-col p-2">
-            <div className="flex flex-row">
-                <div className="flex flex-col">
+        <div className="w-full h-screen flex flex-col p-4">
+            <ResizablePanelGroup
+                direction="horizontal"
+                className="w-full rounded-lg border border-white m-2"
+                >
+                <ResizablePanel defaultSize={120}>
+                    <div className="flex flex-col h-full items-center justify-center p-6">
+                        <GameScreen 
 
-                </div>
-                <div className="flex flex-col">
-
-                </div>
-            </div>
-            <div className="">
+                        />
+                        
+                        <GameDialogBox 
+                        
+                        />
+                    </div>
+                </ResizablePanel>
+                <ResizableHandle />
+                <ResizablePanel defaultSize={50}>
+                    <ResizablePanelGroup direction="vertical">
+                    <ResizablePanel defaultSize={25}>
+                        <div className="flex h-full items-center justify-center p-6">
+                            <span className="font-semibold">Two</span>
+                        </div>
+                    </ResizablePanel>
+                    <ResizableHandle />
+                    <ResizablePanel defaultSize={75}>
+                        <div className="flex h-full items-center justify-center p-6">
+                            <span className="font-semibold">Three</span>
+                        </div>
+                    </ResizablePanel>
+                    </ResizablePanelGroup>
+                </ResizablePanel>
+            </ResizablePanelGroup>
+            <div className="w-full h-1/4 border border-white">
 
             </div>
         </div> 
