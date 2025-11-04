@@ -39,6 +39,7 @@ export default function HowToHackPage () {
             setIsLoading(true);
             const response = await fetch(`/data/chapter${id}.json`);
             const data = await response.json();
+            console.log("Data Loaded")
             setChapterData(data);
         } catch (error) {
             console.error("Failed to load chapter:", error);
@@ -81,9 +82,35 @@ export default function HowToHackPage () {
         }
     };
 
-    return (
-        <div className="">
-
+    if (slowLoading) {
+        return (
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-black text-purple-300">
+            <div className="animate-pulse flex flex-col items-center">
+            <div className="w-40 h-40 bg-purple-800/30 rounded-full mb-6" />
+            <p className="text-lg font-mono tracking-wide mb-2">
+                Website Loading.....
+            </p>
+            <p className="text-sm text-purple-500">
+                Weak network latency...
+            </p>
+            </div>
         </div>
+        );
+    }
+
+    return (
+        <div className="w-full h-screen flex flex-col p-2">
+            <div className="flex flex-row">
+                <div className="flex flex-col">
+
+                </div>
+                <div className="flex flex-col">
+
+                </div>
+            </div>
+            <div className="">
+
+            </div>
+        </div> 
     )
 }
