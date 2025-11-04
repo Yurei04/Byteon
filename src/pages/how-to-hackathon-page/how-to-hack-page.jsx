@@ -97,6 +97,15 @@ export default function HowToHackPage () {
         </div>
         );
     }
+    
+    if (tooSmall) {
+        return (
+            <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-purple-400 text-center">
+                <p className="text-xl mb-2">⚠️ Resize Detected</p>
+                <p className="text-sm">Please use a 1920×1080 screen or fullscreen mode for best experience.</p>
+            </div>
+        );
+    }
 
     return (
         <div className="w-full h-screen flex flex-col p-2">
