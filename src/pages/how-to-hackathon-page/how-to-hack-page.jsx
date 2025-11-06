@@ -4,18 +4,15 @@
 
 "use client"
 
-import { GameDialogBox } from "@/components/howToHack/gameDialogBox";
+import React, { useState, useEffect } from "react";
 import GameScreen from "@/components/howToHack/gameScreen";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { ChartScatter } from "lucide-react";
-import React, { useState, useEffect } from "react";
-
 
 export default function HowToHackPage () {
     // Game States
     const [chapter, setChapter] = useState(1); //Chapter index of the game
     const [chapterData, setChapterData] = useState(null); // Chapter Data
-    const [scenarioIndex, setScenerioIndex] = useState(0); // Scenerio index for a chapter
+    const [scenarioIndex, setScenarioIndex] = useState(0); // Scenerio index for a chapter
     const [eventIndex, setEventIndex] = useState(0); // event index for a scenario
     const [dialogIndex, setDialogIndex] = useState(0); // Dialog index for a scenario
     const [gameCharac, setGameCharac] = useState("byteon"); // Chracter for a chapter or event
@@ -23,7 +20,7 @@ export default function HowToHackPage () {
     const [isLoading, setIsLoading] = useState(false); // for loading 
     const [background, setBackground] = useState("") // set background depending to scenario
     // Mini game states
-    const [isMiniGame, isSetMiniGame] = useState(false) // If mini game is happening
+    const [isMiniGame, setIsMiniGame] = useState(false) // If mini game is happening
     const [isIntroPlaying, setIsIntroPlaying] = useState(true); // Intro scene
     const [isOutroPlaying, setIsOutroPlaying] = useState(false); // Intro scene
     const [isCardGame, setIsCardGame] = useState(false); // Card Game Mini Game
@@ -42,7 +39,7 @@ export default function HowToHackPage () {
     const [dialog, setDialog] = useState(""); // Dialog text
     const [isTyping, setIsTyping] = useState(false); // Typewriter effect
     const [booting, setBooting] = React.useState(true); // Check of website loading
-    
+        
 
     // Chapter Loading base on Chapter and ID
     const loadChapter = async (id) => {
@@ -52,6 +49,10 @@ export default function HowToHackPage () {
             const data = await response.json();
             console.log("Data Loaded")
             setChapterData(data);
+            // reset indices when a new chapter loads to avoid out-of-range indices
+            setScenarioIndex(0);
+            setEventIndex(0);
+            setDialogIndex(0);
         } catch (error) {
             console.error("Failed to load chapter:", error);
         } finally {
@@ -77,21 +78,22 @@ export default function HowToHackPage () {
     }, [chapter]);
 
     // Safe accessors
+    // use chapterData -> scenarios -> events -> dialogs
     const currentScenario = chapterData?.scenarios?.[scenarioIndex]; // Get Scenario data based on Chapter and index
-    const currentEvent = ChartScatter?.events?.[eventIndex]; // Get event data based on Chapter and index
+    const currentEvent = currentScenario?.events?.[eventIndex]; // Get event data based on Chapter and index
     const currentDialog = currentEvent?.dialogs?.[dialogIndex]; // Get dialog data based on Chapter and index
 
     //  Game Progression Logic (Modify later for characters includes and mini games)
     const handleNextDialog = () => {
         if (!chapterData) return; // If no data don't do below
         // Move to next dialog
-        if (dialogIndex + 1 < currentEvent.dialogs.length) {
+        if (currentEvent && dialogIndex + 1 < (currentEvent.dialogs?.length ?? 0)) {
             setDialogIndex((prev) => prev + 1);
-        } else if (eventIndex + 1 < currentScenario.events.length) {
+        } else if (currentScenario && eventIndex + 1 < (currentScenario.events?.length ?? 0)) {
             // Move to next event
             setEventIndex((prev) => prev + 1);
             setDialogIndex(0);
-        } else if (scenarioIndex + 1 < chapterData.scenarios.length) {
+        } else if (scenarioIndex + 1 < (chapterData.scenarios?.length ?? 0)) {
             // Move to next scenario
             setScenarioIndex((prev) => prev + 1);
             setEventIndex(0);
@@ -141,12 +143,22 @@ export default function HowToHackPage () {
                 <ResizablePanel defaultSize={120}>
                     <div className="flex flex-col h-full items-center justify-center p-6">
                         <GameScreen 
-
+                            // pass down the current dialog object and a next handler
+                            gameStart={!isIntroPlaying}
+                            gameCharac={gameCharac}
+                            characPose={gameCharacPose}
+                            dialog={currentDialog?.text ?? ""}
+                            chapter={chapter}
+                            event={eventIndex}
+                            scenario={scenarioIndex}
+                            background={background}
+                            choices={currentDialog?.choices ?? null}
+                            miniGames={isMiniGame}
+                            MultipleChoiceComponent={isMultipleChoice ? undefined : undefined} // placeholder — wire your components here
+                            CardGameComponent={isCardGame ? undefined : undefined} // placeholder — wire your components here
+                            onNext={handleNextDialog}
                         />
                         
-                        <GameDialogBox 
-                        
-                        />
                     </div>
                 </ResizablePanel>
                 <ResizableHandle />
