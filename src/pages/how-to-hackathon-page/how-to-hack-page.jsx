@@ -7,6 +7,8 @@
 import React, { useState, useEffect } from "react";
 import GameScreen from "@/components/howToHack/gameScreen";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import GameIntroScene from "@/components/howToHack/introScene";
+import MainMenu from "@/components/howToHack/mainMenu";
 
 export default function HowToHackPage () {
     // Game States
@@ -18,7 +20,9 @@ export default function HowToHackPage () {
     const [gameCharac, setGameCharac] = useState("byteon"); // Chracter for a chapter or event
     const [gameCharacPose, setGameCharacPose] = useState("standby") // For specific Character pose 
     const [isLoading, setIsLoading] = useState(false); // for loading 
-    const [background, setBackground] = useState("") // set background depending to scenario
+    const [background, setBackground] = useState("") // set background depending to scenario 
+    const [isMainMenu, setIsMainMenu] = useState(false); // if in main menu
+
     // Mini game states
     const [isMiniGame, setIsMiniGame] = useState(false) // If mini game is happening
     const [isIntroPlaying, setIsIntroPlaying] = useState(true); // Intro scene
@@ -39,7 +43,18 @@ export default function HowToHackPage () {
     const [dialog, setDialog] = useState(""); // Dialog text
     const [isTyping, setIsTyping] = useState(false); // Typewriter effect
     const [booting, setBooting] = React.useState(true); // Check of website loading
-        
+
+    // Intro → Main Menu
+    const handleIntroFinish = () => {
+        setIsIntroPlaying(false);
+        setIsMainMenu(true);
+    };
+
+    // Main Menu → Game
+    const handleStartGame = () => {
+        setIsMainMenu(false);
+    };
+
 
     // Chapter Loading base on Chapter and ID
     const loadChapter = async (id) => {
@@ -142,23 +157,28 @@ export default function HowToHackPage () {
                 >
                 <ResizablePanel defaultSize={120}>
                     <div className="flex flex-col h-full items-center justify-center p-6">
-                        <GameScreen 
-                            // pass down the current dialog object and a next handler
-                            gameStart={!isIntroPlaying}
-                            gameCharac={gameCharac}
-                            characPose={gameCharacPose}
-                            dialog={currentDialog?.text ?? ""}
-                            chapter={chapter}
-                            event={eventIndex}
-                            scenario={scenarioIndex}
-                            background={background}
-                            choices={currentDialog?.choices ?? null}
-                            miniGames={isMiniGame}
-                            MultipleChoiceComponent={isMultipleChoice ? undefined : undefined} // placeholder — wire your components here
-                            CardGameComponent={isCardGame ? undefined : undefined} // placeholder — wire your components here
-                            onNext={handleNextDialog}
-                        />
                         
+                        {isIntroPlaying ? (
+                            <GameIntroScene onFinish={handleIntroFinish} />
+                        ) : isMainMenu ? (
+                            <MainMenu onStartGame={handleStartGame} />
+                        ) : (
+                            <GameScreen
+                                gameStart={!isIntroPlaying}
+                                gameCharac={gameCharac}
+                                characPose={gameCharacPose}
+                                dialog={currentDialog?.text ?? ""}
+                                chapter={chapter}
+                                event={eventIndex}
+                                scenario={scenarioIndex}
+                                background={background}
+                                choices={currentDialog?.choices ?? null}
+                                miniGames={isMiniGame}
+                                MultipleChoiceComponent={isMultipleChoice ? undefined : undefined}
+                                CardGameComponent={isCardGame ? undefined : undefined}
+                                onNext={handleNextDialog}
+                            />
+                        )}
                     </div>
                 </ResizablePanel>
                 <ResizableHandle />
