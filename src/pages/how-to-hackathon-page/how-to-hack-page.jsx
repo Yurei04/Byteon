@@ -9,6 +9,9 @@ import GameScreen from "@/components/howToHack/gameScreen";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import GameIntroScene from "@/components/howToHack/introScene";
 import MainMenu from "@/components/howToHack/mainMenu";
+import GameSettings from "@/components/howToHack/gameSettings";
+import { GameExit } from "@/components/howToHack/GameExit";
+// --- ADDED COMMENT: Optional future use: import { supabase } from "@/lib/supabaseClient"; to enable save/load ---
 
 export default function HowToHackPage () {
     // Game States
@@ -22,6 +25,8 @@ export default function HowToHackPage () {
     const [isLoading, setIsLoading] = useState(false); // for loading 
     const [background, setBackground] = useState("") // set background depending to scenario 
     const [isMainMenu, setIsMainMenu] = useState(false); // if in main menu
+    const [isSettings, setIsSettings] = useState(false); // if in settings
+    const [isExit, setIsExit] = useState(false); // if in exit and if data not saved
 
     // Mini game states
     const [isMiniGame, setIsMiniGame] = useState(false) // If mini game is happening
@@ -55,7 +60,6 @@ export default function HowToHackPage () {
         setIsMainMenu(false);
     };
 
-
     // Chapter Loading base on Chapter and ID
     const loadChapter = async (id) => {
         try {
@@ -68,12 +72,20 @@ export default function HowToHackPage () {
             setScenarioIndex(0);
             setEventIndex(0);
             setDialogIndex(0);
+
+            // --- ADDED COMMENT: Update background and character info immediately after loading ---
+            const firstScenario = data?.scenarios?.[0];
+            const firstEvent = firstScenario?.events?.[0];
+            setBackground(firstEvent?.background ?? "/images/default-bg.jpg");
+            setGameCharac(firstEvent?.character ?? "byteon");
+            setGameCharacPose(firstEvent?.pose ?? "standby");
         } catch (error) {
             console.error("Failed to load chapter:", error);
         } finally {
             setIsLoading(false);
         }
     };
+
     // Checks for resize of window screen
     useEffect(() => {
         const handleResize = () => {
@@ -97,6 +109,15 @@ export default function HowToHackPage () {
     const currentScenario = chapterData?.scenarios?.[scenarioIndex]; // Get Scenario data based on Chapter and index
     const currentEvent = currentScenario?.events?.[eventIndex]; // Get event data based on Chapter and index
     const currentDialog = currentEvent?.dialogs?.[dialogIndex]; // Get dialog data based on Chapter and index
+
+    // --- ADDED COMMENT: Dynamically update visuals when event changes ---
+    useEffect(() => {
+        if (currentEvent) {
+            setBackground(currentEvent.background ?? "/images/default-bg.jpg");
+            setGameCharac(currentEvent.character ?? "byteon");
+            setGameCharacPose(currentEvent.pose ?? "standby");
+        }
+    }, [currentEvent]);
 
     //  Game Progression Logic (Modify later for characters includes and mini games)
     const handleNextDialog = () => {
@@ -159,9 +180,18 @@ export default function HowToHackPage () {
                     <div className="flex flex-col h-full items-center justify-center p-6">
                         
                         {isIntroPlaying ? (
-                            <GameIntroScene onFinish={handleIntroFinish} />
+                            <GameIntroScene onFinish={handleIntroFinish} /> 
                         ) : isMainMenu ? (
-                            <MainMenu onStartGame={handleStartGame} />
+                            <MainMenu
+                                onStartGame={handleStartGame}
+                                onLoadGame={() => console.log("Load Game clicked")}
+                                onSettings={() => console.log("Settings clicked")}
+                                onExit={() => console.log("Exit clicked")}
+                            />
+                        ) : isSettings ? (
+                            <GameSettings />
+                        ) : isExit ? (
+                            <GameExit />
                         ) : (
                             <GameScreen
                                 gameStart={!isIntroPlaying}

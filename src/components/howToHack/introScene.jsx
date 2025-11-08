@@ -13,10 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function GameIntroScene({ onFinish = () => {} }) {
     // List of intro lines (you can customize freely)
     const introLines = [
-        "Initializing Byteon System...",
-        "Loading neural directives...",
-        "Decrypting mission protocols...",
-        "Welcome, Operator.",
+        "  Intro",
+        
     ];
 
     const [currentLine, setCurrentLine] = useState(0);

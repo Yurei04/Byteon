@@ -19,7 +19,7 @@ export default function MainMenu({
       transition={{ duration: 1 }}
     >
       {/* Background glow or subtle effect */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black opacity-80" />
+      <div className="absolute inset-0 bg-linear-to-b from-black via-gray-900 to-black opacity-80" />
 
       {/* Title */}
       <motion.h1

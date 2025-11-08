@@ -1,0 +1,111 @@
+{
+  "id": 1,
+  "title": "Chapter 1 - Booting Up Byteon",
+  "scenarios": [
+    {
+      "id": 1,
+      "title": "System Initialization",
+      "events": [
+        {
+          "id": 1,
+          "background": "/backgrounds/lab_room.jpg",
+          "dialogs": [
+            {
+              "speaker": "Byteon",
+              "pose": "neutral",
+              "side": "left",
+              "text": "System online... I can feel the data flowing again!"
+            },
+            {
+              "speaker": "Kaede",
+              "pose": "smile",
+              "side": "right",
+              "text": "Welcome back, Byteon. We thought we lost you in the crash."
+            },
+            {
+              "speaker": "Byteon",
+              "pose": "thinking",
+              "side": "left",
+              "text": "Crash? I don't remember anything... what happened?"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "background": "/backgrounds/server_room.jpg",
+          "dialogs": [
+            {
+              "speaker": "Kaede",
+              "pose": "serious",
+              "side": "right",
+              "text": "We’ll talk later. Right now, I need you to decrypt the main core."
+            },
+            {
+              "speaker": "Byteon",
+              "pose": "focus",
+              "side": "left",
+              "text": "Understood. Starting decryption sequence..."
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "minigame",
+          "minigameType": "card",
+          "background": "/backgrounds/terminal_hack.jpg",
+          "description": "Card Game Mini-Hack",
+          "dialogs": [
+            {
+              "speaker": "System",
+              "pose": "default",
+              "side": "left",
+              "text": "Mini-game initiated. Match the code fragments to decrypt the terminal!"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "System Diagnostics",
+      "events": [
+        {
+          "id": 1,
+          "background": "/backgrounds/office_night.jpg",
+          "dialogs": [
+            {
+              "speaker": "Kaede",
+              "pose": "thinking",
+              "side": "right",
+              "text": "I found a strange log entry from last night."
+            },
+            {
+              "speaker": "Byteon",
+              "pose": "neutral",
+              "side": "left",
+              "text": "Hmm... that might explain the data corruption earlier."
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "background": "/backgrounds/terminal_dark.jpg",
+          "dialogs": [
+            {
+              "speaker": "Kaede",
+              "pose": "smile",
+              "side": "right",
+              "text": "You’re learning fast, Byteon. Let’s run a system check."
+            },
+            {
+              "speaker": "Byteon",
+              "pose": "happy",
+              "side": "left",
+              "text": "System running at optimal efficiency. Awaiting your next command!"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
