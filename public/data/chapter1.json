@@ -1,111 +1,369 @@
 {
-  "id": 1,
-  "title": "Chapter 1 - Booting Up Byteon",
-  "scenarios": [
+  "chapters": [
     {
-      "id": 1,
-      "title": "System Initialization",
+      "id": "chapter1",
+      "title": "The Invitation",
+      "background": "your_room_evening.jpg",
+      "music": "soft_typing_ambient.mp3",
       "events": [
         {
-          "id": 1,
-          "background": "/backgrounds/lab_room.jpg",
+          "id": "scene1",
           "dialogs": [
             {
-              "speaker": "Byteon",
+              "character": "Narrator",
               "pose": "neutral",
-              "side": "left",
-              "text": "System online... I can feel the data flowing again!"
+              "text": "‘Another quiet night,’ you thought to yourself while skimming through your emails — student newsletters, club updates, random spam — when one subject line catches your eye: “🚀 JOIN THE OPEN INNOVATION HACKATHON – BEGINNERS ARE WELCOME!”"
             },
             {
-              "speaker": "Kaede",
-              "pose": "smile",
-              "side": "right",
-              "text": "Welcome back, Byteon. We thought we lost you in the crash."
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You hover over it, hesitating."
+            }
+          ]
+        },
+        {
+          "id": "scene2",
+          "type": "choice",
+          "prompt": "What will you do?",
+          "choices": [
+            {
+              "text": "Click the email",
+              "nextScene": "scene3"
             },
             {
-              "speaker": "Byteon",
+              "text": "Ignore it and keep scrolling",
+              "nextScene": "scene4"
+            }
+          ]
+        },
+        {
+          "id": "scene3",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Bright colors, energetic text, and photos of smiling students greet you when you open the email. “Collaborate. Create. Innovate. Join the 48-hour Hackathon: The Byteon!”"
+            },
+            {
+              "character": "You",
               "pose": "thinking",
-              "side": "left",
-              "text": "Crash? I don't remember anything... what happened?"
-            }
-          ]
-        },
-        {
-          "id": 2,
-          "background": "/backgrounds/server_room.jpg",
-          "dialogs": [
-            {
-              "speaker": "Kaede",
-              "pose": "serious",
-              "side": "right",
-              "text": "We’ll talk later. Right now, I need you to decrypt the main core."
+              "text": "A Hackathon…? Isn’t that where hardcore programmers compete and build apps overnight?"
             },
             {
-              "speaker": "Byteon",
-              "pose": "focus",
-              "side": "left",
-              "text": "Understood. Starting decryption sequence..."
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You sigh. It sounds exciting — but intimidating. Considering how these events in your mind felt like a competition of talented coders trying to one-up each other."
             }
           ]
         },
         {
-          "id": 3,
-          "type": "minigame",
-          "minigameType": "card",
-          "background": "/backgrounds/terminal_hack.jpg",
-          "description": "Card Game Mini-Hack",
+          "id": "scene4",
           "dialogs": [
             {
-              "speaker": "System",
-              "pose": "default",
-              "side": "left",
-              "text": "Mini-game initiated. Match the code fragments to decrypt the terminal!"
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You scroll past it. Then scroll back. Then scroll past it again. Something about that word hackathon just sticks in your mind."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You finally give in and open the email."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Just then, your laptop’s screen flickered. The screen glitched for a second… and then a glowing icon appeared in the center, taking the form of a small, shimmering orb pulsing with blue light."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "Uh… what just happened?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Hello human! You seem to be… curious. Or maybe hesitant about this particular invitation."
+            },
+            {
+              "character": "You",
+              "pose": "surprised",
+              "text": "Whoa! Who—what are you?"
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Please don’t be alarmed. I’m Aira, your AI Resource Assistant — here to guide first-time innovators like you. Looks like you’ve just received an invitation to your first hackathon!"
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Yeah, I guess. But… I don’t think I’m ready. I mean, I’m not a programmer or anything."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your voice feels shaky and you feel a bit uneasy considering that you are not sure if Aira is really an AI Resource Assistant or some random malware in your computer. But given that you observed proper safety rules, it should be unrealistic to expect that this is the work of a malicious hacker."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Perhaps Aira’s rather assuring tone makes you feel at ease far more than one should expect… Uninstalling her does sound like the safest option right now as you find yourself looking at the uninstall pop-up."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Ah, there it is — the classic ‘I’m not ready’ line. Don’t worry, you’re not alone. Almost every first-timer feels that way."
+            }
+          ]
+        },
+        {
+          "id": "scene5",
+          "background": "digital_space.jpg",
+          "music": "virtual_theme.mp3",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Before you knew it, your screen started to flash a bright neon blue light. Blinding you as your sight was robbed for a moment before the intense light faded out and you heard a few rhythmic beepings in the distance as you regained your vision."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "And before you, as if you are transported into what you’d imagine cyberspace to be truly like was Aira. Smiling as she opens her arms wide like one of those tour guides."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Welcome to my digital learning space — where we’ll prepare you for the hackathon, step by step! Think of it like a simulation… with fewer bugs."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Wait, so… you’re saying anyone can join a hackathon? Even beginners like me?"
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Absolutely! Hackathons aren’t just for coders. They need designers, storytellers, problem-solvers, presenters, and dreamers — like you."
+            },
+            {
+              "character": "You",
+              "pose": "concerned",
+              "text": "But I barely know where to start. It just feels… overwhelming."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "That’s perfectly fine. You don’t need to know everything — you just need the courage to start learning. Think of hackathons as playgrounds for ideas, not exams."
+            }
+          ]
+        },
+        {
+          "id": "scene6",
+          "background": "hall_of_hackers.jpg",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Let me show you something."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Dozens of people appear in glowing scenes — some coding, others sketching, presenting, or laughing together."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "See them? None of these people started as experts. Their first hackathon was full of mistakes — but also discovery, teamwork, and creativity."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "So… it’s okay to fail?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Failure is a hackathoner’s secret ingredient. Every time you fail, you learn faster. Every bug you fix, every idea you pitch — it’s all experience."
+            }
+          ]
+        },
+        {
+          "id": "scene7",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Tell me, what stops you from joining?"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "She leans forward slightly, gesturing to you to feel free to speak further about what is truly on your mind."
+            }
+          ]
+        },
+        {
+          "id": "scene8",
+          "type": "choice",
+          "prompt": "What’s holding you back?",
+          "choices": [
+            {
+              "text": "I don’t have enough skills.",
+              "nextScene": "scene9"
+            },
+            {
+              "text": "I’m afraid my ideas won’t be good.",
+              "nextScene": "scene10"
+            },
+            {
+              "text": "I don’t know anyone.",
+              "nextScene": "scene11"
+            }
+          ]
+        },
+        {
+          "id": "scene9",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Skills can be learned — that’s the easiest part. What’s harder is believing that you can learn. Let’s work on that first."
+            }
+          ]
+        },
+        {
+          "id": "scene10",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "No idea is born perfect! Great ideas come from asking questions, not knowing answers. The fact that you care already means your ideas matter."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "And even if your idea is flawed, it doesn’t mean it’s not open to improvement or reiteration. That’s one of the greatest ways to innovate a concept that may not seem to work but does in the right conditions."
+            }
+          ]
+        },
+        {
+          "id": "scene11",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Ah, the fear of going solo! Fun fact: hackathons are designed for strangers to meet. You’ll find teammates who complement your strengths — trust me."
+            }
+          ]
+        },
+        {
+          "id": "scene12",
+          "background": "digital_grid_console.jpg",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Okay, first challenge! Let’s clear your mind of myths about hackathons. Think of it as your warm-up quest."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "A quest? Like… a game?"
+            },
+            {
+              "character": "Aira",
+              "pose": "grin",
+              "text": "Exactly. You’ll be surprised how much fun learning can be when it feels like a hack."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "🧩 MiniGame: “Hackathon Myth Buster” — Aira throws statements and you decide True or False."
+            }
+          ]
+        },
+        {
+          "id": "scene13",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Excellent! You busted all the myths like a pro."
+            }
+          ]
+        },
+        {
+          "id": "scene14",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "You’ve earned your first achievement! — First Steps! 🎖️"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A familiar sound rings from your right side as you see a pop-up: “Achievement Unlocked — First Steps.” Description: “Completed the First Trial even when unsure.”"
+            },
+            {
+              "character": "You",
+              "pose": "smile",
+              "text": "Heh, not bad. Maybe this hackathon thing isn’t so scary after all."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "That’s the spirit! Remember — the hardest part isn’t joining… it’s deciding to try."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The virtual space fades back into your room. You glance again at the hackathon email, this time feeling something new — excitement."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Tomorrow, we’ll talk about teams. Because every hacker needs their crew. Until then, keep that spark alive."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You look at the uninstall pop-up again… it’s right there waiting to be clicked but you feel hesitant pressing it. As if this might be something that would give you the confidence boost you need. Against your better judgement, you close the window. You can uninstall her later if she really is malicious… right?"
             }
           ]
         }
       ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "You",
+      "name": "You",
+      "poses": {
+        "neutral": "you_neutral.png",
+        "thinking": "you_thinking.png",
+        "concerned": "you_concerned.png",
+        "smile": "you_smile.png",
+        "surprised": "you_surprised.png"
+      }
     },
     {
-      "id": 2,
-      "title": "System Diagnostics",
-      "events": [
-        {
-          "id": 1,
-          "background": "/backgrounds/office_night.jpg",
-          "dialogs": [
-            {
-              "speaker": "Kaede",
-              "pose": "thinking",
-              "side": "right",
-              "text": "I found a strange log entry from last night."
-            },
-            {
-              "speaker": "Byteon",
-              "pose": "neutral",
-              "side": "left",
-              "text": "Hmm... that might explain the data corruption earlier."
-            }
-          ]
-        },
-        {
-          "id": 2,
-          "background": "/backgrounds/terminal_dark.jpg",
-          "dialogs": [
-            {
-              "speaker": "Kaede",
-              "pose": "smile",
-              "side": "right",
-              "text": "You’re learning fast, Byteon. Let’s run a system check."
-            },
-            {
-              "speaker": "Byteon",
-              "pose": "happy",
-              "side": "left",
-              "text": "System running at optimal efficiency. Awaiting your next command!"
-            }
-          ]
-        }
-      ]
+      "id": "Aira",
+      "name": "Aira",
+      "poses": {
+        "neutral": "aira_neutral.png",
+        "smile": "aira_smile.png",
+        "grin": "aira_grin.png"
+      }
+    },
+    {
+      "id": "Narrator",
+      "name": "Narrator",
+      "poses": {
+        "neutral": "narrator_none.png"
+      }
     }
   ]
 }
