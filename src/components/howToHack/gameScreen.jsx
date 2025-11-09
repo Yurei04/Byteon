@@ -1,105 +1,234 @@
+/*
+  
+
+*/
+
+
 "use client";
 
-import React from "react";
-import GameDialogBox from "./gameDialogBox";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
+import GameDialogBox from "./gameDialogBox";
 
-export default function GameScreen(props) {
-  const {
-    gameStart = true,
-    gameCharac,
-    characPose = "default",
-    dialog = null, // now expecting a dialog object (or null)
-    chapter,
-    event,
-    scenario,
-    background = "/images/kaede.jpg", // default fallback
-    characPosition = "left", // can be "left" or "right"
-    choices,
-    miniGames = false,
-    MultipleChoiceComponent = null,
-    CardGameComponent = null,
-    onNext = () => {},
-  } = props;
+/*
+  Expectations for `data` (one chapter object):
+  {
+    id: "chapter2",
+    title: "Building the Team",
+    background: "your_room_morning.jpg",
+    music: "gentle_morning_theme.mp3",
+    events: [ { id:"scene1", dialogs: [...] , background?, music?, type?, choices? }, ... ],
+    characters: [ { id: "You", poses: { neutral: "you_neutral.png", ... } }, ... ]
+  }
+*/
 
-  // dialog may be an object { speaker, text, pose, side } or null
-  const dialogText = dialog?.text ?? "";
-  const dialogSpeaker = dialog?.speaker ?? gameCharac ?? "Narrator";
+export default function GameScreen({
+  data,
+  onChapterEnd = () => {},
+  // optional: whether the game is considered started
+  gameStart = true,
+}) {
+  // progression state (owned by GameScreen)
+  const [eventIndex, setEventIndex] = useState(0);
+  const [dialogIndex, setDialogIndex] = useState(0);
 
-  // Character image source resolution:
-  // - If gameCharac looks like a file path (starts with / or contains a dot), use it directly.
-  // - Otherwise, try to map names to temporary images in /images/<name>.jpg (lowercased).
-  // This is a simple convention for temporary testing (e.g., "Kaede" -> /images/kaede.jpg).
-  let charSrc = null;
-  if (typeof gameCharac === "string") {
-    const g = gameCharac.trim();
-    if (g.startsWith("/") || g.includes(".") ) {
-      charSrc = g;
-    } else {
-      charSrc = `/images/${g.toLowerCase()}.jpg`; // temporary convention
+  // refs to avoid double-calling onChapterEnd
+  const calledChapterEndRef = useRef(false);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  // Reset progression indices when new chapter data arrives
+  useEffect(() => {
+  if (!data || data.length === 0) return; // No data, do nothing
+    // Use microtask to defer state reset until after paint
+    const timeout = setTimeout(() => {
+      setEventIndex(0);
+      setDialogIndex(0);
+      calledChapterEndRef.current = false;
+    }, 0);
+
+    return () => clearTimeout(timeout);
+  }, [data]);
+
+
+  // events list (rename from 'scenarios' previously)
+  const events = useMemo(() => {
+    return data?.events || [];
+  }, [data]);
+
+
+  // Build quick id -> index lookup for branching (choices)
+  const eventIdToIndex = useMemo(() => {
+    const map = {};
+    events.forEach((ev, idx) => {
+      if (ev?.id) map[ev.id] = idx;
+    });
+    return map;
+  }, [events]);
+
+  const currentEvent = events[eventIndex] ?? null;
+  const dialogs = currentEvent?.dialogs ?? [];
+  const currentDialog = dialogs[dialogIndex] ?? null;
+
+  // Resolve background: event-level overrides chapter-level, fall back to /images/kaede.jpg
+  const backgroundSrc = currentEvent?.background
+    ? `/images/${currentEvent.background}`
+    : data?.background
+    ? `/images/${data.background}`
+    : "/images/kaede.jpg";
+
+  // Utility: map character name + pose -> image path using data.characters list
+  const getCharacterPoseImage = (characterName, pose) => {
+    if (!characterName) return null;
+    const chars = data?.characters ?? [];
+    const found = chars.find((c) => String(c.id).toLowerCase() === String(characterName).toLowerCase());
+    const poseFile = found?.poses?.[pose] ?? null;
+    if (poseFile) return `/images/characters/${poseFile}`; // expects your files under /public/images/characters/
+    // fallback: try generic `/images/<name>.jpg`
+    return `/images/${String(characterName).toLowerCase()}.jpg`;
+  };
+
+  // Determine who should be shown as "character" for the static character sprite layer.
+  // Prefer currentDialog.character
+  const currentSpeaker = currentDialog?.character ?? "Narrator";
+  const currentPose = currentDialog?.pose ?? "neutral";
+  const charSrc = getCharacterPoseImage(currentSpeaker, currentPose);
+
+  // Progression logic: move through dialogs -> events -> chapter end
+  const progressToNext = () => {
+    // If the current event is a choice-type, we don't auto-advance — choices must be chosen.
+    if (currentEvent?.type === "choice") {
+      // Do nothing — UI presents choices
+      return;
     }
+
+    // 1) more dialogs in current event
+    if (dialogIndex + 1 < (dialogs?.length ?? 0)) {
+      setDialogIndex((d) => d + 1);
+      return;
+    }
+
+    // 2) more events in chapter (sequential)
+    if (eventIndex + 1 < events.length) {
+      setEventIndex((e) => e + 1);
+      setDialogIndex(0);
+      return;
+    }
+
+    // 3) no more events -> chapter finished, call onChapterEnd once
+    if (!calledChapterEndRef.current) {
+      calledChapterEndRef.current = true;
+      // schedule on next microtask to avoid sync state updates during render
+      Promise.resolve().then(() => {
+        if (mountedRef.current) onChapterEnd();
+      });
+    }
+  };
+
+  // When a user selects a choice (from a choice event), jump to the event with id=choice.nextScene
+  const handleChoiceSelect = (choice) => {
+    if (!choice || !choice.nextScene) return;
+    const targetId = choice.nextScene;
+    const targetIndex = eventIdToIndex[targetId];
+    if (typeof targetIndex === "number") {
+      setEventIndex(targetIndex);
+      setDialogIndex(0);
+    } else {
+      // If the target scene id not found, treat as end-of-chapter
+      if (!calledChapterEndRef.current) {
+        calledChapterEndRef.current = true;
+        Promise.resolve().then(() => {
+          if (mountedRef.current) onChapterEnd();
+        });
+      }
+    }
+  };
+
+  // If the chapter file has no events, show message
+  if (!events.length) {
+    return (
+      <div className="flex items-center justify-center h-full min-h-screen text-white bg-black/80">
+        <div className="text-center">
+          <h2 className="text-2xl font-semibold mb-2">No Scenes in this chapter</h2>
+          <p className="text-sm text-gray-400">Add events to this chapter JSON to play it.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    // --- Entire Game Screen Container ---
     <div className="relative w-full h-screen overflow-hidden bg-black text-white">
-      
-      {/* --- Background Image --- 
-          It updates dynamically based on the JSON data (chapter/scenario/event).
-      */}
+      {/* Background image */}
       <div className="absolute inset-0 -z-20">
         <Image
-          src={background}
+          src={backgroundSrc}
           alt="background"
           fill
-          className="object-cover border border-white transition-all duration-700 ease-in-out"
+          className="object-cover transition-all duration-700 ease-in-out"
           priority
         />
       </div>
 
-      {/* --- Character Image (Left or Right) --- 
-          This layer is in front of the background but behind dialog.
-          Position, pose, and character name are all pulled from the JSON.
-      */}
+      {/* Character sprite (uses pose mapping or fallback image) */}
       {charSrc && (
-        <div
-          className={`absolute bottom-0 ${characPosition === "left" ? "left-10" : "right-10"} z-10 pointer-events-none`}
-        >
-          {/* using a square-ish size; adjust width/height to taste */}
+        <div className="absolute bottom-0 left-10 z-10 pointer-events-none">
           <Image
             src={charSrc}
-            alt={String(dialogSpeaker)}
             width={550}
             height={550}
-            className="object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.6)] transition-all duration-500"
+            alt={currentSpeaker}
+            className="object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"
           />
         </div>
       )}
 
-      {/* 
-          Helps the dialog box stand out visually by darkening the bottom area.
-      */}
+      {/* dark gradient to make dialog legible */}
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
-      {/* --- Dialog & Mini-game Layer --- 
-          This is the front-most layer of the game screen.
-          It handles displaying dialog boxes, choices, and mini-games.
-      */}
-      <div className="absolute bottom-0 w-full z-30">
-        {gameStart ? (
-          // --- Dialog Display ---
-          <GameDialogBox
-            text={dialogText}
-            character={dialogSpeaker}
-            chapter={chapter}
-            onNext={onNext}
-          />
+      {/* Dialog area */}
+      <div className="absolute bottom-0 w-full z-30 px-4">
+        {/* If current event is a choice, render dialog prompt (if any) and then choice buttons */}
+        {currentEvent?.type === "choice" ? (
+          <div className="w-full max-w-3xl mx-auto p-4 bg-black/60 border border-white rounded-md">
+            {currentEvent.prompt && (
+              <div className="text-xs text-gray-300 mb-2">{currentEvent.prompt}</div>
+            )}
+            {/* If the choice event also has dialogs, show them first (rare) */}
+            {dialogs.length > 0 && currentDialog && (
+              <GameDialogBox
+                text={currentDialog.text ?? ""}
+                character={currentDialog.character ?? "Narrator"}
+                chapter={data?.id ?? ""}
+                onNext={() => {
+                  // if there are multiple dialogs inside the choice event, allow progressing them
+                  if (dialogIndex + 1 < dialogs.length) setDialogIndex((d) => d + 1);
+                }}
+              />
+            )}
+
+            {/* Show choices */}
+            <div className="mt-4 grid gap-3">
+              {(currentEvent.choices ?? []).map((choice, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleChoiceSelect(choice)}
+                  className="w-full text-left px-4 py-3 bg-white/10 hover:bg-white/20 rounded-md transition"
+                >
+                  {choice.text}
+                </button>
+              ))}
+            </div>
+          </div>
         ) : (
-          // --- Mini-game Handling ---
-          <>
-            {miniGames && MultipleChoiceComponent && <MultipleChoiceComponent />}
-            {miniGames && CardGameComponent && <CardGameComponent />}
-          </>
+          // Normal dialog flow
+          <div className="w-full max-w-3xl mx-auto">
+            <GameDialogBox
+              text={currentDialog?.text ?? ""}
+              character={currentDialog?.character ?? "Narrator"}
+              chapter={data?.id ?? ""}
+              onNext={progressToNext}
+            />
+          </div>
         )}
       </div>
     </div>

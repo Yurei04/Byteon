@@ -1,3 +1,4 @@
+// src/components/howToHack/gameDialogBox.jsx
 "use client"
 import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
@@ -5,16 +6,16 @@ import { Button } from "../ui/button";
 export default function GameDialogBox ({
     text = "",
     character = "Narrator",
-    chapter = 1,
+    chapter = "",
     onNext = () => {},
 }) {
-    const [displayedText, setDisplayedText] = useState(""); // typewriter progress
-    const [isTyping, setIsTyping] = useState(false); // typing flag
+    const [displayedText, setDisplayedText] = useState("");
+    const [isTyping, setIsTyping] = useState(false);
 
-    // typewriter effect logic
     useEffect(() => {
         if (!text) {
             setDisplayedText("");
+            setIsTyping(false);
             return;
         }
 
@@ -22,7 +23,7 @@ export default function GameDialogBox ({
         setIsTyping(true);
 
         let i = 0;
-        const speed = 25; // ⚙️ typing speed (ms per character)
+        const speed = 25;
         const interval = setInterval(() => {
             setDisplayedText((prev) => prev + text.charAt(i));
             i++;
@@ -35,10 +36,8 @@ export default function GameDialogBox ({
         return () => clearInterval(interval);
     }, [text]);
 
-    // skip typing instantly on click 
     const handleClick = () => {
         if (isTyping) {
-            // instantly reveal full text
             setDisplayedText(text);
             setIsTyping(false);
         } else {
@@ -47,17 +46,16 @@ export default function GameDialogBox ({
     };
 
     return (
-        <div className="w-full h-full max-h-1/3 border border-white bg-black/60 p-4 flex flex-col justify-between">
+        <div className="w-full h-full max-h-1/3 border border-white bg-black/60 p-4 flex flex-col justify-between rounded-md">
             <div>
                 <div className="text-xs text-gray-400 mb-1">
-                    Chapter {chapter} — {character}
+                    {chapter} — {character}
                 </div>
                 <div
                     className="text-lg font-sans leading-relaxed text-white whitespace-pre-wrap cursor-pointer"
                     onClick={handleClick}
                 >
                     {displayedText}
-                    {/* blinking cursor while typing */}
                     {isTyping && <span className="animate-pulse">|</span>}
                 </div>
             </div>

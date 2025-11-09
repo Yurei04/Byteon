@@ -1,82 +1,86 @@
+// src/components/howToHack/ChapterManager.jsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import GameScreen from "./GameScreen";
+import GameScreen from "./gameScreen";
 
-import chapter1 from "@/public/data/chapter1.json";
-import chapter2 from "@/public/data/chapter2.json";
-import chapter3 from "@/public/data/chapter3.json";
-import chapter4 from "@/public/data/chapter4.json";
-import chapter5 from "@/public/data/chapter5.json";
+// Import your chapter files (adjust paths if needed).
+// Each file is expected to follow your new format: { "chapters": [...], "characters": [...] }
+import rawChapter1 from "@/public/data/chapter1.json";
+import rawChapter2 from "@/public/data/chapter2.json";
+import rawChapter3 from "@/public/data/chapter3.json";
+import rawChapter4 from "@/public/data/chapter4.json";
+import rawChapter5 from "@/public/data/chapter5.json";
 
-const chapters = {
-  1: chapter1,
-  2: chapter2,
-  3: chapter3,
-  4: chapter4,
-  5: chapter5,
+const rawMap = {
+  1: rawChapter1,
+  2: rawChapter2,
+  3: rawChapter3,
+  4: rawChapter4,
+  5: rawChapter5,
 };
 
-export default function ChapterManager() {
-  const [currentChapter, setCurrentChapter] = useState(1);
-  const [chapterData, setChapterData] = useState(null);
+export default function ChapterManager({ startChapter = 1 }) {
+  const [currentChapter, setCurrentChapter] = useState(startChapter);
+  const [chapterData, setChapterData] = useState(null); // will hold a single chapter object, not the file wrapper
   const mountedRef = useRef(true);
 
-  // ensure mountedRef is updated on unmount
-  useEffect(() => {
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
-  // Clear previous data immediately, then load new data
+  // Immediately clear previous data, then load the new chapter object from the imported file.
   useEffect(() => {
-    // Clear immediately so UI doesn't still show old chapter content
     setChapterData(null);
 
-    // async loader to avoid the "setState synchronously in effect" lint
     const load = async () => {
-      // small micro-delay is optional but can help avoid render interleaving
-      // await new Promise((r) => setTimeout(r, 0));
+      // Load the raw file
+      const raw = rawMap[currentChapter] ?? null;
 
-      const data = chapters[currentChapter] ?? null;
+      // Defensive: the file might be empty or might have "chapters" array
+      const hasChaptersArray = raw && Array.isArray(raw.chapters) && raw.chapters.length > 0;
+      const chapterObj = hasChaptersArray ? raw.chapters[0] : null;
 
-      // defensive: if loaded data is empty object or has no meaningful content, treat as null
-      const hasData = data && Object.keys(data).length > 0;
-      if (!mountedRef.current) return;
-      setChapterData(hasData ? data : null);
+      // Attach characters array (if present in file root) for GameScreen convenience
+      if (chapterObj) {
+        // clone to avoid accidental mutation
+        const data = { ...chapterObj, characters: raw.characters ?? [] };
+        if (!mountedRef.current) return;
+        setChapterData(data);
+      } else {
+        if (!mountedRef.current) return;
+        setChapterData(null);
+      }
     };
 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentChapter]);
 
-  // Called by GameScreen (or your top-level game logic) when the chapter is finished
   const handleNextChapter = () => {
     setCurrentChapter((prev) => {
-      if (prev < 5) return prev + 1;
-      // last chapter reached — keep current or handle end-of-game here
+      const last = Object.keys(rawMap).length;
+      if (prev < last) return prev + 1;
       console.log("All chapters completed");
       return prev;
     });
   };
 
-  // If chapter data is empty, show "No Data Collected" screen (no skip button)
+  // If no data for current chapter -> show "No Data Collected" (no skip button)
   if (!chapterData) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen text-center text-white bg-black">
+      <div className="flex flex-col items-center justify-center h-full min-h-screen text-center text-white bg-black/80 p-6">
         <h1 className="text-3xl font-bold mb-4">No Data Collected</h1>
-        <p className="mb-6">Chapter {currentChapter} data is empty.</p>
+        <p className="mb-2">Chapter {currentChapter} data is empty.</p>
+        <p className="text-sm text-gray-400">Waiting for content (or fill `/public/data/chapter{n}.json`).</p>
       </div>
     );
   }
 
-  // Key ensures remount of GameScreen when chapter changes
+  // key forces remount so GameScreen's internal indices reset cleanly
   return (
     <GameScreen
       key={currentChapter}
       data={chapterData}
-      onChapterEnd={handleNextChapter} // GameScreen must call this when chapter truly ends
+      onChapterEnd={handleNextChapter}
     />
   );
 }
