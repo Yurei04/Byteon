@@ -23,7 +23,7 @@ export default function HowToHackPage () {
     const [gameCharac, setGameCharac] = useState("byteon"); // Chracter for a chapter or event
     const [gameCharacPose, setGameCharacPose] = useState("standby") // For specific Character pose 
     const [isLoading, setIsLoading] = useState(false); // for loading 
-    const [background, setBackground] = useState("") // set background depending to scenario 
+    const [background, setBackground] = useState("/images/kaede.jpg") // TEMP: default to kaede for testing
     const [isMainMenu, setIsMainMenu] = useState(false); // if in main menu
     const [isSettings, setIsSettings] = useState(false); // if in settings
     const [isExit, setIsExit] = useState(false); // if in exit and if data not saved
@@ -76,7 +76,8 @@ export default function HowToHackPage () {
             // --- ADDED COMMENT: Update background and character info immediately after loading ---
             const firstScenario = data?.scenarios?.[0];
             const firstEvent = firstScenario?.events?.[0];
-            setBackground(firstEvent?.background ?? "/images/default-bg.jpg");
+            setBackground(firstEvent?.background ?? "/images/kaede.jpg");
+            // We'll pick speaker from dialog later; keep a default here
             setGameCharac(firstEvent?.character ?? "byteon");
             setGameCharacPose(firstEvent?.pose ?? "standby");
         } catch (error) {
@@ -107,17 +108,39 @@ export default function HowToHackPage () {
     // Safe accessors
     // use chapterData -> scenarios -> events -> dialogs
     const currentScenario = chapterData?.scenarios?.[scenarioIndex]; // Get Scenario data based on Chapter and index
+    console.log(currentScenario)
     const currentEvent = currentScenario?.events?.[eventIndex]; // Get event data based on Chapter and index
+    console.log(currentEvent)
     const currentDialog = currentEvent?.dialogs?.[dialogIndex]; // Get dialog data based on Chapter and index
+    console.log(currentDialog)
 
-    // --- ADDED COMMENT: Dynamically update visuals when event changes ---
+    // Dynamically update visuals when event changes ---
     useEffect(() => {
         if (currentEvent) {
-            setBackground(currentEvent.background ?? "/images/default-bg.jpg");
-            setGameCharac(currentEvent.character ?? "byteon");
-            setGameCharacPose(currentEvent.pose ?? "standby");
+            setBackground(currentEvent.background ?? "/images/kaede.jpg");
+            // If the event contains a "character" field you'd use it; otherwise we derive speaker from dialog
+            setGameCharac(currentEvent.character ?? gameCharac);
+            setGameCharacPose(currentEvent.pose ?? gameCharacPose);
         }
     }, [currentEvent]);
+
+    // Update visuals when the active dialog changes (we use speaker/pose inside each dialog)
+    useEffect(() => {
+        if (currentDialog) {
+            // Set background from event (fallback to kaede)
+            setBackground(currentEvent?.background ?? "/images/kaede.jpg");
+
+            // Prefer speaker from dialog for character visuals
+            const speakerName = currentDialog.speaker ?? null;
+            if (speakerName) {
+                // keep the original speaker string (e.g., "Kaede") so GameScreen can map to an image
+                setGameCharac(speakerName);
+            }
+
+            // Pose from dialog (if available)
+            setGameCharacPose(currentDialog.pose ?? currentEvent?.pose ?? "standby");
+        }
+    }, [currentDialog, currentEvent]);
 
     //  Game Progression Logic (Modify later for characters includes and mini games)
     const handleNextDialog = () => {
@@ -195,13 +218,14 @@ export default function HowToHackPage () {
                         ) : (
                             <GameScreen
                                 gameStart={!isIntroPlaying}
+                                // Pass the whole dialog object (not just the text). This fixes the main bug.
+                                dialog={currentDialog ?? null}
                                 gameCharac={gameCharac}
                                 characPose={gameCharacPose}
-                                dialog={currentDialog?.text ?? ""}
                                 chapter={chapter}
                                 event={eventIndex}
                                 scenario={scenarioIndex}
-                                background={background}
+                                background={background ?? "/images/kaede.jpg"}
                                 choices={currentDialog?.choices ?? null}
                                 miniGames={isMiniGame}
                                 MultipleChoiceComponent={isMultipleChoice ? undefined : undefined}

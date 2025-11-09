@@ -9,7 +9,7 @@ export default function GameScreen(props) {
     gameStart = true,
     gameCharac,
     characPose = "default",
-    dialog,
+    dialog = null, // now expecting a dialog object (or null)
     chapter,
     event,
     scenario,
@@ -21,6 +21,28 @@ export default function GameScreen(props) {
     CardGameComponent = null,
     onNext = () => {},
   } = props;
+
+  // dialog may be an object { speaker, text, pose, side } or null
+  const dialogText = dialog?.text ?? "";
+  const dialogSpeaker = dialog?.speaker ?? gameCharac ?? "Narrator";
+
+  // Character image source resolution:
+  // - If gameCharac looks like a file path (starts with / or contains a dot), use it directly.
+  // - Otherwise, try to map names to temporary images in /images/<name>.jpg (lowercased).
+  // This is a simple convention for temporary testing (e.g., "Kaede" -> /images/kaede.jpg).
+  let charSrc = null;
+  if (typeof gameCharac === "string") {
+    const g = gameCharac.trim();
+    if (g.startsWith("/") || g.includes(".") ) {
+      charSrc = g;
+    } else {
+      charSrc = `/images/${g.toLowerCase()}.jpg`; // temporary convention
+    }
+  }
+
+  // If you prefer to always use a specific test image regardless of character name, you can
+  // uncomment the line below to force kaede for all testing:
+  // charSrc = "/images/kaede.jpg";
 
   return (
     // --- Entire Game Screen Container ---
@@ -43,15 +65,14 @@ export default function GameScreen(props) {
           This layer is in front of the background but behind dialog.
           Position, pose, and character name are all pulled from the JSON.
       */}
-      {gameCharac && (
+      {charSrc && (
         <div
-          className={`absolute bottom-0 ${
-            characPosition === "left" ? "left-10" : "right-10"
-          } z-10`}
+          className={`absolute bottom-0 ${characPosition === "left" ? "left-10" : "right-10"} z-10 pointer-events-none`}
         >
+          {/* using a square-ish size; adjust width/height to taste */}
           <Image
-            src={`/characters/${gameCharac}_${characPose}.png`}
-            alt={gameCharac}
+            src={charSrc}
+            alt={String(dialogSpeaker)}
             width={550}
             height={550}
             className="object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.6)] transition-all duration-500"
@@ -59,7 +80,7 @@ export default function GameScreen(props) {
         </div>
       )}
 
-      {/*
+      {/* 
           Helps the dialog box stand out visually by darkening the bottom area.
       */}
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/70 to-transparent z-20 pointer-events-none" />
@@ -72,8 +93,8 @@ export default function GameScreen(props) {
         {gameStart ? (
           // --- Dialog Display ---
           <GameDialogBox
-            text={dialog?.text ?? ""}
-            character={dialog?.speaker ?? gameCharac}
+            text={dialogText}
+            character={dialogSpeaker}
             chapter={chapter}
             onNext={onNext}
           />

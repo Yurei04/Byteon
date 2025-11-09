@@ -53,7 +53,7 @@ export default function GameDialogBox ({
                     Chapter {chapter} — {character}
                 </div>
                 <div
-                    className="text-lg font-sans leading-relaxed whitespace-pre-wrap cursor-pointer"
+                    className="text-lg font-sans leading-relaxed text-white whitespace-pre-wrap cursor-pointer"
                     onClick={handleClick}
                 >
                     {displayedText}
