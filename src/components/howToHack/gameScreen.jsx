@@ -40,10 +40,6 @@ export default function GameScreen(props) {
     }
   }
 
-  // If you prefer to always use a specific test image regardless of character name, you can
-  // uncomment the line below to force kaede for all testing:
-  // charSrc = "/images/kaede.jpg";
-
   return (
     // --- Entire Game Screen Container ---
     <div className="relative w-full h-screen overflow-hidden bg-black text-white">
