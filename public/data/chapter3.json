@@ -1,0 +1,330 @@
+{
+  "chapters": [
+    {
+      "id": "chapter3",
+      "title": "The Idea Sprint",
+      "background": "your_room_afternoon.jpg",
+      "music": "lofi_soft.mp3",
+      "events": [
+        {
+          "id": "scene1",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You’ve been thinking about what Aira said yesterday. Hackathons aren’t about perfection — they’re about possibility. You open your laptop."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "Alright, Aira. I’ve got my courage. I’ve got my imaginary team. Now what? How do I actually… make an idea?"
+            },
+            {
+              "character": "Aira",
+              "pose": "grinning",
+              "text": "Ah, the million-dollar question — where do ideas come from? Today, my curious friend, you’re about to find out."
+            }
+          ]
+        },
+        {
+          "id": "scene2",
+          "background": "idea_chamber.jpg",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Like clockwork, you find yourself back in cyberspace. Surrounding you are floating notes and pictures connected by glowing cyan strings."
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Welcome to the Idea Sprint Chamber! Every hacker’s imagination starts here. Think of it like a brainstorming dojo — no overthinking allowed."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Wait… no overthinking? That’s a rather hard ask for someone like me."
+            },
+            {
+              "character": "Aira",
+              "pose": "grinning",
+              "text": "Exactly. The biggest mistake beginners make is overthinking. Hackathons are fast. You create first, refine later."
+            },
+            {
+              "character": "Aira",
+              "pose": "teaching",
+              "text": "Every great idea starts with three questions: 1️⃣ What problem do I want to solve? 2️⃣ Who am I helping? 3️⃣ How can technology make it better?"
+            }
+          ]
+        },
+        {
+          "id": "scene3",
+          "type": "choice",
+          "prompt": "What kind of challenge excites you the most?",
+          "choices": [
+            {
+              "text": "Helping the environment",
+              "nextScene": "scene3_env"
+            },
+            {
+              "text": "Improving education",
+              "nextScene": "scene3_edu"
+            },
+            {
+              "text": "Supporting mental health",
+              "nextScene": "scene3_health"
+            },
+            {
+              "text": "Making technology more accessible",
+              "nextScene": "scene3_access"
+            }
+          ]
+        },
+        {
+          "id": "scene3_env",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "happy",
+              "text": "Eco-innovator detected! Sustainability challenges are huge at hackathons — from waste reduction to renewable energy apps. A noble cause, and technology can help make it happen."
+            }
+          ]
+        },
+        {
+          "id": "scene3_edu",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "A learning enthusiast! EdTech is one of the hottest hackathon categories. Projects that make learning fun and accessible can really stand out."
+            }
+          ]
+        },
+        {
+          "id": "scene3_health",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "gentle",
+              "text": "Heart-driven hacker! Mental health innovations can truly change lives — from mindfulness apps to supportive communities. It’s about small steps that help others grow."
+            }
+          ]
+        },
+        {
+          "id": "scene3_access",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "grinning",
+              "text": "Tech for all — I like it! Accessibility projects make digital spaces inclusive. Whether for young or old, improving access always matters."
+            }
+          ]
+        },
+        {
+          "id": "scene4",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "teaching",
+              "text": "Nice! That’s your theme seed. Every big project starts with just one spark. Now, let’s take it further."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira waves her hand — the panels merge into a glowing holographic mind map resembling a chalkboard in cyberspace."
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Imagine this formula: Problem + Technology + Impact = Idea. Think of it like a recipe. Let’s cook up some innovation!"
+            }
+          ]
+        },
+        {
+          "id": "scene5",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "After minutes of brainstorming, you lie down on a cold data floor, frustrated. Everything feels done before."
+            },
+            {
+              "character": "You",
+              "pose": "tired",
+              "text": "Ugh… I can’t think of anything new! Everything’s already been done."
+            },
+            {
+              "character": "Aira",
+              "pose": "gentle",
+              "text": "That’s a myth. Innovation doesn’t always mean new. Sometimes it means better, simpler, or more human. Small ideas can make big differences."
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Look — one team built an app to track food donations. Another helped students find mentors. Simple ideas. Big impact."
+            },
+            {
+              "character": "You",
+              "pose": "determined",
+              "text": "Okay… I think I’m ready to try this brainstorming thing."
+            },
+            {
+              "character": "Aira",
+              "pose": "grinning",
+              "text": "Perfect! Because here comes your next challenge."
+            }
+          ]
+        },
+        {
+          "id": "scene6_minigame",
+          "type": "minigame",
+          "title": "Idea Builder",
+          "description": "Combine one problem, one technology, and one impact to generate your idea!",
+          "elements": {
+            "problems": ["Plastic pollution", "Students struggling to focus", "Rural areas lacking healthcare access", "Social isolation among teens"],
+            "technologies": ["AI chatbot", "Mobile app", "Sensor system", "Web platform"],
+            "impacts": ["Empower communities", "Improve mental well-being", "Educate and inspire users", "Reduce waste"]
+          },
+          "examples": [
+            "AI chatbot + Students struggling to focus + Educate and inspire users → A virtual study buddy that keeps students motivated!",
+            "Mobile app + Plastic pollution + Reduce waste → An app that rewards proper recycling habits.",
+            "Web platform + Social isolation among teens + Improve mental well-being → A space for teens to share positivity.",
+            "Sensor system + Rural healthcare + Empower communities → Low-cost health sensors for remote diagnosis."
+          ]
+        },
+        {
+          "id": "scene7",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "clapping",
+              "text": "Fantastic! See? You brainstormed like a real innovator — fast, focused, and fearless."
+            },
+            {
+              "character": "You",
+              "pose": "happy",
+              "text": "That was actually kinda fun. I didn’t realize ideas could form that easily when you just… try."
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "That’s the hackathon magic — creativity under time pressure. You don’t wait for inspiration. You build it."
+            }
+          ]
+        },
+        {
+          "id": "scene8",
+          "type": "choice",
+          "prompt": "How do you feel about your idea?",
+          "choices": [
+            {
+              "text": "Proud! It’s something I’d love to build.",
+              "nextScene": "scene8_proud"
+            },
+            {
+              "text": "Curious — I want to explore it more.",
+              "nextScene": "scene8_curious"
+            },
+            {
+              "text": "Unsure. It still feels rough.",
+              "nextScene": "scene8_unsure"
+            }
+          ]
+        },
+        {
+          "id": "scene8_proud",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "happy",
+              "text": "Confidence! The first step to innovation is believing your idea matters. Nobody can believe in your vision more than you do."
+            }
+          ]
+        },
+        {
+          "id": "scene8_curious",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Curiosity is your compass. Keep exploring — even rough edges lead to brilliance. Every twist gives you something new."
+            }
+          ]
+        },
+        {
+          "id": "scene8_unsure",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "gentle",
+              "text": "Every great idea starts rough. The first draft isn’t supposed to be perfect — it’s supposed to exist. Believe it’s worth pursuing."
+            }
+          ]
+        },
+        {
+          "id": "scene9",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "You’ve completed your third quest! Here’s your Innovation Spark Achievement! 🎖️"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A pop-up appears: 'Achievement Unlocked — Innovation Spark! Completed making your first Idea Seed.' A cute smiling Aira with a light bulb icon flashes."
+            },
+            {
+              "character": "You",
+              "pose": "proud",
+              "text": "Three achievements! Not bad for someone who almost ignored that hackathon email."
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Not bad at all. You’ve gone from hesitant to hacker-minded. Now it’s time to prepare for the big stage — Pitch Day!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The scene fades to black as upbeat synth music plays, Aira’s glowing outline fading last."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "You",
+      "name": "You",
+      "poses": {
+        "neutral": "you_neutral.png",
+        "thinking": "you_thinking.png",
+        "tired": "you_tired.png",
+        "determined": "you_determined.png",
+        "happy": "you_happy.png",
+        "proud": "you_proud.png"
+      }
+    },
+    {
+      "id": "Aira",
+      "name": "Aira",
+      "poses": {
+        "smiling": "aira_smiling.png",
+        "grinning": "aira_grinning.png",
+        "gentle": "aira_gentle.png",
+        "happy": "aira_happy.png",
+        "clapping": "aira_clapping.png",
+        "teaching": "aira_teaching.png"
+      }
+    },
+    {
+      "id": "Narrator",
+      "name": "Narrator",
+      "poses": {
+        "neutral": "bg_fade.png"
+      }
+    }
+  ]
+}
