@@ -1,0 +1,431 @@
+{
+  "chapters": [
+    {
+      "id": "chapter2",
+      "title": "Building the Team",
+      "background": "your_room_morning.jpg",
+      "music": "gentle_morning_theme.mp3",
+      "events": [
+        {
+          "id": "scene1",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A new day begins — and that email invitation still waits in your inbox. But this time, instead of nervousness, there’s a flicker of curiosity."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "Alright, Aira said we’d talk about teams today… wonder what she’s got planned."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Good morning, future hacker! Ready for your next mission?"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Her tone is the same as ever — warm and full of zeal. You can’t help but feel her energy is infectious."
+            },
+            {
+              "character": "You",
+              "pose": "smile",
+              "text": "I think so. I mean… as ready as I’ll ever be."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Perfect answer! Because today, we tackle the most powerful force in any hackathon."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Code?"
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Nope!"
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "Coffee?"
+            },
+            {
+              "character": "Aira",
+              "pose": "laugh",
+              "text": "Close — but still no. The answer is… Teamwork!"
+            }
+          ]
+        },
+        {
+          "id": "scene2",
+          "background": "collaboration_hub.jpg",
+          "music": "lively_virtual_space.mp3",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "This is the Collaboration Hub — a space where ideas meet people. Every hackathon begins here."
+            },
+            {
+              "character": "You",
+              "pose": "surprised",
+              "text": "Whoa, it’s busy! Everyone seems to know what they’re doing."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Don’t be fooled! Most of them are first-timers too. The trick is: nobody knows everything — and that’s okay. That’s why teams exist."
+            },
+            {
+              "character": "You",
+              "pose": "concerned",
+              "text": "But how do I even find a team? What if nobody wants to work with a beginner like me?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Ah, the second most common fear — right after ‘what if I break something?’ Trust me, every hackathon is full of people looking for someone just like you."
+            }
+          ]
+        },
+        {
+          "id": "scene3",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Let me introduce you to a few types of hackers you’ll meet. Think of it as... your future squad audition."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Three avatars fade in — one at a time, each with their own personality and color theme."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Luna — the Designer — waves, surrounded by glowing shapes and color palettes."
+            },
+            {
+              "character": "Luna",
+              "pose": "smile",
+              "text": "Hey there! I’m Luna — I make things look beautiful and usable. You know, colors, buttons, layouts. Without design, even great ideas feel dull."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "So you’re the artsy type?"
+            },
+            {
+              "character": "Luna",
+              "pose": "smile",
+              "text": "Sort of! But it’s more than art — it’s understanding people. I make sure the users actually enjoy using what we build."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Designers are like empathy wizards — they turn chaos into clarity. Despite what most say considering the age of generative AI, they are indispensable. After all, nobody knows aesthetics better than humans."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Next appears Kenji — the Developer — his avatar framed by lines of cascading code."
+            },
+            {
+              "character": "Kenji",
+              "pose": "neutral",
+              "text": "Sup. I’m Kenji — I code stuff. I’m not great at talking, but give me a bug, and I’ll squash it faster than you can say ‘runtime error’."
+            },
+            {
+              "character": "You",
+              "pose": "surprised",
+              "text": "Wow, you seem… intense."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The coder’s rather stoic lips that were forming a flat line curl into a soft smile."
+            },
+            {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "I just like seeing ideas come to life. But coding alone? Nah. You need others to bring a project to the finish line."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Developers are the builders — they make things work. But without an idea, they have nothing to build. They thrive with direction and collaboration."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Lastly appears Maya — the Presenter — standing confidently with a glowing mic in hand."
+            },
+            {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "Hiya! I’m Maya — the storyteller. My job? Convince the judges that our idea changes the world."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "So you’re like… the face of the group?"
+            },
+            {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "Exactly! But it’s not about fame — it’s about making sure people understand our vision. A strong pitch can turn a small project into something unforgettable."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Presenters are your voice. They connect your ideas to the world. They understand code, concept, and design enough to bring imagination to life."
+            }
+          ]
+        },
+        {
+          "id": "scene4",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "So, you see? Hackathons are like orchestras. Every role plays a different note — but together, they make music."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "I get it now… it’s not just about who’s smartest. It’s about combining strengths."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Exactly! Some people code. Some create. Some communicate. The best teams respect that balance."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "But what if I still don’t know what my role is?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Then that’s your challenge for today."
+            }
+          ]
+        },
+        {
+          "id": "scene5",
+          "background": "team_challenge_console.jpg",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Time for the Team Builder minigame! Let’s see if you can match each hackathon task with the right role. Ready?"
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "Wait — is this another quiz?"
+            },
+            {
+              "character": "Aira",
+              "pose": "grin",
+              "text": "Think of it as your first team management simulation. Don’t worry — you can’t get fired."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "After your mentor — or Resource Assistant — speaks, a hologram pops up labeled “Team Builder Sim: Version Byteon Prep.”"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "🧩 MiniGame: “Team Builder” — Drag and drop each role to the correct task."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Design the app’s layout → ✅ Designer | Fix a bug in the login system → ✅ Developer | Write the pitch script → ✅ Presenter | Brainstorm project ideas → ✅ All | Test the prototype → ✅ Developer & Designer"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Impressive! You’re learning fast. You built a balanced team — and more importantly, you understood why each role matters."
+            },
+            {
+              "character": "You",
+              "pose": "smile",
+              "text": "That was… kinda fun, actually. So hackathons are really like RPG parties, huh?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Exactly! Developers are warriors, designers are healers, presenters are bards — and you? You could be anything you choose."
+            }
+          ]
+        },
+        {
+          "id": "scene6",
+          "type": "choice",
+          "prompt": "Which role do you feel most right now?",
+          "choices": [
+            {
+              "text": "Developer — I like building things.",
+              "nextScene": "scene6a"
+            },
+            {
+              "text": "Designer — I like making things look and feel right.",
+              "nextScene": "scene6b"
+            },
+            {
+              "text": "Presenter — I love telling stories and connecting with people.",
+              "nextScene": "scene6c"
+            },
+            {
+              "text": "I don’t know yet.",
+              "nextScene": "scene6d"
+            }
+          ]
+        },
+        {
+          "id": "scene6a",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Ah, the builder type! You love logic, structure, and making ideas tangible. Your code is your craft — keep sharpening it."
+            }
+          ]
+        },
+        {
+          "id": "scene6b",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Ah, a creative soul! You’ll make sure every detail speaks to the user. Design is how innovation meets emotion."
+            }
+          ]
+        },
+        {
+          "id": "scene6c",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "A natural communicator! You’ll make ideas shine and inspire others to believe. Pitching is storytelling with purpose."
+            }
+          ]
+        },
+        {
+          "id": "scene6d",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "That’s perfectly fine. Hackathons are the best places to find your role. You’ll discover what fits by trying things — and maybe surprising yourself."
+            }
+          ]
+        },
+        {
+          "id": "scene7",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "You’ve completed your second quest! Here’s your ‘Teamwork Makes the Dream Work’ Achievement! 🎖️"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Another achievement pops up: “Teamwork Makes the Dream Work” with a shaking hands icon. Description: “Learning about how teamwork makes everyone work better.”"
+            },
+            {
+              "character": "You",
+              "pose": "smile",
+              "text": "Nice! Two achievements already. I’m starting to feel like I actually belong here."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "And that’s the point. The best teams aren’t made of perfect people — just curious ones who show up."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The digital space slowly fades. You sit at your desk, notebook open, scribbling ideas. For the first time, the word “hackathon” doesn’t feel intimidating. It feels… exciting."
+            },
+            {
+              "character": "Aira",
+              "pose": "fade",
+              "text": "Next stop — The Idea Sprint! Let’s spark your creativity."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Music swells as the screen fades to black."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "You",
+      "name": "You",
+      "poses": {
+        "neutral": "you_neutral.png",
+        "thinking": "you_thinking.png",
+        "concerned": "you_concerned.png",
+        "smile": "you_smile.png",
+        "surprised": "you_surprised.png"
+      }
+    },
+    {
+      "id": "Aira",
+      "name": "Aira",
+      "poses": {
+        "neutral": "aira_neutral.png",
+        "smile": "aira_smile.png",
+        "grin": "aira_grin.png",
+        "laugh": "aira_laugh.png",
+        "fade": "aira_fade.png"
+      }
+    },
+    {
+      "id": "Narrator",
+      "name": "Narrator",
+      "poses": {
+        "neutral": "narrator_none.png"
+      }
+    },
+    {
+      "id": "Luna",
+      "name": "Luna",
+      "poses": {
+        "smile": "luna_smile.png"
+      }
+    },
+    {
+      "id": "Kenji",
+      "name": "Kenji",
+      "poses": {
+        "neutral": "kenji_neutral.png",
+        "smile": "kenji_smile.png"
+      }
+    },
+    {
+      "id": "Maya",
+      "name": "Maya",
+      "poses": {
+        "smile": "maya_smile.png"
+      }
+    }
+  ]
+}

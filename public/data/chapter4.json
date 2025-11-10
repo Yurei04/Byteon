@@ -1,0 +1,275 @@
+{
+  "chapter": 4,
+  "title": "Pitch Day",
+  "theme": ["Confidence", "Storytelling", "Celebration of Growth"],
+  "minigame": "Pitch Perfect",
+  "achievement": "First Hack🏅",
+  "scenes": [
+    {
+      "scene_id": 1,
+      "title": "Early Morning – Your Room",
+      "music": "soft_lofi_piano",
+      "dialogue": [
+        {
+          "speaker": "Narrator",
+          "text": "It’s the final day of your hackathon journey. You’ve learned what hackathons are, how teams work, and how ideas are built. Now, one last challenge remains — the pitch."
+        },
+        {
+          "speaker": "You",
+          "text": "(sighs) Presenting in front of people… that’s gonna be the hardest part."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Good morning, superstar! Nervous? Excited? Slightly terrified?"
+        },
+        {
+          "speaker": "You",
+          "text": "All of the above. I’ve never presented anything before. What if I freeze up?"
+        },
+        {
+          "speaker": "Aira",
+          "text": "Then you take a deep breath, smile, and keep going. Everyone’s first pitch feels scary — that’s also what makes it powerful."
+        },
+        {
+          "speaker": "You",
+          "text": "So… how do I even start?"
+        },
+        {
+          "speaker": "Aira",
+          "text": "With a story. Always with a story."
+        }
+      ]
+    },
+    {
+      "scene_id": 2,
+      "title": "The Virtual Stage",
+      "music": "rising_melody",
+      "background": "holographic_baseball_field",
+      "dialogue": [
+        {
+          "speaker": "Narrator",
+          "text": "You blink, and suddenly you’re standing in a massive holographic baseball field bathed in neon lights. Rows of glowing silhouettes cheer from the stands."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Welcome to the Pitch Arena! This is where ideas find their voice. And your voice — is your secret weapon."
+        },
+        {
+          "speaker": "You",
+          "text": "My voice feels like it’s hiding behind a firewall."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Then let’s unlock it. Let me show you the anatomy of a great pitch."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "Five holographic cards spin in front of you — INTRO, PROBLEM, SOLUTION, IMPACT, CLOSING."
+        },
+        {
+          "speaker": "Aira",
+          "text": "These are your five building blocks. Master them, and you’ll pitch like a pro."
+        }
+      ]
+    },
+    {
+      "scene_id": 3,
+      "title": "The Anatomy of a Pitch",
+      "music": "upbeat_instrumental",
+      "dialogue": [
+        {
+          "speaker": "Aira",
+          "text": "First — the INTRO. You grab attention. Start with a story, a question, or a powerful fact."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Did you know that over 80% of students lose focus while studying online?"
+        },
+        {
+          "speaker": "You",
+          "text": "Then comes the Problem, right?"
+        },
+        {
+          "speaker": "Aira",
+          "text": "Exactly. Show what’s wrong — make them feel it. Numbers are good, but emotions connect."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Many students struggle with motivation, especially when learning remotely."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Then — the Solution! Your hero moment. Come on, your turn."
+        },
+        {
+          "speaker": "You",
+          "text": "That’s why we created FocusFriend — an AI buddy that keeps students motivated and on track."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Beautiful! Next — Impact! What difference does it make?"
+        },
+        {
+          "speaker": "You",
+          "text": "Our app helps students stay engaged, turning goals into daily achievements."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Perfect! Now, end it with a bang."
+        },
+        {
+          "speaker": "You",
+          "text": "We believe learning should never feel lonely — and with FocusFriend, it never will."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Simple. Human. Memorable. That’s the essence of a great pitch."
+        }
+      ]
+    },
+    {
+      "scene_id": 4,
+      "title": "Overcoming Fear",
+      "music": "soft_ambient",
+      "dialogue": [
+        {
+          "speaker": "You",
+          "text": "What if my voice shakes? Or I forget everything mid-sentence?"
+        },
+        {
+          "speaker": "Aira",
+          "text": "Then you smile, laugh, and keep going. People don’t remember perfect pitches — they remember honest ones."
+        },
+        {
+          "speaker": "You",
+          "text": "So… I don’t need to be perfect?"
+        },
+        {
+          "speaker": "Aira",
+          "text": "Not at all. You just need to be you. Speak with heart — that’s something no AI, no robot, no script can replace."
+        },
+        {
+          "speaker": "Aira",
+          "text": "You’ve grown so much since that first day. From uncertainty, to courage, to creation. Now it’s time to share your spark with the world."
+        },
+        {
+          "speaker": "You",
+          "text": "Then… let’s do it, Aira. Let’s pitch."
+        }
+      ]
+    },
+    {
+      "scene_id": 5,
+      "title": "MiniGame: Pitch Perfect",
+      "game_type": "dialogue_choice",
+      "objective": "Choose the best line for each part of your pitch.",
+      "rounds": [
+        {
+          "round": 1,
+          "part": "Intro",
+          "options": [
+            "Hi, my name is [Name]. I’m here to present my app.",
+            "Have you ever felt stuck studying alone, wishing someone could keep you going?"
+          ],
+          "correct_option": 2
+        },
+        {
+          "round": 2,
+          "part": "Problem",
+          "options": [
+            "Students are lazy.",
+            "Many students lose motivation when learning online due to lack of connection."
+          ],
+          "correct_option": 2
+        },
+        {
+          "round": 3,
+          "part": "Solution",
+          "options": [
+            "We made an app that sends random alerts.",
+            "We built FocusFriend — an AI buddy that gamifies your study habits."
+          ],
+          "correct_option": 2
+        },
+        {
+          "round": 4,
+          "part": "Impact",
+          "options": [
+            "It’s kinda fun.",
+            "FocusFriend helps students feel proud of their progress and less alone."
+          ],
+          "correct_option": 2
+        },
+        {
+          "round": 5,
+          "part": "Closing",
+          "options": [
+            "Thank you.",
+            "Together, let’s make learning more human — one study session at a time."
+          ],
+          "correct_option": 2
+        }
+      ],
+      "reward": "Pitch Masterpiece Badge 🎤✨"
+    },
+    {
+      "scene_id": 6,
+      "title": "The Finale",
+      "dialogue": [
+        {
+          "speaker": "Luna",
+          "text": "Nice work, rookie! That was sharp."
+        },
+        {
+          "speaker": "Kenji",
+          "text": "Yeah. I even felt chills — and I don’t do emotions."
+        },
+        {
+          "speaker": "Maya",
+          "text": "See? You always had it in you. You just needed to believe."
+        },
+        {
+          "speaker": "Aira",
+          "text": "They’re proud of you. And so am I."
+        },
+        {
+          "speaker": "You",
+          "text": "Thanks, Aira. For everything."
+        },
+        {
+          "speaker": "Aira",
+          "text": "You earned this moment. Every click, every idea, every doubt — it brought you here."
+        },
+        {
+          "speaker": "Aira",
+          "text": "Congratulations. You’ve completed your first hackathon journey!"
+        }
+      ],
+      "achievement_unlocked": "First Hacker Medal 🏅"
+    },
+    {
+      "scene_id": 7,
+      "title": "Epilogue – The Real World",
+      "music": "triumphant_synth",
+      "dialogue": [
+        {
+          "speaker": "Narrator",
+          "text": "Your mouse hovers over the 'Register' button. For the first time, your hand doesn’t shake."
+        },
+        {
+          "speaker": "You",
+          "text": "(softly) Let’s do this."
+        },
+        {
+          "speaker": "Narrator",
+          "text": "You click 'Register.' The screen fades to white as triumphant music plays."
+        },
+        {
+          "speaker": "Aira",
+          "text": "I’ll be right here — cheering you on, byte by byte."
+        }
+      ],
+      "end": true
+    }
+  ]
+}
