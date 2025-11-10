@@ -3,7 +3,11 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "../ui/button";
+import GameSettings from "./gameSettings";
+import { GameExit } from "./GameExit";
+import LoadGame from "./loadGame";
 
+const styling = ["w-52 py-6 bg-fuchsia-900/20 hover:bg-fuchsia-700 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 cursor-pointer transition-all duration-300"]
 
 export default function MainMenu({
   onStartGame = () => {},
@@ -49,33 +53,41 @@ export default function MainMenu({
         transition={{ delay: 2, duration: 1 }}
       >
         <Button
-          className="w-52 py-6 text-lg border border-gray-600 bg-black/70 hover:bg-gray-800 transition-all duration-300"
+          className={styling}
           onClick={onStartGame}
         >
           Start Game
         </Button>
 
         <Button
-          className="w-52 py-6 text-lg border border-gray-600 bg-black/70 hover:bg-gray-800 transition-all duration-300"
+          className={styling}
           onClick={onLoadGame}
         >
           Load Game
         </Button>
 
         <Button
-          className="w-52 py-6 text-lg border border-gray-600 bg-black/70 hover:bg-gray-800 transition-all duration-300"
+          className={styling}
           onClick={onSettings}
         >
           Settings
         </Button>
 
         <Button
-          className="w-52 py-6 text-lg border border-gray-600 bg-black/70 hover:bg-gray-800 transition-all duration-300"
+          className={styling}
           onClick={onExit}
         >
           Exit
         </Button>
       </motion.div>
+
+      {onSettings ? (
+        <GameSettings />
+      ): onExit ? (
+        <GameExit />
+      ): (
+        <LoadGame />
+      )}
 
       {/* Footer credits */}
       <motion.div

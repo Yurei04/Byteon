@@ -1,6 +1,5 @@
 /*
-  
-
+    Main Game Screen of the Visual Novel
 */
 
 
@@ -9,9 +8,10 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import GameDialogBox from "./gameDialogBox";
-
+import MiniGameMultipleChoice from "./multipleChoiceMG";
+import CardGame from "./cardGame";
 /*
-  Expectations for `data` (one chapter object):
+  Expectations for `data` (one chapter object): // missing mini game and tips and resources
   {
     id: "chapter2",
     title: "Building the Team",
@@ -19,11 +19,13 @@ import GameDialogBox from "./gameDialogBox";
     music: "gentle_morning_theme.mp3",
     events: [ { id:"scene1", dialogs: [...] , background?, music?, type?, choices? }, ... ],
     characters: [ { id: "You", poses: { neutral: "you_neutral.png", ... } }, ... ]
+
+    
   }
 */
 
 export default function GameScreen({
-  data,
+  data, miniGames, multipleChoiceComponent, CardGameComponent,
   onChapterEnd = () => {},
   // optional: whether the game is considered started
   gameStart = true,
@@ -80,9 +82,9 @@ export default function GameScreen({
   // Utility: map character name + pose -> image path using data.characters list
   const getCharacterPoseImage = (characterName, pose) => {
     if (!characterName) return null;
-    const chars = data?.characters ?? [];
-    const found = chars.find((c) => String(c.id).toLowerCase() === String(characterName).toLowerCase());
-    const poseFile = found?.poses?.[pose] ?? null;
+      const chars = data?.characters ?? [];
+      const found = chars.find((c) => String(c.id).toLowerCase() === String(characterName).toLowerCase());
+      const poseFile = found?.poses?.[pose] ?? null;
     if (poseFile) return `/images/characters/${poseFile}`; // expects your files under /public/images/characters/
     // fallback: try generic `/images/<name>.jpg`
     return `/images/${String(characterName).toLowerCase()}.jpg`;
@@ -169,7 +171,7 @@ export default function GameScreen({
         />
       </div>
 
-      {/* Character sprite (uses pose mapping or fallback image) */}
+      {/* Character image  */}
       {charSrc && (
         <div className="absolute bottom-0 left-10 z-10 pointer-events-none">
           <Image
@@ -219,6 +221,10 @@ export default function GameScreen({
               ))}
             </div>
           </div>
+        ) : miniGames && multipleChoiceComponent ? ( // If mini game multiple choice
+            <MiniGameMultipleChoice />
+        ) : miniGames && CardGameComponent ? ( // If mini game card Game
+            <CardGame />
         ) : (
           // Normal dialog flow
           <div className="w-full max-w-3xl mx-auto">

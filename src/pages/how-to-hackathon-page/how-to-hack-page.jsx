@@ -11,6 +11,10 @@ import GameIntroScene from "@/components/howToHack/introScene";
 import MainMenu from "@/components/howToHack/mainMenu";
 import GameSettings from "@/components/howToHack/gameSettings";
 import { GameExit } from "@/components/howToHack/GameExit";
+import GameFlow from "@/components/howToHack/gameFlow";
+import TipsAndResources from "@/components/howToHack/tipsAndResources";
+import GameControls from "@/components/howToHack/gameControls";
+import ChapterManager from "@/components/howToHack/chapterManger";
 // --- ADDED COMMENT: Optional future use: import { supabase } from "@/lib/supabaseClient"; to enable save/load ---
 
 export default function HowToHackPage () {
@@ -37,7 +41,9 @@ export default function HowToHackPage () {
     
     //Data States
     const [gameData, setGameData] = useState(null); // Data from the jsond
-    
+    const [resources, setResources] = useState(null); // resources data from json
+    const [tips, setTips] = useState(null); // tips and tricks from json
+
     // Skeleton loader — only shows if network or assets take too long to load
     const [slowLoading, setSlowLoading] = useState(false);
 
@@ -64,24 +70,61 @@ export default function HowToHackPage () {
     const loadChapter = async (id) => {
         try {
             setIsLoading(true);
-            const response = await fetch(`/data/chapter${id}.json`);
-            const data = await response.json();
-            console.log("Data Loaded")
-            setChapterData(data);
-            // reset indices when a new chapter loads to avoid out-of-range indices
-            setScenarioIndex(0);
-            setEventIndex(0);
-            setDialogIndex(0);
 
-            // --- ADDED COMMENT: Update background and character info immediately after loading ---
-            const firstScenario = data?.scenarios?.[0];
-            const firstEvent = firstScenario?.events?.[0];
+            const res = await fetch(`/data/chapter${id}.json`);
+            if (!res.ok) {
+            console.warn(`Failed to fetch chapter file: /data/chapter${id}.json (status ${res.status})`);
+            setChapterData(null);
+            setGameData(null);
+            return;
+            }
+
+            const raw = await res.json();
+            setGameData(raw ?? null);
+
+            // --- Normalize both new and old JSON formats ---
+            let normalized = null;
+
+            if (raw && Array.isArray(raw.chapters) && raw.chapters.length > 0) {
+                normalized = { ...raw.chapters[0], characters: raw.characters ?? [] };
+            } else if (raw && Array.isArray(raw.events)) {
+                normalized = { ...raw, characters: raw.characters ?? [] };
+            } else if (raw && Array.isArray(raw.scenarios)) {
+        
+                const flattenedEvents = raw.scenarios.flatMap((s) => s.events ?? []);
+                normalized = {
+                    id: raw.id ?? `chapter${id}`,
+                    title: raw.title ?? "",
+                    events: flattenedEvents,
+                    characters: raw.characters ?? [],
+                };
+            } else {
+                normalized = null;
+            }
+
+            // Debug logs to verify the shape in console
+            console.debug("[HowToHackPage] raw loaded:", raw);
+            console.debug("[HowToHackPage] normalized chapter:", normalized);
+
+            // Avoid ESLint "setState in effect" warning
+            setTimeout(() => {
+                setScenarioIndex(0);
+                setEventIndex(0);
+                setDialogIndex(0);
+            }, 0);
+
+            const firstEvent = normalized?.events?.[0] ?? null;
+            const firstDialog = firstEvent?.dialogs?.[0] ?? null;
+
             setBackground(firstEvent?.background ?? "/images/kaede.jpg");
-            // We'll pick speaker from dialog later; keep a default here
-            setGameCharac(firstEvent?.character ?? "byteon");
-            setGameCharacPose(firstEvent?.pose ?? "standby");
+            setGameCharac(firstDialog?.character ?? firstEvent?.character ?? "byteon");
+            setGameCharacPose(firstDialog?.pose ?? firstEvent?.pose ?? "standby");
+
+            setChapterData(normalized);
         } catch (error) {
             console.error("Failed to load chapter:", error);
+            setChapterData(null);
+            setGameData(null);
         } finally {
             setIsLoading(false);
         }
@@ -122,7 +165,7 @@ export default function HowToHackPage () {
             setGameCharac(currentEvent.character ?? gameCharac);
             setGameCharacPose(currentEvent.pose ?? gameCharacPose);
         }
-    }, [currentEvent]);
+    }, [currentEvent, gameCharac, gameCharacPose]);
 
     // Update visuals when the active dialog changes (we use speaker/pose inside each dialog)
     useEffect(() => {
@@ -197,7 +240,7 @@ export default function HowToHackPage () {
         <div className="w-full h-screen flex flex-col p-4">
             <ResizablePanelGroup
                 direction="horizontal"
-                className="w-full rounded-lg border border-white m-2"
+                className="w-full rounded-lg border border-fuchsia-400/80 mb-2"
                 >
                 <ResizablePanel defaultSize={120}>
                     <div className="flex flex-col h-full items-center justify-center p-6">
@@ -216,21 +259,9 @@ export default function HowToHackPage () {
                         ) : isExit ? (
                             <GameExit />
                         ) : (
-                            <GameScreen
-                                gameStart={!isIntroPlaying}
-                                // Pass the whole dialog object (not just the text). This fixes the main bug.
-                                dialog={currentDialog ?? null}
-                                gameCharac={gameCharac}
-                                characPose={gameCharacPose}
-                                chapter={chapter}
-                                event={eventIndex}
-                                scenario={scenarioIndex}
-                                background={background ?? "/images/kaede.jpg"}
-                                choices={currentDialog?.choices ?? null}
-                                miniGames={isMiniGame}
-                                MultipleChoiceComponent={isMultipleChoice ? undefined : undefined}
-                                CardGameComponent={isCardGame ? undefined : undefined}
-                                onNext={handleNextDialog}
+                            <ChapterManager
+                            chapterData={chapterData}
+                            onNextChapter={() => setChapter((prev) => prev + 1)}
                             />
                         )}
                     </div>
@@ -238,22 +269,22 @@ export default function HowToHackPage () {
                 <ResizableHandle />
                 <ResizablePanel defaultSize={50}>
                     <ResizablePanelGroup direction="vertical">
-                    <ResizablePanel defaultSize={25}>
-                        <div className="flex h-full items-center justify-center p-6">
-                            <span className="font-semibold">Two</span>
-                        </div>
+                    <ResizablePanel defaultSize={50} className="p-4">
+                        <GameFlow 
+                            chapter={chapter}
+                            scenario={scenarioIndex}
+                            event={eventIndex}
+                        />
                     </ResizablePanel>
                     <ResizableHandle />
-                    <ResizablePanel defaultSize={75}>
-                        <div className="flex h-full items-center justify-center p-6">
-                            <span className="font-semibold">Three</span>
-                        </div>
+                    <ResizablePanel defaultSize={50} className="p-4">
+                        <GameControls />
                     </ResizablePanel>
                     </ResizablePanelGroup>
                 </ResizablePanel>
             </ResizablePanelGroup>
             <div className="w-full h-1/4 border border-white">
-
+                <TipsAndResources />
             </div>
         </div> 
     )

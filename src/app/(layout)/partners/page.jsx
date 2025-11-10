@@ -1,9 +1,13 @@
+import Footer from "@/components/footer";
+import NavBar from "@/components/navbar";
 import PartnersPage from "@/pages/partners-page/parnters-page";
 
 export default function Partners () {
     return (
-        <div className="flex flex-col p-0 m-0 items-center justify-center overflow-x-hidden">
+        <div className="w-full min-h-screen">
+            <NavBar />
             <PartnersPage />
+            <Footer />
         </div>
     )
 }

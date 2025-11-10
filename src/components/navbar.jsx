@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 
 const navLinks = [
-    { title: "Home", href: "/" },
-    { title: "About", href: "/" },
-    { title: "Partners", href: "/" },
-    { title: "Blog", href: "/" },
+    { title: "Home", href: "/homepage" },
+    { title: "About", href: "/about" },
+    { title: "Partners", href: "/partners" },
+    { title: "Blog", href: "/blog" },
 ]
 
 export default function NavBar() {
@@ -41,7 +41,7 @@ return (
                 size="sm"
                 className="text-sm border border-fuchsia-500 hover:border-purple-400 hover:bg-purple-900/50 transition-colors"
                 >
-                <Link href="/yourBodyInNumbers">HowToHack</Link>
+                <Link href="/how-to-hackathon">HowToHack</Link>
                 </Button>
             </div>
 
@@ -78,7 +78,7 @@ return (
                 size="sm"
                 className="w-full justify-start text-sm border border-fuchsia-500 hover:border-purple-300 hover:bg-purple-900/40 transition-colors"
                 >
-                <Link href="/yourBodyInNumbers">HowToHack</Link>
+                <Link href="/how-to-hackathon">HowToHack</Link>
                 </Button>
             </div>
             )}

@@ -1,86 +1,101 @@
-// src/components/howToHack/ChapterManager.jsx
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import GameScreen from "./gameScreen";
 
-// Import your chapter files (adjust paths if needed).
-// Each file is expected to follow your new format: { "chapters": [...], "characters": [...] }
-import rawChapter1 from "@/public/data/chapter1.json";
-import rawChapter2 from "@/public/data/chapter2.json";
-import rawChapter3 from "@/public/data/chapter3.json";
-import rawChapter4 from "@/public/data/chapter4.json";
-import rawChapter5 from "@/public/data/chapter5.json";
+/**
+ * ChapterManager
+ * ------------------------
+ * This component receives one normalized chapter object
+ * from HowToHackPage and handles:
+ *  - Passing it to GameScreen for rendering
+ *  - Detecting end of chapter (calls onNextChapter)
+ *  - Gracefully handling empty data
+ *
+ * Expected structure of `chapterData`:
+ * {
+ *   id: "chapter2",
+ *   title: "Building the Team",
+ *   events: [
+ *     { id: "scene1", dialogs: [...] },
+ *     { id: "scene2", dialogs: [...] },
+ *     ...
+ *   ],
+ *   characters: [...]
+ * }
+ */
+export default function ChapterManager({ chapterData, onNextChapter }) {
+  const [eventIndex, setEventIndex] = useState(0);
+  const [dialogIndex, setDialogIndex] = useState(0);
+  const calledChapterEndRef = useRef(false);
 
-const rawMap = {
-  1: rawChapter1,
-  2: rawChapter2,
-  3: rawChapter3,
-  4: rawChapter4,
-  5: rawChapter5,
-};
-
-export default function ChapterManager({ startChapter = 1 }) {
-  const [currentChapter, setCurrentChapter] = useState(startChapter);
-  const [chapterData, setChapterData] = useState(null); // will hold a single chapter object, not the file wrapper
-  const mountedRef = useRef(true);
-
-  useEffect(() => () => { mountedRef.current = false; }, []);
-
-  // Immediately clear previous data, then load the new chapter object from the imported file.
+  // ✅ Reset indices when new chapter data arrives
   useEffect(() => {
-    setChapterData(null);
+    if (!chapterData) return;
+    const timeout = setTimeout(() => {
+      setEventIndex(0);
+      setDialogIndex(0);
+      calledChapterEndRef.current = false;
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [chapterData]);
 
-    const load = async () => {
-      // Load the raw file
-      const raw = rawMap[currentChapter] ?? null;
+  // ✅ Memoize events so ESLint stops complaining about dependencies
+  const events = useMemo(() => {
+    return chapterData?.events ?? [];
+  }, [chapterData]);
 
-      // Defensive: the file might be empty or might have "chapters" array
-      const hasChaptersArray = raw && Array.isArray(raw.chapters) && raw.chapters.length > 0;
-      const chapterObj = hasChaptersArray ? raw.chapters[0] : null;
+  const currentEvent = events[eventIndex] ?? null;
+  const dialogs = currentEvent?.dialogs ?? [];
+  const currentDialog = dialogs[dialogIndex] ?? null;
 
-      // Attach characters array (if present in file root) for GameScreen convenience
-      if (chapterObj) {
-        // clone to avoid accidental mutation
-        const data = { ...chapterObj, characters: raw.characters ?? [] };
-        if (!mountedRef.current) return;
-        setChapterData(data);
-      } else {
-        if (!mountedRef.current) return;
-        setChapterData(null);
-      }
-    };
+  // ✅ Handle progression logic
+  const handleNextDialog = () => {
+    if (!events.length) return;
 
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentChapter]);
+    // Go to next dialog
+    if (dialogIndex + 1 < dialogs.length) {
+      setDialogIndex((prev) => prev + 1);
+      return;
+    }
 
-  const handleNextChapter = () => {
-    setCurrentChapter((prev) => {
-      const last = Object.keys(rawMap).length;
-      if (prev < last) return prev + 1;
-      console.log("All chapters completed");
-      return prev;
-    });
+    // Go to next event
+    if (eventIndex + 1 < events.length) {
+      setEventIndex((prev) => prev + 1);
+      setDialogIndex(0);
+      return;
+    }
+
+    // End of chapter — call next chapter once
+    if (!calledChapterEndRef.current) {
+      calledChapterEndRef.current = true;
+      onNextChapter?.();
+    }
   };
 
-  // If no data for current chapter -> show "No Data Collected" (no skip button)
-  if (!chapterData) {
+  // ✅ Handle case where chapterData or events are empty
+  if (!chapterData || !events.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-screen text-center text-white bg-black/80 p-6">
-        <h1 className="text-3xl font-bold mb-4">No Data Collected</h1>
-        <p className="mb-2">Chapter {currentChapter} data is empty.</p>
-        <p className="text-sm text-gray-400">Waiting for content (or fill `/public/data/chapter{n}.json`).</p>
+        <h1 className="text-3xl font-bold mb-4">No Scenes in this Chapter</h1>
+        <p className="mb-2">Add events to this chapter JSON to play it.</p>
+        <p className="text-sm text-gray-400">
+          Expected structure: {"{ chapters: [ { events: [...] } ] }"}
+        </p>
       </div>
     );
   }
 
-  // key forces remount so GameScreen's internal indices reset cleanly
+  // ✅ Render the current dialog and event
   return (
     <GameScreen
-      key={currentChapter}
+      key={`${chapterData.id}-${eventIndex}-${dialogIndex}`}
+      gameStart={true}
       data={chapterData}
-      onChapterEnd={handleNextChapter}
+      currentEvent={currentEvent}
+      currentDialog={currentDialog}
+      onNext={handleNextDialog}
+      onChapterEnd={onNextChapter}
     />
   );
 }

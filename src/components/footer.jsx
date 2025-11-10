@@ -33,11 +33,11 @@ export default function Footer() {
 
                 {/* Middle Links */}
                 <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
-                    <Link href="/" className="hover:text-fuchsia-400 transition-colors">Home</Link>
-                    <Link href="/" className="hover:text-fuchsia-400 transition-colors">About</Link>
-                    <Link href="/" className="hover:text-fuchsia-400 transition-colors">Partners</Link>
-                    <Link href="/" className="hover:text-fuchsia-400 transition-colors">Blog</Link>
-                    <Link href="/" className="hover:text-fuchsia-400 transition-colors">HowToHack</Link>
+                    <Link href="/homepage" className="hover:text-fuchsia-400 transition-colors">Home</Link>
+                    <Link href="/about" className="hover:text-fuchsia-400 transition-colors">About</Link>
+                    <Link href="/partners" className="hover:text-fuchsia-400 transition-colors">Partners</Link>
+                    <Link href="/blog" className="hover:text-fuchsia-400 transition-colors">Blog</Link>
+                    <Link href="/how-to-hackathon" className="hover:text-fuchsia-400 transition-colors">HowToHack</Link>
                 </div>
 
                 {/* Right Section */}
@@ -47,7 +47,7 @@ export default function Footer() {
                         <form className="mt-2 flex flex-col sm:flex-row gap-2 items-center justify-center md:justify-end w-full">
                             <input
                                 type="email"
-                                placeholder="you@example.com"
+                                placeholder="byteonHack.com"
                                 className="w-full sm:w-auto px-3 py-2 rounded-lg bg-black/40 border border-fuchsia-700 text-sm text-fuchsia-100 placeholder-fuchsia-500 focus:outline-none focus:ring-2 focus:ring-fuchsia-500"
                             />
                             <button
