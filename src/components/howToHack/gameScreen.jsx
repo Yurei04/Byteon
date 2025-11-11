@@ -227,14 +227,17 @@ export default function GameScreen({
             <CardGame />
         ) : (
           // Normal dialog flow
-          <div className="w-full max-w-3xl mx-auto">
-            <GameDialogBox
-              text={currentDialog?.text ?? ""}
-              character={currentDialog?.character ?? "Narrator"}
-              chapter={data?.id ?? ""}
-              onNext={progressToNext}
-            />
+          <div className="w-full max-w-3xl mx-auto mb-34 relative z-30">
+            <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
+              <GameDialogBox
+                text={currentDialog?.text ?? ""}
+                character={currentDialog?.character ?? "Narrator"}
+                chapter={data?.id ?? ""}
+                onNext={progressToNext}
+              />
+            </div>
           </div>
+
         )}
       </div>
     </div>
