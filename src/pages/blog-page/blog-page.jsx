@@ -3,6 +3,7 @@
 import { useState } from "react"
 import BlogCard from "../../components/blog/blogCard"
 import BlogSearchBar from "../../components/blog/blog-search"
+import Threads from "@/components/Threads"
 
 
 /* DELETE AFTER CONNECT TO THE BACKEND*/
@@ -52,8 +53,15 @@ export default function BlogPage() {
 
     return (
         <div className="w-full min-h-screen p-6">
+            <div className="pointer-events-none fixed inset-0 -z-20">
+                <Threads
+                amplitude={2}
+                distance={0.7}
+                enableMouseInteraction={false}
+                />
+            </div>
             <BlogSearchBar onSearch={setSearchTerm} onFilterChange={setFilter} />
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center gap-8">
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
                 {filteredData.map((data, idx) => (
                     <BlogCard key={idx} {...data} />
                 ))}

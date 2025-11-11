@@ -4,11 +4,13 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import Image from "next/image";
 import Link from "next/link";
 
+const badgeStyle = "bg-fuchsia-900/20 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100"
+
 export function PartnersCard({
     name, image, location, des, websiteLink, tags
 }) {
     return (
-        <Card className="lg:w-1/2 md:w-full h-1/4 flex flex-row items-center justify-between p-4 gap-6">
+        <Card className="lg:w-1/2 md:w-full h-1/4 flex flex-row items-center justify-between p-4 gap-6 bg-fuchsia-900/20 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 transition-all duration-300">
             <CardHeader className="flex items-center justify-center p-0 w-40 h-40 overflow-hidden rounded-xl">
                 <Image
                     src={image}
@@ -21,10 +23,10 @@ export function PartnersCard({
 
             <CardContent className="flex flex-col flex-1 gap-3 p-0">
                 <div className="flex flex-col justify-start mb-4">
-                    <h1 className="text-xl font-semibold">{name}</h1>
+                    <h1 className="text-xl font-semibold mb-2">{name}</h1>
                     <div className="flex flex-wrap gap-2">
-                        <Badge>{tags}</Badge>
-                        <Badge>{tags}</Badge>
+                        <Badge className={badgeStyle}>{tags}</Badge>
+                        <Badge className={badgeStyle}>{tags}</Badge>
                     </div>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -37,7 +39,7 @@ export function PartnersCard({
                     <h2 className="text-sm text-muted-foreground">{location}</h2>
                 </div>
 
-                <Button size="sm" className="cursor-pointer">
+                <Button size="sm" className="cursor-pointer bg-fuchsia-700 hover:bg-fuchsia-600 text-white border border-fuchsia-600 transition-colors">
                     <Link href={websiteLink} target="_blank" rel="noopener noreferrer">
                         Website
                     </Link>
