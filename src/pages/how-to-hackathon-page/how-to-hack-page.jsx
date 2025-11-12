@@ -183,57 +183,62 @@ export default function HowToHackPage () {
     return (
         <div className="w-full h-screen flex flex-col p-4">
             <ResizablePanelGroup
-                direction="horizontal"
+                direction="vertical"
                 className="w-full rounded-lg border border-fuchsia-400/80 mb-2"
             >
-                <ResizablePanel defaultSize={120}>
-                    <div className="flex flex-col h-full items-center justify-center p-6">
-                        
-                        {isIntroPlaying ? (
-                            <GameIntroScene onFinish={handleIntroFinish} /> 
-                        ) : isMainMenu ? (
-                            <MainMenu
-                                onStartGame={handleStartGame}
-                                onLoadGame={() => console.log("Load Game clicked")}
-                                onSettings={() => console.log("Settings clicked")}
-                                onExit={() => console.log("Exit clicked")}
-                            />
-                        ) : isSettings ? (
-                            <GameSettings />
-                        ) : isExit ? (
-                            <GameExit />
-                        ) : (
-                            // pass normalized chapterData to ChapterManager.
-                            // ChapterManager handles event/dialog progression and will call onNextChapter
-                            // when the chapter ends (parent should increment the chapter index).
-                            <ChapterManager
-                                chapterData={chapterData}
-                                onNextChapter={() => setChapter((prev) => prev + 1)}
-                            />
-                        )}
-                    </div>
-                </ResizablePanel>
-                <ResizableHandle />
-                <ResizablePanel defaultSize={50}>
-                    <ResizablePanelGroup direction="vertical">
-                        <ResizablePanel defaultSize={50} className="p-4">
-                            <GameFlow 
-                                chapter={chapter}
-                                // scenario/event indices moved to ChapterManager; legacy values left at 0
-                                scenario={0}
-                                event={0}
-                            />
+                <ResizablePanel defaultSize={80}>
+                    <ResizablePanelGroup direction="horizontal">
+                        <ResizablePanel defaultSize={70}>
+                            <div className="flex flex-col h-full items-center justify-center p-6">
+                                
+                                {isIntroPlaying ? (
+                                    <GameIntroScene onFinish={handleIntroFinish} /> 
+                                ) : isMainMenu ? (
+                                    <MainMenu
+                                        onStartGame={handleStartGame}
+                                        onLoadGame={() => console.log("Load Game clicked")}
+                                        onSettings={() => console.log("Settings clicked")}
+                                        onExit={() => console.log("Exit clicked")}
+                                    />
+                                ) : isSettings ? (
+                                    <GameSettings />
+                                ) : isExit ? (
+                                    <GameExit />
+                                ) : (
+                                    // pass normalized chapterData to ChapterManager.
+                                    // ChapterManager handles event/dialog progression and will call onNextChapter
+                                    // when the chapter ends (parent should increment the chapter index).
+                                    <ChapterManager
+                                        chapterData={chapterData}
+                                        onNextChapter={() => setChapter((prev) => prev + 1)}
+                                    />
+                                )}
+                            </div>
                         </ResizablePanel>
+
                         <ResizableHandle />
-                        <ResizablePanel defaultSize={50} className="p-4">
-                            <GameControls />
+
+                        <ResizablePanel defaultSize={30}>
+                            <ResizablePanelGroup direction="vertical">
+                                <ResizablePanel defaultSize={60} className="p-4">
+                                    <GameFlow chapter={chapter} scenario={0} event={0} />
+                                </ResizablePanel>
+                                <ResizableHandle />
+                                <ResizablePanel defaultSize={40} className="p-4">
+                                    <GameControls />
+                                </ResizablePanel>
+                            </ResizablePanelGroup>
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </ResizablePanel>
+
+                <ResizableHandle />
+
+                <ResizablePanel defaultSize={20} className="p-4">
+                    <TipsAndResources />
+                </ResizablePanel>
             </ResizablePanelGroup>
-            <div className="w-full h-1/4 border border-white">
-                <TipsAndResources />
-            </div>
+
         </div> 
     )
 }
