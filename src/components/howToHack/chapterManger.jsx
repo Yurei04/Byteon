@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import GameScreen from "./gameScreen";
+import ChapterIntro from "./chapterIntro";
+import EndCredits from "./endCredits";
 
 /**
  * ChapterManager
@@ -12,16 +14,23 @@ import GameScreen from "./gameScreen";
  *  - Triggers next chapter when finished
  *  - Shows fallback if no data
  *  - Provides debug logs and a Next Chapter button for testing
+ *
+ * New: receives `onBackToMenu` which will be called when player presses "Stay" on the per-chapter intro.
  */
-export default function ChapterManager({ chapterData, onNextChapter }) {
+export default function ChapterManager({ chapterData, onNextChapter, onBackToMenu }) {
   const [eventIndex, setEventIndex] = useState(0);
   const [dialogIndex, setDialogIndex] = useState(0);
+  const [showChapterIntro, setShowChapterIntro] = useState(false);
+  const [showGame, setShowGame] = useState(false);
   const calledChapterEndRef = useRef(false);
 
   // Track chapter load
   useEffect(() => {
     if (!chapterData) {
       console.warn("[ChapterManager] No chapterData provided — waiting for fetch...");
+      // reset states
+      setShowChapterIntro(false);
+      setShowGame(false);
       return;
     }
 
@@ -37,6 +46,10 @@ export default function ChapterManager({ chapterData, onNextChapter }) {
       setEventIndex(0);
       setDialogIndex(0);
       calledChapterEndRef.current = false;
+      // When a new chapter loads we show the chapter intro (if any)
+      // and wait for the player's explicit choice.
+      setShowGame(false);
+      setShowChapterIntro(true);
     }, 0);
 
     return () => clearTimeout(timeout);
@@ -73,6 +86,7 @@ export default function ChapterManager({ chapterData, onNextChapter }) {
 
     // End of chapter
     if (!calledChapterEndRef.current) {
+      console.log('is this fuckin working?')
       calledChapterEndRef.current = true;
       console.log("[ChapterManager] Chapter complete! Triggering next chapter...");
       onNextChapter?.();
@@ -105,34 +119,62 @@ export default function ChapterManager({ chapterData, onNextChapter }) {
   // Main render
   return (
     <div className="relative w-full h-full">
-      <GameScreen
-        key={`${chapterData.id}-${eventIndex}-${dialogIndex}`}
-        gameStart={true}
-        data={chapterData}
-        currentEvent={currentEvent}
-        currentDialog={currentDialog}
-        onNext={handleNextDialog}
-        onChapterEnd={() => {
-          if (!calledChapterEndRef.current) {
-            calledChapterEndRef.current = true;
-            console.log("[GameScreen] Chapter end triggered via onChapterEnd.");
-            onNextChapter?.();
-          }
-        }}
-      />
-
-      {/* Debug button (always visible in bottom-right) */}
-      <div className="absolute bottom-6 right-6 z-50">
-        <button
-          onClick={() => {
-            console.log("[Debug Button] Forcing next chapter...");
-            onNextChapter?.();
+      {showChapterIntro ? (
+        <ChapterIntro
+          title={chapterData.title}
+          visible={true}
+          // the ChapterIntro will not auto-dismiss. It will call either:
+          // - onStart: hide intro and start the game for this chapter
+          // - onStay: notify parent to go back to main menu (onBackToMenu)
+          onStart={() => {
+            setShowChapterIntro(false);
+            setShowGame(true);
           }}
-          className="px-4 py-2 bg-fuchsia-700 hover:bg-fuchsia-800 rounded-lg text-sm text-white shadow-md transition"
-        >
-          Next Chapter ▶
-        </button>
-      </div>
+          onStay={() => {
+            // player chose to stay (return to main menu)
+            setShowChapterIntro(false);
+            setShowGame(false);
+            if (onBackToMenu) onBackToMenu();
+          }}
+        />
+      ) : showGame ? (
+        <GameScreen
+          key={`${chapterData.id}-${eventIndex}-${dialogIndex}`}
+          gameStart={true}
+          onNextChapter={onNextChapter}
+          data={chapterData}
+          currentEvent={currentEvent}
+          currentDialog={currentDialog}
+          onNext={handleNextDialog}
+          onChapterEnd={() => {
+            if (!calledChapterEndRef.current) {
+              calledChapterEndRef.current = true;
+              console.log("[GameScreen] Chapter end triggered via onChapterEnd.");
+              onNextChapter?.();
+            }
+          }}
+        />
+      ) : showChapterIntro && onNextChapter ? (
+        <ChapterIntro
+          title={chapterData.title}
+          visible={true}
+          // the ChapterIntro will not auto-dismiss. It will call either:
+          // - onStart: hide intro and start the game for this chapter
+          // - onStay: notify parent to go back to main menu (onBackToMenu)
+          onStart={() => {
+            setShowChapterIntro(false);
+            setShowGame(true);
+          }}
+          onStay={() => {
+            // player chose to stay (return to main menu)
+            setShowChapterIntro(false);
+            setShowGame(false);
+            if (onBackToMenu) onBackToMenu();
+          }}
+        />
+      ) : (
+        <EndCredits />
+      )}
     </div>
   );
 }

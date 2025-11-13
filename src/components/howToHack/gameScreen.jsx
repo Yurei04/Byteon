@@ -25,7 +25,7 @@ import CardGame from "./cardGame";
 */
 
 export default function GameScreen({
-  data, miniGames, multipleChoiceComponent, CardGameComponent,
+  data, miniGames, multipleChoiceComponent, CardGameComponent, onNextChapter,
   onChapterEnd = () => {},
   // optional: whether the game is considered started
   gameStart = true,
@@ -230,6 +230,7 @@ export default function GameScreen({
           <div className="w-full max-w-3xl mx-auto mb-34 relative z-30">
             <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
               <GameDialogBox
+                onNextChapter={onNextChapter}
                 text={currentDialog?.text ?? ""}
                 character={currentDialog?.character ?? "Narrator"}
                 chapter={data?.id ?? ""}

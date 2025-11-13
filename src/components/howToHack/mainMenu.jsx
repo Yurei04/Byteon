@@ -2,19 +2,17 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "../ui/button";
-import GameSettings from "./gameSettings";
-import { GameExit } from "./GameExit";
-import LoadGame from "./loadGame";
+import { Button } from "@/components/ui/button";
 
-const styling = ["w-52 py-6 bg-fuchsia-900/20 hover:bg-fuchsia-700 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 cursor-pointer transition-all duration-300"]
+const styling = [
+  "w-52 py-6 bg-fuchsia-900/20 hover:bg-fuchsia-700 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 cursor-pointer transition-all duration-300"
+];
 
-export default function MainMenu({
-  onStartGame = () => {},
-  onLoadGame = () => {},
-  onSettings = () => {},
-  onExit = () => {},
-}) {
+const MainMenu = ({ onStartGame }) => {
+  if (typeof onStartGame !== "function") {
+    console.error("[MainMenu] onStartGame prop is not a function:", onStartGame);
+  }
+
   return (
     <motion.div
       className="relative w-screen h-screen bg-black overflow-hidden flex flex-col items-center justify-center"
@@ -22,17 +20,17 @@ export default function MainMenu({
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
     >
-      {/* Background glow or subtle effect */}
+      {/* Background effect */}
       <div className="absolute inset-0 bg-linear-to-b from-black via-gray-900 to-black opacity-80" />
 
       {/* Title */}
       <motion.h1
-        className="relative z-10 text-6xl font-bold text-white tracking-widest drop-shadow-lg"
+        className="relative z-10 text-4xl font-bold text-white tracking-widest drop-shadow-lg"
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 1 }}
       >
-        BYTEON
+        Welcome to How To Hack
       </motion.h1>
 
       {/* Subtitle */}
@@ -45,53 +43,33 @@ export default function MainMenu({
         A Visual Novel Experience
       </motion.p>
 
-      {/* Menu buttons */}
+      {/* Buttons */}
       <motion.div
-        className="relative z-10 flex flex-col mt-10 space-y-4"
+        className="relative z-10 flex flex-col items-center justify-center mt-10 space-y-4"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 2, duration: 1 }}
       >
         <Button
+          onClick={() => {
+            console.log("[MainMenu] Begin Journey clicked");
+            if (typeof onStartGame === "function") onStartGame();
+            else console.warn("[MainMenu] onStartGame is not a function!");
+          }}
           className={styling}
-          onClick={onStartGame}
         >
-          Start Game
+          Begin Journey
         </Button>
 
-        <Button
-          className={styling}
-          onClick={onLoadGame}
-        >
-          Load Game
-        </Button>
-
-        <Button
-          className={styling}
-          onClick={onSettings}
-        >
-          Settings
-        </Button>
-
-        <Button
-          className={styling}
-          onClick={onExit}
-        >
-          Exit
-        </Button>
+        <Button className={styling}>Load Game</Button>
+        <Button className={styling}>Tutorial</Button>
+        <Button className={styling}>Settings</Button>
+        <Button className={styling}>Exit</Button>
       </motion.div>
-
-      {onSettings ? (
-        <GameSettings />
-      ): onExit ? (
-        <GameExit />
-      ): (
-        <LoadGame />
-      )}
 
       {/* Footer credits */}
       <motion.div
-        className="absolute bottom-4 text-xs text-gray-500"
+        className="absolute bottom-4 pt-6 text-xs text-gray-500"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 2.5 }}
@@ -100,4 +78,6 @@ export default function MainMenu({
       </motion.div>
     </motion.div>
   );
-}
+};
+
+export default MainMenu;

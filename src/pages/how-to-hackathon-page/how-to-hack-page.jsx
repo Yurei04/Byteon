@@ -26,13 +26,13 @@ export default function HowToHackPage () {
     const [gameCharacPose, setGameCharacPose] = useState("standby"); // For specific Character pose 
     const [isLoading, setIsLoading] = useState(false); // for loading 
     const [background, setBackground] = useState("/images/kaede.jpg"); // TEMP: default to kaede for testing
-    const [isMainMenu, setIsMainMenu] = useState(false); // if in main menu
+    const [isMainMenu, setIsMainMenu] = useState(true); // if in main menu (start in main menu)
     const [isSettings, setIsSettings] = useState(false); // if in settings
     const [isExit, setIsExit] = useState(false); // if in exit and if data not saved
 
     // Mini game states
     const [isMiniGame, setIsMiniGame] = useState(false); // If mini game is happening
-    const [isIntroPlaying, setIsIntroPlaying] = useState(true); // Intro scene
+    const [isIntroPlaying, setIsIntroPlaying] = useState(false); // Intro scene (global); NOT used for per-chapter intro
     const [isOutroPlaying, setIsOutroPlaying] = useState(false); // Outro scene
     const [isCardGame, setIsCardGame] = useState(false); // Card Game Mini Game
     const [isMultipleChoice, setIsMultipleChoice] = useState(false); // Multiple Choice Mini Game
@@ -60,8 +60,16 @@ export default function HowToHackPage () {
     };
 
     // Main Menu → Game
-    const handleStartGame = () => {
+    // NOTE: Instead of directly starting the game we now go into ChapterManager which will show the per-chapter intro.
+    const handleStartGameFromMenu = () => {
+        // hide main menu so ChapterManager can handle the per-chapter intro
         setIsMainMenu(false);
+        // chapter (index) is already managed by state; ChapterManager will show intro before chapter start
+    };
+
+    // Legacy handler kept; redirect to our new handler to avoid accidental direct starts
+    const handleStartGame = () => {
+        handleStartGameFromMenu();
     };
 
     // Chapter Loading base on Chapter and ID
@@ -191,11 +199,13 @@ export default function HowToHackPage () {
                         <ResizablePanel defaultSize={70}>
                             <div className="flex flex-col h-full items-center justify-center p-6">
                                 
-                                {isIntroPlaying ? (
-                                    <GameIntroScene onFinish={handleIntroFinish} /> 
-                                ) : isMainMenu ? (
+                                { /* NOTE: per-chapter intro is now handled inside ChapterManager.
+                                   The global GameIntroScene is not used for per-chapter intros.
+                                   Keep GameIntroScene import if you still want a global prologue elsewhere. */ }
+
+                                {isMainMenu ? (
                                     <MainMenu
-                                        onStartGame={handleStartGame}
+                                        onStartGame={handleStartGameFromMenu}
                                         onLoadGame={() => console.log("Load Game clicked")}
                                         onSettings={() => console.log("Settings clicked")}
                                         onExit={() => console.log("Exit clicked")}
@@ -206,11 +216,15 @@ export default function HowToHackPage () {
                                     <GameExit />
                                 ) : (
                                     // pass normalized chapterData to ChapterManager.
-                                    // ChapterManager handles event/dialog progression and will call onNextChapter
-                                    // when the chapter ends (parent should increment the chapter index).
+                                    // ChapterManager handles the per-chapter intro (Stay / Start Chapter)
+                                    // and progression. Also give it a callback to return to Main Menu (Stay).
                                     <ChapterManager
                                         chapterData={chapterData}
                                         onNextChapter={() => setChapter((prev) => prev + 1)}
+                                        onBackToMenu={() => {
+                                            // callback invoked when player presses "Stay" on the chapter intro
+                                            setIsMainMenu(true);
+                                        }}
                                     />
                                 )}
                             </div>
@@ -234,7 +248,7 @@ export default function HowToHackPage () {
 
                 <ResizableHandle />
 
-                <ResizablePanel defaultSize={20} className="p-4">
+                <ResizablePanel defaultSize={10} className="p-4">
                     <TipsAndResources />
                 </ResizablePanel>
             </ResizablePanelGroup>
