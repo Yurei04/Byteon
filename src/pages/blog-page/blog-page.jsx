@@ -60,10 +60,13 @@ export default function BlogPage() {
                 enableMouseInteraction={false}
                 />
             </div>
+
+
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
+                className="mt-18"
             >
                 <BlogSearchBar onSearch={setSearchTerm} onFilterChange={setFilter} />
             </motion.div>
@@ -75,7 +78,7 @@ export default function BlogPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
             >
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
                     {filteredData.map((data, idx) => (
                         <BlogCard key={idx} {...data} />
                     ))}
