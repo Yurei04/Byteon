@@ -4,7 +4,7 @@ import { useState } from "react"
 import BlogCard from "../../components/blog/blogCard"
 import BlogSearchBar from "../../components/blog/blog-search"
 import Threads from "@/components/Threads"
-
+import { motion } from "framer-motion";
 
 /* DELETE AFTER CONNECT TO THE BACKEND*/
 const fakeData = [
@@ -60,12 +60,27 @@ export default function BlogPage() {
                 enableMouseInteraction={false}
                 />
             </div>
-            <BlogSearchBar onSearch={setSearchTerm} onFilterChange={setFilter} />
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
-                {filteredData.map((data, idx) => (
-                    <BlogCard key={idx} {...data} />
-                ))}
-            </div>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+                <BlogSearchBar onSearch={setSearchTerm} onFilterChange={setFilter} />
+            </motion.div>
+
+            
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
+                    {filteredData.map((data, idx) => (
+                        <BlogCard key={idx} {...data} />
+                    ))}
+                </div>
+            </motion.div>
         </div>
     )
 }
