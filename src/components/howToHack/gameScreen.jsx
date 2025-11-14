@@ -4,7 +4,7 @@
 
 
 "use client";
-
+import { motion, AnimatePresence } from "framer-motion";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import GameDialogBox from "./gameDialogBox";
@@ -25,7 +25,7 @@ import CardGame from "./cardGame";
 */
 
 export default function GameScreen({
-  data, miniGames, multipleChoiceComponent, CardGameComponent, onNextChapter,
+  data, miniGames, multipleChoiceComponent, CardGameComponent, onNextChapter, isFirstChapter,
   onChapterEnd = () => {},
   // optional: whether the game is considered started
   gameStart = true,
@@ -208,18 +208,53 @@ export default function GameScreen({
               />
             )}
 
-            {/* Show choices */}
-            <div className="mt-4 grid gap-3">
-              {(currentEvent.choices ?? []).map((choice, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleChoiceSelect(choice)}
-                  className="w-full text-left px-4 py-3 bg-white/10 hover:bg-white/20 rounded-md transition"
-                >
-                  {choice.text}
-                </button>
-              ))}
-            </div>
+            {currentEvent?.choices && currentEvent.choices.length > 0 && (
+              <div className="w-full max-w-3xl mx-auto mb-34 relative z-30">
+                <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
+                  
+                  {/* Motion wrapper identical to GameDialogBox */}
+                  <motion.div
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
+                    className="w-full max-w-4xl max-h-1/3 border-2 border-fuchsia-500 bg-black/70
+                              backdrop-blur-sm p-6 flex flex-col justify-between rounded-xl shadow-2xl"
+                  >
+                    {/* Choices */}
+                    <motion.div
+                      initial={{ y: 50, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
+                      className="mt-4 grid gap-3"
+                    >
+                      {(currentEvent?.choices ?? []).map((choice, idx) => (
+                        <motion.button
+                          key={idx}
+                          onClick={() => handleChoiceSelect(choice)}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.2, delay: idx * 0.05 }}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          className="
+                            w-full text-left px-4 py-3
+                            bg-fuchsia-900/20 hover:bg-fuchsia-700/40
+                            border border-fuchsia-400/40
+                            backdrop-blur-lg rounded-md text-white
+                            shadow-lg shadow-fuchsia-900/30 cursor-pointer
+                          "
+                        >
+                          {choice.text}
+                        </motion.button>
+                      ))}
+                    </motion.div>
+                  </motion.div>
+
+                </div>
+              </div>
+            )}
+
+
           </div>
         ) : miniGames && multipleChoiceComponent ? ( // If mini game multiple choice
             <MiniGameMultipleChoice />
@@ -230,6 +265,7 @@ export default function GameScreen({
           <div className="w-full max-w-3xl mx-auto mb-34 relative z-30">
             <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
               <GameDialogBox
+                isFirstChapter={isFirstChapter}
                 onNextChapter={onNextChapter}
                 text={currentDialog?.text ?? ""}
                 character={currentDialog?.character ?? "Narrator"}

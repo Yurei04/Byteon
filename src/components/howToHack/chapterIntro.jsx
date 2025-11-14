@@ -67,14 +67,14 @@ export default function ChapterIntro({ visible, title, onStart, onStay, onNextCh
               onClick={() => {
                 if (onStay) onStay();
               }}
-              className="px-6 py-3 rounded-md bg-white/10 hover:bg-white/20"
+              className="px-6 py-3 rounded-md bg-white/10 hover:bg-white/20 cursor-pointer"
             >
               Stay (Back to Menu)
             </button>
 
             <button
               onClick={buttonHandler}
-              className="px-6 py-3 rounded-md bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
+              className="px-6 py-3 rounded-md bg-fuchsia-600 hover:bg-fuchsia-700 text-white cursor-pointer"
             >
               Start Chapter
             </button>

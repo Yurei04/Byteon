@@ -219,6 +219,7 @@ export default function HowToHackPage () {
                                     // ChapterManager handles the per-chapter intro (Stay / Start Chapter)
                                     // and progression. Also give it a callback to return to Main Menu (Stay).
                                     <ChapterManager
+                                        isFirstChapter={chapter === 1}
                                         chapterData={chapterData}
                                         onNextChapter={() => setChapter((prev) => prev + 1)}
                                         onBackToMenu={() => {

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../ui/button";
 
 export default function GameDialogBox ({
+    isFirstChapter,
     onNextChapter,
     text = "",
     character = "Narrator",
@@ -61,45 +62,47 @@ export default function GameDialogBox ({
             transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
             className="w-full max-w-4xl max-h-1/3 border-2 border-fuchsia-500 bg-black/70 backdrop-blur-sm p-6 flex flex-col justify-between rounded-xl shadow-2xl"
         >
-            {onNextChapter ? (
+            {isFirstChapter ? (
+                <>
+                    <div className="flex flex-col">
+                        <div className="text-sm font-mono text-fuchsia-300 mb-2">
+                            {chapter} — <span className="text-white font-bold">{character}</span>
+                        </div>
+
+                        <div
+                            className="text-md md:text-sm font-sans leading-relaxed text-gray-100 whitespace-pre-wrap cursor-pointer min-h-[100px]"
+                            onClick={handleClick}
+                        >
+                            {displayedText}
+                            {isTyping && <span className="animate-pulse text-fuchsia-400">|</span>}
+                        </div>
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                        <button
+                            onClick={handleClick} 
+                            className="px-6 py-2 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold transition duration-200 shadow-md shadow-fuchsia-900 cursor-pointer"
+                        >
+                            {buttonText}
+                        </button>
+                    </div>
+                </>
+            ) : (
                 <div>
                     <button
-                    onClick={() => {
-                        console.log("[Debug] Manually triggering next chapter...");
-                        onNextChapter?.();
-                    }}
-                    className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-lg"
+                        onClick={() => {
+                            console.log("[Debug] Manually triggering next chapter...");
+                            onNextChapter?.();
+                        }}
+                        className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-lg cursor-pointer"
                     >
-                    Next Chapter
+                        Next Chapter
                     </button>
                 </div>
-            ) : (
-                <>
-                <div className="flex flex-col">
-                    <div className="text-sm font-mono text-fuchsia-300 mb-2">
-                        {chapter} — <span className="text-white font-bold">{character}</span>
-                    </div>
-                    <div
-                        className="text-md md:text-sm font-sans leading-relaxed text-gray-100 whitespace-pre-wrap cursor-pointer min-h-[100px]"
-                        onClick={handleClick}
-                    >
-                        {displayedText}
-                        {isTyping && <span className="animate-pulse text-fuchsia-400">|</span>}
-                    </div>
-                </div>
-
-                <div className="mt-4 flex justify-end">
-                    <button
-                        onClick={handleClick}
-                        // Replaced external Button with standard HTML button and Tailwind classes
-                        className="px-6 py-2 rounded-lg bg-fuchsia-600 hover:bg-fuchsia-700 text-white font-semibold transition duration-200 shadow-md shadow-fuchsia-900"
-                    >
-                        {buttonText}
-                    </button>
-                </div>
-            </>
-                
             )}
+
+
+
         </motion.div>
     );
 }

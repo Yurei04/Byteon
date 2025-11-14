@@ -17,7 +17,7 @@ import EndCredits from "./endCredits";
  *
  * New: receives `onBackToMenu` which will be called when player presses "Stay" on the per-chapter intro.
  */
-export default function ChapterManager({ chapterData, onNextChapter, onBackToMenu }) {
+export default function ChapterManager({ chapterData, onNextChapter, onBackToMenu, isFirstChapter }) {
   const [eventIndex, setEventIndex] = useState(0);
   const [dialogIndex, setDialogIndex] = useState(0);
   const [showChapterIntro, setShowChapterIntro] = useState(false);
@@ -139,6 +139,7 @@ export default function ChapterManager({ chapterData, onNextChapter, onBackToMen
         />
       ) : showGame ? (
         <GameScreen
+          isFirstChapter={isFirstChapter}
           key={`${chapterData.id}-${eventIndex}-${dialogIndex}`}
           gameStart={true}
           onNextChapter={onNextChapter}
