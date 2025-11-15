@@ -1,66 +1,45 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabase"
 import BlogCard from "../../components/blog/blogCard"
 import BlogSearchBar from "../../components/blog/blog-search"
 import Threads from "@/components/Threads"
-import { motion } from "framer-motion";
-
-/* DELETE AFTER CONNECT TO THE BACKEND*/
-const fakeData = [
-    {
-        title: "Example Blog 1",
-        image: "/placeholder.jpg",
-        des: "Lorem ipsum dolor sit amet",
-        author: "John Doe",
-        hackathon: "HackFest",
-        place: "Baguio City",
-        theme: "health",
-    },
-    {
-        title: "Example Blog 2",
-        image: "/placeholder.jpg",
-        des: "AI for Good Project",
-        author: "Jane Doe",
-        hackathon: "Byteon",
-        place: "Manila",
-        theme: "ai",
-    },
-    {
-        title: "Example Blog 2",
-        image: "/placeholder.jpg",
-        des: "AI for Good Project",
-        author: "Jane Doe",
-        hackathon: "Byteon",
-        place: "Manila",
-        theme: "ai",
-    },
-]
+import { motion } from "framer-motion"
+import BlogEmpty from "@/components/blog/blog-empty"
 
 export default function BlogPage() {
+    const [blogs, setBlogs] = useState([])
     const [searchTerm, setSearchTerm] = useState("")
     const [filter, setFilter] = useState("all")
 
-    const filteredData = fakeData.filter((item) => {
-        const title = String(item.title || "").toLowerCase()
-        const theme = String(item.theme || "").toLowerCase()
+    useEffect(() => {
+        async function fetchBlogs() {
+            const { data, error } = await supabase
+                .from("blogs")
+                .select("*")
+                .order("created_at", { ascending: false })
 
+            if (error) console.error("Error:", error)
+            else setBlogs(data)
+        }
+
+        fetchBlogs()
+    }, [])
+
+    const filteredData = blogs.filter((item) => {
+        const title = (item.title || "").toLowerCase()
+        const theme = (item.theme || "").toLowerCase()
         const matchesSearch = title.includes(searchTerm.toLowerCase())
         const matchesFilter = filter === "all" || theme === filter.toLowerCase()
-
         return matchesSearch && matchesFilter
     })
 
     return (
         <div className="w-full min-h-screen p-6">
             <div className="pointer-events-none fixed inset-0 -z-20">
-                <Threads
-                amplitude={2}
-                distance={0.7}
-                enableMouseInteraction={false}
-                />
+                <Threads amplitude={2} distance={0.7} enableMouseInteraction={false} />
             </div>
-
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -71,19 +50,22 @@ export default function BlogPage() {
                 <BlogSearchBar onSearch={setSearchTerm} onFilterChange={setFilter} />
             </motion.div>
 
-            
-
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
             >
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
-                    {filteredData.map((data, idx) => (
-                        <BlogCard key={idx} {...data} />
-                    ))}
+                    {filteredData.length === 0 ? (
+                        <BlogEmpty />
+                    ) : (
+                        filteredData.map((data) => (
+                            <BlogCard key={data.id} {...data} />
+                        ))
+                    )}
                 </div>
             </motion.div>
+
         </div>
     )
 }
