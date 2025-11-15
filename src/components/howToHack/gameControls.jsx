@@ -65,7 +65,7 @@ export default function GameControls (
                 className={styling}
                 onClick={onExit}
                 >
-                    Exit
+                    Return Homepage
                 </Button>
             </motion.div>
 
