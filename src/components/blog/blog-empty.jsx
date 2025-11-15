@@ -28,17 +28,17 @@ export default function BlogEmpty({ onCreate }) {
 
         <EmptyContent>
           <div className="flex gap-3 mt-4">
-            <Button onClick={onCreate} className="bg-fuchsia-600 hover:bg-fuchsia-500">
+            <Button onClick={onCreate} className="bg-fuchsia-600 hover:bg-fuchsia-500 cursor-pointer">
               Create Blog
             </Button>
-            <Button variant="outline" onClick={onCreate}>
+            <Button variant="outline" onClick={onCreate} className={"cursor-pointer"}>
               Manage
             </Button>
           </div>
         </EmptyContent>
 
         <div className="mt-4">
-          <Button variant="link" className="text-fuchsia-300 text-sm" asChild>
+          <Button variant="link" className="text-fuchsia-300 text-sm cursor-pointer" asChild>
             <a href="#">Learn More <ArrowUpRightIcon className="ml-2 inline" /></a>
           </Button>
         </div>

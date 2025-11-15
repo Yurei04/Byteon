@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import BlogCard from "@/components/blog/BlogCard"
-import BlogForm from "@/components/blog/BlogForm"
-import BlogEmpty from "@/components/blog/BlogEmpty"
+import BlogCard from "../blog/blogCard"
+import BlogForm from "../blog/blog-form"
+import BlogEmpty from "../blog/blog-empty"
 import { Button } from "@/components/ui/button"
 
 export default function AdminDashboard() {

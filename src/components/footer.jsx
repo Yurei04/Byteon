@@ -33,8 +33,8 @@ export default function Footer() {
 
                 {/* Middle Links */}
                 <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
-                    <Link href="/homepage" className="hover:text-fuchsia-400 transition-colors">Home</Link>
-                    <Link href="/about" className="hover:text-fuchsia-400 transition-colors">About</Link>
+                    <Link href="/" className="hover:text-fuchsia-400 transition-colors">Home</Link>
+                    <Link href="/" className="hover:text-fuchsia-400 transition-colors">About</Link>
                     <Link href="/partners" className="hover:text-fuchsia-400 transition-colors">Partners</Link>
                     <Link href="/blog" className="hover:text-fuchsia-400 transition-colors">Blog</Link>
                     <Link href="/how-to-hackathon" className="hover:text-fuchsia-400 transition-colors">HowToHack</Link>
