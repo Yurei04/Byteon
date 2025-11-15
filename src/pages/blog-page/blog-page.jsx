@@ -54,17 +54,23 @@ export default function BlogPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
+                className="flex flex-col justify-center items-center w-full"
             >
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
-                    {filteredData.length === 0 ? (
-                        <BlogEmpty />
-                    ) : (
-                        filteredData.map((data) => (
-                            <BlogCard key={data.id} {...data} />
-                        ))
-                    )}
-                </div>
+                {filteredData.length === 0 ? (
+                    <div className="w-full flex justify-center items-center mt-12">
+                    <BlogEmpty />
+                    </div>
+                ) : (
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
+                    {filteredData.map((data) => (
+                        <div key={data.id} className="flex justify-center">
+                        <BlogCard {...data} />
+                        </div>
+                    ))}
+                    </div>
+                )}
             </motion.div>
+
 
         </div>
     )
