@@ -246,12 +246,6 @@ export default function HowToHackPage () {
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </ResizablePanel>
-
-                <ResizableHandle />
-
-                <ResizablePanel defaultSize={10} className="p-4">
-                    <TipsAndResources />
-                </ResizablePanel>
             </ResizablePanelGroup>
 
         </div> 
