@@ -86,7 +86,6 @@ export default function ChapterManager({ chapterData, onNextChapter, onBackToMen
 
     // End of chapter
     if (!calledChapterEndRef.current) {
-      console.log('is this fuckin working?')
       calledChapterEndRef.current = true;
       console.log("[ChapterManager] Chapter complete! Triggering next chapter...");
       onNextChapter?.();
