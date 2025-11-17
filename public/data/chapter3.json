@@ -193,6 +193,7 @@
           ]
         },
         {
+          "minigame_type":"MixAndMatch",
           "minigame_title": "Idea Builder",
           "description": "Combine one problem, one technology, and one impact to generate your idea.",
           "categories": {
