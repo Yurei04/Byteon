@@ -5,49 +5,83 @@ import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/comp
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
-const badgeStyle = "bg-fuchsia-900/30 shadow border border-fuchsia-600/30 text-fuchsia-100 text-xs px-2 py-1"
+const badgeStyle =
+  "bg-fuchsia-800/30 text-fuchsia-200 border border-fuchsia-600/40 backdrop-blur-sm px-2 py-0.5 text-[10px] rounded-md"
 
 export default function BlogCard({ id, title, des, image, author, hackathon, place, theme }) {
   return (
-    <Card className="w-full sm:w-[90%] md:w-[85%] lg:w-[75%] h-auto overflow-hidden bg-gradient-to-br from-purple-900/20 to-fuchsia-950/10 shadow-2xl backdrop-blur-sm border border-fuchsia-700/20 text-fuchsia-100 rounded-2xl transition-transform duration-200 hover:scale-102">
-
-      <CardHeader className="p-3">
-        {image ? (
-          <div className="w-full h-36 sm:h-40 relative rounded-xl overflow-hidden border border-fuchsia-600/20">
-            <Image src={image} alt={title || "blog image"} fill className="object-cover" />
-          </div>
-        ) : (
-          <div className="w-full h-36 sm:h-40 rounded-xl flex items-center justify-center bg-fuchsia-900/20 border border-fuchsia-600/10">
-            <span className="text-fuchsia-200 text-sm">No image</span>
-          </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row justify-between mt-3 items-start sm:items-center">
-          <div className="flex flex-col">
-            <CardTitle className="text-base sm:text-lg font-bold text-fuchsia-100 leading-snug">{title}</CardTitle>
-            <p className="text-xs sm:text-sm text-fuchsia-300 mt-1">by {author || "Byteon"}</p>
-          </div>
-
-          <div className="text-xs sm:text-sm text-fuchsia-300 mt-2 sm:mt-0">{place}</div>
+    <Card
+      className="
+        group w-full h-auto overflow-hidden rounded-2xl
+        bg-gradient-to-br from-purple-950/40 to-fuchsia-950/20
+        shadow-[0_0_20px_rgba(255,0,255,0.15)] border border-fuchsia-800/30
+        transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(255,0,255,0.25)]
+        backdrop-blur-xl
+      "
+    >
+      <CardHeader className="p-4 pb-2">
+        <div className="w-full h-40 relative rounded-xl overflow-hidden border border-fuchsia-700/20 shadow-lg">
+          {image ? (
+            <Image
+              src={image}
+              alt={title || "blog image"}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-fuchsia-900/20">
+              <span className="text-fuchsia-200 text-sm">No image</span>
+            </div>
+          )}
         </div>
 
-        <div className="flex gap-2 mt-2 flex-wrap">
-          {theme && (Array.isArray(theme) ? theme : [theme]).map((t, i) => (
-            <Badge key={i} className={badgeStyle}>{t}</Badge>
+        <div className="flex flex-col mt-3">
+          <CardTitle className="text-lg font-semibold text-fuchsia-100 leading-tight">
+            {title}
+          </CardTitle>
+          <p className="text-xs text-fuchsia-300 mt-1">by {author || "Byteon"}</p>
+        </div>
+
+        <div className="flex items-center justify-between mt-3 text-fuchsia-300 text-xs">
+          <span>{place}</span>
+          <span className="opacity-75">{hackathon}</span>
+        </div>
+
+        <div className="flex gap-2 mt-3 flex-wrap">
+          {(Array.isArray(theme) ? theme : [theme]).map((t, i) => (
+            <Badge key={i} className={badgeStyle}>
+              {t}
+            </Badge>
           ))}
         </div>
 
-        <CardDescription className="mt-2 text-sm text-fuchsia-200 leading-snug line-clamp-3">{des}</CardDescription>
+        <CardDescription className="mt-3 text-sm text-fuchsia-200/90 line-clamp-3">
+          {des}
+        </CardDescription>
       </CardHeader>
 
-      <CardFooter className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 gap-2 sm:gap-0">
-        <p className="text-xs sm:text-sm font-medium text-fuchsia-300">{hackathon}</p>
-        <div className="flex gap-2 flex-wrap">
-          <Button className="cursor-pointer bg-fuchsia-700 hover:bg-fuchsia-600 text-white border border-fuchsia-600 text-xs px-2 py-1">Read</Button>
-          <Button className="cursor-pointer bg-transparent hover:bg-fuchsia-800 text-fuchsia-200 border border-fuchsia-600 text-xs px-2 py-1">Share</Button>
+      <CardFooter className="flex justify-between items-center p-4 pt-2">
+        <div className="flex gap-2">
+          <Button
+            className="
+              bg-fuchsia-700 hover:bg-fuchsia-600 text-white w-full
+              text-xs px-3 py-1 rounded-lg border border-fuchsia-600 cursor-pointer
+            "
+          >
+            Read
+          </Button>
+
+          <Button
+            className="
+              bg-transparent text-fuchsia-200 w-full
+              hover:bg-fuchsia-900/40 cursor-pointer
+              text-xs px-3 py-1 border border-fuchsia-600 rounded-lg
+            "
+          >
+            Share
+          </Button>
         </div>
       </CardFooter>
-
     </Card>
   )
 }

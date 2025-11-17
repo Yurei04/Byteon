@@ -36,16 +36,42 @@ export default function BlogPage() {
     })
 
     return (
-        <div className="w-full min-h-screen p-6">
+        <div className="w-full min-h-screen p-6 flex flex-col items-center justify-center">
             <div className="pointer-events-none fixed inset-0 -z-20">
                 <Threads amplitude={2} distance={0.7} enableMouseInteraction={false} />
             </div>
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{
+                    duration: 0.8,
+                    type: "spring",
+                    bounce: 0.25,
+                    delay: 0.1,
+                }}
+                viewport={{ once: true, amount: 0.1 }}
+                className="w-full max-w-7xl mt-24"
+            >
+                <div className="text-center mb-4 ">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-500">
+                        Byteon Blog
+                    </span>
+                    </h1>
+        
+                    <p className="text-fuchsia-200 max-w-2xl mx-auto text-lg">
+                        Learn stories and new knowledge
+                    </p>
+                </div>
+
+            </motion.div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
-                className="mt-18"
+                className="w-full mt-2 p-2"
             >
                 <BlogSearchBar onSearch={setSearchTerm} onFilterChange={setFilter} />
             </motion.div>
@@ -58,13 +84,13 @@ export default function BlogPage() {
             >
                 {filteredData.length === 0 ? (
                     <div className="w-full flex justify-center items-center mt-12">
-                    <BlogEmpty />
+                        <BlogEmpty />
                     </div>
                 ) : (
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
+                    <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
                     {filteredData.map((data) => (
                         <div key={data.id} className="flex justify-center">
-                        <BlogCard {...data} />
+                            <BlogCard {...data} />
                         </div>
                     ))}
                     </div>
