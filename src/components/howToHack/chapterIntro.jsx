@@ -42,7 +42,7 @@ export default function ChapterIntro({ visible, title, onStart, onStay, onNextCh
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
-          className="fixed inset-0 flex flex-col items-center justify-center bg-black z-[100] p-6"
+          className="fixed inset-0 flex flex-col items-center justify-center bg-black z-100 p-6"
         >
           <motion.h1
             className="text-5xl md:text-7xl font-bold text-fuchsia-400 drop-shadow-lg mb-6 text-center"

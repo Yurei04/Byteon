@@ -75,7 +75,7 @@ export default function BlogForm({ initial = {}, onSuccess = () => {} }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl bg-gradient-to-b from-purple-950/30 to-fuchsia-950/25 border border-fuchsia-700/20 p-6 rounded-2xl shadow-xl">
+    <form onSubmit={handleSubmit} className="w-full max-w-2xl bg-linear-to-b from-purple-950/30 to-fuchsia-950/25 border border-fuchsia-700/20 p-6 rounded-2xl shadow-xl">
       {error && <div className="text-sm text-fuchsia-200 mb-2">{error}</div>}
 
       <label className="block mb-2 text-fuchsia-300">Title</label>

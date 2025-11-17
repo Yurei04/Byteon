@@ -13,7 +13,7 @@ export default function BlogCard({ id, title, des, image, author, hackathon, pla
     <Card
       className="
         group w-full h-auto overflow-hidden rounded-2xl
-        bg-gradient-to-br from-purple-950/40 to-fuchsia-950/20
+        bg-linear-to-br from-purple-950/40 to-fuchsia-950/20
         shadow-[0_0_20px_rgba(255,0,255,0.15)] border border-fuchsia-800/30
         transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(255,0,255,0.25)]
         backdrop-blur-xl

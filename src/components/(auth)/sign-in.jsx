@@ -48,7 +48,7 @@ export default function SignIn() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-gradient-to-b from-purple-950/30 to-fuchsia-950/20 border border-fuchsia-700/10 rounded-2xl">
+    <div className="w-full max-w-md mx-auto p-6 bg-linear-to-b from-purple-950/30 to-fuchsia-950/20 border border-fuchsia-700/10 rounded-2xl">
       <h2 className="text-xl font-bold text-fuchsia-100 mb-4">Sign In</h2>
 
       <div className="flex gap-2 mb-4">
