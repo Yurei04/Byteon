@@ -446,7 +446,8 @@
               "pose": "neutral",
               "text": "Music swells as the screen fades to black."
             }
-          ]
+          ],
+          "completion_message": "Completed Chpater 2"
         }
       ]
     }

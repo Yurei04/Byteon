@@ -381,7 +381,8 @@
               "pose": "neutral",
               "text": "The scene fades to black as upbeat synth music plays, Aira’s glowing outline fading last."
             }
-          ]
+          ],
+          "completion_message": "Completed Chpater 3"
         }
       ]
     }

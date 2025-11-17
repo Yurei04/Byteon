@@ -284,6 +284,7 @@
             }
           ],
           "minigame": {
+        "minigame_type":"TrueOrFalseFlashCard",
         "minigame_title": "Hackathon Myth Buster",
         "description": "Aira gives you statements—decide if they’re True or False to earn Confidence Points.",
         "questions": [
