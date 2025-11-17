@@ -284,10 +284,10 @@
             }
           ],
           "minigame": {
-        "minigame_type":"TrueOrFalseFlashCard",
-        "minigame_title": "Hackathon Myth Buster",
-        "description": "Aira gives you statements—decide if they’re True or False to earn Confidence Points.",
-        "questions": [
+          "minigame_type":"TrueOrFalseFlashCard",
+          "minigame_title": "Hackathon Myth Buster",
+          "description": "Aira gives you statements—decide if they’re True or False to earn Confidence Points.",
+          "questions": [
           {
             "id": 1,
             "statement": "Hackathons are only for programmers.",
@@ -399,7 +399,12 @@
             "aira_reaction": "Exactly! Experience is the REAL prize!"
           }
         ],
-        "completion_message": "You didn’t just bust myths—you unlocked real hackathon wisdom! Confidence Points +10 🎉"
+        "achievement": {
+        "title": "Hackathon Myth Buster",
+        "description": "Completed the first mini-game by busting common hackathon myths. Confidence boosted!",
+        "reward_points": 10,
+        "icon": "confidence_medal.png"
+        }
       }
         },
         {
@@ -418,12 +423,7 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "You’ve earned your first achievement! — First Steps! 🎖️"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "A familiar sound rings from your right side as you see a pop-up: “Achievement Unlocked — First Steps.” Description: “Completed the First Trial even when unsure.”"
+              "text": "You’ve earned your first achievement!"
             },
             {
               "character": "You",
@@ -451,7 +451,13 @@
               "text": "You look at the uninstall pop-up again… it’s right there waiting to be clicked but you feel hesitant pressing it. As if this might be something that would give you the confidence boost you need. Against your better judgement, you close the window. You can uninstall her later if she really is malicious… right?"
             }
           ],
-          "completion_message": "Completed Chpater 1"
+          "completion_message": "Complete Chpater 1",
+          "achievement": {
+          "title": "First Steps",
+          "description": "Complete Chapter 1 of How to Hackathon",
+          "reward_points": 10,
+          "icon": "chapter1complete.png"
+          }
         }
       ]
     }

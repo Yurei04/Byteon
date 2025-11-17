@@ -254,61 +254,61 @@
               "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
                "tasks": [
                 {
-                  "id": "teambuilder1",
+                  "id": 1,
                   "task": "Design the app’s layout",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Designer"]
                 },
                 {
-                  "id": "teambuilder2",
+                  "id": 2,
                   "task": "Fix a bug in the login system",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Developer"]
                 },
                 {
-                  "id": "teambuilder3",
+                  "id": 3,
                   "task": "Write the pitch script",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Presenter"]
                 },
                 {
-                  "id": "teambuilder4",
+                  "id": 4,
                   "task": "Brainstorm project ideas",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Developer", "Designer", "Presenter"]
                 },
                 {
-                  "id": "teambuilder5",
+                  "id": 5,
                   "task": "Test the prototype",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Developer", "Designer"]
                 },
                 {
-                  "id": "teambuilder6",
+                  "id": 6,
                   "task": "Create the app logo and branding",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Designer"]
                 },
                 {
-                  "id": "teambuilder7",
+                  "id": 7,
                   "task": "Prepare and deliver the final pitch",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Presenter"]
                 },
                 {
-                  "id": "teambuilder8",
+                  "id": 8,
                   "task": "Connect the frontend to the backend API",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Developer"]
                 },
                 {
-                  "id": "teambuilder9",
+                  "id": 9,
                   "task": "Create user flow diagrams",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Designer"]
                 },
                 {
-                  "id": "teambuilder10",
+                  "id": 10,
                   "task": "Organize the team's project plan and timeline",
                   "options": ["Developer", "Designer", "Presenter"],
                   "correct_answer": ["Presenter"]
@@ -331,7 +331,13 @@
               "text": "Exactly! Developers are warriors, designers are healers, presenters are bards — and you? You could be anything you choose."
             }
           ],
-            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!"
+            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!",
+            "achievement": {
+            "title": "Team Player",
+            "description": "Matched all roles correctly in Team Builder. Teamwork skills leveled up!",
+            "reward_points": 15,
+            "icon": "team_medal.png"
+          }
         }
         },
 
@@ -414,17 +420,12 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "You’ve completed your second quest! Here’s your ‘Teamwork Makes the Dream Work’ Achievement! 🎖️"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Another achievement pops up: “Teamwork Makes the Dream Work” with a shaking hands icon. Description: “Learning about how teamwork makes everyone work better.”"
+              "text": "You’ve completed your second quest!"
             },
             {
               "character": "You",
               "pose": "smile",
-              "text": "Nice! Two achievements already. I’m starting to feel like I actually belong here."
+              "text": "Nice! I’m starting to feel like I actually belong here."
             },
             {
               "character": "Aira",
@@ -447,7 +448,13 @@
               "text": "Music swells as the screen fades to black."
             }
           ],
-          "completion_message": "Completed Chpater 2"
+          "completion_message": "Complete Chapter 2",
+          "achievement": {
+          "title": "Teamwork Makes the Dream Work",
+          "description": "Complete Chapter 2 of How to Hackathon",
+          "reward_points": 10,
+          "icon": "chapter2complete.png"
+          }
         }
       ]
     }

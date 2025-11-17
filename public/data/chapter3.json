@@ -283,7 +283,13 @@
                 {"problem":"Social isolation among teens","technology":"Web platform","impact":"Reduce waste","idea_result":"A web platform that helps teens optimize time spent online meaningfully."}
               ],
               
-                "completion_message": "Fantastic! You just brainstormed like a real innovator. Fast, focused, and fearless! 💡"
+                "completion_message": "Fantastic! You just brainstormed like a real innovator. Fast, focused, and fearless! 💡",
+                "achievement": {
+                "title": "Idea Innovator",
+                "description": "Generated unique ideas by combining problems, technologies, and impacts. Creativity unlocked!",
+                "reward_points": 20,
+                "icon": "idea_lightbulb.png"
+              }
           },
         {
           "id": "scene7",
@@ -360,17 +366,12 @@
             {
               "character": "Aira",
               "pose": "smiling",
-              "text": "You’ve completed your third quest! Here’s your Innovation Spark Achievement! 🎖️"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "A pop-up appears: 'Achievement Unlocked — Innovation Spark! Completed making your first Idea Seed.' A cute smiling Aira with a light bulb icon flashes."
+              "text": "You’ve completed your third quest!"
             },
             {
               "character": "You",
               "pose": "proud",
-              "text": "Three achievements! Not bad for someone who almost ignored that hackathon email."
+              "text": "Not bad for someone who almost ignored that hackathon email!"
             },
             {
               "character": "Aira",
@@ -383,7 +384,13 @@
               "text": "The scene fades to black as upbeat synth music plays, Aira’s glowing outline fading last."
             }
           ],
-          "completion_message": "Completed Chpater 3"
+          "completion_message": "Completed Chpater 3",
+          "achievement": {
+          "title": "Innovation Spark",
+          "description": "Complete Chapter 3 of How to Hackathon",
+          "reward_points": 10,
+          "icon": "chapter3complete.png"
+          }
         }
       ]
     }
