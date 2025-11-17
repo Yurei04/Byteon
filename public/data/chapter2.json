@@ -249,6 +249,7 @@
             }
             ],
               "minigame": {
+              "minigame_type":"MultipleChoice/ChooseTheCorrectRole",
               "minigame_title": "Team Builder",
               "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
                "tasks": [
