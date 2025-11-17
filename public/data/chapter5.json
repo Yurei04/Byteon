@@ -202,14 +202,17 @@
         },
         {
           "speaker": "System",
-          "text": "🎉 THE END"
-        },
-        {
-          "speaker": "Achievement",
-          "text": "Unlocked: 'From Rookie to Hacker' — Courage is the code that writes your future."
+          "text": "THE END"
         }
       ],
+      "completion_message": "Complete Chapter Epilogue",
+      "achievement": {
+      "title": "From Rookie to Hacker",
+      "description": "Complete the Epilogue Chapter of How to Hackathon",
+      "reward_points": 10,
+      "icon": "chapter4complete.png",
       "end": true
+      }
     }
   ]
 }

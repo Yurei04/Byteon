@@ -220,8 +220,8 @@
         },
         {
           "id": "scene5",
-          "background": "team_challenge_console.jpg",
-          "dialogs": [
+          "title": "Team Builder MiniGame",
+          "dialogue": [
             {
               "character": "Aira",
               "pose": "neutral",
@@ -245,13 +245,76 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "🧩 MiniGame: “Team Builder” — Drag and drop each role to the correct task."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Design the app’s layout → ✅ Designer | Fix a bug in the login system → ✅ Developer | Write the pitch script → ✅ Presenter | Brainstorm project ideas → ✅ All | Test the prototype → ✅ Developer & Designer"
-            },
+              "text": "MiniGame: “Team Builder” — Drag and drop each role to the correct task."
+            }
+            ],
+              "minigame": {
+              "minigame_type":"MultipleChoice",
+              "minigame_title": "Team Builder",
+              "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
+               "tasks": [
+                {
+                  "id": 1,
+                  "task": "Design the app’s layout",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Designer"]
+                },
+                {
+                  "id": 2,
+                  "task": "Fix a bug in the login system",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer"]
+                },
+                {
+                  "id": 3,
+                  "task": "Write the pitch script",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Presenter"]
+                },
+                {
+                  "id": 4,
+                  "task": "Brainstorm project ideas",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer", "Designer", "Presenter"]
+                },
+                {
+                  "id": 5,
+                  "task": "Test the prototype",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer", "Designer"]
+                },
+                {
+                  "id": 6,
+                  "task": "Create the app logo and branding",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Designer"]
+                },
+                {
+                  "id": 7,
+                  "task": "Prepare and deliver the final pitch",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Presenter"]
+                },
+                {
+                  "id": 8,
+                  "task": "Connect the frontend to the backend API",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer"]
+                },
+                {
+                  "id": 9,
+                  "task": "Create user flow diagrams",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Designer"]
+                },
+                {
+                  "id": 10,
+                  "task": "Organize the team's project plan and timeline",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Presenter"]
+                }
+              ],
+          "dialogue": [
             {
               "character": "Aira",
               "pose": "smile",
@@ -267,7 +330,26 @@
               "pose": "smile",
               "text": "Exactly! Developers are warriors, designers are healers, presenters are bards — and you? You could be anything you choose."
             }
-          ]
+          ],
+            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!",
+            "achievement": {
+            "title": "Team Player",
+            "description": "Matched all roles correctly in Team Builder. Teamwork skills leveled up!",
+            "reward_points": 15,
+            "icon": "team_medal.png"
+          }
+        }
+        },
+
+          {
+            "character": "Aira",
+            "pose": "happy",
+            "text": "Amazing! Now you understand how each team member contributes!"
+          },
+          {
+            "character": "Aira",
+            "pose": "wink",
+            "text": "A strong team is the secret to winning — or at least having a great hackathon experience."
         },
         {
           "id": "scene6",
@@ -338,17 +420,12 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "You’ve completed your second quest! Here’s your ‘Teamwork Makes the Dream Work’ Achievement! 🎖️"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Another achievement pops up: “Teamwork Makes the Dream Work” with a shaking hands icon. Description: “Learning about how teamwork makes everyone work better.”"
+              "text": "You’ve completed your second quest!"
             },
             {
               "character": "You",
               "pose": "smile",
-              "text": "Nice! Two achievements already. I’m starting to feel like I actually belong here."
+              "text": "Nice! I’m starting to feel like I actually belong here."
             },
             {
               "character": "Aira",
@@ -370,7 +447,14 @@
               "pose": "neutral",
               "text": "Music swells as the screen fades to black."
             }
-          ]
+          ],
+          "completion_message": "Complete Chapter 2",
+          "achievement": {
+          "title": "Teamwork Makes the Dream Work",
+          "description": "Complete Chapter 2 of How to Hackathon",
+          "reward_points": 10,
+          "icon": "chapter2complete.png"
+          }
         }
       ]
     }

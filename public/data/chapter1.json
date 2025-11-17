@@ -280,9 +280,132 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "🧩 MiniGame: “Hackathon Myth Buster” — Aira throws statements and you decide True or False."
+              "text": "MiniGame: “Hackathon Myth Buster” — Aira throws statements and you decide True or False."
             }
-          ]
+          ],
+          "minigame": {
+          "minigame_type":"TrueOrFalseFlashCard",
+          "minigame_title": "Hackathon Myth Buster",
+          "description": "Aira gives you statements—decide if they’re True or False to earn Confidence Points.",
+          "questions": [
+          {
+            "id": 1,
+            "statement": "Hackathons are only for programmers.",
+            "correct_answer": false,
+            "tip": "Hackathons need designers, storytellers, presenters, researchers—every skill matters!",
+            "resources": [
+              "UX Crash Course (31 Articles)",
+              "Hackathon Roles 101"
+            ],
+            "aira_reaction": "Right! Hackathons thrive on diverse skill sets!"
+          },
+          {
+            "id": 2,
+            "statement": "You must know advanced coding before joining.",
+            "correct_answer": false,
+            "tip": "Beginner-friendly hackathons expect learners. You learn faster by doing!",
+            "resources": [
+              "W3Schools (HTML, CSS, JS)",
+              "No-Code Tools: Glide, Bubble, Figma Prototype Mode"
+            ],
+            "aira_reaction": "Exactly! Everyone starts somewhere—even expert hackers began as beginners!"
+          },
+          {
+            "id": 3,
+            "statement": "Hackathons require fully finished apps.",
+            "correct_answer": false,
+            "tip": "A simple prototype or even a mockup is enough—as long as the idea shines.",
+            "resources": [
+              "Prototyping: Figma, Canva",
+              "Google Design Sprint Summaries"
+            ],
+            "aira_reaction": "Perfect! Prototypes > perfection!"
+          },
+          {
+            "id": 4,
+            "statement": "If my idea isn’t completely original, I shouldn’t join.",
+            "correct_answer": false,
+            "tip": "Execution beats originality. Even similar ideas can shine when improved or personalized.",
+            "resources": [
+              "100 Hackathon Idea Lists",
+              "SCAMPER Ideation Framework"
+            ],
+            "aira_reaction": "Nice! Innovation is about improving what's already there!"
+          },
+          {
+            "id": 5,
+            "statement": "Hackathons are overly competitive and toxic.",
+            "correct_answer": false,
+            "tip": "Most hackathons are friendly, supportive, and focused on learning.",
+            "resources": [
+              "Major League Hacking (MLH)",
+              "Devpost Beginner-Friendly Events"
+            ],
+            "aira_reaction": "Correct! Hackathons are more about community than competition!"
+          },
+          {
+            "id": 6,
+            "statement": "You must stay awake for 24–48 hours straight.",
+            "correct_answer": false,
+            "tip": "Smart hackers rest. Creativity collapses when your brain does.",
+            "resources": [
+              "Pomodoro Technique Guide",
+              "Sleep Foundation: Power Naps 101"
+            ],
+            "aira_reaction": "Exactly! Rested minds create the best hacks!"
+          },
+          {
+            "id": 7,
+            "statement": "Hackathons are about teamwork and creativity.",
+            "correct_answer": true,
+            "tip": "Strong communication beats strong code. Teams that talk win more.",
+            "resources": [
+              "Team Tools: Notion, Slack",
+              "Brainstorming Tools: FigJam, Miro"
+            ],
+            "aira_reaction": "Absolutely! Collaboration is the ultimate hackathon power!"
+          },
+          {
+            "id": 8,
+            "statement": "Only students can join hackathons.",
+            "correct_answer": false,
+            "tip": "Hackathons welcome everyone—students, professionals, hobbyists, and beginners!",
+            "resources": [
+              "Devpost Open Hackathons",
+              "Google Developer Groups (GDG)"
+            ],
+            "aira_reaction": "Yes! Hackathons are for ALL curious minds!"
+          },
+          {
+            "id": 9,
+            "statement": "You need expensive equipment or top-tier devices.",
+            "correct_answer": false,
+            "tip": "Hackathons judge ideas and teamwork, not your hardware.",
+            "resources": [
+              "Replit (Browser Coding)",
+              "Figma (Cloud Based)"
+            ],
+            "aira_reaction": "Correct! Creativity doesn't need high specs!"
+          },
+          {
+            "id": 10,
+            "statement": "If you don’t win, you wasted your time.",
+            "correct_answer": false,
+            "tip": "Every hackathon levels you up—skills, friends, confidence, portfolio pieces.",
+            "resources": [
+              "How to Write a Hackathon Case Study",
+              "Growth Mindset Guides"
+            ],
+            "aira_reaction": "Exactly! Experience is the REAL prize!"
+          }
+        ],
+        "achievement": {
+        "title": "Hackathon Myth Buster",
+        "description": "Completed the first mini-game by busting common hackathon myths. Confidence boosted!",
+        "reward_points": 10,
+        "icon": "confidence_medal.png"
+        }
+      }
         },
         {
           "id": "scene13",
@@ -300,12 +423,7 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "You’ve earned your first achievement! — First Steps! 🎖️"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "A familiar sound rings from your right side as you see a pop-up: “Achievement Unlocked — First Steps.” Description: “Completed the First Trial even when unsure.”"
+              "text": "You’ve earned your first achievement!"
             },
             {
               "character": "You",
@@ -332,7 +450,14 @@
               "pose": "neutral",
               "text": "You look at the uninstall pop-up again… it’s right there waiting to be clicked but you feel hesitant pressing it. As if this might be something that would give you the confidence boost you need. Against your better judgement, you close the window. You can uninstall her later if she really is malicious… right?"
             }
-          ]
+          ],
+          "completion_message": "Complete Chpater 1",
+          "achievement": {
+          "title": "First Steps",
+          "description": "Complete Chapter 1 of How to Hackathon",
+          "reward_points": 10,
+          "icon": "chapter1complete.png"
+          }
         }
       ]
     }
