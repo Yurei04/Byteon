@@ -220,8 +220,8 @@
         },
         {
           "id": "scene5",
-          "background": "team_challenge_console.jpg",
-          "dialogs": [
+          "title": "Team Builder MiniGame",
+          "dialogue": [
             {
               "character": "Aira",
               "pose": "neutral",
@@ -245,13 +245,75 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "🧩 MiniGame: “Team Builder” — Drag and drop each role to the correct task."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Design the app’s layout → ✅ Designer | Fix a bug in the login system → ✅ Developer | Write the pitch script → ✅ Presenter | Brainstorm project ideas → ✅ All | Test the prototype → ✅ Developer & Designer"
-            },
+              "text": "MiniGame: “Team Builder” — Drag and drop each role to the correct task."
+            }
+            ],
+              "minigame": {
+              "minigame_title": "Team Builder",
+              "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
+               "tasks": [
+                {
+                  "id": "teambuilder1",
+                  "task": "Design the app’s layout",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Designer"]
+                },
+                {
+                  "id": "teambuilder2",
+                  "task": "Fix a bug in the login system",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer"]
+                },
+                {
+                  "id": "teambuilder3",
+                  "task": "Write the pitch script",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Presenter"]
+                },
+                {
+                  "id": "teambuilder4",
+                  "task": "Brainstorm project ideas",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer", "Designer", "Presenter"]
+                },
+                {
+                  "id": "teambuilder5",
+                  "task": "Test the prototype",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer", "Designer"]
+                },
+                {
+                  "id": "teambuilder6",
+                  "task": "Create the app logo and branding",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Designer"]
+                },
+                {
+                  "id": "teambuilder7",
+                  "task": "Prepare and deliver the final pitch",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Presenter"]
+                },
+                {
+                  "id": "teambuilder8",
+                  "task": "Connect the frontend to the backend API",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer"]
+                },
+                {
+                  "id": "teambuilder9",
+                  "task": "Create user flow diagrams",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Designer"]
+                },
+                {
+                  "id": "teambuilder10",
+                  "task": "Organize the team's project plan and timeline",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Presenter"]
+                }
+              ],
+          "dialogue": [
             {
               "character": "Aira",
               "pose": "smile",
@@ -267,7 +329,20 @@
               "pose": "smile",
               "text": "Exactly! Developers are warriors, designers are healers, presenters are bards — and you? You could be anything you choose."
             }
-          ]
+          ],
+            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!"
+        }
+        },
+
+          {
+            "character": "Aira",
+            "pose": "happy",
+            "text": "Amazing! Now you understand how each team member contributes!"
+          },
+          {
+            "character": "Aira",
+            "pose": "wink",
+            "text": "A strong team is the secret to winning — or at least having a great hackathon experience."
         },
         {
           "id": "scene6",
