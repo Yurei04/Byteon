@@ -1,7 +1,7 @@
 /*
-    Main Game Screen of the Visual Novel
+    Main Game Screen of the Visual Novel - Fixed Version
+    Now properly detects and switches to minigame mode
 */
-
 
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
@@ -9,57 +9,38 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import GameDialogBox from "./gameDialogBox";
 import MiniGameMultipleChoice from "./multipleChoiceMG";
-import CardGame from "./cardGame";
-/*
-  Expectations for `data` (one chapter object): // missing mini game and tips and resources
-  {
-    id: "chapter2",
-    title: "Building the Team",
-    background: "your_room_morning.jpg",
-    music: "gentle_morning_theme.mp3",
-    events: [ { id:"scene1", dialogs: [...] , background?, music?, type?, choices? }, ... ],
-    characters: [ { id: "You", poses: { neutral: "you_neutral.png", ... } }, ... ]
-
-    
-  }
-*/
+import TrueOrFalseFlashGame from "./cardGame";
 
 export default function GameScreen({
-  data, miniGames, multipleChoiceComponent, CardGameComponent, onNextChapter, chapterGameIndex,
+  data,
+  currentEvent,
+  currentDialog,
+  currentMinigame, // Passed from ChapterManager when minigame should show
+  isShowingMinigame, // Flag to indicate minigame mode
+  onNext,
+  onMinigameComplete,
+  onNextChapter,
+  chapterGameIndex,
   onChapterEnd = () => {},
-  // optional: whether the game is considered started
   gameStart = true,
 }) {
-  // progression state (owned by GameScreen)
-  const [eventIndex, setEventIndex] = useState(0);
-  const [dialogIndex, setDialogIndex] = useState(0);
-
   // refs to avoid double-calling onChapterEnd
   const calledChapterEndRef = useRef(false);
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
 
-  // Reset progression indices when new chapter data arrives
+  // Log when minigame state changes
   useEffect(() => {
-  if (!data || data.length === 0) return; // No data, do nothing
-    // Use microtask to defer state reset until after paint
-    const timeout = setTimeout(() => {
-      setEventIndex(0);
-      setDialogIndex(0);
-      calledChapterEndRef.current = false;
-    }, 0);
-
-    return () => clearTimeout(timeout);
-  }, [data]);
-
-
-  // events list (rename from 'scenarios' previously)
-  const events = useMemo(() => {
-    return data?.events || [];
-  }, [data]);
-
+    console.log("[GameScreen] Minigame State:", {
+      hasMinigame: !!currentMinigame,
+      isShowingMinigame,
+      minigameType: currentMinigame?.minigame_type,
+      currentEventId: currentEvent?.id
+    });
+  }, [currentMinigame, isShowingMinigame, currentEvent?.id]);
 
   // Build quick id -> index lookup for branching (choices)
+  const events = useMemo(() => data?.events || [], [data]);
   const eventIdToIndex = useMemo(() => {
     const map = {};
     events.forEach((ev, idx) => {
@@ -68,75 +49,44 @@ export default function GameScreen({
     return map;
   }, [events]);
 
-  const currentEvent = events[eventIndex] ?? null;
   const dialogs = currentEvent?.dialogs ?? [];
-  const currentDialog = dialogs[dialogIndex] ?? null;
 
-  // Resolve background: event-level overrides chapter-level, fall back to /images/kaede.jpg
+  // Resolve background: event-level overrides chapter-level
   const backgroundSrc = currentEvent?.background
     ? `/images/${currentEvent.background}`
     : data?.background
     ? `/images/${data.background}`
     : "/images/kaede.jpg";
 
-  // Utility: map character name + pose -> image path using data.characters list
+  // Utility: map character name + pose -> image path
   const getCharacterPoseImage = (characterName, pose) => {
     if (!characterName) return null;
-      const chars = data?.characters ?? [];
-      const found = chars.find((c) => String(c.id).toLowerCase() === String(characterName).toLowerCase());
-      const poseFile = found?.poses?.[pose] ?? null;
-    if (poseFile) return `/images/characters/${poseFile}`; // expects your files under /public/images/characters/
-    // fallback: try generic `/images/<name>.jpg`
+    const chars = data?.characters ?? [];
+    const found = chars.find((c) => String(c.id).toLowerCase() === String(characterName).toLowerCase());
+    const poseFile = found?.poses?.[pose] ?? null;
+    if (poseFile) return `/images/characters/${poseFile}`;
     return `/images/${String(characterName).toLowerCase()}.jpg`;
   };
 
-  // Determine who should be shown as "character" for the static character sprite layer.
-  // Prefer currentDialog.character
   const currentSpeaker = currentDialog?.character ?? "Narrator";
   const currentPose = currentDialog?.pose ?? "neutral";
   const charSrc = getCharacterPoseImage(currentSpeaker, currentPose);
 
-  // Progression logic: move through dialogs -> events -> chapter end
-  const progressToNext = () => {
-    // If the current event is a choice-type, we don't auto-advance — choices must be chosen.
-    if (currentEvent?.type === "choice") {
-      // Do nothing — UI presents choices
-      return;
-    }
-
-    // 1) more dialogs in current event
-    if (dialogIndex + 1 < (dialogs?.length ?? 0)) {
-      setDialogIndex((d) => d + 1);
-      return;
-    }
-
-    // 2) more events in chapter (sequential)
-    if (eventIndex + 1 < events.length) {
-      setEventIndex((e) => e + 1);
-      setDialogIndex(0);
-      return;
-    }
-
-    // 3) no more events -> chapter finished, call onChapterEnd once
-    if (!calledChapterEndRef.current) {
-      calledChapterEndRef.current = true;
-      // schedule on next microtask to avoid sync state updates during render
-      Promise.resolve().then(() => {
-        if (mountedRef.current) onChapterEnd();
-      });
-    }
-  };
-
-  // When a user selects a choice (from a choice event), jump to the event with id=choice.nextScene
+  // When a user selects a choice, jump to the target event
   const handleChoiceSelect = (choice) => {
     if (!choice || !choice.nextScene) return;
     const targetId = choice.nextScene;
     const targetIndex = eventIdToIndex[targetId];
+    
+    console.log(`[GameScreen] Choice selected: ${choice.text}, jumping to: ${targetId}`);
+    
     if (typeof targetIndex === "number") {
-      setEventIndex(targetIndex);
-      setDialogIndex(0);
+      // For now, we'll call onNext which will be handled by ChapterManager
+      // In a more advanced setup, you'd have a separate callback for choices
+      onNext();
     } else {
-      // If the target scene id not found, treat as end-of-chapter
+      // If target scene not found, treat as end-of-chapter
+      console.warn(`[GameScreen] Target scene not found: ${targetId}`);
       if (!calledChapterEndRef.current) {
         calledChapterEndRef.current = true;
         Promise.resolve().then(() => {
@@ -146,7 +96,7 @@ export default function GameScreen({
     }
   };
 
-  // If the chapter file has no events, show message
+  // If no events, show message
   if (!events.length) {
     return (
       <div className="flex items-center justify-center h-full min-h-screen text-white bg-black/80">
@@ -156,6 +106,27 @@ export default function GameScreen({
         </div>
       </div>
     );
+  }
+
+  // Determine what to render based on priority
+  let contentToRender;
+
+  if (currentMinigame && isShowingMinigame) {
+    // PRIORITY 1: Show minigame
+    console.log("[GameScreen] Rendering minigame:", currentMinigame.minigame_type);
+    contentToRender = "minigame";
+  } else if (currentEvent?.type === "choice") {
+    // PRIORITY 2: Show choices
+    console.log("[GameScreen] Rendering choice event");
+    contentToRender = "choice";
+  } else if (currentDialog) {
+    // PRIORITY 3: Show dialog
+    console.log("[GameScreen] Rendering dialog");
+    contentToRender = "dialog";
+  } else {
+    // Fallback
+    console.warn("[GameScreen] No content to render");
+    contentToRender = "none";
   }
 
   return (
@@ -171,8 +142,8 @@ export default function GameScreen({
         />
       </div>
 
-      {/* Character image  */}
-      {charSrc && (
+      {/* Character image - hide during minigame */}
+      {charSrc && contentToRender !== "minigame" && (
         <div className="absolute bottom-0 left-10 z-10 pointer-events-none">
           <Image
             src={charSrc}
@@ -184,98 +155,121 @@ export default function GameScreen({
         </div>
       )}
 
-      {/* dark gradient to make dialog legible */}
+      {/* Dark gradient */}
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
-      {/* Dialog area */}
+      {/* Main content area */}
       <div className="absolute bottom-0 w-full z-30 px-4">
-        {/* If current event is a choice, render dialog prompt (if any) and then choice buttons */}
-        {currentEvent?.type === "choice" ? (
-          <div className="w-full max-w-3xl mx-auto p-4 bg-black/60 border border-white rounded-md">
-            {currentEvent.prompt && (
-              <div className="text-xs text-gray-300 mb-2">{currentEvent.prompt}</div>
-            )}
-            {/* If the choice event also has dialogs, show them first (rare) */}
-            {dialogs.length > 0 && currentDialog && (
-              <GameDialogBox
-                text={currentDialog.text ?? ""}
-                character={currentDialog.character ?? "Narrator"}
-                chapter={data?.id ?? ""}
-                onNext={() => {
-                  // if there are multiple dialogs inside the choice event, allow progressing them
-                  if (dialogIndex + 1 < dialogs.length) setDialogIndex((d) => d + 1);
-                }}
-              />
-            )}
+        <AnimatePresence mode="wait">
+          {contentToRender === "minigame" && (
+            <motion.div
+              key="minigame"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-4xl mx-auto mb-8"
+            >
+              {currentMinigame.minigame_type === "TrueOrFalseFlashCard" ? (
+                <TrueOrFalseFlashGame
+                  minigameData={currentMinigame}
+                  onComplete={onMinigameComplete}
+                />
+              ) : currentMinigame.minigame_type === "MultipleChoice" ? (
+                <MiniGameMultipleChoice
+                  minigameData={currentMinigame}
+                  onComplete={onMinigameComplete}
+                />
+              ) : (
+                <div className="bg-red-900/50 p-4 rounded-lg text-center">
+                  <p className="text-white mb-2">Unknown minigame type: {currentMinigame.minigame_type}</p>
+                  <button
+                    onClick={onMinigameComplete}
+                    className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 rounded-lg"
+                  >
+                    Skip Minigame
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
 
-            {currentEvent?.choices && currentEvent.choices.length > 0 && (
-              <div className="w-full max-w-3xl mx-auto mb-34 relative z-30">
-                <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
-                  
-                  {/* Motion wrapper identical to GameDialogBox */}
+          {contentToRender === "choice" && (
+            <motion.div
+              key="choice"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-3xl mx-auto mb-34 relative z-30"
+            >
+              <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
+                  className="w-full max-w-4xl border-2 border-fuchsia-500 bg-black/70 backdrop-blur-sm p-6 flex flex-col justify-between rounded-xl shadow-2xl"
+                >
+                  {currentEvent.prompt && (
+                    <div className="text-lg text-white mb-4 font-semibold">
+                      {currentEvent.prompt}
+                    </div>
+                  )}
+
                   <motion.div
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
-                    className="w-full max-w-4xl max-h-1/3 border-2 border-fuchsia-500 bg-black/70
-                              backdrop-blur-sm p-6 flex flex-col justify-between rounded-xl shadow-2xl"
+                    className="mt-4 grid gap-3"
                   >
-                    {/* Choices */}
-                    <motion.div
-                      initial={{ y: 50, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
-                      className="mt-4 grid gap-3"
-                    >
-                      {(currentEvent?.choices ?? []).map((choice, idx) => (
-                        <motion.button
-                          key={idx}
-                          onClick={() => handleChoiceSelect(choice)}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.2, delay: idx * 0.05 }}
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.97 }}
-                          className="
-                            w-full text-left px-4 py-3
-                            bg-fuchsia-900/20 hover:bg-fuchsia-700/40
-                            border border-fuchsia-400/40
-                            backdrop-blur-lg rounded-md text-white
-                            shadow-lg shadow-fuchsia-900/30 cursor-pointer
-                          "
-                        >
-                          {choice.text}
-                        </motion.button>
-                      ))}
-                    </motion.div>
+                    {(currentEvent?.choices ?? []).map((choice, idx) => (
+                      <motion.button
+                        key={idx}
+                        onClick={() => handleChoiceSelect(choice)}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: idx * 0.05 }}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full text-left px-4 py-3 bg-fuchsia-900/20 hover:bg-fuchsia-700/40 border border-fuchsia-400/40 backdrop-blur-lg rounded-md text-white shadow-lg shadow-fuchsia-900/30 cursor-pointer"
+                      >
+                        {choice.text}
+                      </motion.button>
+                    ))}
                   </motion.div>
-
-                </div>
+                </motion.div>
               </div>
-            )}
+            </motion.div>
+          )}
 
+          {contentToRender === "dialog" && (
+            <motion.div
+              key="dialog"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-3xl mx-auto mb-34 relative z-30"
+            >
+              <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
+                <GameDialogBox
+                  chapterGameIndex={chapterGameIndex}
+                  onNextChapter={onNextChapter}
+                  text={currentDialog?.text ?? ""}
+                  character={currentDialog?.character ?? "Narrator"}
+                  chapter={data?.id ?? ""}
+                  onNext={onNext}
+                />
+              </div>
+            </motion.div>
+          )}
 
-          </div>
-        ) : miniGames && multipleChoiceComponent ? ( // If mini game multiple choice
-            <MiniGameMultipleChoice />
-        ) : miniGames && CardGameComponent ? ( // If mini game card Game
-            <CardGame />
-        ) : (
-          // Normal dialog flow
-          <div className="w-full max-w-3xl mx-auto mb-34 relative z-30">
-            <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
-              <GameDialogBox
-                chapterGameIndex={chapterGameIndex}
-                onNextChapter={onNextChapter}
-                text={currentDialog?.text ?? ""}
-                character={currentDialog?.character ?? "Narrator"}
-                chapter={data?.id ?? ""}
-                onNext={progressToNext}
-              />
+          {contentToRender === "none" && (
+            <div className="w-full max-w-3xl mx-auto mb-34 text-center text-white">
+              <p>Loading next scene...</p>
             </div>
-          </div>
-
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

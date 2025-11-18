@@ -7,7 +7,7 @@ export default function GameSettings (
     return (
         <>
         <Dialog>
-
+            
         </Dialog>
         </>
     )
