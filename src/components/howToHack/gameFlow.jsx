@@ -1,38 +1,53 @@
-"use client";
+import React, { useMemo, useEffect, useRef } from "react";
+import GameFlowCard from "./gameFlowCard";
 
-import React from "react";
-import { motion } from "framer-motion";
+export default function GameFlow({
+    chapterData,
+    chapterIndex,
+    dialogIndex,
+    isShowingMinigame
+}) {
+  const containerRef = useRef(null);
 
-export default function GameFlow (
-    currentChapter, currentScenario, currentEvent
-) {
-    return (
-         <motion.div
-            className="bg-black overflow-hidden flex flex-col items-center justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 3 }}
+  const chapter = useMemo(() => chapterData?.chapter ?? [], [chapterData]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const activeEl = container.querySelector(".active-event");
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [chapterIndex, dialogIndex, isShowingMinigame]);
+
+  return (
+    <div ref={containerRef} className="overflow-y-auto max-h-[500px]">
+      {chapter.map((chapt, eIdx) => (
+        <div
+          key={eIdx}
+          className={`mb-2 p-2 rounded ${
+            eIdx === chapterIndex ? "active-event bg-gray-800" : "bg-gray-900"
+          }`}
         >
-            {/* Title */}
-            <motion.h1
-                className="relative z-10 text-xl mb-4 font-bold text-white tracking-widest drop-shadow-lg"
-                initial={{ opacity: 0, y: -40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 3, duration: 1 }}
+          <h3 className="font-bold text-white">{chapt.title}</h3>
+          {chapt.dialogs.map((dialog, dIdx) => (
+            <p
+              key={dIdx}
+              className={`pl-2 ${
+                eIdx === chapterIndex && dIdx === dialogIndex
+                  ? "text-fuchsia-500 font-bold"
+                  : "text-gray-400"
+              }`}
             >
-                Game Flow
-            </motion.h1>
-
-            {/* Menu buttons */}
-            <motion.div
-                className="relative grid grid-cols-2 z-10 gap-2 space-y-4"
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 4, duration: 1 }}
-            >
-                
-            </motion.div>
-
-        </motion.div>
-    )
+              {dialog.text}
+            </p>
+          ))}
+          {chapt.minigame && eIdx === chapterIndex && isShowingMinigame && (
+            <p className="pl-2 text-green-400 font-semibold">Minigame Active</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }

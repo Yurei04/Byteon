@@ -236,7 +236,12 @@ export default function HowToHackPage () {
                         <ResizablePanel defaultSize={30}>
                             <ResizablePanelGroup direction="vertical">
                                 <ResizablePanel defaultSize={60} className="p-4">
-                                    <GameFlow chapter={chapter} scenario={0} event={0} />
+                                    <GameFlow
+                                        chapterData={chapterData}
+                                        eventIndex={eventIndex}
+                                        dialogIndex={dialogIndex}
+                                        isShowingMinigame={isShowingMinigame}
+                                    />
                                 </ResizablePanel>
                                 <ResizableHandle />
                                 <ResizablePanel defaultSize={40} className="p-4">

@@ -1,6 +1,9 @@
 /*
-    Main Game Screen of the Visual Novel - Fixed Version
-    Now properly detects and switches to minigame mode
+    Main Game Screen of the Visual Novel - FINAL FIXED VERSION
+    - No duplicate variable declarations
+    - Proper minigame detection
+    - Auto-start minigame after dialogs finish
+    - Fully coordinated with ChapterManager
 */
 
 "use client";
@@ -13,10 +16,13 @@ import TrueOrFalseFlashGame from "./cardGame";
 
 export default function GameScreen({
   data,
+
+  // Passed from ChapterManager
   currentEvent,
   currentDialog,
-  currentMinigame, // Passed from ChapterManager when minigame should show
-  isShowingMinigame, // Flag to indicate minigame mode
+  currentMinigame,
+  isShowingMinigame,
+  
   onNext,
   onMinigameComplete,
   onNextChapter,
@@ -24,45 +30,62 @@ export default function GameScreen({
   onChapterEnd = () => {},
   gameStart = true,
 }) {
-  // refs to avoid double-calling onChapterEnd
+
+  // --- EVENT + DIALOG REFS ---
+  const dialogs = currentEvent?.dialogs ?? [];
+
+  // --- MINIGAME DETECTOR ---
+  const minigameType = currentMinigame?.minigame_type?.toLowerCase() ?? null;
+
+  // Minigame should start automatically if:
+  // 1. there is a minigame in this event
+  // 2. all dialogs are finished
+  // 3. minigame isn't already showing
+  const startMiniGame =
+    !!currentMinigame &&
+    currentDialog == null &&
+    !isShowingMinigame;
+
+  // Trigger minigame start → signal ChapterManager
+  useEffect(() => {
+    if (startMiniGame) {
+      console.log("[GameScreen] Auto-start minigame triggered.");
+      onMinigameComplete("start");
+    }
+  }, [startMiniGame]);
+
   const calledChapterEndRef = useRef(false);
   const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
+  useEffect(() => () => {
+    mountedRef.current = false;
+  }, []);
 
-  // Log when minigame state changes
+  // Debug logs
   useEffect(() => {
     console.log("[GameScreen] Minigame State:", {
       hasMinigame: !!currentMinigame,
       isShowingMinigame,
       minigameType: currentMinigame?.minigame_type,
-      currentEventId: currentEvent?.id
+      eventId: currentEvent?.id,
+      currentDialogExists: !!currentDialog
     });
-  }, [currentMinigame, isShowingMinigame, currentEvent?.id]);
+  }, [currentMinigame, isShowingMinigame, currentEvent?.id, currentDialog]);
 
-  // Build quick id -> index lookup for branching (choices)
-  const events = useMemo(() => data?.events || [], [data]);
-  const eventIdToIndex = useMemo(() => {
-    const map = {};
-    events.forEach((ev, idx) => {
-      if (ev?.id) map[ev.id] = idx;
-    });
-    return map;
-  }, [events]);
-
-  const dialogs = currentEvent?.dialogs ?? [];
-
-  // Resolve background: event-level overrides chapter-level
+  // --- BACKGROUND ---
   const backgroundSrc = currentEvent?.background
     ? `/images/${currentEvent.background}`
     : data?.background
     ? `/images/${data.background}`
     : "/images/kaede.jpg";
 
-  // Utility: map character name + pose -> image path
+  // --- CHARACTER POSE IMAGE ---
   const getCharacterPoseImage = (characterName, pose) => {
     if (!characterName) return null;
     const chars = data?.characters ?? [];
-    const found = chars.find((c) => String(c.id).toLowerCase() === String(characterName).toLowerCase());
+    const found = chars.find(
+      (c) =>
+        String(c.id).toLowerCase() === String(characterName).toLowerCase()
+    );
     const poseFile = found?.poses?.[pose] ?? null;
     if (poseFile) return `/images/characters/${poseFile}`;
     return `/images/${String(characterName).toLowerCase()}.jpg`;
@@ -72,66 +95,37 @@ export default function GameScreen({
   const currentPose = currentDialog?.pose ?? "neutral";
   const charSrc = getCharacterPoseImage(currentSpeaker, currentPose);
 
-  // When a user selects a choice, jump to the target event
-  const handleChoiceSelect = (choice) => {
-    if (!choice || !choice.nextScene) return;
-    const targetId = choice.nextScene;
-    const targetIndex = eventIdToIndex[targetId];
-    
-    console.log(`[GameScreen] Choice selected: ${choice.text}, jumping to: ${targetId}`);
-    
-    if (typeof targetIndex === "number") {
-      // For now, we'll call onNext which will be handled by ChapterManager
-      // In a more advanced setup, you'd have a separate callback for choices
-      onNext();
-    } else {
-      // If target scene not found, treat as end-of-chapter
-      console.warn(`[GameScreen] Target scene not found: ${targetId}`);
-      if (!calledChapterEndRef.current) {
-        calledChapterEndRef.current = true;
-        Promise.resolve().then(() => {
-          if (mountedRef.current) onChapterEnd();
-        });
-      }
-    }
-  };
+  // --- RENDER PRIORITY ---
+  let contentToRender;
 
-  // If no events, show message
-  if (!events.length) {
+  if (currentMinigame && isShowingMinigame) {
+    contentToRender = "minigame";
+  } else if (currentEvent?.type === "choice") {
+    contentToRender = "choice";
+  } else if (currentDialog) {
+    contentToRender = "dialog";
+  } else {
+    contentToRender = "none";
+  }
+
+  // No events: fallback
+  if (!data?.events?.length) {
     return (
       <div className="flex items-center justify-center h-full min-h-screen text-white bg-black/80">
         <div className="text-center">
           <h2 className="text-2xl font-semibold mb-2">No Scenes in this chapter</h2>
-          <p className="text-sm text-gray-400">Add events to this chapter JSON to play it.</p>
+          <p className="text-sm text-gray-400">
+            Add events to this chapter JSON to play it.
+          </p>
         </div>
       </div>
     );
   }
 
-  // Determine what to render based on priority
-  let contentToRender;
-
-  if (currentMinigame && isShowingMinigame) {
-    // PRIORITY 1: Show minigame
-    console.log("[GameScreen] Rendering minigame:", currentMinigame.minigame_type);
-    contentToRender = "minigame";
-  } else if (currentEvent?.type === "choice") {
-    // PRIORITY 2: Show choices
-    console.log("[GameScreen] Rendering choice event");
-    contentToRender = "choice";
-  } else if (currentDialog) {
-    // PRIORITY 3: Show dialog
-    console.log("[GameScreen] Rendering dialog");
-    contentToRender = "dialog";
-  } else {
-    // Fallback
-    console.warn("[GameScreen] No content to render");
-    contentToRender = "none";
-  }
-
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black text-white">
-      {/* Background image */}
+      
+      {/* BACKGROUND */}
       <div className="absolute inset-0 -z-20">
         <Image
           src={backgroundSrc}
@@ -142,7 +136,7 @@ export default function GameScreen({
         />
       </div>
 
-      {/* Character image - hide during minigame */}
+      {/* CHARACTER — HIDDEN DURING MINI GAME */}
       {charSrc && contentToRender !== "minigame" && (
         <div className="absolute bottom-0 left-10 z-10 pointer-events-none">
           <Image
@@ -155,20 +149,21 @@ export default function GameScreen({
         </div>
       )}
 
-      {/* Dark gradient */}
+      {/* GRADIENT */}
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
-      {/* Main content area */}
+      {/* MAIN CONTENT */}
       <div className="absolute bottom-0 w-full z-30 px-4">
         <AnimatePresence mode="wait">
-          {contentToRender === "minigame" && (
+
+          {contentToRender === "minigame" && currentMinigame && (
             <motion.div
               key="minigame"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className="w-full max-w-4xl mx-auto mb-8"
+              className="w-full max-w-4xl mx-auto mb-41"
             >
               {currentMinigame.minigame_type === "TrueOrFalseFlashCard" ? (
                 <TrueOrFalseFlashGame
@@ -182,7 +177,7 @@ export default function GameScreen({
                 />
               ) : (
                 <div className="bg-red-900/50 p-4 rounded-lg text-center">
-                  <p className="text-white mb-2">Unknown minigame type: {currentMinigame.minigame_type}</p>
+                  <p className="text-white mb-2">Unknown minigame type: {currentMinigame?.minigame_type}</p>
                   <button
                     onClick={onMinigameComplete}
                     className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 rounded-lg"
@@ -192,8 +187,10 @@ export default function GameScreen({
                 </div>
               )}
             </motion.div>
-          )}
+        )}
 
+
+          {/* --- CHOICE EVENT --- */}
           {contentToRender === "choice" && (
             <motion.div
               key="choice"
@@ -208,7 +205,7 @@ export default function GameScreen({
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
-                  className="w-full max-w-4xl border-2 border-fuchsia-500 bg-black/70 backdrop-blur-sm p-6 flex flex-col justify-between rounded-xl shadow-2xl"
+                  className="w-full max-w-4xl border-2 border-fuchsia-500 bg-black/70 backdrop-blur-sm p-6 rounded-xl shadow-2xl"
                 >
                   {currentEvent.prompt && (
                     <div className="text-lg text-white mb-4 font-semibold">
@@ -216,16 +213,11 @@ export default function GameScreen({
                     </div>
                   )}
 
-                  <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 100, duration: 0.5 }}
-                    className="mt-4 grid gap-3"
-                  >
+                  <div className="mt-4 grid gap-3">
                     {(currentEvent?.choices ?? []).map((choice, idx) => (
                       <motion.button
                         key={idx}
-                        onClick={() => handleChoiceSelect(choice)}
+                        onClick={() => onNext(choice)}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.2, delay: idx * 0.05 }}
@@ -236,12 +228,13 @@ export default function GameScreen({
                         {choice.text}
                       </motion.button>
                     ))}
-                  </motion.div>
+                  </div>
                 </motion.div>
               </div>
             </motion.div>
           )}
 
+          {/* --- NORMAL DIALOG MODE --- */}
           {contentToRender === "dialog" && (
             <motion.div
               key="dialog"
@@ -264,11 +257,13 @@ export default function GameScreen({
             </motion.div>
           )}
 
+          {/* --- NO CONTENT (loading) --- */}
           {contentToRender === "none" && (
             <div className="w-full max-w-3xl mx-auto mb-34 text-center text-white">
               <p>Loading next scene...</p>
             </div>
           )}
+
         </AnimatePresence>
       </div>
     </div>
