@@ -85,7 +85,15 @@ export default function GameDialogBox ({
                         >
                             {buttonText}
                         </button>
-                        
+                        <button // remove after test
+                        onClick={() => {
+                            console.log("[Debug] Manually triggering next chapter...");
+                            onNextChapter?.();
+                        }}
+                        className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-lg cursor-pointer"
+                        >
+                            Next Chapter
+                        </button>
                     </div>
                 </>
             ) : (
