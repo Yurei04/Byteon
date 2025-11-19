@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function MultipleChoiceGame({ minigameData, onComplete }) {
+export default function MiniGameMultipleChoice({ minigameData, onComplete }) {
   // All hooks FIRST
   const tasks = minigameData?.tasks ?? [];
   const total = tasks.length;
