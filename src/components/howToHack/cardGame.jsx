@@ -318,7 +318,7 @@ export default function TrueOrFalseFlashGame({ minigameData, onComplete }) {
         >
           <p className="text-red-300 font-semibold">⚠️ Warning!</p>
           <p className="text-red-200 text-sm">
-            You've reached the maximum wrong answers. One more mistake and you'll fail!
+            You ve reached the maximum wrong answers. One more mistake and you ll fail!
           </p>
         </motion.div>
       )}

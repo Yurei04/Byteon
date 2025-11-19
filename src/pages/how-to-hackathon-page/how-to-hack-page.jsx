@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import MainMenu from "@/components/howToHack/mainMenu";
 import GameSettings from "@/components/howToHack/gameSettings";
@@ -10,55 +10,74 @@ import GameControls from "@/components/howToHack/gameControls";
 import ChapterManager from "@/components/howToHack/chapterManger";
 
 export default function HowToHackPage() {
-    // Game States
+    /* ----------------------------- STATE HOOKS FIRST ----------------------------- */
+
     const [chapter, setChapter] = useState(1);
     const [chapterData, setChapterData] = useState(null);
+
     const [isLoading, setIsLoading] = useState(false);
     const [isMainMenu, setIsMainMenu] = useState(true);
     const [isSettings, setIsSettings] = useState(false);
     const [isExit, setIsExit] = useState(false);
+    const [isStartGame, setIsStartGame] = useState(false);
 
-    // NEW: Track ChapterManager's internal state
     const [gameFlowState, setGameFlowState] = useState({
         eventIndex: 0,
         dialogIndex: 0,
-        isShowingMinigame: false
+        isShowingMinigame: false,
     });
 
-    // Skeleton loader
     const [slowLoading, setSlowLoading] = useState(false);
     const [tooSmall, setTooSmall] = useState(false);
 
-    // Main Menu → Game
-    const handleStartGameFromMenu = () => {
-        setIsMainMenu(false);
-    };
+    /* ------------------------------ STABLE CALLBACKS ----------------------------- */
 
-    // Chapter Loading
-    const loadChapter = async (id) => {
+    const handleStartGameFromMenu = useCallback(() => {
+        setIsMainMenu(false);
+        setIsStartGame(true);
+    }, []);
+
+    const handleNextChapter = useCallback(() => {
+        setChapter((prev) => prev + 1);
+    }, []);
+
+    const handleBackToMenu = useCallback(() => {
+        setIsMainMenu(true);
+    }, []);
+
+    const handleStateChange = useCallback((state) => {
+        setGameFlowState((prev) => {
+            if (
+                prev.eventIndex === state.eventIndex &&
+                prev.dialogIndex === state.dialogIndex &&
+                prev.isShowingMinigame === state.isShowingMinigame
+            ) return prev;
+
+            return state;
+        });
+    }, []);
+
+    /* ------------------------------ LOAD CHAPTER ------------------------------ */
+
+    const loadChapter = useCallback(async (id) => {
         try {
             setIsLoading(true);
 
             const res = await fetch(`/data/chapter${id}.json`);
             if (!res.ok) {
-                console.warn(`Failed to fetch chapter file: /data/chapter${id}.json (status ${res.status})`);
+                console.warn(`Failed to load chapter file /data/chapter${id}.json`);
                 setChapterData(null);
                 return;
             }
 
             const raw = await res.json();
-
-            // Normalize JSON format
             let normalized = null;
 
-            if (raw && Array.isArray(raw.chapters) && raw.chapters.length > 0) {
-                // new format: { chapters: [ { ... } ], characters: [...] }
+            if (raw?.chapters?.length > 0) {
                 normalized = { ...raw.chapters[0], characters: raw.characters ?? [] };
-            } else if (raw && Array.isArray(raw.events)) {
-                // already a single chapter object with events
+            } else if (raw?.events) {
                 normalized = { ...raw, characters: raw.characters ?? [] };
-            } else if (raw && Array.isArray(raw.scenarios)) {
-                // older format: flatten scenarios -> events
+            } else if (raw?.scenarios) {
                 const flattenedEvents = raw.scenarios.flatMap((s) => s.events ?? []);
                 normalized = {
                     id: raw.id ?? `chapter${id}`,
@@ -66,79 +85,97 @@ export default function HowToHackPage() {
                     events: flattenedEvents,
                     characters: raw.characters ?? [],
                 };
-            } else {
-                normalized = null;
             }
 
-            console.debug("[HowToHackPage] Loaded chapter:", normalized);
             setChapterData(normalized);
-        } catch (error) {
-            console.error("Failed to load chapter:", error);
+        } catch (err) {
+            console.error("Error loading chapter:", err);
             setChapterData(null);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
-    // Resize check
+    /* ------------------------------ WINDOW RESIZE CHECK ------------------------------ */
+
     useEffect(() => {
         const handleResize = () => {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            setTooSmall(w < 1280 || h < 720);
+            setTooSmall(window.innerWidth < 1280 || window.innerHeight < 720);
         };
+
         window.addEventListener("resize", handleResize);
         handleResize();
+
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    // Fetch chapter when it changes
+    /* ------------------------------ CHAPTER EFFECT ------------------------------ */
+
     useEffect(() => {
         loadChapter(chapter);
-    }, [chapter]);
+    }, [chapter, loadChapter]);
 
-    // Skeleton Loader
+    /* ------------------------------ MEMOIZED UI BLOCKS ------------------------------ */
+
+    const chapterManagerElement = useMemo(() => {
+        return (
+            <ChapterManager
+                chapterGameIndex={chapter}
+                chapterData={chapterData}
+                onNextChapter={handleNextChapter}
+                onBackToMenu={handleBackToMenu}
+                onStateChange={handleStateChange}
+            />
+        );
+    }, [chapter, chapterData, handleNextChapter, handleBackToMenu, handleStateChange]);
+
+    const gameFlowElement = useMemo(() => {
+        return (
+            <GameFlow
+                chapterData={chapterData}
+                currentEventIndex={gameFlowState.eventIndex}
+                currentDialogIndex={gameFlowState.dialogIndex}
+                isShowingMinigame={gameFlowState.isShowingMinigame}
+            />
+        );
+    }, [chapterData, gameFlowState]);
+
+    /* ------------------------------ EARLY RETURNS (AFTER HOOKS!) ------------------------------ */
+
     if (slowLoading) {
         return (
             <div className="w-full h-screen flex flex-col items-center justify-center bg-black text-purple-300">
-                <div className="animate-pulse flex flex-col items-center">
-                    <div className="w-40 h-40 bg-purple-800/30 rounded-full mb-6" />
-                    <p className="text-lg font-mono tracking-wide mb-2">
-                        Website Loading.....
-                    </p>
-                    <p className="text-sm text-purple-500">
-                        Weak network latency...
-                    </p>
+                <div className="animate-pulse">
+                    <p>Website Loading…</p>
                 </div>
             </div>
         );
     }
-    
-    // Screen too small
+
     if (tooSmall) {
         return (
-            <div className="fixed inset-0 bg-black flex flex-col items-center justify-center text-purple-400 text-center">
-                <p className="text-xl mb-2">⚠️ Resize Detected</p>
-                <p className="text-sm">Please use a 1920×1080 screen or fullscreen mode for best experience.</p>
+            <div className="fixed inset-0 bg-black text-purple-400 flex flex-col justify-center items-center">
+                <p className="text-xl mb-2">⚠️ Screen Too Small</p>
+                <p>Please use at least 1280×720 or fullscreen mode.</p>
             </div>
         );
     }
 
+    /* ------------------------------ MAIN RENDER ------------------------------ */
+
     return (
         <div className="w-full h-screen flex flex-col p-4">
-            <ResizablePanelGroup
-                direction="vertical"
-                className="w-full rounded-lg border border-fuchsia-400/80 mb-2"
-            >
+            <ResizablePanelGroup direction="vertical" className="rounded-lg border border-fuchsia-400/80 mb-2">
                 <ResizablePanel defaultSize={80}>
                     <ResizablePanelGroup direction="horizontal">
-                        {/* LEFT: Main Game Screen */}
+
+                        {/* LEFT SCREEN */}
                         <ResizablePanel defaultSize={70}>
                             <div className="flex flex-col h-full items-center justify-center p-6">
                                 {isMainMenu ? (
                                     <MainMenu
                                         onStartGame={handleStartGameFromMenu}
-                                        onLoadGame={() => console.log("Load Game clicked")}
+                                        onLoadGame={() => {}}
                                         onSettings={() => setIsSettings(true)}
                                         onExit={() => setIsExit(true)}
                                     />
@@ -147,44 +184,42 @@ export default function HowToHackPage() {
                                 ) : isExit ? (
                                     <GameExit onBack={() => setIsExit(false)} />
                                 ) : (
-                                    <ChapterManager
-                                        chapterGameIndex={chapter}
-                                        chapterData={chapterData}
-                                        onNextChapter={() => setChapter((prev) => prev + 1)}
-                                        onBackToMenu={() => setIsMainMenu(true)}
-                                        onStateChange={(state) => setGameFlowState(state)}
-                                    />
+                                    chapterManagerElement
                                 )}
                             </div>
                         </ResizablePanel>
 
                         <ResizableHandle />
 
-                        {/* RIGHT: GameFlow & Controls */}
+                        {/* RIGHT SIDE */}
                         <ResizablePanel defaultSize={30}>
                             <ResizablePanelGroup direction="vertical">
-                                {/* GameFlow Panel */}
+
+                                {/* Top: GameFlow */}
                                 <ResizablePanel defaultSize={60}>
-                                    <div className="h-full bg-gray-950 p-4 overflow-hidden">
-                                        <GameFlow
-                                            chapterData={chapterData}
-                                            currentEventIndex={gameFlowState.eventIndex}
-                                            currentDialogIndex={gameFlowState.dialogIndex}
-                                            isShowingMinigame={gameFlowState.isShowingMinigame}
-                                        />
-                                    </div>
+                                    {isStartGame ? (
+                                        <div className="h-full bg-gray-950 p-4 overflow-hidden">
+                                            {gameFlowElement}
+                                        </div>
+                                    ) : (
+                                        <div className="text-white flex h-full justify-center items-center">
+                                            <h1>Welcome To Byteon Visual Novel</h1>
+                                        </div>
+                                    )}
                                 </ResizablePanel>
-                                
+
                                 <ResizableHandle />
-                                
-                                {/* Controls Panel */}
+
+                                {/* Bottom: Controls */}
                                 <ResizablePanel defaultSize={40}>
                                     <div className="h-full bg-gray-950 p-4">
                                         <GameControls />
                                     </div>
                                 </ResizablePanel>
+
                             </ResizablePanelGroup>
                         </ResizablePanel>
+
                     </ResizablePanelGroup>
                 </ResizablePanel>
             </ResizablePanelGroup>

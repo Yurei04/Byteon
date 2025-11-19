@@ -151,11 +151,8 @@ export default function GameFlow({
                             {isCurrentDialog ? "▶" : isPastDialog ? "✓" : "○"}
                           </span>
                           <div className="flex-1">
-                            <p className="font-semibold text-[10px] opacity-70">
+                            <p className="font-semibold text-md opacity-70">
                               {dialog?.character || "Narrator"}
-                            </p>
-                            <p className="line-clamp-2">
-                              {dialog?.text || "..."}
                             </p>
                           </div>
                         </div>

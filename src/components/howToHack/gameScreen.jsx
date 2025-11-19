@@ -1,28 +1,18 @@
-/*
-    Main Game Screen of the Visual Novel - FINAL FIXED VERSION
-    - No duplicate variable declarations
-    - Proper minigame detection
-    - Auto-start minigame after dialogs finish
-    - Fully coordinated with ChapterManager
-*/
-
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import GameDialogBox from "./gameDialogBox";
 import MiniGameMultipleChoice from "./multipleChoiceMG";
 import TrueOrFalseFlashGame from "./cardGame";
+import TeamBuilderGame from "./multipleChoiceMG";
 
 export default function GameScreen({
   data,
-
-  // Passed from ChapterManager
   currentEvent,
   currentDialog,
   currentMinigame,
   isShowingMinigame,
-  
   onNext,
   onMinigameComplete,
   onNextChapter,
@@ -30,29 +20,20 @@ export default function GameScreen({
   onChapterEnd = () => {},
   gameStart = true,
 }) {
-
-  // --- EVENT + DIALOG REFS ---
   const dialogs = currentEvent?.dialogs ?? [];
 
-  // --- MINIGAME DETECTOR ---
-  const minigameType = currentMinigame?.minigame_type?.toLowerCase() ?? null;
-
-  // Minigame should start automatically if:
-  // 1. there is a minigame in this event
-  // 2. all dialogs are finished
-  // 3. minigame isn't already showing
+  // Minigame auto-start detector
   const startMiniGame =
     !!currentMinigame &&
     currentDialog == null &&
     !isShowingMinigame;
 
-  // Trigger minigame start → signal ChapterManager
   useEffect(() => {
     if (startMiniGame) {
       console.log("[GameScreen] Auto-start minigame triggered.");
       onMinigameComplete("start");
     }
-  }, [startMiniGame]);
+  }, [startMiniGame, onMinigameComplete]);
 
   const calledChapterEndRef = useRef(false);
   const mountedRef = useRef(true);
@@ -71,14 +52,14 @@ export default function GameScreen({
     });
   }, [currentMinigame, isShowingMinigame, currentEvent?.id, currentDialog]);
 
-  // --- BACKGROUND ---
+  // Background
   const backgroundSrc = currentEvent?.background
     ? `/images/${currentEvent.background}`
     : data?.background
     ? `/images/${data.background}`
     : "/images/kaede.jpg";
 
-  // --- CHARACTER POSE IMAGE ---
+  // Character pose image
   const getCharacterPoseImage = (characterName, pose) => {
     if (!characterName) return null;
     const chars = data?.characters ?? [];
@@ -95,7 +76,7 @@ export default function GameScreen({
   const currentPose = currentDialog?.pose ?? "neutral";
   const charSrc = getCharacterPoseImage(currentSpeaker, currentPose);
 
-  // --- RENDER PRIORITY ---
+  // Render priority
   let contentToRender;
 
   if (currentMinigame && isShowingMinigame) {
@@ -108,7 +89,7 @@ export default function GameScreen({
     contentToRender = "none";
   }
 
-  // No events: fallback
+  // No events fallback
   if (!data?.events?.length) {
     return (
       <div className="flex items-center justify-center h-full min-h-screen text-white bg-black/80">
@@ -124,7 +105,6 @@ export default function GameScreen({
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black text-white">
-      
       {/* BACKGROUND */}
       <div className="absolute inset-0 -z-20">
         <Image
@@ -150,12 +130,11 @@ export default function GameScreen({
       )}
 
       {/* GRADIENT */}
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/70 to-transparent z-20 pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
       {/* MAIN CONTENT */}
       <div className="absolute bottom-0 w-full z-30 px-4">
         <AnimatePresence mode="wait">
-
           {contentToRender === "minigame" && currentMinigame && (
             <motion.div
               key="minigame"
@@ -163,23 +142,39 @@ export default function GameScreen({
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.3 }}
-              className="w-full max-w-4xl mx-auto mb-41"
+              className="w-full max-w-4xl mx-auto mb-8"
             >
-              {currentMinigame.minigame_type === "TrueOrFalseFlashCard" ? (
+              {/* TRUE OR FALSE GAME */}
+              {currentMinigame.minigame_type === "TrueOrFalseFlashCard" && (
                 <TrueOrFalseFlashGame
                   minigameData={currentMinigame}
                   onComplete={onMinigameComplete}
                 />
-              ) : currentMinigame.minigame_type === "MultipleChoice" ? (
+              )}
+
+              {/* MULTIPLE CHOICE (old format with questions array) */}
+              {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.questions && (
                 <MiniGameMultipleChoice
                   minigameData={currentMinigame}
                   onComplete={onMinigameComplete}
                 />
-              ) : (
+              )}
+
+              {/* TEAM BUILDER (new format with tasks array) */}
+              {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.tasks && (
+                <TeamBuilderGame
+                  minigameData={currentMinigame}
+                  onComplete={onMinigameComplete}
+                />
+              )}
+
+              {/* UNKNOWN MINIGAME TYPE */}
+              {currentMinigame.minigame_type !== "TrueOrFalseFlashCard" && 
+               currentMinigame.minigame_type !== "MultipleChoice" && (
                 <div className="bg-red-900/50 p-4 rounded-lg text-center">
                   <p className="text-white mb-2">Unknown minigame type: {currentMinigame?.minigame_type}</p>
                   <button
-                    onClick={onMinigameComplete}
+                    onClick={() => onMinigameComplete({})}
                     className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 rounded-lg"
                   >
                     Skip Minigame
@@ -187,10 +182,9 @@ export default function GameScreen({
                 </div>
               )}
             </motion.div>
-        )}
+          )}
 
-
-          {/* --- CHOICE EVENT --- */}
+          {/* CHOICE EVENT */}
           {contentToRender === "choice" && (
             <motion.div
               key="choice"
@@ -234,7 +228,7 @@ export default function GameScreen({
             </motion.div>
           )}
 
-          {/* --- NORMAL DIALOG MODE --- */}
+          {/* NORMAL DIALOG MODE */}
           {contentToRender === "dialog" && (
             <motion.div
               key="dialog"
@@ -257,13 +251,12 @@ export default function GameScreen({
             </motion.div>
           )}
 
-          {/* --- NO CONTENT (loading) --- */}
+          {/* NO CONTENT (loading) */}
           {contentToRender === "none" && (
             <div className="w-full max-w-3xl mx-auto mb-34 text-center text-white">
               <p>Loading next scene...</p>
             </div>
           )}
-
         </AnimatePresence>
       </div>
     </div>
