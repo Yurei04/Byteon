@@ -5,7 +5,17 @@ import GameScreen from "./gameScreen";
 import ChapterIntro from "./chapterIntro";
 import EndCredits from "./endCredits";
 
-export default function ChapterManager({ chapterData, onNextChapter, onBackToMenu, chapterGameIndex }) {
+/**
+ * ChapterManager - Exposes State to Parent
+ * Now calls onStateChange callback to update parent with current progress
+ */
+export default function ChapterManager({ 
+  chapterData, 
+  onNextChapter, 
+  onBackToMenu, 
+  chapterGameIndex,
+  onStateChange  // NEW: Callback to update parent with current state
+}) {
   const [eventIndex, setEventIndex] = useState(0);
   const [dialogIndex, setDialogIndex] = useState(0);
   const [showChapterIntro, setShowChapterIntro] = useState(false);
@@ -27,6 +37,17 @@ export default function ChapterManager({ chapterData, onNextChapter, onBackToMen
 
   // Whether all dialogs for the current event have been shown
   const allDialogsFinished = dialogIndex >= dialogs.length;
+
+  // NEW: Notify parent of state changes
+  useEffect(() => {
+    if (onStateChange && showGame) {
+      onStateChange({
+        eventIndex,
+        dialogIndex,
+        isShowingMinigame
+      });
+    }
+  }, [eventIndex, dialogIndex, isShowingMinigame, showGame, onStateChange]);
 
   // Reset chapter-level state when chapterData changes
   useEffect(() => {
@@ -234,9 +255,7 @@ export default function ChapterManager({ chapterData, onNextChapter, onBackToMen
           onNextChapter={onNextChapter}
           data={chapterData}
           currentEvent={currentEvent}
-          // If we're in minigame mode we set currentDialog to null so GameScreen knows dialogs finished.
           currentDialog={isShowingMinigame ? null : currentDialog}
-          // Pass minigame only when showing it to avoid confusion in GameScreen
           currentMinigame={isShowingMinigame ? currentMinigame : null}
           isShowingMinigame={isShowingMinigame}
           onNext={handleNextDialog}
@@ -247,20 +266,6 @@ export default function ChapterManager({ chapterData, onNextChapter, onBackToMen
               console.log("[GameScreen] Chapter end triggered via onChapterEnd.");
               onNextChapter?.();
             }
-          }}
-        />
-      ) : showChapterIntro && onNextChapter ? (
-        <ChapterIntro
-          title={chapterData.title}
-          visible={true}
-          onStart={() => {
-            setShowChapterIntro(false);
-            setShowGame(true);
-          }}
-          onStay={() => {
-            setShowChapterIntro(false);
-            setShowGame(false);
-            if (onBackToMenu) onBackToMenu();
           }}
         />
       ) : (
