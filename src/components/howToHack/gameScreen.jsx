@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import GameDialogBox from "./gameDialogBox";
-import MiniGameMultipleChoice from "./multipleChoiceMG";
 import TrueOrFalseFlashGame from "./cardGame";
 import IdeaBuilderMiniGame from "./ideaBuilderMG";
+import MiniGameMultipleChoice from "./multipleChoiceMG";
 
 export default function GameScreen({
   data,
@@ -164,7 +164,7 @@ export default function GameScreen({
               )}
 
               {/* MULTIPLE CHOICE (old format with questions array) */}
-              {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.questions && (
+              {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.tasks && (
                 <MiniGameMultipleChoice
                   minigameData={currentMinigame}
                   onComplete={onMinigameComplete}

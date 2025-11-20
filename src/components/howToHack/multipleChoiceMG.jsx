@@ -145,7 +145,7 @@ export default function MiniGameMultipleChoice({ minigameData, onComplete }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-3xl mx-auto p-6 bg-black/80 border-2 border-fuchsia-500 rounded-xl shadow-2xl"
+        className="w-full max-h-[90%] mx-auto p-6 bg-black/80 border-2 border-fuchsia-500 rounded-xl shadow-2xl"
       >
         <div className="text-center">
           {/* Pass/Fail Header */}
@@ -258,7 +258,7 @@ export default function MiniGameMultipleChoice({ minigameData, onComplete }) {
 
   // TASK SCREEN
   return (
-    <div className="w-full max-w-3xl mx-auto p-4 bg-black/70 border border-white/20 rounded-xl shadow-xl">
+    <div className="w-full max-w-3xl mx-auto p-4 bg-black/70 border border-white/20 rounded-xl shadow-xl mb-24">
       {/* Header */}
       <div className="mb-4">
         <h2 className="text-2xl font-bold mb-1">{minigameData.minigame_title}</h2>
