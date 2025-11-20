@@ -171,7 +171,7 @@ useEffect(() => {
     // CRITICAL: Minigame completed!
     console.log("[ChapterManager] 🎮 Minigame completed! Result:", payload);
     
-    // Log achievement/points
+    // Log achievement/points  // WILL ADD AFTER LOGIN IN DONE
     if (payload && typeof payload === "object") {
       if (payload.passed) {
         console.log("✅ Player PASSED the minigame!");
@@ -184,12 +184,10 @@ useEffect(() => {
       }
     }
 
-    // CRITICAL FIX: Close minigame and mark as completed
     console.log("[ChapterManager] Closing minigame UI...");
     setIsShowingMinigame(false);
     setMinigameJustCompleted(true); // Prevent retriggering
-    
-    // CRITICAL FIX: Advance to NEXT EVENT after short delay
+
     setTimeout(() => {
       console.log("[ChapterManager] Auto-advancing to next event after minigame...");
       

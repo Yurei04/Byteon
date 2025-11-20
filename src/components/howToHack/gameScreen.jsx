@@ -5,7 +5,7 @@ import Image from "next/image";
 import GameDialogBox from "./gameDialogBox";
 import MiniGameMultipleChoice from "./multipleChoiceMG";
 import TrueOrFalseFlashGame from "./cardGame";
-import TeamBuilderGame from "./multipleChoiceMG";
+import IdeaBuilderMiniGame from "./ideaBuilderMG";
 
 export default function GameScreen({
   data,
@@ -172,8 +172,8 @@ export default function GameScreen({
               )}
 
               {/* TEAM BUILDER (new format with tasks array) */}
-              {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.tasks && (
-                <TeamBuilderGame
+              {currentMinigame.minigame_type === "MixAndMatch" && currentMinigame.tasks && (
+                <IdeaBuilderMiniGame
                   minigameData={currentMinigame}
                   onComplete={onMinigameComplete}
                 />
@@ -181,7 +181,8 @@ export default function GameScreen({
 
               {/* UNKNOWN MINIGAME TYPE */}
               {currentMinigame.minigame_type !== "TrueOrFalseFlashCard" && 
-               currentMinigame.minigame_type !== "MultipleChoice" && (
+                currentMinigame.minigame_type !== "MixAndMatch" && 
+                currentMinigame.minigame_type !== "MultipleChoice" && (
                 <div className="bg-red-900/50 p-4 rounded-lg text-center">
                   <p className="text-white mb-2">Unknown minigame type: {currentMinigame?.minigame_type}</p>
                   <button

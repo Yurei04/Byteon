@@ -194,7 +194,6 @@ export default function HowToHackPage() {
                         {/* RIGHT SIDE */}
                         <ResizablePanel defaultSize={30}>
                             <ResizablePanelGroup direction="vertical">
-
                                 {/* Top: GameFlow */}
                                 <ResizablePanel defaultSize={60}>
                                     {isStartGame ? (
@@ -206,15 +205,6 @@ export default function HowToHackPage() {
                                             <h1>Welcome To Byteon Visual Novel</h1>
                                         </div>
                                     )}
-                                </ResizablePanel>
-
-                                <ResizableHandle />
-
-                                {/* Bottom: Controls */}
-                                <ResizablePanel defaultSize={40}>
-                                    <div className="h-full bg-gray-950 p-4">
-                                        <GameControls />
-                                    </div>
                                 </ResizablePanel>
 
                             </ResizablePanelGroup>
