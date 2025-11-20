@@ -59,22 +59,32 @@ export default function GameScreen({
     ? `/images/${data.background}`
     : "/images/kaede.jpg";
 
-  // Character pose image
-  const getCharacterPoseImage = (characterName, pose) => {
-    if (!characterName) return null;
-    const chars = data?.characters ?? [];
-    const found = chars.find(
-      (c) =>
-        String(c.id).toLowerCase() === String(characterName).toLowerCase()
-    );
-    const poseFile = found?.poses?.[pose] ?? null;
-    if (poseFile) return `/images/characters/${poseFile}`;
-    return `/images/${String(characterName).toLowerCase()}.jpg`;
+  // Get character image - now directly from dialog.image
+  const getCharacterImage = (dialog) => {
+    if (!dialog) return null;
+    
+    const character = dialog.character;
+    
+    // Don't show images for Narrator or You
+    if (!character || character === "Narrator" || character === "You") {
+      return null;
+    }
+    
+    // If dialog has direct image path, use it
+    if (dialog.image) {
+      console.log("[Character Image - Direct]", dialog.image);
+      return dialog.image;
+    }
+    
+    // Fallback: construct from character + pose (backward compatibility)
+    const pose = dialog.pose || "neutral";
+    const fallbackPath = `/images/${character.toLowerCase()}_${pose.toLowerCase()}.png`;
+    console.log("[Character Image - Fallback]", fallbackPath);
+    return fallbackPath;
   };
 
   const currentSpeaker = currentDialog?.character ?? "Narrator";
-  const currentPose = currentDialog?.pose ?? "neutral";
-  const charSrc = getCharacterPoseImage(currentSpeaker, currentPose);
+  const charSrc = getCharacterImage(currentDialog);
 
   // Render priority
   let contentToRender;
@@ -116,21 +126,22 @@ export default function GameScreen({
         />
       </div>
 
+
       {/* CHARACTER — HIDDEN DURING MINI GAME */}
       {charSrc && contentToRender !== "minigame" && (
-        <div className="absolute bottom-0 left-10 z-10 pointer-events-none">
+        <div className="absolute flex justify-center items-start z-10 pointer-events-none w-[400px] h-[400px]">
           <Image
             src={charSrc}
-            width={550}
-            height={550}
             alt={currentSpeaker}
+            fill
             className="object-contain drop-shadow-[0_0_15px_rgba(0,0,0,0.6)]"
           />
         </div>
       )}
 
+
       {/* GRADIENT */}
-      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent z-20 pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
       {/* MAIN CONTENT */}
       <div className="absolute bottom-0 w-full z-30 px-4">
@@ -236,7 +247,7 @@ export default function GameScreen({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="w-full max-w-3xl mx-auto mb-34 relative z-30"
+              className="w-full max-w-3xl mx-auto mb-20 relative z-30"
             >
               <div className="rounded-xl overflow-hidden shadow-lg bg-black/60 border border-white/20 backdrop-blur-md p-4">
                 <GameDialogBox
@@ -255,6 +266,7 @@ export default function GameScreen({
           {contentToRender === "none" && (
             <div className="w-full max-w-3xl mx-auto mb-34 text-center text-white">
               <p>Loading next scene...</p>
+              <p>Error in Loading Scenes</p>
             </div>
           )}
         </AnimatePresence>

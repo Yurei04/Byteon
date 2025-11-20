@@ -21,7 +21,7 @@ export default function TipsAndResources (
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 3, duration: 1 }}
             >
-                Tips and Resources
+                Tips and Tricks
             </motion.h1>
 
         </motion.div>
