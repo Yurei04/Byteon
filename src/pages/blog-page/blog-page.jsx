@@ -55,7 +55,7 @@ export default function BlogPage() {
             >
                 <div className="text-center mb-4 ">
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-500">
+                    <span className="text-transparent bg-clip-text bg-linear-to-r from-fuchsia-300 to-purple-500">
                         Byteon Blog
                     </span>
                     </h1>

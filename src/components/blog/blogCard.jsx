@@ -41,12 +41,7 @@ export default function BlogCard({ id, title, des, image, author, hackathon, pla
           </CardTitle>
           <p className="text-xs text-fuchsia-300 mt-1">by {author || "Byteon"}</p>
         </div>
-
-        <div className="flex items-center justify-between mt-3 text-fuchsia-300 text-xs">
-          <span>{place}</span>
-          <span className="opacity-75">{hackathon}</span>
-        </div>
-
+        
         <div className="flex gap-2 mt-3 flex-wrap">
           {(Array.isArray(theme) ? theme : [theme]).map((t, i) => (
             <Badge key={i} className={badgeStyle}>

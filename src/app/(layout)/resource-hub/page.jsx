@@ -1,8 +1,13 @@
+import Footer from "@/components/footer";
+import NavBar from "@/components/navbar";
+import ResourceHubPage from "@/pages/resource-hub-page/resource-hub-page";
 
 export default function ResourceHub () {
     return (
-        <div className="flex flex-col p-0 m-0 items-center justify-center overflow-x-hidden">
-
+        <div className="w-full min-h-screen overflow-x-hidden">
+            <NavBar />
+            <ResourceHubPage />
+            <Footer />
         </div>
     )
 }
