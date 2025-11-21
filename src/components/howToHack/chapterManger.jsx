@@ -270,8 +270,9 @@ useEffect(() => {
 
 
         />
-      ) : endGame ? (
-        <EndCredits />
+      )  : endGame ? (
+        <EndCredits onComplete={onBackToMenu} />
+      
       ) : (
         <div>
           erorr in game loading...

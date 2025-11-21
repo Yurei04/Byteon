@@ -8,10 +8,14 @@ export default function EndCredits({ onComplete }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsComplete(true);
+      // Automatically call onComplete after credits finish
+      if (onComplete) {
+        onComplete();
+      }
     }, 45000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [onComplete]);
 
   const stars = useMemo(
     () =>
@@ -42,15 +46,6 @@ export default function EndCredits({ onComplete }) {
     { type: "credit", role: "Character Design & Audio", name: "Gunther Kaede Pineda" },
 
     { type: "space" },
-/*
-    { type: "section", text: "Technology Stack" },
-    { type: "credit", role: "Frontend Framework", name: "Next.js & React" },
-    { type: "credit", role: "Styling", name: "Tailwind CSS" },
-    { type: "credit", role: "Animations", name: "Framer Motion" },
-    { type: "credit", role: "Image Processing", name: "Next/Image" },
-
-    { type: "space" },
-*/
 
     { type: "section", text: "Special Thanks" },
     { type: "name", text: "Our Amazing Hackathon Participants" },
@@ -93,8 +88,13 @@ export default function EndCredits({ onComplete }) {
     { type: "space" },
     { type: "space" },
     { type: "space" },
-    { type: "button" },
   ];
+
+  const handleReturnToMenu = () => {
+    if (onComplete) {
+      onComplete();
+    }
+  };
 
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-slate-950 via-purple-950 to-black overflow-hidden">
@@ -140,31 +140,6 @@ export default function EndCredits({ onComplete }) {
         >
           {credits.map((item, index) => {
             if (item.type === "space") return <div key={index} className="h-12" />;
-
-            if (item.type === "button") {
-              return (
-                <motion.button
-                  key={index}
-                  className="px-12 py-6 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 hover:from-fuchsia-500 hover:via-purple-500 hover:to-pink-500 rounded-2xl text-white text-2xl font-black shadow-2xl border border-white/20 mb-20"
-                  style={{
-                    boxShadow:
-                      "0 0 60px rgba(217,70,239,0.5), 0 0 100px rgba(168,85,247,0.3)",
-                  }}
-                  onClick={onComplete}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  whileHover={{
-                    scale: 1.1,
-                    boxShadow:
-                      "0 0 80px rgba(217,70,239,0.7), 0 0 120px rgba(168,85,247,0.5)",
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Return to Main Menu
-                </motion.button>
-              );
-            }
 
             if (item.type === "title") {
               return (
@@ -281,10 +256,11 @@ export default function EndCredits({ onComplete }) {
         </motion.div>
       </div>
 
-      {!isComplete && onComplete && (
+      {/* Skip Credits Button - Always visible */}
+      {onComplete && (
         <motion.button
           className="fixed bottom-10 right-10 px-8 py-4 bg-gradient-to-r from-fuchsia-600/90 to-purple-600/90 hover:from-fuchsia-500 hover:to-purple-500 backdrop-blur-md rounded-2xl text-white font-bold transition-all z-50 border border-white/20 shadow-2xl shadow-fuchsia-500/30"
-          onClick={onComplete}
+          onClick={handleReturnToMenu}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2 }}
@@ -293,33 +269,6 @@ export default function EndCredits({ onComplete }) {
         >
           Skip Credits →
         </motion.button>
-      )}
-
-      {isComplete && onComplete && (
-        <motion.div
-          className="fixed inset-0 flex items-center justify-center bg-black/90 backdrop-blur-sm z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <motion.button
-            className="px-12 py-6 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 hover:from-fuchsia-500 hover:via-purple-500 hover:to-pink-500 rounded-2xl text-white text-2xl font-black shadow-2xl border border-white/20"
-            style={{
-              boxShadow:
-                "0 0 60px rgba(217,70,239,0.5), 0 0 100px rgba(168,85,247,0.3)",
-            }}
-            onClick={onComplete}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            whileHover={{
-              scale: 1.1,
-              boxShadow:
-                "0 0 80px rgba(217,70,239,0.7), 0 0 120px rgba(168,85,247,0.5)",
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Return to Main Menu
-          </motion.button>
-        </motion.div>
       )}
     </div>
   );
