@@ -5,7 +5,7 @@ import { PartnersCard } from "../../components/partners/partners-card"
 const data = [
     {
         name: "Hack United",
-        image: "/images/hackunited2.png",
+        image: "/images/HackUnited2.png",
         location: "USA",
         des: "Empowering the Next Generation of Tech Innovators",
         websiteLink: "https://www.hackunited.org/",

@@ -15,15 +15,16 @@ export function PartnersCard({
     return (
         <Card className="w-full sm:w-[90%] lg:w-full flex flex-col sm:flex-row items-center sm:items-start justify-between p-4 gap-4 bg-fuchsia-900/20 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 transition-all duration-300">
             
-            <CardHeader className="shrink-0 w-full sm:w-50 h-40  overflow-hidden rounded-xl flex items-center justify-center">
+            <CardHeader className="shrink-0 w-full sm:w-50 h-40 overflow-hidden rounded-xl flex items-center justify-center bg-fuchsia-500/40 border border-fuchsia-300 p-4">
                 <Image
                     src={image}
                     alt={name}
                     width={260}
                     height={260}
-                    className="object-cover w-full h-full bg-fuchsia-500/40 rounded-2xl p-4 border border-fuchsia-300"
+                    className="object-contain w-auto h-full"
                 />
             </CardHeader>
+
 
             <CardContent className="flex flex-col flex-1 gap-4 p-0">
                 <div className="flex flex-col justify-start sm:mb-2">
