@@ -193,96 +193,432 @@
           ]
         },
         {
-          "minigame_type":"MixAndMatch",
-          "minigame_title": "Idea Builder",
-          "description": "Combine one problem, one technology, and one impact to generate your idea.",
-          "categories": {
-            "problems": [
-              "Plastic pollution",
-              "Students struggling to focus",
-              "Rural areas lacking healthcare access",
-              "Social isolation among teens"
-            ],
-            "technologies": [
-              "AI chatbot",
-              "Mobile app",
-              "Sensor system",
-              "Web platform"
-            ],
-            "impacts": [
-              "Empower communities",
-              "Improve mental well-being",
-              "Educate and inspire users",
-              "Reduce waste"
-            ]
+          "minigame_type": "MixAndMatch",
+          "minigame_title": "Idea Builder - Step by Step",
+          "description": "Pick a problem, then a technology, then an impact — and see your generated idea.",
+          "steps": [
+            {
+              "step": 1,
+              "prompt": "Choose a problem",
+              "options": [
+                "Plastic pollution",
+                "Students struggling to focus",
+                "Rural areas lacking healthcare access",
+                "Social isolation among teens"
+              ]
             },
-              "combinations": [
-                {"problem":"Plastic pollution","technology":"AI chatbot","impact":"Empower communities","idea_result":"An AI chatbot that encourages communities to reduce plastic usage."},
-                {"problem":"Plastic pollution","technology":"AI chatbot","impact":"Improve mental well-being","idea_result":"An AI chatbot that educates users about plastic reduction while promoting mindful habits."},
-                {"problem":"Plastic pollution","technology":"AI chatbot","impact":"Educate and inspire users","idea_result":"An AI chatbot that teaches users about recycling and inspires sustainable practices."},
-                {"problem":"Plastic pollution","technology":"AI chatbot","impact":"Reduce waste","idea_result":"An AI chatbot that guides users on reducing plastic waste in daily life."},
-                {"problem":"Plastic pollution","technology":"Mobile app","impact":"Empower communities","idea_result":"A mobile app that connects local communities to tackle plastic pollution together."},
-                {"problem":"Plastic pollution","technology":"Mobile app","impact":"Improve mental well-being","idea_result":"A mobile app that promotes eco-friendly challenges to boost mood and purpose."},
-                {"problem":"Plastic pollution","technology":"Mobile app","impact":"Educate and inspire users","idea_result":"A mobile app providing tips and interactive games about plastic reduction."},
-                {"problem":"Plastic pollution","technology":"Mobile app","impact":"Reduce waste","idea_result":"A mobile app that tracks plastic use and suggests alternatives."},
-                {"problem":"Plastic pollution","technology":"Sensor system","impact":"Empower communities","idea_result":"Sensors in neighborhoods track plastic disposal, helping communities improve recycling habits."},
-                {"problem":"Plastic pollution","technology":"Sensor system","impact":"Improve mental well-being","idea_result":"Sensors alert users when to recycle and encourage responsible habits to reduce guilt and stress."},
-                {"problem":"Plastic pollution","technology":"Sensor system","impact":"Educate and inspire users","idea_result":"Sensors provide feedback on plastic usage and teach sustainable choices."},
-                {"problem":"Plastic pollution","technology":"Sensor system","impact":"Reduce waste","idea_result":"Sensors monitor plastic waste and suggest ways to cut down usage."},
-                {"problem":"Plastic pollution","technology":"Web platform","impact":"Empower communities","idea_result":"A web platform where communities can organize plastic cleanup events."},
-                {"problem":"Plastic pollution","technology":"Web platform","impact":"Improve mental well-being","idea_result":"A web platform that gamifies eco-actions to improve users' sense of contribution."},
-                {"problem":"Plastic pollution","technology":"Web platform","impact":"Educate and inspire users","idea_result":"A web platform teaching the impact of plastic on the environment with interactive resources."},
-                {"problem":"Plastic pollution","technology":"Web platform","impact":"Reduce waste","idea_result":"A web platform that tracks waste reduction progress across communities."},
-                {"problem":"Students struggling to focus","technology":"AI chatbot","impact":"Empower communities","idea_result":"An AI chatbot that encourages students to form study groups and stay motivated."},
-                {"problem":"Students struggling to focus","technology":"AI chatbot","impact":"Improve mental well-being","idea_result":"An AI chatbot providing motivational reminders and mental wellness tips while studying."},
-                {"problem":"Students struggling to focus","technology":"AI chatbot","impact":"Educate and inspire users","idea_result":"An AI chatbot guiding students to manage study time and achieve goals."},
-                {"problem":"Students struggling to focus","technology":"AI chatbot","impact":"Reduce waste","idea_result":"An AI chatbot that suggests ways to optimize study time, reducing wasted hours."},
-                {"problem":"Students struggling to focus","technology":"Mobile app","impact":"Empower communities","idea_result":"A mobile app connecting students to collaborative study sessions."},
-                {"problem":"Students struggling to focus","technology":"Mobile app","impact":"Improve mental well-being","idea_result":"A mobile app that gamifies studying to keep students engaged and positive."},
-                {"problem":"Students struggling to focus","technology":"Mobile app","impact":"Educate and inspire users","idea_result":"A mobile app providing micro-lessons and daily motivation."},
-                {"problem":"Students struggling to focus","technology":"Mobile app","impact":"Reduce waste","idea_result":"A mobile app that tracks study time and reduces time wasted on distractions."},
-                {"problem":"Students struggling to focus","technology":"Sensor system","impact":"Empower communities","idea_result":"Sensors detect student engagement and notify study groups to help each other."},
-                {"problem":"Students struggling to focus","technology":"Sensor system","impact":"Improve mental well-being","idea_result":"Sensors monitor focus and suggest breaks to prevent burnout."},
-                {"problem":"Students struggling to focus","technology":"Sensor system","impact":"Educate and inspire users","idea_result":"Sensors track learning progress and give feedback to inspire improvement."},
-                {"problem":"Students struggling to focus","technology":"Sensor system","impact":"Reduce waste","idea_result":"Sensors monitor inefficient study habits and suggest optimized routines."},
-                {"problem":"Students struggling to focus","technology":"Web platform","impact":"Empower communities","idea_result":"A web platform where students share study tips and support each other."},
-                {"problem":"Students struggling to focus","technology":"Web platform","impact":"Improve mental well-being","idea_result":"A web platform providing mental wellness tips while learning online."},
-                {"problem":"Students struggling to focus","technology":"Web platform","impact":"Educate and inspire users","idea_result":"A web platform offering interactive learning tools and encouragement."},
-                {"problem":"Students struggling to focus","technology":"Web platform","impact":"Reduce waste","idea_result":"A web platform that tracks progress and reduces wasted study time."},
-                {"problem":"Rural areas lacking healthcare access","technology":"AI chatbot","impact":"Empower communities","idea_result":"An AI chatbot guiding rural communities on available health resources."},
-                {"problem":"Rural areas lacking healthcare access","technology":"AI chatbot","impact":"Improve mental well-being","idea_result":"An AI chatbot offering mental health guidance in remote regions."},
-                {"problem":"Rural areas lacking healthcare access","technology":"AI chatbot","impact":"Educate and inspire users","idea_result":"An AI chatbot teaching health literacy and awareness."},
-                {"problem":"Rural areas lacking healthcare access","technology":"AI chatbot","impact":"Reduce waste","idea_result":"An AI chatbot reducing unnecessary hospital visits through guidance."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Mobile app","impact":"Empower communities","idea_result":"A mobile app connecting rural patients to doctors remotely."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Mobile app","impact":"Improve mental well-being","idea_result":"A mobile app offering counseling and support to rural users."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Mobile app","impact":"Educate and inspire users","idea_result":"A mobile app providing educational healthcare content to rural communities."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Mobile app","impact":"Reduce waste","idea_result":"A mobile app minimizing travel by providing virtual checkups."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Sensor system","impact":"Empower communities","idea_result":"Health sensors deployed in villages to monitor vital signs and alert communities."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Sensor system","impact":"Improve mental well-being","idea_result":"Sensors track health indicators and reduce anxiety for patients and families."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Sensor system","impact":"Educate and inspire users","idea_result":"Sensors provide learning opportunities on health for locals."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Sensor system","impact":"Reduce waste","idea_result":"Sensors optimize healthcare delivery, reducing wasted resources."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Web platform","impact":"Empower communities","idea_result":"A web platform connecting doctors, nurses, and rural patients efficiently."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Web platform","impact":"Improve mental well-being","idea_result":"A web platform offering teletherapy and support groups."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Web platform","impact":"Educate and inspire users","idea_result":"A web platform with health education content for underserved areas."},
-                {"problem":"Rural areas lacking healthcare access","technology":"Web platform","impact":"Reduce waste","idea_result":"A web platform coordinating appointments to avoid unnecessary visits."},
-                {"problem":"Social isolation among teens","technology":"AI chatbot","impact":"Empower communities","idea_result":"An AI chatbot connecting teens to safe online communities."},
-                {"problem":"Social isolation among teens","technology":"AI chatbot","impact":"Improve mental well-being","idea_result":"An AI chatbot offering support and conversation to isolated teens."},
-                {"problem":"Social isolation among teens","technology":"AI chatbot","impact":"Educate and inspire users","idea_result":"An AI chatbot providing guidance and motivation for teens."},
-                {"problem":"Social isolation among teens","technology":"AI chatbot","impact":"Reduce waste","idea_result":"An AI chatbot suggesting activities to make social time productive."},
-                {"problem":"Social isolation among teens","technology":"Mobile app","impact":"Empower communities","idea_result":"A mobile app connecting teens for collaborative projects and hobbies."},
-                {"problem":"Social isolation among teens","technology":"Mobile app","impact":"Improve mental well-being","idea_result":"A mobile app offering virtual hangouts and counseling features."},
-                {"problem":"Social isolation among teens","technology":"Mobile app","impact":"Educate and inspire users","idea_result":"A mobile app with resources to build social skills and confidence."},
-                {"problem":"Social isolation among teens","technology":"Mobile app","impact":"Reduce waste","idea_result":"A mobile app that helps teens spend screen time productively."},
-                {"problem":"Social isolation among teens","technology":"Sensor system","impact":"Empower communities","idea_result":"Sensors in schools detect social isolation trends and suggest group activities."},
-                {"problem":"Social isolation among teens","technology":"Sensor system","impact":"Improve mental well-being","idea_result":"Sensors monitor engagement and recommend mental wellness activities."},
-                {"problem":"Social isolation among teens","technology":"Sensor system","impact":"Educate and inspire users","idea_result":"Sensors track social skills progress and offer learning insights."},
-                {"problem":"Social isolation among teens","technology":"Sensor system","impact":"Reduce waste","idea_result":"Sensors help reduce wasted time and energy in unproductive activities."},
-                {"problem":"Social isolation among teens","technology":"Web platform","impact":"Empower communities","idea_result":"A web platform where teens can join clubs, collaborate, and socialize safely."},
-                {"problem":"Social isolation among teens","technology":"Web platform","impact":"Improve mental well-being","idea_result":"A web platform providing peer support and guided discussions."},
-                {"problem":"Social isolation among teens","technology":"Web platform","impact":"Educate and inspire users","idea_result":"A web platform offering workshops and resources for social development."},
-                {"problem":"Social isolation among teens","technology":"Web platform","impact":"Reduce waste","idea_result":"A web platform that helps teens optimize time spent online meaningfully."}
-              ],
-              
+            {
+              "step": 2,
+              "prompt": "Choose a technology",
+              "options": [
+                "AI chatbot",
+                "Mobile app",
+                "Sensor system",
+                "Web platform"
+              ]
+            },
+            {
+              "step": 3,
+              "prompt": "Choose an impact",
+              "options": [
+                "Empower communities",
+                "Improve mental well-being",
+                "Educate and inspire users",
+                "Reduce waste"
+              ]
+            },
+            {
+              "step": 4,
+              "prompt": "Here’s your idea!",
+              "show_result": true
+            }
+          ],
+          "combinations": [
+            {
+              "problem": "Plastic pollution",
+              "technology": "AI chatbot",
+              "impact": "Empower communities",
+              "idea_result": "An AI chatbot that encourages communities to reduce plastic usage."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "AI chatbot",
+              "impact": "Improve mental well-being",
+              "idea_result": "An AI chatbot that educates users about plastic reduction while promoting mindful habits."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "AI chatbot",
+              "impact": "Educate and inspire users",
+              "idea_result": "An AI chatbot that teaches users about recycling and inspires sustainable practices."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "AI chatbot",
+              "impact": "Reduce waste",
+              "idea_result": "An AI chatbot that guides users on reducing plastic waste in daily life."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Mobile app",
+              "impact": "Empower communities",
+              "idea_result": "A mobile app that connects local communities to tackle plastic pollution together."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Mobile app",
+              "impact": "Improve mental well-being",
+              "idea_result": "A mobile app that promotes eco-friendly challenges to boost mood and purpose."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Mobile app",
+              "impact": "Educate and inspire users",
+              "idea_result": "A mobile app providing tips and interactive games about plastic reduction."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Mobile app",
+              "impact": "Reduce waste",
+              "idea_result": "A mobile app that tracks plastic use and suggests alternatives."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Sensor system",
+              "impact": "Empower communities",
+              "idea_result": "Sensors in neighborhoods track plastic disposal, helping communities improve recycling habits."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Sensor system",
+              "impact": "Improve mental well-being",
+              "idea_result": "Sensors alert users when to recycle and encourage responsible habits to reduce guilt and stress."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Sensor system",
+              "impact": "Educate and inspire users",
+              "idea_result": "Sensors provide feedback on plastic usage and teach sustainable choices."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Sensor system",
+              "impact": "Reduce waste",
+              "idea_result": "Sensors monitor plastic waste and suggest ways to cut down usage."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Web platform",
+              "impact": "Empower communities",
+              "idea_result": "A web platform where communities can organize plastic cleanup events."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Web platform",
+              "impact": "Improve mental well-being",
+              "idea_result": "A web platform that gamifies eco-actions to improve users' sense of contribution."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Web platform",
+              "impact": "Educate and inspire users",
+              "idea_result": "A web platform teaching the impact of plastic on the environment with interactive resources."
+            },
+            {
+              "problem": "Plastic pollution",
+              "technology": "Web platform",
+              "impact": "Reduce waste",
+              "idea_result": "A web platform that tracks waste reduction progress across communities."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "AI chatbot",
+              "impact": "Empower communities",
+              "idea_result": "An AI chatbot that encourages students to form study groups and stay motivated."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "AI chatbot",
+              "impact": "Improve mental well-being",
+              "idea_result": "An AI chatbot providing motivational reminders and mental wellness tips while studying."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "AI chatbot",
+              "impact": "Educate and inspire users",
+              "idea_result": "An AI chatbot guiding students to manage study time and achieve goals."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "AI chatbot",
+              "impact": "Reduce waste",
+              "idea_result": "An AI chatbot that suggests ways to optimize study time, reducing wasted hours."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Mobile app",
+              "impact": "Empower communities",
+              "idea_result": "A mobile app connecting students to collaborative study sessions."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Mobile app",
+              "impact": "Improve mental well-being",
+              "idea_result": "A mobile app that gamifies studying to keep students engaged and positive."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Mobile app",
+              "impact": "Educate and inspire users",
+              "idea_result": "A mobile app providing micro-lessons and daily motivation."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Mobile app",
+              "impact": "Reduce waste",
+              "idea_result": "A mobile app that tracks study time and reduces time wasted on distractions."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Sensor system",
+              "impact": "Empower communities",
+              "idea_result": "Sensors detect student engagement and notify study groups to help each other."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Sensor system",
+              "impact": "Improve mental well-being",
+              "idea_result": "Sensors monitor focus and suggest breaks to prevent burnout."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Sensor system",
+              "impact": "Educate and inspire users",
+              "idea_result": "Sensors track learning progress and give feedback to inspire improvement."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Sensor system",
+              "impact": "Reduce waste",
+              "idea_result": "Sensors monitor inefficient study habits and suggest optimized routines."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Web platform",
+              "impact": "Empower communities",
+              "idea_result": "A web platform where students share study tips and support each other."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Web platform",
+              "impact": "Improve mental well-being",
+              "idea_result": "A web platform providing mental wellness tips while learning online."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Web platform",
+              "impact": "Educate and inspire users",
+              "idea_result": "A web platform offering interactive learning tools and encouragement."
+            },
+            {
+              "problem": "Students struggling to focus",
+              "technology": "Web platform",
+              "impact": "Reduce waste",
+              "idea_result": "A web platform that tracks progress and reduces wasted study time."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "AI chatbot",
+              "impact": "Empower communities",
+              "idea_result": "An AI chatbot guiding rural communities on available health resources."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "AI chatbot",
+              "impact": "Improve mental well-being",
+              "idea_result": "An AI chatbot offering mental health guidance in remote regions."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "AI chatbot",
+              "impact": "Educate and inspire users",
+              "idea_result": "An AI chatbot teaching health literacy and awareness."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "AI chatbot",
+              "impact": "Reduce waste",
+              "idea_result": "An AI chatbot reducing unnecessary hospital visits through guidance."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Mobile app",
+              "impact": "Empower communities",
+              "idea_result": "A mobile app connecting rural patients to doctors remotely."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Mobile app",
+              "impact": "Improve mental well-being",
+              "idea_result": "A mobile app offering counseling and support to rural users."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Mobile app",
+              "impact": "Educate and inspire users",
+              "idea_result": "A mobile app providing educational healthcare content to rural communities."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Mobile app",
+              "impact": "Reduce waste",
+              "idea_result": "A mobile app minimizing travel by providing virtual checkups."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Sensor system",
+              "impact": "Empower communities",
+              "idea_result": "Health sensors deployed in villages to monitor vital signs and alert communities."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Sensor system",
+              "impact": "Improve mental well-being",
+              "idea_result": "Sensors track health indicators and reduce anxiety for patients and families."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Sensor system",
+              "impact": "Educate and inspire users",
+              "idea_result": "Sensors provide learning opportunities on health for locals."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Sensor system",
+              "impact": "Reduce waste",
+              "idea_result": "Sensors optimize healthcare delivery, reducing wasted resources."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Web platform",
+              "impact": "Empower communities",
+              "idea_result": "A web platform connecting doctors, nurses, and rural patients efficiently."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Web platform",
+              "impact": "Improve mental well-being",
+              "idea_result": "A web platform offering teletherapy and support groups."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Web platform",
+              "impact": "Educate and inspire users",
+              "idea_result": "A web platform with health education content for underserved areas."
+            },
+            {
+              "problem": "Rural areas lacking healthcare access",
+              "technology": "Web platform",
+              "impact": "Reduce waste",
+              "idea_result": "A web platform coordinating appointments to avoid unnecessary visits."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "AI chatbot",
+              "impact": "Empower communities",
+              "idea_result": "An AI chatbot connecting teens to safe online communities."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "AI chatbot",
+              "impact": "Improve mental well-being",
+              "idea_result": "An AI chatbot offering support and conversation to isolated teens."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "AI chatbot",
+              "impact": "Educate and inspire users",
+              "idea_result": "An AI chatbot providing guidance and motivation for teens."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "AI chatbot",
+              "impact": "Reduce waste",
+              "idea_result": "An AI chatbot suggesting activities to make social time productive."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Mobile app",
+              "impact": "Empower communities",
+              "idea_result": "A mobile app connecting teens for collaborative projects and hobbies."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Mobile app",
+              "impact": "Improve mental well-being",
+              "idea_result": "A mobile app offering virtual hangouts and counseling features."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Mobile app",
+              "impact": "Educate and inspire users",
+              "idea_result": "A mobile app with resources to build social skills and confidence."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Mobile app",
+              "impact": "Reduce waste",
+              "idea_result": "A mobile app that helps teens spend screen time productively."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Sensor system",
+              "impact": "Empower communities",
+              "idea_result": "Sensors in schools detect social isolation trends and suggest group activities."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Sensor system",
+              "impact": "Improve mental well-being",
+              "idea_result": "Sensors monitor engagement and recommend mental wellness activities."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Sensor system",
+              "impact": "Educate and inspire users",
+              "idea_result": "Sensors track social skills progress and offer learning insights."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Sensor system",
+              "impact": "Reduce waste",
+              "idea_result": "Sensors help reduce wasted time and energy in unproductive activities."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Web platform",
+              "impact": "Empower communities",
+              "idea_result": "A web platform where teens can join clubs, collaborate, and socialize safely."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Web platform",
+              "impact": "Improve mental well-being",
+              "idea_result": "A web platform providing peer support and guided discussions."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Web platform",
+              "impact": "Educate and inspire users",
+              "idea_result": "A web platform offering workshops and resources for social development."
+            },
+            {
+              "problem": "Social isolation among teens",
+              "technology": "Web platform",
+              "impact": "Reduce waste",
+              "idea_result": "A web platform that helps teens optimize time spent online meaningfully."
+            }
+          ],
                 "completion_message": "Fantastic! You just brainstormed like a real innovator. Fast, focused, and fearless! 💡",
                 "achievement": {
                 "title": "Idea Innovator",
