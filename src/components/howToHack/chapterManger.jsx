@@ -21,6 +21,7 @@ export default function ChapterManager({
   const [showChapterIntro, setShowChapterIntro] = useState(false);
   const [showGame, setShowGame] = useState(false);
   const calledChapterEndRef = useRef(false);
+  const [endGame, setEndGame] = useState(false);
 
   // minigame state
   const [isShowingMinigame, setIsShowingMinigame] = useState(false);
@@ -145,12 +146,21 @@ useEffect(() => {
       return;
     }
 
-    // 3) no more events -> chapter finished
+
     if (!calledChapterEndRef.current) {
       calledChapterEndRef.current = true;
       console.log("[ChapterManager] Chapter complete! Triggering next chapter...");
-      onNextChapter?.();
+      
+      // Check if this is the last chapter (chapter 5, index 4)
+      if (chapterGameIndex === 4) {
+        console.log("[ChapterManager] Final chapter complete! Showing end credits...");
+        setEndGame(true);
+        setShowGame(false);
+      } else {
+        onNextChapter?.();
+      }
     }
+  
   };
 
   // Handler for minigame completion
@@ -212,23 +222,12 @@ useEffect(() => {
   if (!chapterData || !events.length) {
     console.warn("[ChapterManager] Chapter data missing or empty.");
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-screen text-center text-white bg-black/80 p-6">
-        <h1 className="text-3xl font-bold mb-4">No Scenes in this Chapter</h1>
-        <p className="mb-2">Add events to this chapter JSON to play it.</p>
-        <p className="text-sm text-gray-400">
-          Expected structure: {"{ chapters: [ { events: [...] } ] }"}
-        </p>
-        <button
-          onClick={() => {
-            console.log("[Debug] Manually triggering next chapter...");
-            onNextChapter?.();
-          }}
-          className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-lg"
-        >
-          Next Chapter
-        </button>
-      </div>
+      <EndCredits/>
     );
+  }
+
+  if (chapterGameIndex === 6) {
+    <EndCredits />
   }
 
   // Main render
@@ -268,9 +267,15 @@ useEffect(() => {
               onNextChapter?.();
             }
           }}
+
+
         />
-      ) : (
+      ) : endGame ? (
         <EndCredits />
+      ) : (
+        <div>
+          erorr in game loading...
+        </div>
       )}
     </div>
   );

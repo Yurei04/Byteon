@@ -172,7 +172,7 @@ export default function GameScreen({
               )}
 
               {/* TEAM BUILDER (new format with tasks array) */}
-              {currentMinigame.minigame_type === "MixAndMatch" && currentMinigame.tasks && (
+              {currentMinigame.minigame_type === "MixAndMatch" && currentMinigame.combinations && (
                 <IdeaBuilderMiniGame
                   minigameData={currentMinigame}
                   onComplete={onMinigameComplete}
@@ -268,6 +268,7 @@ export default function GameScreen({
             <div className="w-full max-w-3xl mx-auto mb-34 text-center text-white">
               <p>Loading next scene...</p>
               <p>Error in Loading Scenes</p>
+              
             </div>
           )}
         </AnimatePresence>

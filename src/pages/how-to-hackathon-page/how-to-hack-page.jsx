@@ -8,6 +8,7 @@ import { GameExit } from "@/components/howToHack/GameExit";
 import GameFlow from "@/components/howToHack/gameFlow";
 import GameControls from "@/components/howToHack/gameControls";
 import ChapterManager from "@/components/howToHack/chapterManger";
+import EndCredits from "@/components/howToHack/endCredits";
 
 export default function HowToHackPage() {
     /* ----------------------------- STATE HOOKS FIRST ----------------------------- */
