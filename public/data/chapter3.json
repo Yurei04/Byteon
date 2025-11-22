@@ -175,80 +175,164 @@
               "text": "Perfect! Because here comes your next challenge."
             }
           ],
-                    "minigame": {
-          "minigame_type": "SequentialIdeaBuilder",
-          "minigame_title": "Team Builder",
-          "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
-          "tasks": [
-            {
-              "id": 1,
-              "task": "Design the app's layout",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Designer"]
-            },
-            {
-              "id": 2,
-              "task": "Fix a bug in the login system",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Developer"]
-            },
-            {
-              "id": 3,
-              "task": "Write the pitch script",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Presenter"]
-            },
-            {
-              "id": 4,
-              "task": "Brainstorm project ideas",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Developer", "Designer", "Presenter"]
-            },
-            {
-              "id": 5,
-              "task": "Test the prototype",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Developer", "Designer"]
-            },
-            {
-              "id": 6,
-              "task": "Create the app logo and branding",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Designer"]
-            },
-            {
-              "id": 7,
-              "task": "Prepare and deliver the final pitch",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Presenter"]
-            },
-            {
-              "id": 8,
-              "task": "Connect the frontend to the backend API",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Developer"]
-            },
-            {
-              "id": 9,
-              "task": "Create user flow diagrams",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Designer"]
-            },
-            {
-              "id": 10,
-              "task": "Organize the team's project plan and timeline",
-              "options": ["Developer", "Designer", "Presenter"],
-              "correct_answer": ["Presenter"]
+          "minigame": {
+            "minigame_type": "IdeaBuilderMiniGame",
+            "minigame_title": "SDG Impact Builder — Scenario Solver",
+            "builds": [
+              {
+                "id": 1,
+                "scenario": "People want new shoes but aren't sure where to buy them.",
+                "problem": {
+                  "options": [
+                    "People don't know where to look",
+                    "Shoe stores are closed",
+                    "Designers dislike sneakers"
+                  ],
+                  "correct": "People don't know where to look"
+                },
+                "solution": {
+                  "options": [
+                    "Create a curated store list",
+                    "Build a new shoe prototype",
+                    "Rewrite the app's backend"
+                  ],
+                  "correct": "Create a curated store list"
+                },
+                "sdg": {
+                  "options": [
+                    "SDG 8: Decent Work and Economic Growth",
+                    "SDG 13: Climate Action",
+                    "SDG 4: Quality Education"
+                  ],
+                  "correct": "SDG 8: Decent Work and Economic Growth",
+                  "hint": "Which goal supports local businesses and consumer access?"
+                }
+              },
+              {
+                "id": 2,
+                "scenario": "A community is unable to access fresh produce after a storm.",
+                "problem": {
+                  "options": [
+                    "Bad weather blocking deliveries",
+                    "Lack of designers",
+                    "Too many shoes"
+                  ],
+                  "correct": "Bad weather blocking deliveries"
+                },
+                "solution": {
+                  "options": [
+                    "Set up temporary market stalls",
+                    "Hire a presenter",
+                    "Redesign the logo"
+                  ],
+                  "correct": "Set up temporary market stalls"
+                },
+                "sdg": {
+                  "options": [
+                    "SDG 2: Zero Hunger",
+                    "SDG 7: Affordable and Clean Energy",
+                    "SDG 16: Peace and Justice"
+                  ],
+                  "correct": "SDG 2: Zero Hunger",
+                  "hint": "Which goal addresses food security and access?"
+                }
+              },
+              {
+                "id": 3,
+                "scenario": "Users are confused by the app navigation and leave quickly.",
+                "problem": {
+                  "options": [
+                    "Navigation is unclear",
+                    "Servers are too fast",
+                    "The pitch is too long"
+                  ],
+                  "correct": "Navigation is unclear"
+                },
+                "solution": {
+                  "options": [
+                    "Add clear user-flow hints",
+                    "Increase server CPU",
+                    "Write a long pitch script"
+                  ],
+                  "correct": "Add clear user-flow hints"
+                },
+                "sdg": {
+                  "options": [
+                    "SDG 9: Industry, Innovation and Infrastructure",
+                    "SDG 14: Life Below Water",
+                    "SDG 15: Life on Land"
+                  ],
+                  "correct": "SDG 9: Industry, Innovation and Infrastructure",
+                  "hint": "Which goal promotes accessible technology and innovation?"
+                }
+              },
+              {
+                "id": 4,
+                "scenario": "The team needs users to test their prototype this weekend.",
+                "problem": {
+                  "options": [
+                    "No testers available",
+                    "Design trend is outdated",
+                    "Coffee is too hot"
+                  ],
+                  "correct": "No testers available"
+                },
+                "solution": {
+                  "options": [
+                    "Run a weekend testing pop-up",
+                    "Change the color palette",
+                    "Refactor CSS only"
+                  ],
+                  "correct": "Run a weekend testing pop-up"
+                },
+                "sdg": {
+                  "options": [
+                    "SDG 17: Partnerships for the Goals",
+                    "SDG 6: Clean Water and Sanitation",
+                    "SDG 11: Sustainable Cities"
+                  ],
+                  "correct": "SDG 17: Partnerships for the Goals",
+                  "hint": "Which goal emphasizes collaboration and community engagement?"
+                }
+              },
+              {
+                "id": 5,
+                "scenario": "The team wants to get press attention for their app launch.",
+                "problem": {
+                  "options": [
+                    "No media contacts",
+                    "Prototype has too many features",
+                    "Servers are down"
+                  ],
+                  "correct": "No media contacts"
+                },
+                "solution": {
+                  "options": [
+                    "Prepare a press kit and outreach list",
+                    "Add more animations",
+                    "Encrypt the database"
+                  ],
+                  "correct": "Prepare a press kit and outreach list"
+                },
+                "sdg": {
+                  "options": [
+                    "SDG 9: Industry, Innovation and Infrastructure",
+                    "SDG 3: Good Health and Well-being",
+                    "SDG 12: Responsible Consumption"
+                  ],
+                  "correct": "SDG 9: Industry, Innovation and Infrastructure",
+                  "hint": "Which goal supports innovation awareness and technology advancement?"
+                }
+              }
+            ],
+            "completion_message": "You matched problems, solutions and SDGs like a pro — mission complete!",
+            "achievement": {
+              "title": "SDG Scenario Master",
+              "description": "Perfectly matched all problem-solution-SDG scenarios",
+              "badge": "🎯🌍"
             }
-          ],
-          "completion_message": "Excellent work! You've successfully assigned all team roles. You're a natural team builder! 🎉",
-          "achievement": {
-            "title": "Team Builder Master",
-            "description": "Successfully matched all roles to their tasks",
-            "badge": "🏆"
           }
-        }
-        },   
+        },
         {
           "id": "scene7",
           "dialogs": [

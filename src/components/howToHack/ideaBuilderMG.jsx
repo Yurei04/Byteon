@@ -1,333 +1,412 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+"use client";
 
-export default function IdeaBuilderMiniGame({ minigameData, onComplete }) {
-  const [selectedProblem, setSelectedProblem] = useState(null);
-  const [selectedTech, setSelectedTech] = useState(null);
-  const [selectedImpact, setSelectedImpact] = useState(null);
-  const [draggedItem, setDraggedItem] = useState(null);
-  const [generatedIdea, setGeneratedIdea] = useState(null);
-  const [showResult, setShowResult] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 
-  const categories = minigameData?.categories || {
-    problems: [],
-    technologies: [],
-    impacts: []
-  };
+/**
+ * SDG IdeaBuilderDragDrop
+ *
+ * Expects props:
+ *  - minigameData: { minigame_title, builds: [ { id, scenario, problem: { options, correct }, solution: {...}, sdg: {...} } ] }
+ *  - onComplete(result)
+ *
+ * Behavior:
+ *  - shows one round at a time (based on builds array)
+ *  - pools all options (problem_options, solution_options, sdg_options) into a shuffled pool
+ *  - player drags an option into Problem / Solution / SDG slots
+ *  - only one item per slot; dropping a new item returns old to pool
+ *  - player can drag a placed item back to pool
+ *  - Submit evaluates matches against correct values and shows feedback; if all correct progress to next round
+ */
 
-  const combinations = minigameData?.combinations || [];
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-  // Check if all slots are filled
+export default function SDGIdeaBuilderDragDrop({ minigameData, onComplete }) {
+  const builds = (minigameData && (minigameData.builds || minigameData.rounds)) || [];
+  const title = (minigameData && minigameData.minigame_title) || "SDG Idea Builder";
+
+  const [index, setIndex] = useState(0);
+  const current = builds[index] || null;
+
+  // pool: array of { id, text, kind } where kind is "problem" | "solution" | "sdg"
+  const [pool, setPool] = useState([]);
+
+  // placed slots:
+  const [placed, setPlaced] = useState({
+    problem: null,
+    solution: null,
+    sdg: null
+  });
+
+  // feedback state:
+  const [feedback, setFeedback] = useState({
+    shown: false,
+    correct: { problem: false, solution: false, sdg: false },
+    message: ""
+  });
+
+  // score tracking
+  const [score, setScore] = useState(0);
+
+  // initialize pool when minigameData or index changes
   useEffect(() => {
-    if (selectedProblem && selectedTech && selectedImpact && !generatedIdea) {
-      generateIdea();
-    }
-  }, [selectedProblem, selectedTech, selectedImpact]);
-
-  const generateIdea = () => {
-    const combination = combinations.find(
-      c => c.problem === selectedProblem &&
-           c.technology === selectedTech &&
-           c.impact === selectedImpact
-    );
-
-    if (combination) {
-      setGeneratedIdea(combination.idea_result);
-      setShowResult(true);
-    }
-  };
-
-  const handleDragStart = (item, category) => {
-    setDraggedItem({ item, category });
-  };
-
-  const handleDragEnd = () => {
-    setDraggedItem(null);
-  };
-
-  const handleDrop = (dropZone) => {
-    if (!draggedItem) return;
-
-    const { item, category } = draggedItem;
-
-    if (dropZone === 'problem' && category === 'problems') {
-      setSelectedProblem(item);
-    } else if (dropZone === 'technology' && category === 'technologies') {
-      setSelectedTech(item);
-    } else if (dropZone === 'impact' && category === 'impacts') {
-      setSelectedImpact(item);
+    if (!current) {
+      setPool([]);
+      setPlaced({ problem: null, solution: null, sdg: null });
+      setFeedback({ shown: false, correct: { problem: false, solution: false, sdg: false }, message: "" });
+      return;
     }
 
-    setDraggedItem(null);
+    // Build pool items with unique ids
+    const items = [];
+    let idCounter = 0;
+
+    const addItems = (arr, kind) => {
+      (arr || []).forEach((txt) => {
+        items.push({ id: `${index}-${kind}-${idCounter++}`, text: txt, kind });
+      });
+    };
+
+    // support two JSON shapes: either separate arrays like problem_options OR nested like current.problem.options
+    if (current.problem?.options) addItems(current.problem.options, "problem");
+    else if (current.problem_options) addItems(current.problem_options, "problem");
+
+    if (current.solution?.options) addItems(current.solution.options, "solution");
+    else if (current.solution_options) addItems(current.solution_options, "solution");
+
+    if (current.sdg?.options) addItems(current.sdg.options, "sdg");
+    else if (current.sdg_options) addItems(current.sdg_options, "sdg");
+
+    setPool(shuffleArray(items));
+    setPlaced({ problem: null, solution: null, sdg: null });
+    setFeedback({ shown: false, correct: { problem: false, solution: false, sdg: false }, message: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minigameData, index]);
+
+  // helper: get expected correct text for each slot
+  const expected = useMemo(() => {
+    if (!current) return { problem: null, solution: null, sdg: null };
+    const getCorrect = (obj, legacyKey) => {
+      if (obj?.correct) return obj.correct;
+      if (obj?.answer) return obj.answer;
+      // legacy shape: current.correct?.problem etc
+      if (current.correct && typeof current.correct === "object" && current.correct[legacyKey]) return current.correct[legacyKey];
+      return null;
+    };
+    return {
+      problem: getCorrect(current.problem, "problem"),
+      solution: getCorrect(current.solution, "solution"),
+      sdg: getCorrect(current.sdg, "sdg")
+    };
+  }, [current]);
+
+  // HTML5 drag handlers --------------------------------
+  const onDragStartFromPool = (e, item) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ ...item, source: "pool" }));
+    e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDragOver = (e) => {
+  const onDragStartFromPlaced = (e, item, zone) => {
+    e.dataTransfer.setData("application/json", JSON.stringify({ ...item, source: "placed", zone }));
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const allowDrop = (e) => e.preventDefault();
+
+  // Drop into a zone
+  const onDropToZone = (e, zone) => {
     e.preventDefault();
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("application/json"));
+      if (!data || !data.text) return;
+
+      let newPool = [...pool];
+      if (data.source === "pool") {
+        newPool = newPool.filter((p) => p.id !== data.id);
+      } else if (data.source === "placed") {
+        const srcZone = data.zone;
+        if (srcZone && placed[srcZone] && placed[srcZone].id === data.id) {
+          // will clear below
+        }
+      }
+
+      // If target zone currently occupied -> move occupant to pool
+      const currentOccupant = placed[zone];
+      if (currentOccupant) {
+        newPool = shuffleArray([...newPool, currentOccupant]);
+      }
+
+      // Clear source zone if moving from placed
+      let newPlaced = { ...placed };
+      if (data.source === "placed" && data.zone) {
+        newPlaced[data.zone] = null;
+      }
+
+      // Place new item into target zone
+      const toPlace = { id: data.id, text: data.text, kind: data.kind };
+      newPlaced[zone] = toPlace;
+
+      setPool(newPool);
+      setPlaced(newPlaced);
+      setFeedback({ shown: false, correct: { problem: false, solution: false, sdg: false }, message: "" });
+    } catch (err) {
+      // ignore parse errors
+    }
   };
 
-  const resetSelection = () => {
-    setSelectedProblem(null);
-    setSelectedTech(null);
-    setSelectedImpact(null);
-    setGeneratedIdea(null);
-    setShowResult(false);
+  // Drop back to pool (unplace)
+  const onDropToPool = (e) => {
+    e.preventDefault();
+    try {
+      const data = JSON.parse(e.dataTransfer.getData("application/json"));
+      if (!data || !data.text) return;
+
+      if (data.source === "pool") return;
+
+      const srcZone = data.zone;
+      if (srcZone && placed[srcZone] && placed[srcZone].id === data.id) {
+        const newPlaced = { ...placed, [srcZone]: null };
+        setPlaced(newPlaced);
+        setPool((p) => shuffleArray([...p, { id: data.id, text: data.text, kind: data.kind }]));
+        setFeedback({ shown: false, correct: { problem: false, solution: false, sdg: false }, message: "" });
+      }
+    } catch (err) {}
   };
 
-  const handleComplete = () => {
-    setIsComplete(true);
-    setTimeout(() => {
+  // Evaluate current placements
+  const evaluate = () => {
+    if (!current) return;
+    const correct = {
+      problem: placed.problem && expected.problem && placed.problem.text === expected.problem,
+      solution: placed.solution && expected.solution && placed.solution.text === expected.solution,
+      sdg: placed.sdg && expected.sdg && placed.sdg.text === expected.sdg
+    };
+    const allCorrect = correct.problem && correct.solution && correct.sdg;
+    setFeedback({
+      shown: true,
+      correct,
+      message: allCorrect ? "Perfect! All three matched — great work connecting this to the right SDG!" : "Some items are not correct — review the scenario and try again."
+    });
+
+    if (allCorrect) {
+      setScore((s) => s + 3);
+    }
+    return allCorrect;
+  };
+
+  // Next / finish
+  const nextRound = () => {
+    const allCorrect = feedback.shown && Object.values(feedback.correct).every(Boolean);
+    if (!allCorrect) {
+      const nowAll = evaluate();
+      if (!nowAll) return;
+    }
+
+    // If last round -> complete
+    if (index + 1 >= builds.length) {
       onComplete?.({
         passed: true,
-        achievement: minigameData?.achievement
+        score,
+        details: { roundsPlayed: builds.length }
       });
-    }, 500);
+      return;
+    }
+
+    // Otherwise go to next
+    const next = index + 1;
+    setIndex(next);
+    setPlaced({ problem: null, solution: null, sdg: null });
+    setFeedback({ shown: false, correct: { problem: false, solution: false, sdg: false }, message: "" });
   };
 
-  const removeItem = (slot) => {
-    if (slot === 'problem') setSelectedProblem(null);
-    if (slot === 'technology') setSelectedTech(null);
-    if (slot === 'impact') setSelectedImpact(null);
-    setGeneratedIdea(null);
-    setShowResult(false);
-  };
+  // Safety: if there is no minigame data, render fallback
+  if (!minigameData || builds.length === 0) {
+    return (
+      <div className="min-h-[240px] w-full p-6 bg-black/60 rounded-xl text-white">
+        <div className="text-lg font-semibold">Minigame data missing</div>
+        <div className="text-sm text-white/60 mt-2">This minigame requires build data in minigameData.builds.</div>
+        <button
+          onClick={() => onComplete?.({ passed: false })}
+          className="mt-4 px-4 py-2 bg-fuchsia-700 rounded-lg"
+        >
+          Skip
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-6 bg-gradient-to-br from-purple-900/90 via-fuchsia-900/90 to-pink-900/90 rounded-2xl shadow-2xl border-2 border-fuchsia-400/50 backdrop-blur-sm">
-      {/* Header */}
-      <div className="text-center mb-6">
-        <h2 className="text-3xl font-bold text-white mb-2">
-          {minigameData?.minigame_title || "Idea Builder"}
-        </h2>
-        <p className="text-white/90 text-sm">
-          {minigameData?.description || "Drag and drop to create your innovative idea!"}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Problems Column */}
-        <div className="space-y-3">
-          <h3 className="text-xl font-semibold text-fuchsia-300 text-center mb-3">
-            🎯 Problems
+    <div className="w-full max-w-6xl mx-auto p-6 bg-gradient-to-br from-indigo-900/95 via-purple-900/95 to-fuchsia-900/95 rounded-2xl shadow-2xl border border-purple-400/30 text-white">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-3xl font-bold bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
+            {title}
           </h3>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-fuchsia-500 scrollbar-track-purple-900/50">
-            {categories.problems.map((problem, idx) => (
-              <motion.div
-                key={idx}
-                draggable
-                onDragStart={() => handleDragStart(problem, 'problems')}
-                onDragEnd={handleDragEnd}
-                whileHover={{ scale: 1.02, x: 5 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-3 bg-gradient-to-r from-red-500/80 to-orange-500/80 rounded-lg cursor-move border-2 border-red-400/50 text-white text-sm font-medium shadow-lg hover:shadow-red-500/50 transition-all ${
-                  selectedProblem === problem ? 'opacity-50' : 'opacity-100'
-                }`}
-              >
-                {problem}
-              </motion.div>
-            ))}
-          </div>
+          <p className="text-base text-white/90 mt-2 font-medium">{current?.scenario || current?.description || ""}</p>
         </div>
-
-        {/* Technologies Column */}
-        <div className="space-y-3">
-          <h3 className="text-xl font-semibold text-cyan-300 text-center mb-3">
-            💻 Technologies
-          </h3>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-cyan-500 scrollbar-track-purple-900/50">
-            {categories.technologies.map((tech, idx) => (
-              <motion.div
-                key={idx}
-                draggable
-                onDragStart={() => handleDragStart(tech, 'technologies')}
-                onDragEnd={handleDragEnd}
-                whileHover={{ scale: 1.02, x: 5 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-3 bg-gradient-to-r from-blue-500/80 to-cyan-500/80 rounded-lg cursor-move border-2 border-cyan-400/50 text-white text-sm font-medium shadow-lg hover:shadow-cyan-500/50 transition-all ${
-                  selectedTech === tech ? 'opacity-50' : 'opacity-100'
-                }`}
-              >
-                {tech}
-              </motion.div>
-            ))}
+        <div className="text-right">
+          <div className="text-sm text-white/60">
+            Round {index + 1}/{builds.length}
           </div>
-        </div>
-
-        {/* Impacts Column */}
-        <div className="space-y-3">
-          <h3 className="text-xl font-semibold text-green-300 text-center mb-3">
-            ✨ Impacts
-          </h3>
-          <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-green-500 scrollbar-track-purple-900/50">
-            {categories.impacts.map((impact, idx) => (
-              <motion.div
-                key={idx}
-                draggable
-                onDragStart={() => handleDragStart(impact, 'impacts')}
-                onDragEnd={handleDragEnd}
-                whileHover={{ scale: 1.02, x: 5 }}
-                whileTap={{ scale: 0.98 }}
-                className={`p-3 bg-gradient-to-r from-green-500/80 to-emerald-500/80 rounded-lg cursor-move border-2 border-green-400/50 text-white text-sm font-medium shadow-lg hover:shadow-green-500/50 transition-all ${
-                  selectedImpact === impact ? 'opacity-50' : 'opacity-100'
-                }`}
-              >
-                {impact}
-              </motion.div>
-            ))}
-          </div>
+          <div className="text-xl font-bold text-green-300">Score: {score}</div>
         </div>
       </div>
 
-      {/* Drop Zones */}
-      <div className="bg-black/40 p-6 rounded-xl border-2 border-white/20 mb-6">
-        <h3 className="text-xl font-semibold text-white text-center mb-4">
-          🎨 Build Your Idea
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Problem Drop Zone */}
+      {/* Targets */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+        {["problem", "solution", "sdg"].map((zone) => (
           <div
-            onDrop={() => handleDrop('problem')}
-            onDragOver={handleDragOver}
-            className={`min-h-24 p-4 rounded-lg border-2 border-dashed transition-all ${
-              draggedItem?.category === 'problems'
-                ? 'border-red-400 bg-red-500/20 scale-105'
-                : 'border-white/30 bg-white/5'
+            key={zone}
+            onDragOver={allowDrop}
+            onDrop={(e) => onDropToZone(e, zone)}
+            className={`p-5 rounded-xl min-h-[140px] border-2 transition-all duration-300 ${
+              placed[zone] 
+                ? "border-green-400/60 bg-green-900/20 shadow-lg shadow-green-500/20" 
+                : "border-white/20 bg-white/5 hover:border-white/30"
             }`}
           >
-            <div className="text-xs text-white/60 mb-2">Problem</div>
-            {selectedProblem ? (
-              <div className="bg-gradient-to-r from-red-500/80 to-orange-500/80 p-3 rounded-lg text-white text-sm relative group">
-                {selectedProblem}
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <div className="text-sm uppercase font-bold tracking-wide text-white/95 flex items-center gap-2">
+                  {zone === "problem" && "🔍"}
+                  {zone === "solution" && "💡"}
+                  {zone === "sdg" && "🌍"}
+                  {zone}
+                </div>
+                <div className="text-xs text-white/70 mt-1">
+                  {(() => {
+                    if (zone === "problem") return current?.problem?.hint || "What's the core issue?";
+                    if (zone === "solution") return current?.solution?.hint || "How can we solve it?";
+                    return current?.sdg?.hint || "Which UN SDG does this align with?";
+                  })()}
+                </div>
+              </div>
+              {placed[zone] && (
                 <button
-                  onClick={() => removeItem('problem')}
-                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => {
+                    const item = placed[zone];
+                    setPlaced((p) => ({ ...p, [zone]: null }));
+                    setPool((prev) => shuffleArray([...prev, item]));
+                    setFeedback({ shown: false, correct: { problem: false, solution: false, sdg: false }, message: "" });
+                  }}
+                  className="text-xs text-white/60 hover:text-white/90 bg-white/10 px-2 py-1 rounded"
                 >
-                  ×
+                  ✕
                 </button>
-              </div>
-            ) : (
-              <div className="text-center text-white/40 text-sm">
-                Drop problem here
-              </div>
-            )}
-          </div>
-
-          {/* Technology Drop Zone */}
-          <div
-            onDrop={() => handleDrop('technology')}
-            onDragOver={handleDragOver}
-            className={`min-h-24 p-4 rounded-lg border-2 border-dashed transition-all ${
-              draggedItem?.category === 'technologies'
-                ? 'border-cyan-400 bg-cyan-500/20 scale-105'
-                : 'border-white/30 bg-white/5'
-            }`}
-          >
-            <div className="text-xs text-white/60 mb-2">Technology</div>
-            {selectedTech ? (
-              <div className="bg-gradient-to-r from-blue-500/80 to-cyan-500/80 p-3 rounded-lg text-white text-sm relative group">
-                {selectedTech}
-                <button
-                  onClick={() => removeItem('technology')}
-                  className="absolute -top-2 -right-2 bg-cyan-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
-              <div className="text-center text-white/40 text-sm">
-                Drop technology here
-              </div>
-            )}
-          </div>
-
-          {/* Impact Drop Zone */}
-          <div
-            onDrop={() => handleDrop('impact')}
-            onDragOver={handleDragOver}
-            className={`min-h-24 p-4 rounded-lg border-2 border-dashed transition-all ${
-              draggedItem?.category === 'impacts'
-                ? 'border-green-400 bg-green-500/20 scale-105'
-                : 'border-white/30 bg-white/5'
-            }`}
-          >
-            <div className="text-xs text-white/60 mb-2">Impact</div>
-            {selectedImpact ? (
-              <div className="bg-gradient-to-r from-green-500/80 to-emerald-500/80 p-3 rounded-lg text-white text-sm relative group">
-                {selectedImpact}
-                <button
-                  onClick={() => removeItem('impact')}
-                  className="absolute -top-2 -right-2 bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
-              <div className="text-center text-white/40 text-sm">
-                Drop impact here
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Generated Idea Result */}
-      <AnimatePresence>
-        {showResult && generatedIdea && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="bg-gradient-to-r from-yellow-500/20 via-amber-500/20 to-orange-500/20 p-6 rounded-xl border-2 border-yellow-400/50 mb-6"
-          >
-            <div className="flex items-start gap-4">
-              <div className="text-4xl">💡</div>
-              <div className="flex-1">
-                <h4 className="text-xl font-bold text-yellow-300 mb-2">
-                  Your Generated Idea:
-                </h4>
-                <p className="text-white text-lg leading-relaxed">
-                  {generatedIdea}
-                </p>
-              </div>
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Action Buttons */}
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={resetSelection}
-          className="px-6 py-3 bg-gray-600/80 hover:bg-gray-700/80 text-white rounded-lg font-semibold transition-all shadow-lg hover:shadow-xl"
-        >
-          Reset
-        </button>
-        {generatedIdea && !isComplete && (
-          <motion.button
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            onClick={handleComplete}
-            className="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white rounded-lg font-bold transition-all shadow-lg hover:shadow-xl"
-          >
-            Complete! 🎉
-          </motion.button>
-        )}
+            <div>
+              {placed[zone] ? (
+                <motion.div
+                  layout
+                  draggable
+                  onDragStart={(e) => onDragStartFromPlaced(e, placed[zone], zone)}
+                  className="p-3 rounded-lg bg-gradient-to-br from-indigo-600/30 to-purple-600/30 border border-white/20 cursor-grab active:cursor-grabbing hover:scale-105 transition-transform"
+                >
+                  <div className="font-semibold text-sm">{placed[zone].text}</div>
+                </motion.div>
+              ) : (
+                <div className="text-white/50 text-sm italic">Drop an option here</div>
+              )}
+
+              {/* feedback text */}
+              {feedback.shown && (
+                <div className="mt-3 text-sm font-semibold">
+                  {feedback.correct[zone] ? (
+                    <span className="text-green-300 flex items-center gap-1">
+                      ✓ Correct!
+                    </span>
+                  ) : (
+                    <span className="text-orange-300 flex items-center gap-1">
+                      ✗ Try again
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Completion Message */}
-      <AnimatePresence>
-        {isComplete && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="mt-6 p-4 bg-green-500/20 border-2 border-green-400 rounded-lg text-center"
-          >
-            <p className="text-white text-lg font-semibold">
-              {minigameData?.completion_message}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Pool */}
+      <div
+        onDragOver={allowDrop}
+        onDrop={onDropToPool}
+        className="p-5 rounded-xl bg-black/50 border-2 border-white/10 mb-6 min-h-[140px]"
+      >
+        <div className="text-sm text-white/80 mb-4 font-semibold flex items-center gap-2">
+          <span>📦</span> Options Pool — Drag cards to slots above
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {pool.map((it) => (
+            <motion.div
+              key={it.id}
+              draggable
+              onDragStart={(e) => onDragStartFromPool(e, it)}
+              whileHover={{ scale: 1.03, y: -2 }}
+              whileTap={{ scale: 0.98 }}
+              className="p-3 rounded-lg bg-gradient-to-br from-white/10 to-white/5 border border-white/20 cursor-grab active:cursor-grabbing hover:border-white/40 transition-all"
+            >
+              <div className="font-medium text-sm">{it.text}</div>
+              <div className="text-xs text-white/50 mt-1 capitalize">
+                {it.kind === "sdg" ? "🌍 SDG" : it.kind}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Feedback message */}
+      {feedback.shown && (
+        <div className={`mb-4 p-3 rounded-lg text-center font-semibold ${
+          Object.values(feedback.correct).every(Boolean) 
+            ? "bg-green-500/20 text-green-200" 
+            : "bg-orange-500/20 text-orange-200"
+        }`}>
+          {feedback.message}
+        </div>
+      )}
+
+      {/* Controls */}
+      <div className="flex items-center justify-between gap-4">
+        <button
+          onClick={() => {
+            const back = Object.values(placed).filter(Boolean);
+            setPool((p) => shuffleArray([...p, ...back]));
+            setPlaced({ problem: null, solution: null, sdg: null });
+            setFeedback({ shown: false, correct: { problem: false, solution: false, sdg: false }, message: "" });
+          }}
+          className="px-4 py-2 bg-gray-700/60 hover:bg-gray-700/80 rounded-lg text-white font-medium transition-colors"
+        >
+          🔄 Reset Round
+        </button>
+
+        <button
+          onClick={() => {
+            const allPlaced = placed.problem && placed.solution && placed.sdg;
+            if (!allPlaced) {
+              alert("Please place one option into each slot (Problem, Solution, SDG) before submitting.");
+              return;
+            }
+            const ok = evaluate();
+            if (ok) {
+              setTimeout(nextRound, 800);
+            }
+          }}
+          className="px-6 py-2 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+        >
+          {index + 1 < builds.length ? "Submit & Next →" : "Submit & Finish 🎉"}
+        </button>
+      </div>
     </div>
   );
 }
