@@ -1,33 +1,48 @@
-import { Card, CardContent, CardHeader } from "../ui/card";
+"use client";
 
-export default function TipsCard({ tip, author, title }) {
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { User } from "lucide-react";
+
+export default function TipsCard({ author, title, tip }) {
     return (
-        <Card
-            className="
-                w-80 h-72 rounded-2xl p-4
-                bg-gradient-to-b from-fuchsia-900/40 to-purple-900/30
-                backdrop-blur-xl 
-                border border-fuchsia-500/30
-                shadow-[0_0_25px_rgba(255,0,255,0.35)]
-                hover:shadow-[0_0_40px_rgba(255,0,255,0.6)]
-                transition-all duration-300
-                text-white
-            "
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
         >
-            <CardHeader>
-                <h1 className="text-xl font-bold text-fuchsia-300 drop-shadow-md">
-                    {author}
-                </h1>
-                <h2 className="text-sm text-purple-200 tracking-widest opacity-90">
-                    {title}
-                </h2>
-            </CardHeader>
+            <Card
+                className="
+                bg-gradient-to-br from-black via-[#0b0014] to-[#1a001f]
+                border border-fuchsia-700/40 
+                shadow-[0_0_25px_rgba(255,0,255,0.25)]
+                rounded-3xl p-5 w-[320px]
+                backdrop-blur-xl
+                "
+            >
+                <CardContent className="space-y-4">
 
-            <CardContent>
-                <p className="text-sm leading-relaxed text-gray-200">
-                    {tip}
-                </p>
-            </CardContent>
-        </Card>
+                    {/* Title */}
+                    <h2 className="text-xl font-bold text-fuchsia-300 tracking-wide">
+                        {title}
+                    </h2>
+
+                    {/* Tip in quotes + italic */}
+                    <p className="text-sm italic text-fuchsia-100/90 leading-relaxed">
+                        “{tip}”
+                    </p>
+
+                    {/* Author with SVG */}
+                    <div className="flex items-center gap-2 pt-2">
+                        <User className="w-5 h-5 text-purple-300" />
+                        <span className="text-sm text-purple-200 font-medium">
+                            — {author}
+                        </span>
+                    </div>
+
+                </CardContent>
+            </Card>
+        </motion.div>
     );
 }

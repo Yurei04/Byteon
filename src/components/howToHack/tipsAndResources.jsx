@@ -62,7 +62,7 @@ export default function TipsAndResources() {
                 }}
                 plugins={[
                     Autoplay({
-                        delay: 2500,
+                        delay: 3000,
                         stopOnInteraction: false,
                     }),
                 ]}

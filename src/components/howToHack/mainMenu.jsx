@@ -63,7 +63,6 @@ const MainMenu = ({ onStartGame }) => {
         </Button>
 
         <Button className={styling}>Load Game</Button>
-        <Button className={styling}>Tutorial</Button>
         <Button className={styling}>Settings</Button>
         <Link href={"/"}>
             <Button
