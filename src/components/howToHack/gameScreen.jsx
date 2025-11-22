@@ -115,14 +115,14 @@ export default function GameScreen({
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black text-white">
+    <div className="relative w-full h-screen overflow-hidden text-white">
       {/* BACKGROUND */}
       <div className="absolute inset-0 -z-20">
         <Image
-          src={backgroundSrc}
+          src={"/images/temp_bkg.jpg"}
           alt="background"
           fill
-          className="object-cover transition-all duration-700 ease-in-out"
+          className="object-cover transition-all duration-700 ease-in-out rounded-2xl"
           priority
         />
       </div>

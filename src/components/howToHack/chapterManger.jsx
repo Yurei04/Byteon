@@ -271,7 +271,9 @@ useEffect(() => {
 
         />
       )  : endGame ? (
-        <EndCredits onComplete={onBackToMenu} />
+        <EndCredits onComplete={() => {
+          onBackToMenu()
+        }} />
       
       ) : (
         <div>

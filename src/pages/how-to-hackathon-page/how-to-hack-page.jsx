@@ -9,6 +9,7 @@ import GameFlow from "@/components/howToHack/gameFlow";
 import GameControls from "@/components/howToHack/gameControls";
 import ChapterManager from "@/components/howToHack/chapterManger";
 import EndCredits from "@/components/howToHack/endCredits";
+import TipsAndResources from "@/components/howToHack/tipsAndResources";
 
 export default function HowToHackPage() {
     /* ----------------------------- STATE HOOKS FIRST ----------------------------- */
@@ -203,7 +204,7 @@ export default function HowToHackPage() {
                                         </div>
                                     ) : (
                                         <div className="text-white flex h-full justify-center items-center">
-                                            <h1>Welcome To Byteon Visual Novel</h1>
+                                           <TipsAndResources />
                                         </div>
                                     )}
                                 </ResizablePanel>

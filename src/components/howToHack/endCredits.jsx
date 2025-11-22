@@ -1,22 +1,15 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 
 export default function EndCredits({ onComplete }) {
   const [isComplete, setIsComplete] = useState(false);
+  const [haltScroll, setHaltScroll] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsComplete(true);
-      // Automatically call onComplete after credits finish
-      if (onComplete) {
-        onComplete();
-      }
-    }, 45000);
+  const containerRef = useRef(null);
+  const endRef = useRef(null);
 
-    return () => clearTimeout(timer);
-  }, [onComplete]);
-
+  // Stars background
   const stars = useMemo(
     () =>
       Array.from({ length: 100 }, (_, i) => ({
@@ -33,6 +26,7 @@ export default function EndCredits({ onComplete }) {
     []
   );
 
+  // Credit items
   const credits = [
     { type: "space" },
     { type: "space" },
@@ -51,6 +45,7 @@ export default function EndCredits({ onComplete }) {
     { type: "name", text: "Our Amazing Hackathon Participants" },
     { type: "name", text: "The Open Source Community" },
     { type: "name", text: "All Playtesters and Beta Users" },
+
     { type: "space" },
 
     { type: "section", text: "Partners & Resources" },
@@ -64,12 +59,14 @@ export default function EndCredits({ onComplete }) {
     { type: "section", text: "Music & Sound" },
     { type: "name", text: "Audio sourced from royalty-free libraries" },
     { type: "name", text: "Sound effects from Freesound.org" },
+
     { type: "space" },
 
     { type: "section", text: "Additional Thanks" },
     { type: "name", text: "Coffee, for fueling late-night coding sessions" },
     { type: "name", text: "Stack Overflow, for solving impossible bugs" },
     { type: "name", text: "Our families and friends for their support" },
+
     { type: "space" },
     { type: "space" },
 
@@ -77,32 +74,54 @@ export default function EndCredits({ onComplete }) {
     { type: "space" },
     { type: "giant", text: "YOU" },
     { type: "subtitle", text: "Thank you for playing our game!" },
+
     { type: "space" },
     { type: "space" },
     { type: "space" },
     { type: "space" },
     { type: "space" },
     { type: "space" },
-    { type: "final", text: "THE END" },
     { type: "space" },
     { type: "space" },
     { type: "space" },
-    { type: "space" },
+
+    { type: "end" },
   ];
 
-  const handleReturnToMenu = () => {
-    if (onComplete) {
-      onComplete();
-    }
-  };
+  // Intersection observer: stop scroll when "end" enters view
+  useEffect(() => {
+    if (!endRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setHaltScroll(true);
+
+          // Wait 3 seconds after credits finish before showing button
+          setTimeout(() => {
+            setIsComplete(true);
+            if (onComplete) onComplete();
+          }, 3000);
+        }
+      },
+      {
+        threshold: 0.5,
+      }
+    );
+
+    observer.observe(endRef.current);
+    return () => observer.disconnect();
+  }, [onComplete]);
 
   return (
     <div className="relative w-full h-screen bg-gradient-to-b from-slate-950 via-purple-950 to-black overflow-hidden">
+      {/* Background pulse gradient */}
       <div
         className="absolute inset-0 bg-gradient-to-br from-fuchsia-500/10 via-transparent to-purple-500/10 animate-pulse"
         style={{ animationDuration: "8s" }}
       />
 
+      {/* Stars */}
       <div className="absolute inset-0 opacity-40">
         {stars.map((star) => (
           <motion.div
@@ -128,104 +147,75 @@ export default function EndCredits({ onComplete }) {
         ))}
       </div>
 
+      {/* Scrollable credits */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div
+          ref={containerRef}
           className="w-full flex flex-col items-center text-white"
           initial={{ y: "100vh" }}
-          animate={{ y: "-100%" }}
+          animate={{ y: haltScroll ? "-100%" : "-100%" }}
           transition={{
-            duration: 45,
+            duration: haltScroll ? 0 : 45,
             ease: "linear",
           }}
         >
           {credits.map((item, index) => {
-            if (item.type === "space") return <div key={index} className="h-12" />;
+            if (item.type === "space")
+              return <div key={index} className="h-12" />;
 
-            if (item.type === "title") {
+            if (item.type === "title")
               return (
                 <motion.h1
                   key={index}
                   className="text-4xl md:text-5xl font-extrabold mb-8 tracking-wide bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300 bg-clip-text text-transparent"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1 }}
                 >
                   {item.text}
                 </motion.h1>
               );
-            }
 
-            if (item.type === "giant") {
+            if (item.type === "giant")
               return (
                 <motion.h1
                   key={index}
                   className="text-[6rem] md:text-[8rem] font-black leading-none tracking-tight bg-gradient-to-b from-fuchsia-300 to-purple-500 bg-clip-text text-transparent drop-shadow-[0_0_60px_rgba(217,70,239,0.7)]"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1.5, type: "spring" }}
                 >
                   {item.text}
                 </motion.h1>
               );
-            }
 
-            if (item.type === "final") {
+            if (item.type === "final")
               return (
                 <motion.h1
                   key={index}
-                  className="text-5xl md:text-7xl font-semibold tracking-[0.3em] uppercase bg-gradient-to-b from-white to-purple-200 bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(255,255,255,0.5)]"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 2 }}
+                  className="text-5xl md:text-7xl font-semibold tracking-[0.3em] uppercase bg-gradient-to-b from-white to-purple-200 bg-clip-text text-transparent"
                 >
                   {item.text}
                 </motion.h1>
               );
-            }
 
-            if (item.type === "subtitle") {
+            if (item.type === "subtitle")
               return (
                 <motion.p
                   key={index}
                   className="text-xl md:text-2xl text-purple-300 font-extralight tracking-wide italic mb-4"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 1, delay: 0.3 }}
                 >
                   {item.text}
                 </motion.p>
               );
-            }
 
-            if (item.type === "section") {
+            if (item.type === "section")
               return (
                 <motion.h2
                   key={index}
-                  className="text-2xl md:text-3xl font-semibold text-fuchsia-300 tracking-wide mb-10 mt-16 drop-shadow-[0_0_15px_rgba(217,70,239,0.4)]"
-                  initial={{ opacity: 0, x: -50 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8 }}
+                  className="text-2xl md:text-3xl font-semibold text-fuchsia-300 tracking-wide mb-10 mt-16"
                 >
                   {item.text}
                 </motion.h2>
               );
-            }
 
-            if (item.type === "credit") {
+            if (item.type === "credit")
               return (
-                <motion.div
-                  key={index}
-                  className="text-center mb-4"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6 }}
-                >
+                <motion.div key={index} className="text-center mb-4">
                   <p className="text-md md:text-xl text-purple-300 font-light tracking-wide">
                     {item.role}
                   </p>
@@ -234,41 +224,48 @@ export default function EndCredits({ onComplete }) {
                   </p>
                 </motion.div>
               );
-            }
 
-            if (item.type === "name") {
+            if (item.type === "name")
               return (
                 <motion.p
                   key={index}
                   className="text-md md:text-xl text-purple-200 font-light tracking-wide mb-4"
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6 }}
                 >
                   {item.text}
                 </motion.p>
               );
-            }
+
+            if (item.type === "end")
+              return (
+                <div
+                  key={index}
+                  ref={endRef}
+                  className="text-3xl font-bold text-fuchsia-300 mt-10"
+                >
+                  — End —
+                </div>
+              );
 
             return null;
           })}
         </motion.div>
       </div>
 
-      {/* Skip Credits Button - Always visible */}
-      {onComplete && (
-        <motion.button
-          className="fixed bottom-10 right-10 px-8 py-4 bg-gradient-to-r from-fuchsia-600/90 to-purple-600/90 hover:from-fuchsia-500 hover:to-purple-500 backdrop-blur-md rounded-2xl text-white font-bold transition-all z-50 border border-white/20 shadow-2xl shadow-fuchsia-500/30"
-          onClick={handleReturnToMenu}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 2 }}
-          whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(217,70,239,0.6)" }}
-          whileTap={{ scale: 0.95 }}
+      {/* Return to Homepage Button */}
+      {isComplete && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5 }}
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
         >
-          Skip Credits →
-        </motion.button>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="px-8 py-4 text-lg font-semibold rounded-xl bg-fuchsia-600/30 hover:bg-fuchsia-600/50 border border-fuchsia-400/40 text-fuchsia-200 backdrop-blur-xl shadow-lg transition-all duration-300"
+          >
+            Return to Homepage
+          </button>
+        </motion.div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import TipsAndResources from "./tipsAndResources";
 
 /**
  * GameFlow Component - Fixed for Main Page Integration
@@ -35,9 +36,8 @@ export default function GameFlow({
   if (!chapterData || !events.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4">
-        <div className="text-6xl mb-4 opacity-50">📖</div>
-        <p className="text-sm text-center">Chapter flow will appear here</p>
-        <p className="text-xs text-gray-500 mt-2">Start the game to see progress</p>
+        <TipsAndResources />
+
       </div>
     );
   }
