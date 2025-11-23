@@ -7,6 +7,7 @@ import TrueOrFalseFlashGame from "./cardGame";
 import IdeaBuilderMiniGame from "./ideaBuilderMG";
 import MiniGameMultipleChoice from "./multipleChoiceMG";
 import IdeaBuilderDragDrop from "./ideaBuilderMG";
+import GameNav from "./gameNav";
 
 export default function GameScreen({
   data,
@@ -116,6 +117,9 @@ export default function GameScreen({
 
   return (
     <div className="relative w-full h-screen overflow-hidden text-white">
+      <div className="absolute flex justify-start items-start z-30 pointer-events-none">
+        <GameNav />
+      </div>
       {/* BACKGROUND */}
       <div className="absolute inset-0 -z-20">
         <Image

@@ -10,13 +10,15 @@ import GameControls from "@/components/howToHack/gameControls";
 import ChapterManager from "@/components/howToHack/chapterManger";
 import EndCredits from "@/components/howToHack/endCredits";
 import TipsAndResources from "@/components/howToHack/tipsAndResources";
-
+import AudioPermissionDialog from "@/components/howToHack/audioPermissionDialog";
+import audioService from "@/lib/audioService";
 export default function HowToHackPage() {
     /* ----------------------------- STATE HOOKS FIRST ----------------------------- */
 
     const [chapter, setChapter] = useState(1);
     const [chapterData, setChapterData] = useState(null);
-
+    const [showAudioPermission, setShowAudioPermission] = useState(false);
+    const [audioEnabled, setAudioEnabled] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isMainMenu, setIsMainMenu] = useState(true);
     const [isSettings, setIsSettings] = useState(false);
@@ -32,6 +34,37 @@ export default function HowToHackPage() {
     const [slowLoading, setSlowLoading] = useState(false);
     const [tooSmall, setTooSmall] = useState(false);
 
+    // Show audio permission dialog on mount (main menu)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowAudioPermission(true);
+        }, 500); // Small delay for better UX
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleAudioAccept = async () => {
+        setShowAudioPermission(false);
+        setAudioEnabled(true);
+        
+        // Initialize and start background music
+        try {
+            await audioService.initialize();
+            await audioService.playBackgroundMusic();
+            console.log('[HowToHackPage] Audio enabled and music started');
+        } catch (error) {
+            console.error('[HowToHackPage] Failed to start audio:', error);
+        }
+    };
+
+    const handleAudioDecline = () => {
+        setShowAudioPermission(false);
+        setAudioEnabled(false);
+        console.log('[HowToHackPage] Audio disabled by user');
+    };
+    
+    
+    
     /* ------------------------------ STABLE CALLBACKS ----------------------------- */
 
     const handleStartGameFromMenu = useCallback(() => {
@@ -153,7 +186,7 @@ export default function HowToHackPage() {
             </div>
         );
     }
-
+    /* Temporary Removal due to Bug in resize resets the whole game 
     if (tooSmall) {
         return (
             <div className="fixed inset-0 bg-black text-purple-400 flex flex-col justify-center items-center">
@@ -162,11 +195,16 @@ export default function HowToHackPage() {
             </div>
         );
     }
-
+    */
     /* ------------------------------ MAIN RENDER ------------------------------ */
 
     return (
         <div className="w-full h-screen flex flex-col p-4">
+            <AudioPermissionDialog
+                isOpen={showAudioPermission}
+                onAccept={handleAudioAccept}
+                onDecline={handleAudioDecline}
+            />
             <ResizablePanelGroup direction="vertical" className="rounded-lg border border-fuchsia-400/80 mb-2">
                 <ResizablePanel defaultSize={80}>
                     <ResizablePanelGroup direction="horizontal">
@@ -177,19 +215,44 @@ export default function HowToHackPage() {
                                 {isMainMenu ? (
                                     <MainMenu
                                         onStartGame={handleStartGameFromMenu}
-                                        onLoadGame={() => {}}
-                                        onSettings={() => setIsSettings(true)}
-                                        onExit={() => setIsExit(true)}
+                                        onLoadGame={() => {
+                                            if (audioEnabled && window.audioManager) {
+                                                window.audioManager.playClick();
+                                            }
+                                        }}
+                                        onSettings={() => {
+                                            if (audioEnabled && window.audioManager) {
+                                                window.audioManager.playClick();
+                                            }
+                                            setIsSettings(true);
+                                        }}
+                                        onExit={() => {
+                                            if (audioEnabled && window.audioManager) {
+                                                window.audioManager.playClick();
+                                            }
+                                            setIsExit(true);
+                                        }}
                                     />
                                 ) : isSettings ? (
-                                    <GameSettings onBack={() => setIsSettings(false)} />
+                                    <GameSettings onBack={() => {
+                                        if (audioEnabled && window.audioManager) {
+                                            window.audioManager.playClick();
+                                        }
+                                        setIsSettings(false);
+                                    }} />
                                 ) : isExit ? (
-                                    <GameExit onBack={() => setIsExit(false)} />
+                                    <GameExit onBack={() => {
+                                        if (audioEnabled && window.audioManager) {
+                                            window.audioManager.playClick();
+                                        }
+                                        setIsExit(false);
+                                    }} />
                                 ) : (
                                     chapterManagerElement
                                 )}
                             </div>
                         </ResizablePanel>
+
 
                         <ResizableHandle />
 

@@ -221,7 +221,7 @@
         {
           "id": "scene5",
           "title": "Team Builder MiniGame",
-          "dialogue": [
+          "dialogs": [
             {
               "character": "Aira",
               "pose": "neutral",
@@ -314,7 +314,14 @@
                   "correct_answer": ["Presenter"]
                 }
               ],
-          "dialogue": [
+            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!",
+            "achievement": {
+            "title": "Team Player",
+            "description": "Matched all roles correctly in Team Builder. Teamwork skills leveled up!",
+            "reward_points": 15,
+            "icon": "team_medal.png"
+          },
+          "dialogs": [
             {
               "character": "Aira",
               "pose": "smile",
@@ -329,27 +336,19 @@
               "character": "Aira",
               "pose": "smile",
               "text": "Exactly! Developers are warriors, designers are healers, presenters are bards — and you? You could be anything you choose."
+            },
+            {
+              "character": "Aira",
+              "pose": "happy",
+              "text": "Amazing! Now you understand how each team member contributes!"
+            },
+            {
+              "character": "Aira",
+              "pose": "wink",
+              "text": "A strong team is the secret to winning — or at least having a great hackathon experience."
             }
-          ],
-            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!",
-            "achievement": {
-            "title": "Team Player",
-            "description": "Matched all roles correctly in Team Builder. Teamwork skills leveled up!",
-            "reward_points": 15,
-            "icon": "team_medal.png"
-          }
+          ]
         }
-        },
-
-          {
-            "character": "Aira",
-            "pose": "happy",
-            "text": "Amazing! Now you understand how each team member contributes!"
-          },
-          {
-            "character": "Aira",
-            "pose": "wink",
-            "text": "A strong team is the secret to winning — or at least having a great hackathon experience."
         },
         {
           "id": "scene6",
