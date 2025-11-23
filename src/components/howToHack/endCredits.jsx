@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import audioService from "@/lib/audioService";
 
 export default function EndCredits({ onComplete }) {
   const [isComplete, setIsComplete] = useState(false);
@@ -43,31 +44,47 @@ export default function EndCredits({ onComplete }) {
     { type: "space" },
 
     { type: "section", text: "Special Thanks" },
-    { type: "name", text: "Our Amazing Hackathon Participants" },
-    { type: "name", text: "The Open Source Community" },
+    { type: "name", text: "Interview Contributors" },
+    { type: "credit", role: "Founder of Maximally", name: "Rishul Chanana" },
+    { type: "credit", role: "5x Hackathon Winner", name: "Christopher Khaing" },
+    { type: "credit", role: "3x Hackathon Winner", name: "Ryan Tran" },
+    { type: "credit", role: "7x Hackathon Winner", name: "Arsh Gibran Tariq" },
+    { type: "credit", role: "3rd place winner in Scrapyard Seattle Hackathon", name: "Vibhu Rampally" },
+    { type: "credit", role: "Student", name: "Juan Miguel Recondo" },
     { type: "name", text: "All Playtesters and Beta Users" },
 
     { type: "space" },
 
-    { type: "section", text: "Partners & Resources" },
-    { type: "credit", role: "Partner", name: "Hack United" },
+    { type: "section", text: "Partnered Organizations" },
     { type: "credit", role: "Partner", name: "Maximally" },
+    { type: "credit", role: "Founder of Maximally", name: "Rishul Chanana" },
+    { type: "credit", role: "Partner", name: "Hack United" },
+    { type: "credit", role: "Founder of Hack United", name: "Tejas Chakrapani" },
     { type: "credit", role: "Partner", name: "Code Base" },
+    { type: "credit", role: "Chief Operating Officer of Code base", name: "Shashwat Chakraborty" },
     { type: "credit", role: "Partner", name: "Medihacks" },
+    { type: "credit", role: "Co Founder of Medi Hacks", name: "Tanuj Siripurapu" },
+
 
     { type: "space" },
 
     { type: "section", text: "Music & Sound" },
     { type: "name", text: "Audio sourced from royalty-free libraries" },
-    { type: "name", text: "Sound effects from Freesound.org" },
+    { type: "credit", role: "Pixabay", name: "freesound_community" },
+    { type: "credit", role: "Pixabay", name: "MatthewVakalluk73627" },
+    { type: "credit", role: "Pixabay", name: "PURNANAND_WASAVE" },
+    { type: "credit", role: "Pixabay", name: "XtremeFreddy" },
+    { type: "name", text: "Sound effects and background music from pixabay.com" },
 
     { type: "space" },
 
-    { type: "section", text: "Additional Thanks" },
-    { type: "name", text: "Coffee, for fueling late-night coding sessions" },
-    { type: "name", text: "Stack Overflow, for solving impossible bugs" },
-    { type: "name", text: "Our families and friends for their support" },
+    { type: "section", text: "Art and Images" },
+    { type: "name", text: "Art and Images sourced from royalty-free Makers" },
+    { type: "credit", role: "itch.io", name: "sutemo" },
+    { type: "name", text: "Art and Images maker from sutemo.itch.io" },
 
+
+    { type: "space" },
     { type: "space" },
     { type: "space" },
 

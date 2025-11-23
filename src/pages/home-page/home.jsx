@@ -41,15 +41,15 @@ export default function Home () {
                 </p>
 
                 <div className="mt-6 flex flex-wrap gap-4 justify-center lg:justify-start">
-                    <Link href="#projects">
-                    <Button
-                        size="lg"
-                        className="cursor-pointer bg-fuchsia-700 hover:bg-fuchsia-600 text-white border border-fuchsia-600 transition-colors"
-                    >
-                        Join Byteon
-                    </Button>
+                    <Link href="/how-to-hackathon">
+                        <Button
+                            size="lg"
+                            className="cursor-pointer bg-fuchsia-700 hover:bg-fuchsia-600 text-white border border-fuchsia-600 transition-colors"
+                        >
+                            Check it out!
+                        </Button>
                     </Link>
-                    <Link href="/about">
+                    <Link href="#aboutSection">
                     <Button
                         variant="outline"
                         size="lg"
