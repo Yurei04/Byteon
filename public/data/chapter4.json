@@ -189,56 +189,56 @@
         {
           "id": "scene5",
           "minigame": {
-            "minigame_type": "DialogueChoice",
-            "minigame_title": "Pitch Perfect",
-            "description": "Choose the best line for each part of your pitch.",
-            "rounds": [
-              {
-                "round": 1,
-                "part": "Intro",
-                "options": [
-                  "Hi, my name is [Name]. I’m here to present my app.",
-                  "Have you ever felt stuck studying alone, wishing someone could keep you going?"
-                ],
-                "correct_option": 2
-              },
-              {
-                "round": 2,
-                "part": "Problem",
-                "options": [
-                  "Students are lazy.",
-                  "Many students lose motivation when learning online due to lack of connection."
-                ],
-                "correct_option": 2
-              },
-              {
-                "round": 3,
-                "part": "Solution",
-                "options": [
-                  "We made an app that sends random alerts.",
-                  "We built FocusFriend — an AI buddy that gamifies your study habits."
-                ],
-                "correct_option": 2
-              },
-              {
-                "round": 4,
-                "part": "Impact",
-                "options": [
-                  "It’s kinda fun.",
-                  "FocusFriend helps students feel proud of their progress and less alone."
-                ],
-                "correct_option": 2
-              },
-              {
-                "round": 5,
-                "part": "Closing",
-                "options": [
-                  "Thank you.",
-                  "Together, let’s make learning more human — one study session at a time."
-                ],
-                "correct_option": 2
-              }
-            ],
+          "minigame_type": "MultipleChoice",
+          "minigame_title": "Pitch Perfect",
+          "description": "Choose the best line for each part of your pitch.",
+          "tasks": [
+            {
+              "id": 1,
+              "task": "Intro",
+              "options": [
+                "Hi, my name is [Name]. I’m here to present my app.",
+                "Have you ever felt stuck studying alone, wishing someone could keep you going?"
+              ],
+              "correct_answer": ["Have you ever felt stuck studying alone, wishing someone could keep you going?"]
+            },
+            {
+              "id": 2,
+              "task": "Problem",
+              "options": [
+                "Students are lazy.",
+                "Many students lose motivation when learning online due to lack of connection."
+              ],
+              "correct_answer": ["Many students lose motivation when learning online due to lack of connection."]
+            },
+            {
+              "id": 3,
+              "task": "Solution",
+              "options": [
+                "We made an app that sends random alerts.",
+                "We built FocusFriend — an AI buddy that gamifies your study habits."
+              ],
+              "correct_answer": ["We built FocusFriend — an AI buddy that gamifies your study habits."]
+            },
+            {
+              "id": 4,
+              "task": "Impact",
+              "options": [
+                "It’s kinda fun.",
+                "FocusFriend helps students feel proud of their progress and less alone."
+              ],
+              "correct_answer": ["FocusFriend helps students feel proud of their progress and less alone."]
+            },
+            {
+              "id": 5,
+              "task": "Closing",
+              "options": [
+                "Thank you.",
+                "Together, let’s make learning more human — one study session at a time."
+              ],
+              "correct_answer": ["Together, let’s make learning more human — one study session at a time."]
+            }
+          ],
             "achievement": {
               "title": "Pitch Master",
               "description": "Completed the Pitch Perfect mini-game and delivered a successful pitch.",
