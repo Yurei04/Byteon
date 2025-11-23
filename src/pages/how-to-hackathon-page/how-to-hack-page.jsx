@@ -10,7 +10,7 @@ import GameControls from "@/components/howToHack/gameControls";
 import ChapterManager from "@/components/howToHack/chapterManger";
 import EndCredits from "@/components/howToHack/endCredits";
 import TipsAndResources from "@/components/howToHack/tipsAndResources";
-import AudioPermissionDialog from "@/components/howToHack/audioPermissionDialog";
+import AudioPermissionDialog from "@/components/howToHack/audioPermissionDialogBox";
 import audioService from "@/lib/audioService";
 export default function HowToHackPage() {
     /* ----------------------------- STATE HOOKS FIRST ----------------------------- */

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function EndCredits({ onComplete }) {
   const [isComplete, setIsComplete] = useState(false);
@@ -259,12 +260,16 @@ export default function EndCredits({ onComplete }) {
           transition={{ duration: 1.5 }}
           className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
         >
-          <button 
-            onClick={() => window.location.href = '/'}
+         <Link href={"/"}>
+           <button 
+            onClick={() => {
+              audioService.stopBackgroundMusic()
+            }}
             className="px-8 py-4 text-lg font-semibold rounded-xl bg-fuchsia-600/30 hover:bg-fuchsia-600/50 border border-fuchsia-400/40 text-fuchsia-200 backdrop-blur-xl shadow-lg transition-all duration-300"
           >
             Return to Homepage
           </button>
+         </Link>
         </motion.div>
       )}
     </div>

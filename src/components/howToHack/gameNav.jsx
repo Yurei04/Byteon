@@ -3,8 +3,9 @@
 import * as React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import { Ghost, Menu, X } from "lucide-react"
 import AudioManager from "./audioManager"
+import audioService from "@/lib/audioService"
 
 export default function GameNav() {
   const [isOpen, setIsOpen] = React.useState(false)
@@ -49,13 +50,19 @@ export default function GameNav() {
               >
                 Load Game
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full cursor-pointer justify-start text-sm border border-transparent text-fuchsia-200 hover:border-fuchsia-400 hover:bg-fuchsia-950/40 transition-colors"
-              >
-                <Link href="/">Return Home</Link>
-              </Button>
+
+              <Link href="/">
+                <Button
+                  className="w-full cursor-pointer justify-start text-sm border border-transparent text-fuchsia-200 hover:border-fuchsia-400 hover:bg-fuchsia-950/40 transition-colors"
+                  variant="ghost"
+                  size="sm"
+                    onClick={() => {
+                      audioService.stopBackgroundMusic()
+                    }}
+                  >
+                  Return Home
+                </Button>
+              </Link>
             </div>
           )}
         </nav>

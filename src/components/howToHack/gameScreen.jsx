@@ -117,7 +117,7 @@ export default function GameScreen({
 
   return (
     <div className="relative w-full h-screen overflow-hidden text-white">
-      <div className="absolute flex justify-start items-start z-30 pointer-events-none">
+      <div className="absolute flex justify-start items-start z-30">
         <GameNav />
       </div>
       {/* BACKGROUND */}
