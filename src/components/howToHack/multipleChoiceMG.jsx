@@ -145,7 +145,7 @@ export default function MiniGameMultipleChoice({ minigameData, onComplete }) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-h-[90%] mx-auto p-6 bg-black/80 border-2 border-fuchsia-500 rounded-xl shadow-2xl"
+        className="w-full max-h-[50%] mx-auto p-6 bg-black/80 border-2 border-fuchsia-500 rounded-xl shadow-2xl mb-24"
       >
         <div className="text-center">
           {/* Pass/Fail Header */}
@@ -402,17 +402,26 @@ export default function MiniGameMultipleChoice({ minigameData, onComplete }) {
 
       {/* Submit Button */}
       {!answered && (
-        <button
-          onClick={handleSubmit}
-          disabled={selectedOptions.length === 0}
-          className={`w-full py-3 rounded-lg font-bold text-white transition-all ${
-            selectedOptions.length > 0
-              ? 'bg-fuchsia-600 hover:bg-fuchsia-700 active:scale-95'
-              : 'bg-gray-600 cursor-not-allowed opacity-50'
-          }`}
-        >
-          Submit Answer
-        </button>
+        <>
+          <button
+            onClick={handleSubmit}
+            disabled={selectedOptions.length === 0}
+            className={`w-full py-3 rounded-lg font-bold text-white transition-all ${
+              selectedOptions.length > 0
+                ? 'bg-fuchsia-600 hover:bg-fuchsia-700 active:scale-95'
+                : 'bg-gray-600 cursor-not-allowed opacity-50'
+            }`}
+          >
+            Submit Answer
+          </button>
+          <button
+            onClick={handleContinue}
+            className={"px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg cursor-pointer text-xs"}
+          >
+            Debug Skip
+          </button>
+        </>
+        
       )}
 
       {/* Warning if approaching limit */}
