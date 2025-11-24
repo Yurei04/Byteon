@@ -14,24 +14,24 @@ import TipsCard from "./tipsCards";
 export default function TipsAndResources() {
     const tips = [
         {
-            author: "Sumire",
-            title: "Stay Calm",
-            tip: "Always take a deep breath before responding to intense situations."
+            author: "Rishul Chanana",
+            title: "Founder of Maximally",
+            tip: "Joining a hackathon isn’t about being perfect — it’s about showing up to learn, mess around, and build something imperfect in a space that should feel like a playground, not a performance."
         },
         {
-            author: "HexenCore",
-            title: "Efficiency",
-            tip: "Short, clear instructions are always more effective."
+            author: "Ryan Tran",
+            title: "3x Hackathon Winner",
+            tip: "Keep building every day even if you're unsure where to start, and don’t forget to have fun instead of getting lost in the pressure to win."
         },
         {
-            author: "AI Ops",
-            title: "Focus",
-            tip: "Work on one task at a time to avoid being overwhelmed."
+            author: "Arsh Gibran Tariq",
+            title: "7x Hackathon Winner",
+            tip: "Treat hackathons as a chance to think for yourself, start small, have fun, and build something you’d actually use—because the real win is learning, not perfection."
         },
         {
-            author: "AI Guide",
-            title: "Consistency",
-            tip: "Small daily habits create long-term success."
+            author: "Juan Miguel Recondo",
+            title: "Student",
+            tip: "Start joining hackathons early—even if you feel unready—because the right tools and a willingness to learn on the go matter far more than perfect skills."
         }
     ];
 
