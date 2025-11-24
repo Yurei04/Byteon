@@ -1,5 +1,5 @@
 
-export default function AnnouncementControl({ children }) {
+export default function ControlLayout({ children }) {
   return (
       <div>
         {children}

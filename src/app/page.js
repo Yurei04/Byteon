@@ -4,6 +4,7 @@ import HowToHackathon from "./(layout)/how-to-hackathon/page";
 import NavBar from "@/components/navbar";
 import Footer from "@/components/footer";
 import AboutSection from "@/pages/about-page/about-page";
+import AnnounceSection from "@/pages/announce-control-page/announce-section";
 
 export default function Home() {
   return (
@@ -11,6 +12,7 @@ export default function Home() {
       <NavBar />
       <Homepage />
       <AboutSection />
+      <AnnounceSection />
       <Footer />
     </div>
   );
