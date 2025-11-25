@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import AnnounceCard from "@/components/announce/announce-card";
+import AnnouncementCard from "@/components/announce/announce-card";
 export default function AnnounceSection (
 
 
@@ -63,10 +64,21 @@ export default function AnnounceSection (
                         stopOnInteraction: false,
                     }),
                 ]}
-                className="w-full max-w-md"
+                className="w-full flex justify-center items-center"
             >
                 <CarouselContent>
-
+                  {announcements.map((item) => (
+                    <CarouselItem 
+                      key={item.id} 
+                      className="basis-1/3 p-4 flex justify-center"
+                    >
+                      <div className="w-full max-w-sm mx-auto">
+                        <AnnouncementCard
+                          item={item}
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
                 </CarouselContent>
             </Carousel>
         </motion.div>

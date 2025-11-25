@@ -79,7 +79,7 @@ export default function AnnounceForm({ onSuccess }) {
         record_after: 0
       }
 
-      const { data, error } = await mockSupabase
+      const { data, error } = await supabase
         .from('announcements')
         .insert([announcementData])
         .select()

@@ -51,7 +51,7 @@ export default function BlogForm ({ onSuccess }) {
         hackathon: formData.hackathon ? formData.hackathon.split(',').map(s => s.trim()) : []
       }
 
-      await mockSupabase.from('blogs').insert([blogData]).select()
+      await supabase.from('blogs').insert([blogData]).select()
       setAlert({ type: 'success', message: 'Blog created successfully!' })
       
       setFormData({

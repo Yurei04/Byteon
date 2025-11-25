@@ -89,7 +89,7 @@ export default function BlogPage() {
                 ) : (
                     <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
                         {blogs.map((item) => (
-                            <BlogCard key={item.id} item={item} onDelete={(id) => handleDelete('blog', id)} />
+                            <BlogCard key={item.id} item={item} />
                         ))}
                     </div>
                 )}

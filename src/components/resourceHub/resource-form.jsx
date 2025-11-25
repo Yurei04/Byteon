@@ -60,7 +60,7 @@ export default function ResourceForm({ onSuccess }) {
         organization_id: selectedOrg.id
       }
 
-      await mockSupabase.from('resource_hub').insert([resourceData]).select()
+      await supabase.from('resource_hub').insert([resourceData]).select()
       setAlert({ type: 'success', message: 'Resource created successfully!' })
       
       setFormData({
