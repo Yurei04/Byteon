@@ -1,39 +1,56 @@
-## CURRENTLY IN DEVELOPEMENT
+# **Byteon**
 
+Byteon is a multi-organization content and resource platform built with **Next.js**, **Supabase**, and **Tailwind CSS**. It serves as a unified hub where different organizations can create, manage, and showcase their announcements, blogs, and resource libraries under their own customized branding.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+---
 
-## Getting Started
+## 🚀 **What Byteon Does**
 
-First, run the development server:
+### **🔹 Multi-Organization System**
+Byteon supports multiple organizations, each with unique profiles, color schemes, descriptions, and authors. All content is isolated per organization using secure Supabase authentication and Row Level Security (RLS).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### **🔹 Announcements Module**
+Organizations can publish announcements with titles, descriptions, categories, and timestamps. These updates appear instantly in their branded announcement space.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### **🔹 Blogs Module**
+A lightweight CMS allows organizations to write and publish blogs with:
+- Titles  
+- Descriptions  
+- Full content  
+- Author info  
+- Images  
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Blogs are displayed cleanly with smooth UI/UX animations.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### **🔹 Resource Hub**
+A central repository where organizations can upload or link:
+- Files  
+- Guides  
+- Tools  
+- External references  
 
-## Learn More
+Resources can be categorized and searched easily.
 
-To learn more about Next.js, take a look at the following resources:
+### **🔹 Branding & Theming**
+Each organization controls:
+- Primary and secondary colors  
+- Theme presets  
+- Branding details  
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ensuring each org's pages feel unique while still fitting within the Byteon system.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### **🔹 Permissions & Security**
+Organizations can only view and modify their own:
+- Announcements  
+- Blogs  
+- Resources  
 
-## Deploy on Vercel
+Thanks to Supabase-level data separation.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🎯 **Project Purpose**
+
+Byteon aims to provide a **centralized platform** for communities, student organizations, and teams to manage their public-facing content without needing separate websites. It offers a modern, animated, and organized experience using a scalable multi-tenant structure.
+
+---
