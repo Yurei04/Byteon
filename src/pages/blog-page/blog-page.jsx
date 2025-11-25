@@ -88,11 +88,9 @@ export default function BlogPage() {
                     </div>
                 ) : (
                     <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
-                    {filteredData.map((data) => (
-                        <div key={data.id} className="flex justify-center">
-                            <BlogCard {...data} />
-                        </div>
-                    ))}
+                        {blogs.map((item) => (
+                            <BlogCard key={item.id} item={item} onDelete={(id) => handleDelete('blog', id)} />
+                        ))}
                     </div>
                 )}
             </motion.div>

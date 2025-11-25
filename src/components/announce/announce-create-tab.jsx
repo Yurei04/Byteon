@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import AnnounceForm from "./announce-form"
 import { supabase } from "@/lib/supabase"
+import BlogForm from "../blog/blog-form"
 
 export default function AnnounceCreateTab (
 
@@ -191,11 +192,7 @@ export default function AnnounceCreateTab (
 
                 {/* Blogs Tab */}
                 <TabsContent value="createBlogs" className="space-y-6">
-                  <div className="text-center py-12">
-                    <FileText className="w-16 h-16 mx-auto mb-4 text-fuchsia-300" />
-                    <h3 className="text-2xl font-bold text-white mb-2">Blog Management</h3>
-                    <p className="text-fuchsia-200 mb-6">Coming soon...</p>
-                  </div>
+                  <BlogForm />
                 </TabsContent>
 
                 {/* Resources Tab */}
