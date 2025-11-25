@@ -21,9 +21,13 @@ import {
 import AnnounceForm from "@/components/announce/announce-form"
 import AnnounceCard from "@/components/announce/announce-card"
 import { supabase } from "@/lib/supabase"
+import AnnounceViewTab from "@/components/announce/announce-view-tab"
+import AnnounceCreateTab from "@/components/announce/announce-create-tab"
 
 export default function AnnouncePage() {
-  const [activeTab, setActiveTab] = useState("announcements")
+  const [activeViewTab, setActiveViewTab] = useState("viewAnnouncement")
+  const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
+  const [activeTab, setActiveTab] = useState("view")
   const [announcements, setAnnouncements] = useState([])
   const [organizations, setOrganizations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -108,49 +112,13 @@ export default function AnnouncePage() {
     }
   }
 
-  const handleCheckClick = async (announcementId, isExpired) => {
-    try {
-      const field = isExpired ? 'record_after' : 'record'
-      const announcement = announcements.find(a => a.id === announcementId)
-      
-      const { error } = await supabase
-        .from('announcements')
-        .update({ [field]: (announcement[field] || 0) + 1 })
-        .eq('id', announcementId)
-
-      if (error) throw error
-      
-      await fetchAnnouncements()
-      await fetchStats()
-    } catch (error) {
-      console.error('Error updating check count:', error)
-    }
-  }
-
-  const handleDeleteAnnouncement = async (announcementId) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return
-
-    try {
-      const { error } = await supabase
-        .from('announcements')
-        .delete()
-        .eq('id', announcementId)
-
-      if (error) throw error
-      
-      await fetchAnnouncements()
-      await fetchStats()
-    } catch (error) {
-      console.error('Error deleting announcement:', error)
-    }
-  }
-
-  const handleAnnouncementCreated = () => {
-    fetchData()
-  }
-
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <div className="w-full min-h-screen bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+      <div className="w-full text-center bg-fuchsia-900">
+        <p className="text-fuchsia-200 max-w-2xl mx-auto text-md">
+          This Page is currently in Beta Testing 
+        </p>
+      </div>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -158,14 +126,14 @@ export default function AnnouncePage() {
           transition={{ duration: 0.8, type: "spring", bounce: 0.25 }}
           className="mb-8"
         >
-          <div className="text-center mb-8">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
+          <div className="text-center mb-8 mt-8">
+            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-bold mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-500">
-                Control Center
+                Dashboard Center
               </span>
             </h1>
-            <p className="text-fuchsia-200 max-w-2xl mx-auto text-lg">
-              Manage announcements, blogs, and resources all in one place
+            <p className="text-fuchsia-200 max-w-2xl mx-auto text-md">
+              Welcome Back {organizations.name} Manage announcements, blogs, and resources all in one place 
             </p>
           </div>
 
@@ -177,7 +145,7 @@ export default function AnnouncePage() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="bg-gradient-to-br from-blue-500 to-blue-600 border-0 text-white">
+              <Card className="bg-gradient-to-br from-blue-500/50 to-blue-600/50 border-blue-400 border text-white">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -189,11 +157,11 @@ export default function AnnouncePage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-500 to-green-600 border-0 text-white">
+              <Card className="bg-gradient-to-br from-green-500/50 to-green-600/50 border-green-400 border text-white">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-green-100 text-sm">Active Now</p>
+                      <p className="text-green-100 text-sm">Resource</p>
                       <p className="text-3xl font-bold">{stats.activeAnnouncements}</p>
                     </div>
                     <Calendar className="w-10 h-10 text-green-200" />
@@ -201,11 +169,11 @@ export default function AnnouncePage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-purple-500 to-purple-600 border-0 text-white">
+              <Card className="bg-gradient-to-br from-purple-500/50 to-purple-600/50 border-purple-400 border text-white">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-purple-100 text-sm">Total Checks</p>
+                      <p className="text-purple-100 text-sm">Blogs</p>
                       <p className="text-3xl font-bold">{stats.totalChecks}</p>
                     </div>
                     <TrendingUp className="w-10 h-10 text-purple-200" />
@@ -213,11 +181,11 @@ export default function AnnouncePage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 text-white">
+              <Card className="bg-gradient-to-br from-orange-500/50 to-orange-600/50 border-orange-400 border text-white">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-orange-100 text-sm">Organizations</p>
+                      <p className="text-orange-100 text-sm">Total Visits</p>
                       <p className="text-3xl font-bold">{stats.totalOrganizations}</p>
                     </div>
                     <Users className="w-10 h-10 text-orange-200" />
@@ -226,107 +194,35 @@ export default function AnnouncePage() {
               </Card>
             </motion.div>
           )}
-
-          {/* Tabs */}
           <Card className="bg-white/10 backdrop-blur-lg border-white/20">
-            <CardContent className="p-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid w-full grid-cols-3 mb-6">
-                  <TabsTrigger value="announcements" className="flex items-center gap-2">
+            <CardContent className="p-2">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex justify-center ">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="create" className="flex items-center gap-2">
                     <Megaphone className="w-4 h-4" />
-                    Announcements
+                    Create
                   </TabsTrigger>
-                  <TabsTrigger value="blogs" className="flex items-center gap-2">
+                  <TabsTrigger value="view" className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    Blogs
-                  </TabsTrigger>
-                  <TabsTrigger value="resources" className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Resources
+                    View
                   </TabsTrigger>
                 </TabsList>
 
-                {/* Announcements Tab */}
-                <TabsContent value="announcements" className="space-y-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-2xl font-bold text-white">Announcements</h2>
-                  </div>
-
-                  {/* Create Form */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <AnnounceForm 
-                      supabase={supabase}
-                      onSuccess={handleAnnouncementCreated}
-                    />
-                  </motion.div>
-
-                  {/* Announcements List */}
-                  <div className="mt-8">
-                    <h3 className="text-xl font-bold text-white mb-4">All Announcements</h3>
-                    {isLoading ? (
-                      <div className="flex justify-center items-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
-                      </div>
-                    ) : announcements.length === 0 ? (
-                      <Alert>
-                        <AlertDescription className="text-center py-8">
-                          No announcements yet. Create your first one above!
-                        </AlertDescription>
-                      </Alert>
-                    ) : (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {announcements.map((announcement) => (
-                          <motion.div
-                            key={announcement.id}
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.3 }}
-                            className="relative"
-                          >
-                            <AnnounceCard
-                              announcement={announcement}
-                              onCheckClick={handleCheckClick}
-                              colorScheme={announcement.color_scheme || 'blue'}
-                            />
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              className="absolute top-2 right-2 z-10"
-                              onClick={() => handleDeleteAnnouncement(announcement.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </motion.div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                {/* View Tab */}
+                <TabsContent value="view" className="space-y-6">
+                  <AnnounceViewTab />
                 </TabsContent>
 
                 {/* Blogs Tab */}
-                <TabsContent value="blogs" className="space-y-6">
-                  <div className="text-center py-12">
-                    <FileText className="w-16 h-16 mx-auto mb-4 text-fuchsia-300" />
-                    <h3 className="text-2xl font-bold text-white mb-2">Blog Management</h3>
-                    <p className="text-fuchsia-200 mb-6">Coming soon...</p>
-                  </div>
-                </TabsContent>
-
-                {/* Resources Tab */}
-                <TabsContent value="resources" className="space-y-6">
-                  <div className="text-center py-12">
-                    <BookOpen className="w-16 h-16 mx-auto mb-4 text-fuchsia-300" />
-                    <h3 className="text-2xl font-bold text-white mb-2">Resource Management</h3>
-                    <p className="text-fuchsia-200 mb-6">Coming soon...</p>
-                  </div>
+                <TabsContent value="create" className="space-y-6">
+                  <AnnounceCreateTab />
                 </TabsContent>
               </Tabs>
             </CardContent>
           </Card>
+
+          {/* Tabs */}
+          
         </motion.div>
       </div>
     </div>

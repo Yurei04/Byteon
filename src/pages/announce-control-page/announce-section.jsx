@@ -3,14 +3,12 @@ import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carouse
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-
+import Autoplay from "embla-carousel-autoplay";
 export default function AnnounceSection (
 
 
 ) {
     const [announcements, setAnnounements] = useState([]);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filter, setFilter] = useState("all");
 
     useEffect(() => {
       async function fetchAnnouncements() {
@@ -67,11 +65,9 @@ export default function AnnounceSection (
                 className="w-full max-w-md"
             >
                 <CarouselContent>
-                    {tips.map((item, index) => (
-                        <CarouselItem key={index} className="flex justify-center">
-
-                        </CarouselItem>
-                    ))}
+                  <CarouselItem className="flex justify-center">
+                    {/* Add / fix card later */}
+                  </CarouselItem>
                 </CarouselContent>
             </Carousel>
         </motion.div>
