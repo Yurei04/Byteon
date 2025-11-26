@@ -11,6 +11,9 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog"
+import BlogForm from "./blog-form"
+import BlogUserForm from "./blog-user-form"
 
 export default function BlogEmpty({ onCreate }) {
   return (
@@ -28,9 +31,16 @@ export default function BlogEmpty({ onCreate }) {
 
         <EmptyContent>
           <div className="flex gap-3 mt-4">
-            <Button onClick={onCreate} className="bg-fuchsia-600 hover:bg-fuchsia-500 cursor-pointer">
-              Create Blog
-            </Button>
+            <Dialog>
+              <DialogTrigger className="bg-fuchsia-400">Create</DialogTrigger>
+              <DialogContent>
+                  <DialogTitle></DialogTitle>
+                  <DialogContent>
+                    <BlogUserForm />
+                  </DialogContent>
+                
+              </DialogContent>
+            </Dialog>
             <Button variant="outline" onClick={onCreate} className={"cursor-pointer"}>
               Manage
             </Button>
