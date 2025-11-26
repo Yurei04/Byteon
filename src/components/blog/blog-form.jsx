@@ -84,8 +84,8 @@ export default function BlogForm ({ onSuccess }) {
         )}
 
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Label className="text-white">Organization *</Label>
+          <div className="space-y-2 p-2 border border-red-400 rounded-xl">
+            <Label className="text-white">Organization - This Is For Testing Purposes Only!</Label>
             <Select onValueChange={(val) => setSelectedOrg(organizations.find(o => o.id === parseInt(val)))} value={selectedOrg?.id?.toString()}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Select organization" />

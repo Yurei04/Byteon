@@ -1,14 +1,17 @@
 "use client";
-
-import React, { useMemo, useEffect, useRef } from "react";
+import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion";
-import TipsAndResources from "./tipsAndResources";
+import Autoplay from "embla-carousel-autoplay";
+import AnnouncePublicCard from "@/components/announce/announce-public-card";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 
 /**
  * GameFlow Component - Fixed for Main Page Integration
  * Shows vertical scrollable timeline of chapter progression
  * Receives state from parent (HowToHackPage) which gets it from ChapterManager
  */
+
 export default function GameFlow({
   chapterData,
   currentEventIndex = 0,  // Default to 0 if not provided
@@ -16,7 +19,7 @@ export default function GameFlow({
   isShowingMinigame = false
 }) {
   const containerRef = useRef(null);
-  
+  const [announcements, setAnnounements] = useState([]);
   const events = useMemo(() => chapterData?.events ?? [], [chapterData]);
 
   // Auto-scroll to active element
@@ -32,11 +35,64 @@ export default function GameFlow({
     }
   }, [currentEventIndex, currentDialogIndex, isShowingMinigame]);
 
-  // Show placeholder if no data
+
+
+  useEffect(() => {
+    async function fetchAnnouncements() {
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("*")
+        .order("created_at", {ascending: false}
+        )
+        if(error) console.log("Error", error)
+        else setAnnounements(data)
+    }
+
+    fetchAnnouncements()
+  }, [])
+
+  // Show placeholder if no data or end 
   if (!chapterData || !events.length) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-gray-400 p-4">
-        <TipsAndResources />
+      <div className="flex flex-col items-center justify-center h-full mt-4 text-gray-400 p-4">
+        <div className="text-center mb-12">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-500">
+                Join Hackathons
+              </span>
+            </h1>
+
+            <p className="text-fuchsia-200 max-w-2xl mx-auto text-md">
+              Join Most recent Hackathons right now!
+            </p>
+          </div>
+        <Carousel
+          opts={{
+            align: "center",
+            axis: "y",
+            loop: true,
+          }}
+          plugins={[
+            Autoplay({
+              delay: 3000,
+              stopOnInteraction: false,
+            }),
+          ]}
+          className="w-full flex  justify-center items-center h-full"
+        >
+          <CarouselContent className="flex">
+            {announcements.map((item) => (
+              <CarouselItem
+                key={item.id}
+                className="p-4 flex flex-col justify-center items-center"
+              >
+                <div className="w-full max-w-sm mx-auto">
+                  <AnnouncePublicCard item={item} />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
 
       </div>
     );

@@ -28,7 +28,7 @@ export default function AnnounceSection (
     }, [])
 
     return (
-      <section id="aboutSection" className="w-full min-h-screen px-4 py-20 flex flex-col items-center justify-center bg-gradient-to-b from-black to-purple-950/40">
+      <section className="w-full min-h-screen px-4 py-20 flex flex-col items-center justify-center bg-gradient-to-b from-black to-purple-950/40">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
