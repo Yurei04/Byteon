@@ -4,9 +4,9 @@ import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
-import AnnounceCard from "@/components/announce/announce-card";
-import AnnouncementCard from "@/components/announce/announce-card";
-import AnnouncePublicCard from "@/components/announce/announce-public-card";
+import AnnounceCard from "@/components/(dashboard)/announce/announce-card";
+import AnnouncementCard from "@/components/(dashboard)/announce/announce-card";
+import AnnouncePublicCard from "@/components/(dashboard)/announce/announce-public-card";
 export default function AnnounceSection (
 
 

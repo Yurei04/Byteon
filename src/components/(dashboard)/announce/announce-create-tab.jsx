@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import AnnounceForm from "./announce-form"
 import { supabase } from "@/lib/supabase"
-import BlogForm from "../blog/blog-form"
+import BlogForm from "../../blog/blog-form"
 
 export default function AnnounceCreateTab (
 

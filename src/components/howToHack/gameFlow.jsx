@@ -3,7 +3,7 @@ import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carouse
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion";
 import Autoplay from "embla-carousel-autoplay";
-import AnnouncePublicCard from "@/components/announce/announce-public-card";
+import AnnouncePublicCard from "@/components/(dashboard)/announce/announce-public-card";
 import React, { useMemo, useState, useEffect, useRef } from "react";
 
 /**

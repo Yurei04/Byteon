@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Calendar, MapPin, Trophy, ExternalLink, Users, Award, Trash2 } from "lucide-react"
 import { useState } from "react"
-import { Button } from "../ui/button"
+import { Button } from "../../ui/button"
 
 export default function AnnouncementCard({ item, onDelete }) {
   const isExpired = new Date(item.date_end) < new Date()

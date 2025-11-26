@@ -1,7 +1,7 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Calendar, ExternalLink, Award } from "lucide-react"
-import { Button } from "../ui/button"
+import { Button } from "../../ui/button"
 
 export default function AnnouncePublicCard({ item }) {
   const isExpired = new Date(item.date_end) < new Date()

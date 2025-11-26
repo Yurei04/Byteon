@@ -1,7 +1,7 @@
 
 export default function Profile () {
     return (
-        <div className="flex flex-col p-0 m-0 items-center justify-center overflow-x-hidden">
+        <div className="w-full min-screen overflow-x-hidden">
 
         </div>
     )

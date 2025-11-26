@@ -35,10 +35,10 @@ import {
 } from "lucide-react"
 import ResourceForm from "@/components/resourceHub/resource-form"
 import BlogForm from "@/components/blog/blog-form"
-import AnnounceForm from "@/components/announce/announce-form"
+import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
 import ResourceCard from "@/components/resourceHub/resourceHub-card"
 import BlogCard from "@/components/blog/blogCard"
-import AnnouncementCard from "@/components/announce/announce-card"
+import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
 
 export default function DashboardCenter() {
   const [activeTab, setActiveTab] = useState("view")

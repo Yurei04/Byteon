@@ -17,8 +17,8 @@ import {
   Trash2,
   Edit
 } from "lucide-react"
-import AnnounceForm from "@/components/announce/announce-form"
-import AnnounceCard from "@/components/announce/announce-card"
+import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
+import AnnounceCard from "@/components/(dashboard)/announce/announce-card"
 import { supabase } from "@/lib/supabase"
 
 export default function AnnounceViewTab (
