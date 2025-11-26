@@ -6,40 +6,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { supabase } from "@/lib/supabase"
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { 
   Plus, 
   FileText, 
-  Megaphone, 
-  BookOpen,
-  Calendar,
-  Users,
   TrendingUp,
-  Loader2,
-  Trash2,
-  Edit,
-  ExternalLink,
   AlertCircle,
   CheckCircle,
   Award,
-  User2
+  User2,
+  BookOpen
 } from "lucide-react"
 
 import UserProfile from "@/components/(dashboard)/userDashboard/profile"
 import BlogEmpty from "@/components/blog/blog-empty"
 
 export default function UserDashboardPage() {
-  const [activeTab, setActiveTab] = useState("view")
-  const [activeViewTab, setActiveViewTab] = useState("viewAnnouncement")
-  const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
+  const [activeTab, setActiveTab] = useState("profile")
 
   const [blogs, setBlogs] = useState([])
-
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({
     totalBlogs: 0,
@@ -108,10 +91,10 @@ export default function UserDashboardPage() {
               transition={{ delay: 0.2 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
             >
-              <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20 rounded-b-full">
+              <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20 rounded-full">
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 " />
                 <CardContent className="relative p-6">
-                  <div className="flex items-center justify-between p-2">
+                  <div className="flex items-center justify-center">
                     <User2 className="w-1/2 h-1/2 " />
                   </div>
                 </CardContent>
@@ -150,6 +133,23 @@ export default function UserDashboardPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="group relative bg-gradient-to-br from-emerald-900/40 via-green-900/40 to-slate-950/40 backdrop-blur-xl border border-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-emerald-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/0 via-green-600/5 to-emerald-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-emerald-200/70 text-sm mb-1">Views</p>
+                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-green-300">
+                        {stats.totalResources}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-emerald-500/20 rounded-lg border border-emerald-400/30">
+                      <BookOpen className="w-8 h-8 text-emerald-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
 
@@ -162,12 +162,18 @@ export default function UserDashboardPage() {
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
+                  <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
                     <TabsTrigger 
                       value="profile" 
                       className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
                     >
                       <FileText className="w-4 h-4" />Profile
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="myBlog" 
+                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
+                    >
+                      <Plus className="w-4 h-4" />My Blogs
                     </TabsTrigger>
                     <TabsTrigger 
                       value="create" 
@@ -179,6 +185,14 @@ export default function UserDashboardPage() {
 
                   {/* View Tab */}
                   <TabsContent value="profile">
+                    <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
+                      <CardContent className="p-6">
+                        <UserProfile />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="myblog">
                     <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                       <CardContent className="p-6">
                         <UserProfile />

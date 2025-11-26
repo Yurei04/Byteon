@@ -1,9 +1,9 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
-import { Calendar, ExternalLink, Award } from "lucide-react"
+import { Calendar, ExternalLink, Award, Trash2 } from "lucide-react"
 import { Button } from "../../ui/button"
 
-export default function AnnouncePublicCard({ item }) {
+export default function AnnouncementCard({ item, onDelete }) {
   const isExpired = new Date(item.date_end) < new Date()
   
   return (
@@ -14,11 +14,24 @@ export default function AnnouncePublicCard({ item }) {
       <CardContent className="relative p-6">
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
+            {/* Organization Name */}
+            {item.organization && (
+              <div className="mb-2">
+                <span className="text-xs font-semibold text-fuchsia-400 uppercase tracking-wider">
+                  {item.organization}
+                </span>
+              </div>
+            )}
+            
+            {/* Title */}
             <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-3 group-hover:from-fuchsia-200 group-hover:via-purple-200 group-hover:to-pink-200 transition-all duration-300">
               {item.title}
             </h3>
+            
+            {/* Description */}
             <p className="text-gray-300 text-sm mb-4 leading-relaxed">{item.des}</p>
             
+            {/* Badges */}
             <div className="flex flex-wrap gap-2 mb-4">
               {item.prizes && (
                 <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
@@ -37,6 +50,7 @@ export default function AnnouncePublicCard({ item }) {
               )}
             </div>
             
+            {/* Info Section */}
             <div className="text-sm text-gray-400 space-y-2 bg-black/20 rounded-lg p-3 border border-purple-500/10">
               <p className="flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-fuchsia-400" />
@@ -61,13 +75,14 @@ export default function AnnouncePublicCard({ item }) {
           </div>
         </div>
         
+        {/* Action Buttons */}
         {(item.website_link || item.dev_link) && (
-          <div className="flex gap-3 mt-5">
+          <div className="flex gap-3 mt-5 pt-4 border-t border-purple-500/10">
             {item.website_link && (
               <a href={item.website_link} target="_blank" rel="noopener noreferrer" className="flex-1">
                 <Button 
                   size="sm" 
-                  className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-fuchsia-500/30 transition-all duration-300"
+                  className="w-full cursor-pointer bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-fuchsia-500/30 transition-all duration-300"
                 >
                   <ExternalLink className="w-3.5 h-3.5 mr-2" />
                   Website
@@ -78,7 +93,7 @@ export default function AnnouncePublicCard({ item }) {
               <a href={item.dev_link} target="_blank" rel="noopener noreferrer" className="flex-1">
                 <Button 
                   size="sm" 
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-0 shadow-lg shadow-purple-500/30 transition-all duration-300"
+                  className="w-full cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-0 shadow-lg shadow-purple-500/30 transition-all duration-300"
                 >
                   <ExternalLink className="w-3.5 h-3.5 mr-2" />
                   DevPost
