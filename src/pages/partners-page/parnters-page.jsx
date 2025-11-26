@@ -9,15 +9,17 @@ const data = [
         location: "USA",
         des: "Empowering the Next Generation of Tech Innovators",
         websiteLink: "https://www.hackunited.org/",
-        tags: ["tech", "innovation"]
+        tags: ["tech", "innovation"],
+        colorTheme: "purple"
     },
     {
         name: "Maximally",
         image: "/images/Maximallyc.png",
         location: "India",
-        des: " global innovation league that hosts high-stakes hackathons for ambitious builders. Built by hackers, for hackers.",
+        des: "A global innovation league that hosts high-stakes hackathons for ambitious builders. Built by hackers, for hackers.",
         websiteLink: "https://maximally.in/",
-        tags: ["Innovation", "Hackathon"]
+        tags: ["Innovation", "Hackathon"],
+        colorTheme: "red"
     },
     {
         name: "CS Base",
@@ -25,26 +27,28 @@ const data = [
         location: "US",
         des: "CS Base provides a global ecosystem that enables elementary to high school students to specialize in modern computer science.",
         websiteLink: "https://www.csbase.org/",
-        tags: ["Tech", "innovation"]
+        tags: ["Tech", "innovation"],
+        colorTheme: "blue"
     },
     {
         name: "Medihacks",
         image: "/images/meddi.png",
         location: "US",
-        des: "Fostering innovation today for a healthier tommorow.",
+        des: "Fostering innovation today for a healthier tomorrow.",
         websiteLink: "https://medihacks.org/",
-        tags: ["Health", "Tech"]
+        tags: ["Health", "Tech"],
+        colorTheme: "pink"
     },
 ]
 
-export default function PartnersPage () {
+export default function PartnersPage() {
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-center gap-8 p-8">
             <div className="pointer-events-none fixed inset-0 -z-20">
                 <Threads
-                amplitude={2}
-                distance={0.7}
-                enableMouseInteraction={false}
+                    amplitude={2}
+                    distance={0.7}
+                    enableMouseInteraction={false}
                 />
             </div>
 
@@ -61,9 +65,9 @@ export default function PartnersPage () {
                 </p>
             </div>
         
-            <div className="flex flex-col gap-2 justify-evenly w-[80%] m-2">
-                {data.map((data, idx) => (
-                    <PartnersCard key={idx} {...data} />
+            <div className="flex flex-col gap-6 justify-evenly w-[80%] m-2">
+                {data.map((partner, idx) => (
+                    <PartnersCard key={idx} {...partner} />
                 ))}
             </div>
         </div>

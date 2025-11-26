@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import AnnounceCard from "@/components/announce/announce-card";
 import AnnouncementCard from "@/components/announce/announce-card";
+import AnnouncePublicCard from "@/components/announce/announce-public-card";
 export default function AnnounceSection (
 
 
@@ -73,9 +74,7 @@ export default function AnnounceSection (
                       className="basis-1/3 p-4 flex justify-center"
                     >
                       <div className="w-full max-w-sm mx-auto">
-                        <AnnouncementCard
-                          item={item}
-                        />
+                        <AnnouncePublicCard item={item} />
                       </div>
                     </CarouselItem>
                   ))}

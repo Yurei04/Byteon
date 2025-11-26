@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import Threads from "@/components/Threads";
 import { motion } from "framer-motion";
 import ResourceHubCard from "@/components/resourceHub/resourceHub-card";
+import ResourcePublicCard from "@/components/resourceHub/resource-public-card";
 
 export default function ResourceHubPage() {
   const [resource, setResource] = useState([]);
@@ -135,7 +136,7 @@ export default function ResourceHubPage() {
           <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
             {filteredData.map((item) => (
               <div key={item.id} className="flex justify-center">
-                <ResourceHubCard item={item} />
+                <ResourcePublicCard item={item} />
               </div>
             ))}
           </div>

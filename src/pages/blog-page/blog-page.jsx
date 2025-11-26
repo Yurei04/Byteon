@@ -7,6 +7,7 @@ import BlogSearchBar from "../../components/blog/blog-search"
 import Threads from "@/components/Threads"
 import { motion } from "framer-motion"
 import BlogEmpty from "@/components/blog/blog-empty"
+import BlogPublicCard from "@/components/blog/blog-public-card"
 
 export default function BlogPage() {
     const [blogs, setBlogs] = useState([])
@@ -89,7 +90,7 @@ export default function BlogPage() {
                 ) : (
                     <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
                         {blogs.map((item) => (
-                            <BlogCard key={item.id} item={item} />
+                            <BlogPublicCard key={item.id} item={item} />
                         ))}
                     </div>
                 )}
