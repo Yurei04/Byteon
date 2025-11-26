@@ -1,6 +1,6 @@
 
 
-export default function userDashboardForm (
+export default function UserDashboardForm (
 
 ) {
     return (

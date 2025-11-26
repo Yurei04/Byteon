@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, BookOpen, Sparkles } from "lucide-react";
+import { ExternalLink, Trash2, BookOpen, Sparkles } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
 
@@ -14,51 +14,64 @@ export default function ResourcePublicCard({ item }) {
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
       
       <CardContent className="relative p-6">
-        <div className="flex flex-col gap-4">
-          {/* Header with icon */}
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border border-fuchsia-400/30 rounded-lg shadow-lg shadow-fuchsia-500/10 group-hover:scale-110 transition-transform duration-300">
-              <BookOpen className="w-5 h-5 text-fuchsia-300" />
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            {/* Header with icon */}
+            <div className="flex items-start gap-3 mb-4">
+              <div className="p-2 bg-gradient-to-br from-fuchsia-500/20 to-purple-500/20 border border-fuchsia-400/30 rounded-lg shadow-lg shadow-fuchsia-500/10 group-hover:scale-110 transition-transform duration-300">
+                <BookOpen className="w-5 h-5 text-fuchsia-300" />
+              </div>
+              <div className="flex-1">
+                {/* Organization Name */}
+                {item.organization && (
+                  <div className="mb-2">
+                    <span className="text-xs font-semibold text-fuchsia-400 uppercase tracking-wider">
+                      {item.organization}
+                    </span>
+                  </div>
+                )}
+                
+                {/* Title */}
+                <h3 className="text-xl font-bold bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300 bg-clip-text text-transparent group-hover:from-fuchsia-200 group-hover:via-purple-200 group-hover:to-pink-200 transition-all duration-300">
+                  {item.title}
+                </h3>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-xl font-bold bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-2 group-hover:from-fuchsia-200 group-hover:via-purple-200 group-hover:to-pink-200 transition-all duration-300">
-                {item.title}
-              </h3>
-              {item.des && (
-                <p className="text-gray-300 text-sm leading-relaxed line-clamp-2">
-                  {item.des}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          {/* Category Badge */}
-          {item.category && (
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
-                <Sparkles className="w-3 h-3" />
-                {item.category}
-              </span>
-            </div>
-          )}
-          
-          {/* Action Button */}
-          {item.link && (
-            <a 
-              href={item.link} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="mt-2"
-            >
-              <Button 
-                size="sm" 
-                className="w-full bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-fuchsia-500/30 transition-all duration-300 group/btn"
+            
+            {/* Description */}
+            {item.des && (
+              <p className="text-gray-300 text-sm leading-relaxed line-clamp-2 mb-4">
+                {item.des}
+              </p>
+            )}
+            
+            {/* Category Badge */}
+            {item.category && (
+              <div className="flex items-center gap-2 mb-4">
+                <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
+                  <Sparkles className="w-3 h-3" />
+                  {item.category}
+                </span>
+              </div>
+            )}
+            
+            {/* Action Button */}
+            {item.link && (
+              <a 
+                href={item.link} 
+                target="_blank" 
+                rel="noopener noreferrer"
               >
-                <ExternalLink className="w-3.5 h-3.5 mr-2 group-hover/btn:rotate-12 transition-transform duration-300" />
-                Visit Resource
-              </Button>
-            </a>
-          )}
+                <Button 
+                  size="sm" 
+                  className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-fuchsia-500/30 transition-all cursor-pointer  duration-300 group/btn"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 mr-2 group-hover/btn:rotate-12 transition-transform duration-300" />
+                  Visit Resource
+                </Button>
+              </a>
+            )}
+          </div>
         </div>
         
         {/* Hover indicator line */}

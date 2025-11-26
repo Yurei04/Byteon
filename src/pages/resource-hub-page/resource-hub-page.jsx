@@ -133,7 +133,7 @@ export default function ResourceHubPage() {
             <h1 className="text-fuchsia-200 text-lg">Resource Hub Is Currently Empty...</h1>
           </div>
         ) : (
-          <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
+          <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-center justify-center">
             {filteredData.map((item) => (
               <div key={item.id} className="flex justify-center">
                 <ResourcePublicCard item={item} />
