@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
@@ -33,12 +33,25 @@ import {
   CheckCircle,
   Award
 } from "lucide-react"
+// Import the Pagination components from shadcn/ui
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination"
+
 import ResourceForm from "@/components/resourceHub/resource-form"
 import BlogForm from "@/components/blog/blog-form"
 import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
 import ResourceCard from "@/components/resourceHub/resourceHub-card"
 import BlogCard from "@/components/blog/blogCard"
 import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
+
+const ITEMS_PER_PAGE = 6;
 
 export default function DashboardCenter() {
   const [activeTab, setActiveTab] = useState("view")
@@ -58,6 +71,10 @@ export default function DashboardCenter() {
     activeAnnouncements: 0
   })
 
+  const [currentPageAnnouncement, setCurrentPageAnnouncement] = useState(1);
+  const [currentPageBlogs, setCurrentPageBlogs] = useState(1);
+  const [currentPageResources, setCurrentPageResources] = useState(1);
+
   useEffect(() => {
     fetchAllData()
   }, [])
@@ -71,6 +88,9 @@ export default function DashboardCenter() {
         fetchResources(),
         fetchOrganizations()
       ])
+      setCurrentPageAnnouncement(1);
+      setCurrentPageBlogs(1);
+      setCurrentPageResources(1);
     } catch (error) {
       console.error('Error:', error)
     } finally {
@@ -117,6 +137,111 @@ export default function DashboardCenter() {
       console.error('Error:', error)
     }
   }
+
+  const paginateData = (data, currentPage, itemsPerPage) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (data) => {
+    return Math.ceil(data.length / ITEMS_PER_PAGE);
+  };
+
+  const generatePaginationItems = (totalPages, currentPage, onPageChange) => {
+    const items = [];
+    // Max 5 visible page numbers + prev/next + ellipses
+    const maxVisiblePages = 5; 
+
+    // Previous button
+    items.push(
+      <PaginationItem key="prev">
+        <PaginationPrevious
+          onClick={() => onPageChange(currentPage - 1)}
+          isActive={currentPage > 1}
+          className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
+        />
+      </PaginationItem>
+    );
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // First page and ellipsis if needed
+    if (startPage > 1) {
+      items.push(
+        <PaginationItem key={1}>
+          <PaginationLink onClick={() => onPageChange(1)} className="cursor-pointer hover:bg-fuchsia-800/20">1</PaginationLink>
+        </PaginationItem>
+      );
+      if (startPage > 2) {
+        items.push(<PaginationItem key="ellipsis-start"><PaginationEllipsis /></PaginationItem>);
+      }
+    }
+
+    // Page numbers
+    for (let page = startPage; page <= endPage; page++) {
+      items.push(
+        <PaginationItem key={page}>
+          <PaginationLink 
+            onClick={() => onPageChange(page)} 
+            isActive={page === currentPage} 
+            className={`cursor-pointer ${page === currentPage ? 'bg-fuchsia-600/50 text-white' : 'hover:bg-fuchsia-800/20'}`}
+          >
+            {page}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    // Last page and ellipsis if needed
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(<PaginationItem key="ellipsis-end"><PaginationEllipsis /></PaginationItem>);
+      }
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink onClick={() => onPageChange(totalPages)} className="cursor-pointer hover:bg-fuchsia-800/20">{totalPages}</PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    // Next button
+    items.push(
+      <PaginationItem key="next">
+        <PaginationNext
+          onClick={() => onPageChange(currentPage + 1)}
+          isActive={currentPage < totalPages}
+          className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
+        />
+      </PaginationItem>
+    );
+
+    return items;
+  };
+  
+  // --- UseMemo for Paginated Data ---
+  const paginatedAnnouncements = useMemo(() => {
+    return paginateData(announcements, currentPageAnnouncement, ITEMS_PER_PAGE);
+  }, [announcements, currentPageAnnouncement]);
+
+  const paginatedBlogs = useMemo(() => {
+    return paginateData(blogs, currentPageBlogs, ITEMS_PER_PAGE);
+  }, [blogs, currentPageBlogs]);
+
+  const paginatedResources = useMemo(() => {
+    return paginateData(resources, currentPageResources, ITEMS_PER_PAGE);
+  }, [resources, currentPageResources]);
+
+  const totalPagesAnnouncement = getTotalPages(announcements);
+  const totalPagesBlogs = getTotalPages(blogs);
+  const totalPagesResources = getTotalPages(resources);
+  // --- END NEW: Pagination Logic Functions ---
+
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6">
@@ -281,6 +406,7 @@ export default function DashboardCenter() {
                             </TabsTrigger>
                           </TabsList>
 
+                          {/* --- View Announcement Tab Content with Pagination --- */}
                           <TabsContent value="viewAnnouncement">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent mb-6">
                               All Announcements
@@ -297,14 +423,31 @@ export default function DashboardCenter() {
                                 </AlertDescription>
                               </Alert>
                             ) : (
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {announcements.map((item) => (
-                                  <AnnouncementCard key={item.id} item={item} onDelete={(id) => handleDelete('announcement', id)} />
-                                ))}
-                              </div>
+                              <>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                  {/* Render only the paginated items */}
+                                  {paginatedAnnouncements.map((item) => (
+                                    <AnnouncementCard key={item.id} item={item} onDelete={(id) => handleDelete('announcement', id)} />
+                                  ))}
+                                </div>
+                                
+                                {/* Pagination Component */}
+                                {totalPagesAnnouncement > 1 && (
+                                  <Pagination className="mt-8">
+                                    <PaginationContent>
+                                      {generatePaginationItems(
+                                        totalPagesAnnouncement, 
+                                        currentPageAnnouncement, 
+                                        setCurrentPageAnnouncement
+                                      )}
+                                    </PaginationContent>
+                                  </Pagination>
+                                )}
+                              </>
                             )}
                           </TabsContent>
 
+                          {/* --- View Blogs Tab Content with Pagination --- */}
                           <TabsContent value="viewBlogs">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent mb-6">
                               All Blogs
@@ -321,14 +464,31 @@ export default function DashboardCenter() {
                                 </AlertDescription>
                               </Alert>
                             ) : (
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {blogs.map((item) => (
-                                  <BlogCard key={item.id} item={item} onDelete={(id) => handleDelete('blog', id)} />
-                                ))}
-                              </div>
+                              <>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                  {/* Render only the paginated items */}
+                                  {paginatedBlogs.map((item) => (
+                                    <BlogCard key={item.id} item={item} onDelete={(id) => handleDelete('blog', id)} />
+                                  ))}
+                                </div>
+
+                                {/* Pagination Component */}
+                                {totalPagesBlogs > 1 && (
+                                  <Pagination className="mt-8">
+                                    <PaginationContent>
+                                      {generatePaginationItems(
+                                        totalPagesBlogs, 
+                                        currentPageBlogs, 
+                                        setCurrentPageBlogs
+                                      )}
+                                    </PaginationContent>
+                                  </Pagination>
+                                )}
+                              </>
                             )}
                           </TabsContent>
 
+                          {/* --- View Resources Tab Content with Pagination --- */}
                           <TabsContent value="viewResources">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-green-300 bg-clip-text text-transparent mb-6">
                               All Resources
@@ -345,13 +505,30 @@ export default function DashboardCenter() {
                                 </AlertDescription>
                               </Alert>
                             ) : (
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {resources.map((item) => (
-                                  <ResourceCard key={item.id} item={item} onDelete={(id) => handleDelete('resource', id)} />
-                                ))}
-                              </div>
+                              <>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                  {/* Render only the paginated items */}
+                                  {paginatedResources.map((item) => (
+                                    <ResourceCard key={item.id} item={item} onDelete={(id) => handleDelete('resource', id)} />
+                                  ))}
+                                </div>
+
+                                {/* Pagination Component */}
+                                {totalPagesResources > 1 && (
+                                  <Pagination className="mt-8">
+                                    <PaginationContent>
+                                      {generatePaginationItems(
+                                        totalPagesResources, 
+                                        currentPageResources, 
+                                        setCurrentPageResources
+                                      )}
+                                    </PaginationContent>
+                                  </Pagination>
+                                )}
+                              </>
                             )}
                           </TabsContent>
+                          
                         </Tabs>
                       </CardContent>
                     </Card>
