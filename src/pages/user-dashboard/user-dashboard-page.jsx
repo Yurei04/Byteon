@@ -19,6 +19,7 @@ import UserProfile from "@/components/(dashboard)/userDashboard/profile"
 import BlogEmpty from "@/components/blog/blog-empty"
 import MyBlogs from "@/components/blog/blog-user"
 import BlogUserForm from "@/components/blog/blog-user-form"
+import { ReturnButton } from "@/components/return"
 
 export default function UserDashboardPage() {
   const [activeTab, setActiveTab] = useState("profile")
@@ -59,6 +60,9 @@ export default function UserDashboardPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-7xl mx-auto mb-6"
       >
+        <div className="fixed inset-0 p-6">
+          <ReturnButton />
+        </div>
         <div className="bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-3 px-4 rounded-xl shadow-lg shadow-fuchsia-500/10">
           <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />

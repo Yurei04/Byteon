@@ -17,10 +17,10 @@ export default function BlogPublicCard({ item, }) {
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             {/* Organization Name */}
-            {item.organization && (
+            {item.organization || item.user_name && (
               <div className="mb-2">
                 <span className="text-xs font-semibold text-fuchsia-400 uppercase tracking-wider">
-                  {item.organization}
+                  {item.organization || item.user_name}
                 </span>
               </div>
             )}

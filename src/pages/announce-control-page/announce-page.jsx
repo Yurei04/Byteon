@@ -50,6 +50,7 @@ import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
 import ResourceCard from "@/components/resourceHub/resourceHub-card"
 import BlogCard from "@/components/blog/blogCard"
 import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
+import { ReturnButton } from "@/components/return"
 
 const ITEMS_PER_PAGE = 6;
 
@@ -251,6 +252,9 @@ export default function DashboardCenter() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-7xl mx-auto mb-6"
       >
+        <div className="fixed inset-0 p-6">
+          <ReturnButton />
+        </div>
         <div className="bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-3 px-4 rounded-lg shadow-lg shadow-fuchsia-500/10">
           <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
             <AlertCircle className="w-4 h-4" />
@@ -268,6 +272,7 @@ export default function DashboardCenter() {
         >
           {/* Header */}
           <div className="text-center mb-8">
+
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
                 Dashboard Center
