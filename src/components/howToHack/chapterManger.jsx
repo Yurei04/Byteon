@@ -5,16 +5,12 @@ import GameScreen from "./gameScreen";
 import ChapterIntro from "./chapterIntro";
 import EndCredits from "./endCredits";
 
-/**
- * ChapterManager - Exposes State to Parent
- * Now calls onStateChange callback to update parent with current progress
- */
 export default function ChapterManager({ 
   chapterData, 
   onNextChapter, 
   onBackToMenu, 
   chapterGameIndex,
-  onStateChange  // NEW: Callback to update parent with current state
+  onStateChange
 }) {
   const [eventIndex, setEventIndex] = useState(0);
   const [dialogIndex, setDialogIndex] = useState(0);
@@ -23,9 +19,13 @@ export default function ChapterManager({
   const calledChapterEndRef = useRef(false);
   const [endGame, setEndGame] = useState(false);
 
-  // minigame state
+  // Minigame state
   const [isShowingMinigame, setIsShowingMinigame] = useState(false);
   const [minigameJustCompleted, setMinigameJustCompleted] = useState(false);
+  
+  // Tutorial state
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialShownForEvent, setTutorialShownForEvent] = useState(new Set());
 
   // Memoized events
   const events = useMemo(() => chapterData?.events ?? [], [chapterData]);
@@ -33,79 +33,81 @@ export default function ChapterManager({
   const dialogs = currentEvent?.dialogs ?? [];
   const currentDialog = dialogs[dialogIndex] ?? null;
 
-  // current minigame (if any)
+  // Current minigame (if any)
   const currentMinigame = currentEvent?.minigame ?? null;
 
   // Whether all dialogs for the current event have been shown
   const allDialogsFinished = dialogIndex >= dialogs.length;
 
-  // NEW: Notify parent of state changes
+  // Notify parent of state changes
   useEffect(() => {
     if (onStateChange && showGame) {
       onStateChange({
         eventIndex,
         dialogIndex,
-        isShowingMinigame
+        isShowingMinigame,
+        showTutorial
       });
     }
-  }, [eventIndex, dialogIndex, isShowingMinigame, showGame, onStateChange]);
+  }, [eventIndex, dialogIndex, isShowingMinigame, showTutorial, showGame, onStateChange]);
 
   // Reset chapter-level state when chapterData changes
-useEffect(() => {
-  if (!chapterData) {
-    console.warn("[ChapterManager] No chapterData provided — waiting for fetch...");
-
-    queueMicrotask(() => {
-      setShowChapterIntro(false);
-      setShowGame(false);
-      setIsShowingMinigame(false);
-      setMinigameJustCompleted(false);
-    });
-
-    return;
-  }
-
-  console.group(`[ChapterManager] Loading chapter: ${chapterData.id || "unknown"}`);
-  console.log("Title:", chapterData.title);
-  console.log("Events found:", chapterData.events?.length ?? 0);
-  console.log("Characters found:", chapterData.characters?.length ?? 0);
-  console.groupEnd();
-
-  // Reset state safely (React-19 compliant)
-  const timeout = setTimeout(() => {
-    console.log("[ChapterManager] Resetting event & dialog indices...");
-
-    queueMicrotask(() => {
-      setEventIndex(0);
-      setDialogIndex(0);
-      calledChapterEndRef.current = false;
-      setIsShowingMinigame(false);
-      setMinigameJustCompleted(false);
-      setShowGame(false);
-      setShowChapterIntro(true);
-    });
-  }, 0);
-
-  return () => clearTimeout(timeout);
-}, [chapterData]);
-
-
-  // Auto-start minigame when current event has a minigame and dialogs are finished
   useEffect(() => {
-    if (!currentMinigame) {
-      if (isShowingMinigame) {
-        queueMicrotask(() => setIsShowingMinigame(false));
-      }
+    if (!chapterData) {
+      console.warn("[ChapterManager] No chapterData provided — waiting for fetch...");
+
+      queueMicrotask(() => {
+        setShowChapterIntro(false);
+        setShowGame(false);
+        setIsShowingMinigame(false);
+        setMinigameJustCompleted(false);
+        setShowTutorial(false);
+        setTutorialShownForEvent(new Set());
+      });
+
       return;
     }
 
-    if (minigameJustCompleted) return;
+    console.group(`[ChapterManager] Loading chapter: ${chapterData.id || "unknown"}`);
+    console.log("Title:", chapterData.title);
+    console.log("Events found:", chapterData.events?.length ?? 0);
+    console.log("Characters found:", chapterData.characters?.length ?? 0);
+    console.groupEnd();
 
-    if (allDialogsFinished && !isShowingMinigame) {
-      queueMicrotask(() => setIsShowingMinigame(true));
-    }
-  }, [currentMinigame, allDialogsFinished, isShowingMinigame, minigameJustCompleted]);
-  
+    // Reset state safely
+    const timeout = setTimeout(() => {
+      console.log("[ChapterManager] Resetting event & dialog indices...");
+
+      queueMicrotask(() => {
+        setEventIndex(0);
+        setDialogIndex(0);
+        calledChapterEndRef.current = false;
+        setIsShowingMinigame(false);
+        setMinigameJustCompleted(false);
+        setShowGame(false);
+        setShowChapterIntro(true);
+        setShowTutorial(false);
+        setTutorialShownForEvent(new Set());
+      });
+    }, 0);
+
+    return () => clearTimeout(timeout);
+  }, [chapterData]);
+
+  // Handle tutorial completion
+  const handleTutorialComplete = () => {
+    console.log("[ChapterManager] ✅ Tutorial completed");
+    const eventKey = `${chapterData?.id}-${eventIndex}`;
+    setTutorialShownForEvent(prev => new Set([...prev, eventKey]));
+    setShowTutorial(false);
+    
+    // Start the actual minigame after tutorial
+    setTimeout(() => {
+      console.log("[ChapterManager] 🎮 Starting minigame after tutorial");
+      setIsShowingMinigame(true);
+    }, 100);
+  };
+
   // Handle progression logic (dialogs -> events -> chapter end)
   const handleNextDialog = () => {
     if (!events.length) {
@@ -117,41 +119,52 @@ useEffect(() => {
       `[Progress] Event ${eventIndex + 1}/${events.length} | Dialog ${Math.min(dialogIndex + 1, dialogs.length)}/${dialogs.length}`
     );
 
-    // If we're currently showing a minigame, ignore dialog progression
-    if (isShowingMinigame) {
-      console.log("[ChapterManager] In minigame mode — dialog progression paused.");
+    // If we're currently showing a tutorial or minigame, ignore dialog progression
+    if (showTutorial || isShowingMinigame) {
+      console.log("[ChapterManager] In tutorial/minigame mode — dialog progression paused.");
       return;
     }
 
-    // 1) more dialogs in current event
+    // 1) More dialogs in current event
     if (dialogIndex + 1 < dialogs.length) {
+      console.log("[ChapterManager] Advancing to next dialog");
       setDialogIndex((prev) => prev + 1);
       return;
     }
 
-    // If we've shown all dialogs for this event and a minigame exists and NOT completed, wait
-    if (currentMinigame && !isShowingMinigame && !minigameJustCompleted) {
-      console.log("[ChapterManager] Reached end of dialogs — starting minigame instead of advancing.");
-      setIsShowingMinigame(true);
-      return;
+    // 2) All dialogs finished - check for minigame
+    const eventKey = `${chapterData?.id}-${eventIndex}`;
+    if (currentMinigame && !minigameJustCompleted) {
+      console.log("[ChapterManager] All dialogs finished, minigame detected");
+      
+      // Check if tutorial has been shown for this event
+      if (!tutorialShownForEvent.has(eventKey)) {
+        console.log("[ChapterManager] 📚 Showing tutorial for minigame");
+        setShowTutorial(true);
+        return;
+      } else {
+        console.log("[ChapterManager] 🎮 Tutorial already shown, starting minigame directly");
+        setIsShowingMinigame(true);
+        return;
+      }
     }
 
-    // 2) more events in chapter (sequential)
+    // 3) More events in chapter
     if (eventIndex + 1 < events.length) {
       console.log(`[Progress] Moving to next event (${eventIndex + 2})`);
       setEventIndex((prev) => prev + 1);
       setDialogIndex(0);
       setIsShowingMinigame(false);
-      setMinigameJustCompleted(false); // Reset for next event
+      setMinigameJustCompleted(false);
+      setShowTutorial(false);
       return;
     }
 
-
+    // 4) Chapter complete
     if (!calledChapterEndRef.current) {
       calledChapterEndRef.current = true;
       console.log("[ChapterManager] Chapter complete! Triggering next chapter...");
       
-      // Check if this is the last chapter (chapter 5, index 4)
       if (chapterGameIndex === 4) {
         console.log("[ChapterManager] Final chapter complete! Showing end credits...");
         setEndGame(true);
@@ -160,28 +173,18 @@ useEffect(() => {
         onNextChapter?.();
       }
     }
-  
   };
 
   // Handler for minigame completion
   const handleMinigameComplete = (payload) => {
-    // Special "start" signal
+    // Special "start" signal - ignore this, we handle it via tutorial now
     if (payload === "start") {
-      if (!currentMinigame) {
-        console.warn("[ChapterManager] Received start signal but no minigame present.");
-        return;
-      }
-      if (!isShowingMinigame) {
-        console.log("[ChapterManager] Opening minigame UI.");
-        setIsShowingMinigame(true);
-      }
+      console.log("[ChapterManager] Ignoring auto-start signal (using tutorial flow)");
       return;
     }
 
-    // CRITICAL: Minigame completed!
     console.log("[ChapterManager] 🎮 Minigame completed! Result:", payload);
     
-    // Log achievement/points  // WILL ADD AFTER LOGIN IN DONE
     if (payload && typeof payload === "object") {
       if (payload.passed) {
         console.log("✅ Player PASSED the minigame!");
@@ -196,19 +199,18 @@ useEffect(() => {
 
     console.log("[ChapterManager] Closing minigame UI...");
     setIsShowingMinigame(false);
-    setMinigameJustCompleted(true); // Prevent retriggering
+    setMinigameJustCompleted(true);
 
     setTimeout(() => {
       console.log("[ChapterManager] Auto-advancing to next event after minigame...");
       
-      // Move to next event
       if (eventIndex + 1 < events.length) {
         console.log(`[ChapterManager] ➡️ Moving to event ${eventIndex + 2}`);
         setEventIndex((prev) => prev + 1);
         setDialogIndex(0);
-        setMinigameJustCompleted(false); // Reset for next potential minigame
+        setMinigameJustCompleted(false);
+        setShowTutorial(false);
       } else {
-        // Chapter complete
         console.log("[ChapterManager] 🏁 Chapter complete after minigame!");
         if (!calledChapterEndRef.current) {
           calledChapterEndRef.current = true;
@@ -221,13 +223,11 @@ useEffect(() => {
   // Handle missing data
   if (!chapterData || !events.length) {
     console.warn("[ChapterManager] Chapter data missing or empty.");
-    return (
-      <EndCredits/>
-    );
+    return <EndCredits />;
   }
 
   if (chapterGameIndex === 6) {
-    <EndCredits />
+    return <EndCredits />;
   }
 
   // Main render
@@ -250,14 +250,16 @@ useEffect(() => {
       ) : showGame ? (
         <GameScreen
           chapterGameIndex={chapterGameIndex}
-          key={`${chapterData.id}-${eventIndex}-${dialogIndex}-${isShowingMinigame}`}
+          key={`${chapterData.id}-${eventIndex}-${dialogIndex}-${isShowingMinigame}-${showTutorial}`}
           gameStart={true}
           onNextChapter={onNextChapter}
           data={chapterData}
           currentEvent={currentEvent}
-          currentDialog={isShowingMinigame ? null : currentDialog}
-          currentMinigame={isShowingMinigame ? currentMinigame : null}
+          currentDialog={showTutorial || isShowingMinigame ? null : currentDialog}
+          currentMinigame={(showTutorial || isShowingMinigame) ? currentMinigame : null}
           isShowingMinigame={isShowingMinigame}
+          tutorial={showTutorial}
+          onTutorialComplete={handleTutorialComplete}
           onNext={handleNextDialog}
           onMinigameComplete={handleMinigameComplete}
           onChapterEnd={() => {
@@ -267,18 +269,13 @@ useEffect(() => {
               onNextChapter?.();
             }
           }}
-
-
         />
-      )  : endGame ? (
+      ) : endGame ? (
         <EndCredits onComplete={() => {
-          onBackToMenu()
+          onBackToMenu();
         }} />
-      
       ) : (
-        <div>
-          erorr in game loading...
-        </div>
+        <div>Error in game loading...</div>
       )}
     </div>
   );

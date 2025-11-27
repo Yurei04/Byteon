@@ -20,24 +20,14 @@ export default function GameScreen({
   onMinigameComplete,
   onNextChapter,
   chapterGameIndex,
-  tutorial,
+  tutorial = false,
+  onTutorialComplete,
   onChapterEnd = () => {},
   gameStart = true,
 }) {
   const dialogs = currentEvent?.dialogs ?? [];
 
-  // Minigame auto-start detector
-  const startMiniGame =
-    !!currentMinigame &&
-    currentDialog == null &&
-    !isShowingMinigame;
-
-  useEffect(() => {
-    if (startMiniGame) {
-      console.log("[GameScreen] Auto-start minigame triggered.");
-      onMinigameComplete("start");
-    }
-  }, [startMiniGame, onMinigameComplete]);
+  // Removed auto-start logic - now handled by ChapterManager via tutorial flow
 
   const calledChapterEndRef = useRef(false);
   const mountedRef = useRef(true);
@@ -47,14 +37,15 @@ export default function GameScreen({
 
   // Debug logs
   useEffect(() => {
-    console.log("[GameScreen] Minigame State:", {
+    console.log("[GameScreen] State:", {
       hasMinigame: !!currentMinigame,
       isShowingMinigame,
+      showTutorial: tutorial,
       minigameType: currentMinigame?.minigame_type,
       eventId: currentEvent?.id,
       currentDialogExists: !!currentDialog
     });
-  }, [currentMinigame, isShowingMinigame, currentEvent?.id, currentDialog]);
+  }, [currentMinigame, isShowingMinigame, tutorial, currentEvent?.id, currentDialog]);
 
   // Background
   const backgroundSrc = currentEvent?.background
@@ -63,24 +54,21 @@ export default function GameScreen({
     ? `/images/${data.background}`
     : "/images/kaede.jpg";
 
-  // Get character image - now directly from dialog.image
+  // Get character image
   const getCharacterImage = (dialog) => {
     if (!dialog) return null;
     
     const character = dialog.character;
     
-    // Don't show images for Narrator or You
     if (!character || character === "Narrator" || character === "You") {
       return null;
     }
     
-    // If dialog has direct image path, use it
     if (dialog.image) {
       console.log("[Character Image - Direct]", dialog.image);
       return dialog.image;
     }
     
-    // Fallback: construct from character + pose (backward compatibility)
     const pose = dialog.pose || "neutral";
     const fallbackPath = `/images/${character.toLowerCase()}_${pose.toLowerCase()}.png`;
     console.log("[Character Image - Fallback]", fallbackPath);
@@ -90,10 +78,12 @@ export default function GameScreen({
   const currentSpeaker = currentDialog?.character ?? "Narrator";
   const charSrc = getCharacterImage(currentDialog);
 
-  // Render priority
+  // Render priority - UPDATED to include tutorial
   let contentToRender;
 
-  if (currentMinigame && isShowingMinigame) {
+  if (tutorial && currentMinigame) {
+    contentToRender = "tutorial";
+  } else if (currentMinigame && isShowingMinigame) {
     contentToRender = "minigame";
   } else if (currentEvent?.type === "choice") {
     contentToRender = "choice";
@@ -122,6 +112,7 @@ export default function GameScreen({
       <div className="absolute flex justify-start items-start z-30">
         <GameNav />
       </div>
+      
       {/* BACKGROUND */}
       <div className="absolute inset-0 -z-20">
         <Image
@@ -133,9 +124,8 @@ export default function GameScreen({
         />
       </div>
 
-
-      {/* CHARACTER — HIDDEN DURING MINI GAME */}
-      {charSrc && contentToRender !== "minigame" && (
+      {/* CHARACTER — HIDDEN DURING TUTORIAL AND MINIGAME */}
+      {charSrc && contentToRender !== "minigame" && contentToRender !== "tutorial" && (
         <div className="absolute flex justify-center items-start z-10 pointer-events-none w-[400px] h-[400px]">
           <Image
             src={charSrc}
@@ -146,75 +136,76 @@ export default function GameScreen({
         </div>
       )}
 
-
       {/* GRADIENT */}
       <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black/70 to-transparent z-20 pointer-events-none" />
 
       {/* MAIN CONTENT */}
-      <div className="absolute bottom-0 w-full z-30 px-4">
+      <div className="absolute bottom-0 w-full z-50 px-4 flex items-center justify-center min-h-[60vh]">
         <AnimatePresence mode="wait">
-          {contentToRender === "minigame" && currentMinigame && (
-          <motion.div
-            key="minigame"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3 }}
-            className="w-full max-w-4xl mx-auto mb-8"
-          >
-            {currentMinigame.minigame_type === "TrueOrFalseFlashCard" && (
-                tutorial ? (
-                    <TutorialMiniGame />
-                ) : (
-                    <TrueOrFalseFlashGame
-                        minigameData={currentMinigame}
-                        onComplete={onMinigameComplete}
-                    />
-                )
-            )}
-            
-            {/* MULTIPLE CHOICE - Original format */}
-            {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.tasks && (
-              tutorial ? (
-                  <TutorialMiniGame />
-                ) : (
-                  <MiniGameMultipleChoice
-                    minigameData={currentMinigame}
-                    onComplete={onMinigameComplete}
-                  />
-                )
-            )}
+          {/* TUTORIAL */}
+          {contentToRender === "tutorial" && currentMinigame && (
+            <motion.div
+              key="tutorial"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-4xl mx-auto mb-8"
+            >
+              <TutorialMiniGame 
+                minigameType={currentMinigame.minigame_type}
+                onComplete={onTutorialComplete}
+              />
+            </motion.div>
+          )}
 
-            {/* SEQUENTIAL IDEA BUILDER - New task-based format */}
-            {currentMinigame.minigame_type === "IdeaBuilderMiniGame" && currentMinigame.builds && (
-              tutorial ? (
-                <TutorialMiniGame />
-              ) : (
+          {/* MINIGAME */}
+          {contentToRender === "minigame" && currentMinigame && (
+            <motion.div
+              key="minigame"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-4xl mx-auto mb-8"
+            >
+              {currentMinigame.minigame_type === "TrueOrFalseFlashCard" && (
+                <TrueOrFalseFlashGame
+                  minigameData={currentMinigame}
+                  onComplete={onMinigameComplete}
+                />
+              )}
+              
+              {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.tasks && (
+                <MiniGameMultipleChoice
+                  minigameData={currentMinigame}
+                  onComplete={onMinigameComplete}
+                />
+              )}
+
+              {currentMinigame.minigame_type === "IdeaBuilderMiniGame" && currentMinigame.builds && (
                 <IdeaBuilderDragDrop
                   minigameData={currentMinigame}
                   onComplete={onMinigameComplete}
                 />
-              )
-            )}
+              )}
 
-            {/* UNKNOWN MINIGAME TYPE */}
-            {currentMinigame.minigame_type !== "TrueOrFalseFlashCard" && 
-              currentMinigame.minigame_type !== "MultipleChoice" && 
-              currentMinigame.minigame_type !== "IdeaBuilderMiniGame" && (
-              <div className="bg-red-900/50 p-4 rounded-lg text-center">
-                <p className="text-white mb-2">Unknown minigame type: {currentMinigame?.minigame_type}</p>
-                <p className="text-white/70 text-sm mb-4">Expected: TrueOrFalseFlashCard, MultipleChoice, SequentialIdeaBuilder, or MixAndMatch</p>
-                <button
-                  onClick={() => onMinigameComplete({})}
-                  className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 rounded-lg"
-                >
-                  Skip Minigame
-                </button>
-              </div>
-            )}
-          </motion.div>
-        )}
-
+              {currentMinigame.minigame_type !== "TrueOrFalseFlashCard" && 
+                currentMinigame.minigame_type !== "MultipleChoice" && 
+                currentMinigame.minigame_type !== "IdeaBuilderMiniGame" && (
+                <div className="bg-red-900/50 p-4 rounded-lg text-center">
+                  <p className="text-white mb-2">Unknown minigame type: {currentMinigame?.minigame_type}</p>
+                  <p className="text-white/70 text-sm mb-4">Expected: TrueOrFalseFlashCard, MultipleChoice, or IdeaBuilderMiniGame</p>
+                  <button
+                    onClick={() => onMinigameComplete({})}
+                    className="mt-4 px-6 py-2 bg-fuchsia-600 hover:bg-fuchsia-700 rounded-lg"
+                  >
+                    Skip Minigame
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
 
           {/* CHOICE EVENT */}
           {contentToRender === "choice" && (
@@ -288,7 +279,6 @@ export default function GameScreen({
             <div className="w-full max-w-3xl mx-auto mb-34 text-center text-white">
               <p>Loading next scene...</p>
               <p>Error in Loading Scenes</p>
-              
             </div>
           )}
         </AnimatePresence>
