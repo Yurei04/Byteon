@@ -98,9 +98,10 @@ export default function DashboardCenter() {
       setIsLoading(false)
     }
   }
+  const organizationNames = ["TechNova", "CodeCrafters", "InnoHealth"]
 
   const fetchAnnouncements = async () => {
-    const { data } = await supabase.from('announcements').select('*')
+    const { data } = await supabase.from('announcements').select('*').in('organization', organizationNames);
     setAnnouncements(data || [])
     console.log('Fetched announcements:', data)
     const now = new Date()
@@ -109,7 +110,7 @@ export default function DashboardCenter() {
   }
 
   const fetchBlogs = async () => {
-    const { data } = await supabase.from('blogs').select('*')
+    const { data } = await supabase.from('blogs').select('*').in('organization', organizationNames);
     setBlogs(data || [])
     setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
   }
@@ -121,7 +122,7 @@ export default function DashboardCenter() {
   }
 
   const fetchOrganizations = async () => {
-    const { data } = await supabase.from('organization').select('*')
+    const { data } = await supabase.from('organization').select('*').in('organization', organizationNames);
     setOrganizations(data || [])
   }
 
