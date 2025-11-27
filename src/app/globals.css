@@ -12,7 +12,7 @@ body {
     rgba(45, 5, 63, 0.7), 
     rgba(72, 5, 75, 0.9)
   ),
-  url('/images/bkg8.png');
+  url('/images/bkg8.webp');
   background-attachment: fixed;
   background-size: cover;
   background-position: center;
