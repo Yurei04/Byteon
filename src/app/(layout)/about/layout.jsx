@@ -1,8 +1,0 @@
-
-export default function AnnouncementControl({ children }) {
-  return (
-      <div>
-        {children}
-      </div>
-  );
-}
