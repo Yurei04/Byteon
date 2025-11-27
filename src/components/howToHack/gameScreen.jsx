@@ -8,6 +8,7 @@ import IdeaBuilderMiniGame from "./ideaBuilderMG";
 import MiniGameMultipleChoice from "./multipleChoiceMG";
 import IdeaBuilderDragDrop from "./ideaBuilderMG";
 import GameNav from "./gameNav";
+import TutorialMiniGame from "./tutorialMiniGame";
 
 export default function GameScreen({
   data,
@@ -19,6 +20,7 @@ export default function GameScreen({
   onMinigameComplete,
   onNextChapter,
   chapterGameIndex,
+  tutorial,
   onChapterEnd = () => {},
   gameStart = true,
 }) {
@@ -160,28 +162,39 @@ export default function GameScreen({
             transition={{ duration: 0.3 }}
             className="w-full max-w-4xl mx-auto mb-8"
           >
-            {/* TRUE OR FALSE GAME */}
             {currentMinigame.minigame_type === "TrueOrFalseFlashCard" && (
-              <TrueOrFalseFlashGame
-                minigameData={currentMinigame}
-                onComplete={onMinigameComplete}
-              />
+                tutorial ? (
+                    <TutorialMiniGame />
+                ) : (
+                    <TrueOrFalseFlashGame
+                        minigameData={currentMinigame}
+                        onComplete={onMinigameComplete}
+                    />
+                )
             )}
-
+            
             {/* MULTIPLE CHOICE - Original format */}
             {currentMinigame.minigame_type === "MultipleChoice" && currentMinigame.tasks && (
-              <MiniGameMultipleChoice
-                minigameData={currentMinigame}
-                onComplete={onMinigameComplete}
-              />
+              tutorial ? (
+                  <TutorialMiniGame />
+                ) : (
+                  <MiniGameMultipleChoice
+                    minigameData={currentMinigame}
+                    onComplete={onMinigameComplete}
+                  />
+                )
             )}
 
             {/* SEQUENTIAL IDEA BUILDER - New task-based format */}
             {currentMinigame.minigame_type === "IdeaBuilderMiniGame" && currentMinigame.builds && (
-              <IdeaBuilderDragDrop
-                minigameData={currentMinigame}
-                onComplete={onMinigameComplete}
-              />
+              tutorial ? (
+                <TutorialMiniGame />
+              ) : (
+                <IdeaBuilderDragDrop
+                  minigameData={currentMinigame}
+                  onComplete={onMinigameComplete}
+                />
+              )
             )}
 
             {/* UNKNOWN MINIGAME TYPE */}
