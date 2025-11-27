@@ -37,10 +37,7 @@ export default function BlogPage() {
     })
 
     return (
-        <div className="w-full min-h-screen p-6 flex flex-col items-center justify-center">
-            <div className="pointer-events-none fixed inset-0 -z-20">
-                <Threads amplitude={2} distance={0.7} enableMouseInteraction={false} />
-            </div>
+        <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6 flex flex-col items-center justify-center">
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

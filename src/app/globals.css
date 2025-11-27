@@ -6,7 +6,7 @@
 }
 
 body {
-  background-color: black;
+  background-image: linear-gradient(to bottom right, #080512, #2d053f, #48054b);
 }
 
 @custom-variant dark (&:is(.dark *));
