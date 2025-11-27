@@ -3,12 +3,25 @@ import { motion, AnimatePresence } from "framer-motion";
 import React, { useEffect, useRef } from "react";
 import Image from "next/image";
 import GameDialogBox from "./gameDialogBox";
-import TrueOrFalseFlashGame from "./cardGame";
-import IdeaBuilderMiniGame from "./ideaBuilderMG";
-import MiniGameMultipleChoice from "./multipleChoiceMG";
-import IdeaBuilderDragDrop from "./ideaBuilderMG";
 import GameNav from "./gameNav";
 import TutorialMiniGame from "./tutorialMiniGame";
+import dynamic from "next/dynamic";
+
+const TrueOrFalseFlashGame = dynamic(
+  () => import("./cardGame"),
+  { ssr: false, loading: () => <div className='text-white'>Loading mini-game...</div> }
+);
+
+const MiniGameMultipleChoice = dynamic(
+  () => import("./multipleChoiceMG"),
+  { ssr: false, loading: () => <div className='text-white'>Loading mini-game...</div> }
+);
+
+const IdeaBuilderDragDrop = dynamic(
+  () => import("./ideaBuilderMG"),
+  { ssr: false, loading: () => <div className='text-white'>Loading mini-game...</div> }
+);
+
 
 export default function GameScreen({
   data,
@@ -25,6 +38,7 @@ export default function GameScreen({
   onChapterEnd = () => {},
   gameStart = true,
 }) {
+
   const dialogs = currentEvent?.dialogs ?? [];
 
   // Removed auto-start logic - now handled by ChapterManager via tutorial flow

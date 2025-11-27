@@ -2,16 +2,33 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import MainMenu from "@/components/howToHack/mainMenu";
-import GameSettings from "@/components/howToHack/gameSettings";
-import { GameExit } from "@/components/howToHack/GameExit";
-import GameFlow from "@/components/howToHack/gameFlow";
-import GameControls from "@/components/howToHack/gameControls";
-import ChapterManager from "@/components/howToHack/chapterManger";
-import EndCredits from "@/components/howToHack/endCredits";
-import TipsAndResources from "@/components/howToHack/tipsAndResources";
-import AudioPermissionDialog from "@/components/howToHack/audioPermissionDialogBox";
 import audioService from "@/lib/audioService";
+import MainMenu from "@/components/howToHack/mainMenu";
+import dynamic from "next/dynamic";
+
+const GameSettings = dynamic(() => import("@/components/howToHack/gameSettings"), {
+    ssr: false,
+});
+const GameExit = dynamic(() => import("@/components/howToHack/GameExit"), {
+    ssr: false,
+});
+const GameFlow = dynamic(() => import("@/components/howToHack/gameFlow"), {
+    ssr: false,
+});
+const ChapterManager = dynamic(() => import("@/components/howToHack/chapterManger"), {
+    ssr: false,
+});
+const EndCredits = dynamic(() => import("@/components/howToHack/endCredits"), {
+    ssr: false,
+});
+const TipsAndResources = dynamic(() => import("@/components/howToHack/tipsAndResources"), {
+    ssr: false,
+});
+const AudioPermissionDialog = dynamic(() => import("@/components/howToHack/audioPermissionDialogBox"), {
+    ssr: false,
+});
+
+
 export default function HowToHackPage() {
     /* ----------------------------- STATE HOOKS FIRST ----------------------------- */
 
