@@ -56,11 +56,6 @@ export default function ResourceHubPage() {
 
   return (
     <div className="w-full min-h-screen p-6 flex flex-col items-center justify-center">
-      {/* Background Threads */}
-      <div className="pointer-events-none fixed inset-0 -z-20">
-        <Threads amplitude={2} distance={0.7} enableMouseInteraction={false} />
-      </div>
-
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

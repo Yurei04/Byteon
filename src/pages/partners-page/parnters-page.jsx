@@ -43,7 +43,7 @@ const data = [
 
 export default function PartnersPage() {
     return (
-        <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 flex flex-col items-center justify-center gap-8 p-8">
+        <div className="w-full min-h-screen flex flex-col items-center justify-center gap-8 p-8">
             <div className="text-center mt-24">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-500">

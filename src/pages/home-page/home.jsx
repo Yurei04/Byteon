@@ -7,7 +7,15 @@ import Link from "next/link";
 
 export default function Home () {
     return (
-        <div className="relative min-h-screen w-full bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 flex items-center justify-center overflow-x-hidden">
+        <div className="relative min-h-screen w-full flex bg-linear-to-tr from-purple-950/50 via-fuchsia-900/20 to-black/70 items-center justify-center overflow-x-hidden">
+            <div className="pointer-events-none fixed inset-0 -z-20">
+                <Threads
+                amplitude={2}
+                distance={0.7}
+                enableMouseInteraction={false}
+                />
+            </div>
+
             <div className="absolute inset-0 -z-10 bg-linear-to-tr from-purple-950/50 via-fuchsia-900/20 to-black/70" />
 
             <div className="container mx-auto px-6 sm:px-10 lg:px-16 flex flex-col-reverse lg:flex-row items-center justify-center gap-10 lg:gap-16">

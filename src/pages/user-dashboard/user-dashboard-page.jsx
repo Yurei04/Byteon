@@ -55,7 +55,7 @@ export default function UserDashboardPage() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-4 md:p-6 lg:p-8">
+    <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
       {/* Beta Warning Banner */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

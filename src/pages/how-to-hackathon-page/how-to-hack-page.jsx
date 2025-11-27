@@ -216,7 +216,7 @@ export default function HowToHackPage() {
     /* ------------------------------ MAIN RENDER ------------------------------ */
 
     return (
-        <div className="w-full h-screen flex flex-col p-4">
+        <div className="w-full h-screen flex bg-gray-950 flex-col p-4">
             <AudioPermissionDialog
                 isOpen={showAudioPermission}
                 onAccept={handleAudioAccept}
