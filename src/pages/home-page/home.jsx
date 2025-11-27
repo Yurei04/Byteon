@@ -73,7 +73,7 @@ export default function Home () {
                     alt="Byteon Logo"
                     fill
                     className="object-cover"
-                    priority
+                    fetchPriority="high"
                 />
                 </motion.div>
             </div>
