@@ -1,11 +1,9 @@
 "use client"
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
-import AnnounceCard from "@/components/(dashboard)/announce/announce-card";
-import AnnouncementCard from "@/components/(dashboard)/announce/announce-card";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import AnnouncePublicCard from "@/components/(dashboard)/announce/announce-public-card";
 export default function AnnounceSection (
 
@@ -67,6 +65,7 @@ export default function AnnounceSection (
                 ]}
                 className="w-full flex justify-center items-center"
             >
+              <CarouselPrevious className="cursor-pointer"/>
                 <CarouselContent>
                   {announcements.map((item) => (
                     <CarouselItem 
@@ -79,6 +78,7 @@ export default function AnnounceSection (
                     </CarouselItem>
                   ))}
                 </CarouselContent>
+              <CarouselNext className="cursor-pointer"/>
             </Carousel>
         </motion.div>
       </section>

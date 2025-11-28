@@ -1,5 +1,5 @@
 "use client";
-import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion";
 import Autoplay from "embla-carousel-autoplay";
@@ -78,13 +78,14 @@ export default function GameFlow({
               stopOnInteraction: false,
             }),
           ]}
-          className="w-full flex  justify-center items-center h-full"
+          className="w-full justify-center items-center h-full"
         >
+          <CarouselPrevious className="flex left-2 cursor-pointer" />
           <CarouselContent className="flex">
             {announcements.map((item) => (
               <CarouselItem
                 key={item.id}
-                className="p-4 flex flex-col justify-center items-center"
+                className="p-2 flex flex-col justify-center items-center"
               >
                 <div className="w-full max-w-sm mx-auto">
                   <AnnouncePublicCard item={item} />
@@ -92,6 +93,7 @@ export default function GameFlow({
               </CarouselItem>
             ))}
           </CarouselContent>
+          <CarouselNext className="flex right-2 cursor-pointer"/>
         </Carousel>
       </div>
     );
