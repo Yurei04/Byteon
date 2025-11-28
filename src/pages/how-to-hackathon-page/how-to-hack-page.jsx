@@ -41,6 +41,8 @@ export default function HowToHackPage() {
     const [isSettings, setIsSettings] = useState(false);
     const [isExit, setIsExit] = useState(false);
     const [isStartGame, setIsStartGame] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
     const [gameFlowState, setGameFlowState] = useState({
         eventIndex: 0,
@@ -55,7 +57,7 @@ export default function HowToHackPage() {
     useEffect(() => {
         const timer = setTimeout(() => {
             setShowAudioPermission(true);
-        }, 500); // Small delay for better UX
+        }, 500);
 
         return () => clearTimeout(timer);
     }, []);
@@ -64,7 +66,6 @@ export default function HowToHackPage() {
         setShowAudioPermission(false);
         setAudioEnabled(true);
         
-        // Initialize and start background music
         try {
             await audioService.initialize();
             await audioService.playBackgroundMusic();
@@ -152,6 +153,8 @@ export default function HowToHackPage() {
 
     useEffect(() => {
         const handleResize = () => {
+            const mobile = window.innerWidth < 1024;
+            setIsMobile(mobile);
             setTooSmall(window.innerWidth < 1280 || window.innerHeight < 720);
         };
 
@@ -203,20 +206,124 @@ export default function HowToHackPage() {
             </div>
         );
     }
-    /* Temporary Removal due to Bug in resize resets the whole game 
-    if (tooSmall) {
+
+    /* ------------------------------ MOBILE LAYOUT ------------------------------ */
+
+    if (isMobile) {
         return (
-            <div className="fixed inset-0 bg-black text-purple-400 flex flex-col justify-center items-center">
-                <p className="text-xl mb-2">⚠️ Screen Too Small</p>
-                <p>Please use at least 1280×720 or fullscreen mode.</p>
+            <div className="w-full h-screen flex flex-col bg-gray-950 overflow-hidden z-50">
+                <AudioPermissionDialog
+                    isOpen={showAudioPermission}
+                    onAccept={handleAudioAccept}
+                    onDecline={handleAudioDecline}
+                />
+                
+                {/* Mobile Header */}
+                <div className="flex items-center justify-between p-3 bg-gray-900 border-b border-fuchsia-400/50">
+                    <h1 className="text-fuchsia-400 font-bold text-lg">How to Hack</h1>
+                    {isStartGame && (
+                        <button
+                            onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+                            className="px-3 py-1.5 bg-fuchsia-600 hover:bg-fuchsia-700 active:bg-fuchsia-800 text-white rounded-md text-sm transition-colors"
+                        >
+                            {showMobileSidebar ? 'Hide Info' : 'Show Info'}
+                        </button>
+                    )}
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 overflow-hidden relative">
+                    {/* Game Screen */}
+                    <div className="h-full w-full">
+                        {isMainMenu ? (
+                            <div className="flex h-full items-center justify-center p-4">
+                                <MainMenu
+                                    onStartGame={handleStartGameFromMenu}
+                                    onLoadGame={() => {
+                                        if (audioEnabled && window.audioManager) {
+                                            window.audioManager.playClick();
+                                        }
+                                    }}
+                                    onSettings={() => {
+                                        if (audioEnabled && window.audioManager) {
+                                            window.audioManager.playClick();
+                                        }
+                                        setIsSettings(true);
+                                    }}
+                                    onExit={() => {
+                                        if (audioEnabled && window.audioManager) {
+                                            window.audioManager.playClick();
+                                        }
+                                        setIsExit(true);
+                                    }}
+                                />
+                            </div>
+                        ) : isSettings ? (
+                            <div className="flex h-full items-center justify-center p-4">
+                                <GameSettings onBack={() => {
+                                    if (audioEnabled && window.audioManager) {
+                                        window.audioManager.playClick();
+                                    }
+                                    setIsSettings(false);
+                                }} />
+                            </div>
+                        ) : isExit ? (
+                            <div className="flex h-full items-center justify-center p-4">
+                                <GameExit onBack={() => {
+                                    if (audioEnabled && window.audioManager) {
+                                        window.audioManager.playClick();
+                                    }
+                                    setIsExit(false);
+                                }} />
+                            </div>
+                        ) : (
+                            <div className="h-full">
+                                {chapterManagerElement}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Mobile Sidebar Overlay */}
+                    {showMobileSidebar && isStartGame && (
+                        <div 
+                            className="absolute inset-0 bg-black/50 z-40"
+                            onClick={() => setShowMobileSidebar(false)}
+                        >
+                            <div 
+                                className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-gray-900 border-l border-fuchsia-400/50 overflow-y-auto"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="p-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h2 className="text-fuchsia-400 font-semibold text-lg">Game Info</h2>
+                                        <button
+                                            onClick={() => setShowMobileSidebar(false)}
+                                            className="text-white hover:text-fuchsia-400 text-2xl leading-none"
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                    {gameFlowElement}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Mobile Bottom Tips (when not in game) */}
+                {!isStartGame && !isSettings && !isExit && isMainMenu && (
+                    <div className="border-t border-fuchsia-400/50 bg-gray-900 p-4 max-h-48 overflow-y-auto">
+                        <TipsAndResources />
+                    </div>
+                )}
             </div>
         );
     }
-    */
-    /* ------------------------------ MAIN RENDER ------------------------------ */
+
+    /* ------------------------------ DESKTOP LAYOUT ------------------------------ */
 
     return (
-        <div className="w-full h-screen flex bg-gray-950 flex-col p-4">
+        <div className="w-full h-screen flex bg-gray-950 flex-col p-2 sm:p-4">
             <AudioPermissionDialog
                 isOpen={showAudioPermission}
                 onAccept={handleAudioAccept}
@@ -228,7 +335,7 @@ export default function HowToHackPage() {
 
                         {/* LEFT SCREEN */}
                         <ResizablePanel defaultSize={70}>
-                            <div className="flex flex-col h-full items-center justify-center p-6">
+                            <div className="flex flex-col h-full items-center justify-center p-3 sm:p-6">
                                 {isMainMenu ? (
                                     <MainMenu
                                         onStartGame={handleStartGameFromMenu}
@@ -279,11 +386,11 @@ export default function HowToHackPage() {
                                 {/* Top: GameFlow */}
                                 <ResizablePanel defaultSize={60}>
                                     {isStartGame ? (
-                                        <div className="h-full bg-gray-950 p-4 overflow-hidden">
+                                        <div className="h-full bg-gray-950 p-2 sm:p-4 overflow-hidden">
                                             {gameFlowElement}
                                         </div>
                                     ) : (
-                                        <div className="text-white flex h-full justify-center items-center">
+                                        <div className="text-white flex h-full justify-center items-center p-2 sm:p-4">
                                            <TipsAndResources />
                                         </div>
                                     )}

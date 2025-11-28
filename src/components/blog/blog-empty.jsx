@@ -29,24 +29,6 @@ export default function BlogEmpty({ onCreate }) {
           </EmptyDescription>
         </EmptyHeader>
 
-        <EmptyContent>
-          <div className="flex gap-3 mt-4">
-            <Dialog>
-              <DialogTrigger className="bg-fuchsia-400">Create</DialogTrigger>
-              <DialogContent>
-                  <DialogTitle></DialogTitle>
-                  <DialogContent>
-                    <BlogUserForm />
-                  </DialogContent>
-                
-              </DialogContent>
-            </Dialog>
-            <Button variant="outline" onClick={onCreate} className={"cursor-pointer"}>
-              Manage
-            </Button>
-          </div>
-        </EmptyContent>
-
         <div className="mt-4">
           <Button variant="link" className="text-fuchsia-300 text-sm cursor-pointer" asChild>
             <a href="#">Learn More <ArrowUpRightIcon className="ml-2 inline" /></a>
