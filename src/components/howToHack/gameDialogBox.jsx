@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 
 export default function GameDialogBox({
@@ -12,50 +12,66 @@ export default function GameDialogBox({
   onNext = () => {},
 }) {
   const [displayedText, setDisplayedText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
+  const timeoutRef = useRef(null);
   const isFinished = displayedText.length === text.length && !isTyping;
 
+  // Reset when text changes
   useEffect(() => {
     if (!text) {
       setDisplayedText("");
+      setCurrentIndex(0);
       setIsTyping(false);
       return;
     }
 
+    // Reset everything for new text
     setDisplayedText("");
+    setCurrentIndex(0);
     setIsTyping(true);
 
-    let i = 0;
-    const speed = 25;
-    
     // Start typewriter sound loop
     if (typeof window !== 'undefined' && window.audioManager) {
       window.audioManager.startTypewriterLoop(50);
     }
 
-    const interval = setInterval(() => {
-      setDisplayedText((prev) => prev + text.charAt(i));
-      i++;
-      
-      if (i >= text.length) {
-        clearInterval(interval);
-        setIsTyping(false);
-        
-        // Stop typewriter sound
-        if (typeof window !== 'undefined' && window.audioManager) {
-          window.audioManager.stopTypewriterLoop();
-        }
-      }
-    }, speed);
-
     return () => {
-      clearInterval(interval);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
       // Cleanup typewriter sound
       if (typeof window !== 'undefined' && window.audioManager) {
         window.audioManager.stopTypewriterLoop();
       }
     };
   }, [text]);
+
+  // Handle typing animation
+  useEffect(() => {
+    if (!isTyping || currentIndex >= text.length) {
+      if (currentIndex >= text.length && isTyping) {
+        setIsTyping(false);
+        // Stop typewriter sound
+        if (typeof window !== 'undefined' && window.audioManager) {
+          window.audioManager.stopTypewriterLoop();
+        }
+      }
+      return;
+    }
+
+    const speed = 25;
+    timeoutRef.current = setTimeout(() => {
+      setDisplayedText(text.substring(0, currentIndex + 1));
+      setCurrentIndex(prev => prev + 1);
+    }, speed);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [currentIndex, isTyping, text]);
 
   const handleClick = () => {
     // Play click sound
@@ -66,6 +82,7 @@ export default function GameDialogBox({
     if (isTyping) {
       // Skip typing animation
       setDisplayedText(text);
+      setCurrentIndex(text.length);
       setIsTyping(false);
       
       // Stop typewriter sound immediately

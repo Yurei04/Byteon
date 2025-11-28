@@ -128,12 +128,12 @@ export default function GameScreen({
       </div>
       
       {/* BACKGROUND */}
-      <div className="absolute inset-0 -z-20">
+      <div className="absolute inset-0 z-0">
         <Image
-          src={"/images/temp_bkg.jpg"}
+          src="/images/temp_bkg.jpg"
           alt="background"
           fill
-          className="object-cover transition-all duration-700 ease-in-out rounded-2xl"
+          className="object-cover transition-all duration-700 ease-in-out"
           priority
         />
       </div>
