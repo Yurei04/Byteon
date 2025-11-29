@@ -70,7 +70,7 @@ export default function AnnounceSection (
                   {announcements.map((item) => (
                     <CarouselItem 
                       key={item.id} 
-                      className="basis-1/3 p-4 flex justify-center"
+                      className="p-4 flex justify-center"
                     >
                       <div className="w-full max-w-sm mx-auto">
                         <AnnouncePublicCard item={item} />

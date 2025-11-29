@@ -26,7 +26,7 @@ export default function ResourcePublicCard({ item }) {
                 {item.organization && (
                   <div className="mb-2">
                     <span className="text-xs font-semibold text-fuchsia-400 uppercase tracking-wider">
-                      {item.organization}
+                      Source: {item.organization}
                     </span>
                   </div>
                 )}

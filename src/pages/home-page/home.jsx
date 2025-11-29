@@ -62,6 +62,7 @@ export default function Home () {
                     src="/images/logoByteon.png"
                     alt="Byteon Logo"
                     fill
+                    loading="eager"
                     className="object-cover"
                     fetchPriority="high"
                 />

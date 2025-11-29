@@ -31,7 +31,8 @@ import {
   ExternalLink,
   AlertCircle,
   CheckCircle,
-  Award
+  Award,
+  User2
 } from "lucide-react"
 // Import the Pagination components from shadcn/ui
 import { 
@@ -51,6 +52,7 @@ import ResourceCard from "@/components/resourceHub/resourceHub-card"
 import BlogCard from "@/components/blog/blogCard"
 import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
 import { ReturnButton } from "@/components/return"
+import OrganizationProfile from "@/components/(dashboard)/announce/org-profile"
 
 const ITEMS_PER_PAGE = 6;
 
@@ -98,7 +100,7 @@ export default function DashboardCenter() {
       setIsLoading(false)
     }
   }
-  const organizationNames = ["TechNova", "CodeCrafters", "InnoHealth"]
+  const organizationNames = ["Hack United", "Maximally", "CS Base", "Medi Hacks", "ByteonAdmin"]
 
   const fetchAnnouncements = async () => {
     const { data } = await supabase.from('announcements').select('*').in('organization', organizationNames);
@@ -290,8 +292,22 @@ export default function DashboardCenter() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
             >
+              <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardContent className="relative p-4 sm:p-6">
+                  <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <div className="p-3 bg-purple-500/20 rounded-full border border-purple-400/30">
+                      <User2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <p className="text-purple-200/70 text-xs sm:text-sm">Your Profile</p>
+                      <p className="text-lg sm:text-xl font-bold text-purple-300">Active</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
               <Card className="group relative bg-gradient-to-br from-fuchsia-900/40 via-purple-900/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-fuchsia-500/20">
                 <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-purple-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <CardContent className="relative p-6">
@@ -371,7 +387,13 @@ export default function DashboardCenter() {
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-2 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
+                  <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
+                    <TabsTrigger 
+                      value="profile" 
+                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
+                    >
+                      <FileText className="w-4 h-4" />Profile
+                    </TabsTrigger>
                     <TabsTrigger 
                       value="view" 
                       className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
@@ -385,6 +407,21 @@ export default function DashboardCenter() {
                       <Plus className="w-4 h-4" />Create New
                     </TabsTrigger>
                   </TabsList>
+
+                  {/* Profile Tab */}
+                  <TabsContent value="profile" className="mt-0">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
+                        <CardContent className="p-4 sm:p-6">
+                          <OrganizationProfile />
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </TabsContent>
 
                   {/* View Tab */}
                   <TabsContent value="view">

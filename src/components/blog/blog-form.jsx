@@ -24,6 +24,7 @@ export default function BlogForm ({ onSuccess }) {
     image: "",
     hackathon: "",
     place: "",
+    organization: "",
     theme: ""
   })
 
@@ -86,16 +87,28 @@ export default function BlogForm ({ onSuccess }) {
         <div className="space-y-6">
           <div className="space-y-2 p-2 border border-red-400 rounded-xl">
             <Label className="text-white">Organization - This Is For Testing Purposes Only!</Label>
-            <Select onValueChange={(val) => setSelectedOrg(organizations.find(o => o.id === parseInt(val)))} value={selectedOrg?.id?.toString()}>
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Select organization" />
-              </SelectTrigger>
-              <SelectContent>
-                {organizations.map((org) => (
-                  <SelectItem key={org.id} value={org.id.toString()}>{org.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select 
+                onValueChange={(val) => {
+                  const selected = organizations.find(o => o.id === parseInt(val));
+                  setSelectedOrg(selected);
+                  setFormData({...formData, organization: val});
+                }} 
+                value={formData.organization}
+              >
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Select organization" />
+                </SelectTrigger>
+                <SelectContent>
+                  {organizations.map((org) => (
+                    <SelectItem 
+                      key={org.id} 
+                      value={org.id.toString()} 
+                    >
+                      {org.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
