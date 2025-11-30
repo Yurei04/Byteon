@@ -52,9 +52,10 @@ export default function PartnersPage() {
                 </h1>
 
                 <p className="text-fuchsia-200 max-w-2xl mx-auto text-lg">
-                    Empowering creators, coders, and innovators through community,
-                    learning, and meaningful opportunities.
+                    Empowering creators, coders, and innovators through community. 
+                    Explore our partners, join their initiatives, and discover new learning opportunities!
                 </p>
+
             </div>
         
             <div className="flex flex-col gap-6 justify-evenly w-[80%] m-2">

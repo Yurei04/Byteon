@@ -27,8 +27,9 @@ export default function Home () {
                 </h2>
 
                 <p className="mt-3 text-sm sm:text-base text-fuchsia-300/80">
-                    Where beginners become builders — your gateway to hackathons, growth, and real-world impact.
+                    Learn, play, and grow — Byteon blends interactive storytelling with real opportunities like hackathons and student programs.
                 </p>
+
 
                 <div className="mt-6 flex flex-wrap gap-4 justify-center lg:justify-start">
                     <Link href="/orgDashboard">

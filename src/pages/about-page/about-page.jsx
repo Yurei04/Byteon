@@ -6,31 +6,35 @@ import { Sparkles, Cpu, UsersRound } from "lucide-react";
 import { motion } from "framer-motion";
 
 const aboutPoints = [
-    {
-        title: "What is Byteon?",
-        icon: <Sparkles className="w-6 h-6 text-fuchsia-400" />,
-        items: [
-            "- Byteon is a tech community built for dreamers, builders, and innovators.",
-            "- We empower students to turn ideas into real, scalable projects.",
-        ],
-    },
-    {
-        title: "Our Purpose",
-        icon: <Cpu className="w-6 h-6 text-fuchsia-400" />,
-        items: [
-            "- Helping students master modern tech through collaboration & creation.",
-            "- A home for coding, innovation, problem-solving, and big ideas.",
-        ],
-    },
-    {
-        title: "The Community",
-        icon: <UsersRound className="w-6 h-6 text-fuchsia-400" />,
-        items: [
-            "- A growing network of developers, designers, and future founders.",
-            "- Events, programs, and initiatives to boost your skills and confidence.",
-        ],
-    },
+  {
+    title: "What is Byteon?",
+    icon: <Sparkles className="w-6 h-6 text-fuchsia-400" />,
+    items: [
+      "- Byteon is a student-driven tech platform built to unite creators, hackers, and innovators.",
+      "- It lets organizations announce hackathons, publish blogs, and share resources in one place.",
+      "- Users can also enjoy our interactive visual-novel experience that teaches real tech concepts in a fun way.",
+    ],
+  },
+  {
+    title: "Our Purpose",
+    icon: <Cpu className="w-6 h-6 text-fuchsia-400" />,
+    items: [
+      "- To build a space where students can learn, grow, and showcase their projects and ideas.",
+      "- Byteon empowers both beginners and advanced learners through accessible tools, stories, and tech-driven experiences.",
+      "- We help organizations reach students while helping students discover opportunities that fit their goals.",
+    ],
+  },
+  {
+    title: "The Community",
+    icon: <UsersRound className="w-6 h-6 text-fuchsia-400" />,
+    items: [
+      "- A collective of developers, designers, researchers, and aspiring founders from all over the World.",
+      "- Students can explore upcoming hackathons, join initiatives, and get inspired by real tech journeys.",
+      "- Whether you're joining events or simply playing our visual novel, Byteon is your gateway to the tech world.",
+    ],
+  },
 ];
+
 
 function AboutCard({ title, icon, items }) {
   return (
