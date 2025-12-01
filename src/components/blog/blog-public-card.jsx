@@ -48,12 +48,6 @@ export default function BlogPublicCard({ item, }) {
                       {item.theme}
                     </span>
                   )}
-                  {item.place && (
-                    <span className="px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-purple-500/10">
-                      <MapPin className="w-3 h-3" />
-                      {item.place}
-                    </span>
-                  )}
                 </div>
                 
                 {/* Info Section */}

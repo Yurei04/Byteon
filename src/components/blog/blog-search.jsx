@@ -35,10 +35,10 @@ export default function BlogSearchBar({ onSearch, onFilterChange }) {
                     </SelectTrigger>
                     <SelectContent>
                     <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="health">Health</SelectItem>
-                    <SelectItem value="ai">AI</SelectItem>
+                    <SelectItem value="Health">Health</SelectItem>
+                    <SelectItem value="AI">AI</SelectItem>
                     <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="environment">Environment</SelectItem>
+                    <SelectItem value="Technology">Technology</SelectItem>
                     </SelectContent>
             </Select>
         </div>

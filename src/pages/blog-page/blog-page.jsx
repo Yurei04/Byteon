@@ -2,17 +2,26 @@
 
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
-import BlogCard from "../../components/blog/blogCard"
-import BlogSearchBar from "../../components/blog/blog-search"
-import Threads from "@/components/Threads"
-import { motion } from "framer-motion"
-import BlogEmpty from "@/components/blog/blog-empty"
 import BlogPublicCard from "@/components/blog/blog-public-card"
+import BlogEmpty from "@/components/blog/blog-empty"
+import { motion } from "framer-motion"
+import { Search } from "lucide-react"
 
 export default function BlogPage() {
     const [blogs, setBlogs] = useState([])
     const [searchTerm, setSearchTerm] = useState("")
     const [filter, setFilter] = useState("all")
+
+    const categories = [
+        "all",
+        "Technology",
+        "Personal Development",
+        "Innovation",
+        "Education",
+        "Health",
+        "AI",
+        "Science",
+    ]
 
     useEffect(() => {
         async function fetchBlogs() {
@@ -29,71 +38,113 @@ export default function BlogPage() {
     }, [])
 
     const filteredData = blogs.filter((item) => {
+        const search = searchTerm.toLowerCase()
+
         const title = (item.title || "").toLowerCase()
-        const theme = (item.theme || "").toLowerCase()
-        const matchesSearch = title.includes(searchTerm.toLowerCase())
-        const matchesFilter = filter === "all" || theme === filter.toLowerCase()
+        const desc = (item.des || "").toLowerCase()
+        const content = (item.content || "").toLowerCase()
+        const organization = (item.organization || "").toLowerCase()
+        const hackathon = (item.hackathon || []).join(" ").toLowerCase()
+
+        // --- MULTIPLE THEME SUPPORT ---
+        let themeArray = []
+
+        if (Array.isArray(item.theme)) {
+            themeArray = item.theme.map((t) => t.toLowerCase())
+        } else if (typeof item.theme === "string") {
+            themeArray = item.theme
+                .split(/[,|]/)          // split by comma OR | bar
+                .map((t) => t.trim().toLowerCase())
+        }
+
+        const matchesSearch =
+            title.includes(search) ||
+            desc.includes(search) ||
+            content.includes(search) ||
+            organization.includes(search) ||
+            hackathon.includes(search) ||
+            themeArray.some((t) => t.includes(search))
+
+        const matchesFilter =
+            filter === "all" || themeArray.includes(filter.toLowerCase())
+
         return matchesSearch && matchesFilter
     })
 
     return (
-        <div className="w-full min-h-screen p-6 flex flex-col items-center justify-center">
+        <div className="w-full min-h-screen p-6 flex flex-col items-center">
 
+            {/* HEADER */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{
-                    duration: 0.8,
-                    type: "spring",
-                    bounce: 0.25,
-                    delay: 0.1,
-                }}
-                viewport={{ once: true, amount: 0.1 }}
-                className="w-full max-w-7xl mt-24"
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="w-full max-w-7xl mt-20 text-center"
             >
-                <div className="text-center mb-4 ">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
-                    <span className="text-transparent bg-clip-text bg-linear-to-r from-fuchsia-300 to-purple-500">
+                <h1 className="text-5xl sm:text-6xl font-bold mb-4">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-500">
                         Byteon Blog
                     </span>
-                    </h1>
-        
-                    <p className="text-fuchsia-200 max-w-2xl mx-auto text-lg">
-                        Learn stories and new knowledge
-                    </p>
-                </div>
-
+                </h1>
+                <p className="text-fuchsia-200 max-w-2xl mx-auto text-lg">
+                    Learn stories and discover new knowledge.
+                </p>
             </motion.div>
 
+            {/* SEARCH BAR */}
+            <div className="w-full max-w-2xl mt-10 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-fuchsia-300/60" />
+                <input
+                    type="text"
+                    placeholder="Search blog posts..."
+                    className="w-full pl-12 p-3 bg-fuchsia-950/20 border border-fuchsia-800/40 
+                        text-fuchsia-100 placeholder-fuchsia-300/40 rounded-xl backdrop-blur-md
+                        focus:ring-2 focus:ring-fuchsia-500/40 outline-none transition"
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            {/* FILTER CHIPS */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="w-full mt-2 p-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex flex-wrap justify-center gap-3 mt-6"
             >
-                <BlogSearchBar onSearch={setSearchTerm} onFilterChange={setFilter} />
+                {categories.map((cat) => (
+                    <button
+                        key={cat}
+                        onClick={() => setFilter(cat)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium border backdrop-blur-md transition 
+                            ${filter === cat
+                                ? "bg-fuchsia-600 text-white border-fuchsia-400"
+                                : "bg-fuchsia-950/20 text-fuchsia-200 border-fuchsia-800/40 hover:bg-fuchsia-700/40"
+                            }`}
+                    >
+                        {cat}
+                    </button>
+                ))}
             </motion.div>
 
+            {/* CONTENT GRID */}
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="flex flex-col justify-center items-center w-full"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className="flex justify-center items-center w-full"
             >
                 {filteredData.length === 0 ? (
-                    <div className="w-full flex justify-center items-center mt-12">
+                    <div className="w-full flex justify-center mt-16">
                         <BlogEmpty />
                     </div>
                 ) : (
-                    <div className="w-[90%] mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
-                        {blogs.map((item) => (
+                    <div className="w-[90%] mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {filteredData.map((item) => (
                             <BlogPublicCard key={item.id} item={item} />
                         ))}
                     </div>
                 )}
             </motion.div>
-
-
         </div>
     )
 }
