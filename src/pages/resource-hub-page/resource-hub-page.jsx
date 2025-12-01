@@ -45,13 +45,12 @@ export default function ResourceHubPage() {
   // Category Buttons
   const categories = [
     { label: "All", value: "all" },
-    { label: "Web Development", value: "web" },
-    { label: "Mobile Development", value: "mobile" },
-    { label: "AI", value: "ai" },
-    { label: "Machine Learning", value: "ml" },
-    { label: "Cybersecurity", value: "cyber" },
-    { label: "Cloud / DevOps", value: "cloud" },
-    { label: "UI / UX", value: "uiux" },
+    { label: "Web Development", value: "Web Development" },
+    { label: "Mobile Development", value: "Mobile Development" },
+    { label: "AI & ML", value: "AI & ML" },
+    { label: "Deployment", value: "Deployment" },
+    { label: "DevOps", value: "DevOps" },
+    { label: "UI / UX", value: "UI/UX Design" },
   ];
 
   return (
