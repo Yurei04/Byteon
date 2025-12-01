@@ -470,8 +470,8 @@ export default function DashboardCenter() {
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {/* Render only the paginated items */}
                                   {paginatedAnnouncements.map((item) => (
-                                    <AnnouncementCard key={item.id} item={item} onDelete={(id) => handleDelete('announcement', id)} />
-                                  ))}
+                                      <AnnouncementCard key={item.id} item={item} onUpdate={fetchAnnouncements} onDelete={(id) => handleDelete('announcements', id)} />
+                                    ))}
                                 </div>
                                 
                                 {/* Pagination Component */}
@@ -511,7 +511,7 @@ export default function DashboardCenter() {
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {/* Render only the paginated items */}
                                   {paginatedBlogs.map((item) => (
-                                    <BlogCard key={item.id} item={item} onDelete={(id) => handleDelete('blog', id)} />
+                                    <BlogCard key={item.id} item={item} onUpdate={fetchBlogs} onDelete={(id) => handleDelete('blog', id)} />
                                   ))}
                                 </div>
 

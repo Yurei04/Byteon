@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase"
 import { Loader2 } from "lucide-react"
 import { ScrollArea } from "../ui/scroll-area"
 
-export default function BlogEditUser({ blog, onUpdate, children }) {
+export default function BlogEditOrg({ blog, onUpdate, children }) {
   const [form, setForm] = useState({
     title: blog.title || "",
     des: blog.des || "",
@@ -50,7 +50,7 @@ export default function BlogEditUser({ blog, onUpdate, children }) {
   }
 
   return (
-    <Dialog>
+    <Dialog className="overflow-hidden">
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -82,7 +82,7 @@ export default function BlogEditUser({ blog, onUpdate, children }) {
             />
           </div>
 
-          <div>
+            <div>
                 <label className="text-fuchsia-300 text-sm">Content</label>
                 <ScrollArea className="h-40 w-full rounded-md border border-fuchsia-500/30 mt-1">
                     <Textarea
@@ -93,6 +93,7 @@ export default function BlogEditUser({ blog, onUpdate, children }) {
                     />
                 </ScrollArea>
             </div>
+
 
           <div>
             <label className="text-fuchsia-300 text-sm">Theme</label>

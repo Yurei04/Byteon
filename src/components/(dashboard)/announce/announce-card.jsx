@@ -1,9 +1,10 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
-import { Calendar, ExternalLink, Award, Trash2 } from "lucide-react"
+import { Calendar, ExternalLink, Award, Trash2, Edit } from "lucide-react"
 import { Button } from "../../ui/button"
+import AnnouncementEdit from "./announce-edit"
 
-export default function AnnouncementCard({ item, onDelete }) {
+export default function AnnouncementCard({ item, onDelete, onUpdate }) {
   const isExpired = new Date(item.date_end) < new Date()
   
   return (
@@ -73,7 +74,14 @@ export default function AnnouncementCard({ item, onDelete }) {
               </p>
             </div>
           </div>
-          
+          <AnnouncementEdit
+            announcement={item} 
+            onUpdate={onUpdate}
+          >
+            <Button size="sm" variant="outline">
+              <Edit className="w-4 h-4" />
+            </Button>
+          </AnnouncementEdit>
           {/* Delete Button */}
           <Button
             variant="destructive"

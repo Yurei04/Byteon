@@ -5,11 +5,30 @@ import { supabase } from "@/lib/supabase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "../ui/card"
 import { Alert, AlertDescription } from "../ui/alert"
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react"
+import { AlertCircle, CheckCircle, Loader2, Tag } from "lucide-react"
 import { Label } from "../ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
 import { Input } from "../ui/input"
 import { Textarea } from "../ui/textarea"
+
+
+const THEME_OPTIONS = [
+  "Technology",
+  "Education",
+  "Lifestyle",
+  "Business",
+  "Health & Wellness",
+  "Science",
+  "Arts & Culture",
+  "Travel",
+  "Food & Cooking",
+  "Sports",
+  "Gaming",
+  "Finance",
+  "Environment",
+  "Personal Development",
+  "Other"
+]
 
 export default function BlogForm ({ onSuccess }) {
   const [organizations, setOrganizations] = useState([])
@@ -24,9 +43,9 @@ export default function BlogForm ({ onSuccess }) {
     image: "",
     hackathon: "",
     place: "",
-    organization: "",
     theme: ""
   })
+
 
   useEffect(() => {
     fetchOrganizations()
@@ -49,6 +68,7 @@ export default function BlogForm ({ onSuccess }) {
       const blogData = {
         ...formData,
         organization_id: selectedOrg.id,
+        organization: selectedOrg.name,
         hackathon: formData.hackathon ? formData.hackathon.split(',').map(s => s.trim()) : []
       }
 
@@ -74,6 +94,19 @@ export default function BlogForm ({ onSuccess }) {
     }
   }
 
+  if (!organizations) {
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
+          <CardContent className="p-12 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-fuchsia-300" />
+            <p className="text-fuchsia-200/70">Loading Organization information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <Card className="bg-white/10 backdrop-blur-lg border-white/20">
       <CardContent className="p-6">
@@ -91,9 +124,8 @@ export default function BlogForm ({ onSuccess }) {
                 onValueChange={(val) => {
                   const selected = organizations.find(o => o.id === parseInt(val));
                   setSelectedOrg(selected);
-                  setFormData({...formData, organization: val});
                 }} 
-                value={formData.organization}
+                value={selectedOrg?.id?.toString()}
               >
                 <SelectTrigger className="bg-white/10 border-white/20 text-white">
                   <SelectValue placeholder="Select organization" />
@@ -150,14 +182,23 @@ export default function BlogForm ({ onSuccess }) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-white">Theme</Label>
-              <Input
-                value={formData.theme}
-                onChange={(e) => setFormData({...formData, theme: e.target.value})}
-                className="bg-white/10 border-white/20 text-white"
-                placeholder="Technology, Education, etc."
-              />
+            <div className="space-y-3">
+              <Label className="text-fuchsia-100 font-semibold flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                Theme/Category
+              </Label>
+              <Select value={formData.theme} onValueChange={(value) => setFormData({...formData, theme: value})}>
+                <SelectTrigger className="bg-white/5 border-fuchsia-500/30 text-white focus:border-fuchsia-400 focus:ring-fuchsia-400/20">
+                  <SelectValue placeholder="Select a theme for your blog..." />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-950 border-fuchsia-500/30">
+                  {THEME_OPTIONS.map((theme) => (
+                    <SelectItem key={theme} value={theme} className="text-white hover:bg-fuchsia-500/20">
+                      {theme}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
@@ -167,16 +208,6 @@ export default function BlogForm ({ onSuccess }) {
                 onChange={(e) => setFormData({...formData, place: e.target.value})}
                 className="bg-white/10 border-white/20 text-white"
                 placeholder="Online, New York, etc."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-white">Related Hackathons (comma-separated)</Label>
-              <Input
-                value={formData.hackathon}
-                onChange={(e) => setFormData({...formData, hackathon: e.target.value})}
-                className="bg-white/10 border-white/20 text-white"
-                placeholder="AI Hackathon, Web3 Event"
               />
             </div>
 

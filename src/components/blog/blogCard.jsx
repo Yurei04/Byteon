@@ -2,9 +2,10 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Trash2, Calendar, MapPin, Tag, Link2 } from "lucide-react"
+import { Trash2, Calendar, MapPin, Tag, Link2, Edit } from "lucide-react"
+import BlogEditOrg from "./blog-edit-org"
 
-export default function BlogCard({ item, onDelete }) {
+export default function BlogCard({ item, onDelete, onUpdate}) {
   return (
     <Card className="group relative bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 hover:border-fuchsia-400/60 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-fuchsia-500/20">
       {/* Animated gradient overlay */}
@@ -78,7 +79,20 @@ export default function BlogCard({ item, onDelete }) {
               )}
             </div>
           </div>
-          
+          {/*Edit button */}
+          <BlogEditOrg
+            blog={item}
+            onUpdate={onUpdate}
+          >
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-fuchsia-500/30 text-fuchsia-200 hover:bg-fuchsia-500/20"
+            >
+              <Edit className="w-4 h-4 mr-1" />
+              Edit
+            </Button>
+          </BlogEditOrg>
           {/* Delete Button */}
           <Button
             variant="destructive"
@@ -88,7 +102,9 @@ export default function BlogCard({ item, onDelete }) {
           >
             <Trash2 className="w-4 h-4" />
           </Button>
+          
         </div>
+
         
         {/* Hover indicator */}
         <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
