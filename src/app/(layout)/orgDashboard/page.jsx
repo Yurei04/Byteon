@@ -1,5 +1,5 @@
 import ClientFooterLoader from "@/components/client-footer-loader";
-import DashboardCenter from "@/pages/announce-control-page/announce-page";
+import DashboardCenter from "@/pages/announce-control-page/org-dashboard";
 
 export default function Announement () {
     return (

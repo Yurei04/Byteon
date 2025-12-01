@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Calendar, ExternalLink, Award, Trash2 } from "lucide-react"
 import { Button } from "../../ui/button"
 
-export default function AnnouncementCard({ item, onDelete }) {
+export default function AnnouncementPublicCard({ item, onDelete }) {
   const isExpired = new Date(item.date_end) < new Date()
   
   return (

@@ -4,7 +4,7 @@ import { Calendar, ExternalLink, Award, Trash2, Edit } from "lucide-react"
 import { Button } from "../../ui/button"
 import AnnouncementEdit from "./announce-edit"
 
-export default function AnnouncementCard({ item, onDelete, onUpdate }) {
+export default function AnnouncementCard({ item, onDelete, onUpdate, }) {
   const isExpired = new Date(item.date_end) < new Date()
   
   return (

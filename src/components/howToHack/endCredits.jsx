@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import audioService from "@/lib/audioService";
+import { Button } from "../ui/button";
 
 export default function EndCredits({ onComplete }) {
   const [isComplete, setIsComplete] = useState(false);
@@ -269,26 +270,28 @@ export default function EndCredits({ onComplete }) {
         </motion.div>
       </div>
 
-      {/* Return to Homepage Button */}
-      {isComplete && (
+      {/* Go to Hackathons Button */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.5 }}
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
+          className="absolute inset-0  flex items-end justify-center"
         >
-         <Link href={"/"}>
-           <button 
-            onClick={() => {
-              audioService.stopBackgroundMusic()
-            }}
-            className="px-8 py-4 text-lg font-semibold rounded-xl bg-fuchsia-600/30 hover:bg-fuchsia-600/50 border border-fuchsia-400/40 text-fuchsia-200 backdrop-blur-xl shadow-lg transition-all duration-300"
-          >
-            Return to Homepage
-          </button>
-         </Link>
+        <div className="flex justify-center items-center m-2">
+          <Link href={"/announce"}>
+              <Button 
+              onClick={() => {
+                audioService.stopBackgroundMusic()
+              }}
+              size="lg"
+              className="cursor-pointer px-4 py-4 text-md font-semibold rounded-xl bg-fuchsia-600/30 hover:bg-fuchsia-600/50 border border-fuchsia-400/40 text-fuchsia-200 backdrop-blur-xl shadow-lg transition-all duration-300"
+                    >
+                Check Out Hackathons
+              </Button>
+          </Link>
+        </div>
         </motion.div>
-      )}
+
     </div>
   );
 }

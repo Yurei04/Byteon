@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import Autoplay from "embla-carousel-autoplay";
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel";
 import AnnouncePublicCard from "@/components/(dashboard)/announce/announce-public-card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { SelectSeparator } from "@/components/ui/select";
 export default function AnnounceSection (
 
 
@@ -80,6 +83,17 @@ export default function AnnounceSection (
                 </CarouselContent>
               <CarouselNext className="cursor-pointer"/>
             </Carousel>
+            <SelectSeparator className={"h-0.5 bg-gradient-to-r from-transparent via-purple-500/70 to-transparent my-1 m-2"}/>
+            <div className="flex justify-center items-center m-2">
+              <Link href={"/announce"}>
+                  <Button
+                            size="lg"
+                            className="cursor-pointer bg-fuchsia-700 hover:bg-fuchsia-600 text-white border border-fuchsia-600 transition-colors"
+                        >
+                    Check More Out!
+                  </Button>
+              </Link>
+            </div>
         </motion.div>
       </section>
     )

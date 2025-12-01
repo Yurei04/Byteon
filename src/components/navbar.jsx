@@ -10,6 +10,7 @@ const navLinks = [
     { title: "Partners", href: "/partners" },
     { title: "Blog", href: "/blog" },
     { title: "Resource", href: "/resource-hub" },
+    { title: "Hacks", href: "/announce" },
 ]
 
 export default function NavBar() {
