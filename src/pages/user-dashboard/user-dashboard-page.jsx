@@ -232,7 +232,7 @@ export default function UserDashboardPage() {
                           {!blogs || blogs.length === 0 ? (
                             <BlogEmpty />
                           ) : (
-                            <MyBlogs blogs={blogs} onBlogDeleted={fetchBlogs} />
+                            <MyBlogs blogs={blogs} onUpdate={fetchBlogs} onBlogDeleted={fetchBlogs} />
                           )}
                         </CardContent>
                       </Card>
