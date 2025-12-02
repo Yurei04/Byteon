@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Calendar, ExternalLink, Award, Users, AlertCircle, MousePointerClick } from "lucide-react"
 import { Button } from "../../ui/button"
 import { supabase } from "@/lib/supabase"
+import AnnouncementTrackingBadge from "./announce-tracking-badge"
 
 export default function AnnouncementPublicCard({ item, onDelete }) {
   const isExpired = new Date(item.date_end) < new Date()
@@ -86,6 +87,11 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
                   ${item.prizes.toLocaleString()}
                 </span>
               )}
+
+              {item.google_sheet_csv_url && (
+                <AnnouncementTrackingBadge announcementId={item.id} />
+              )}
+
               {isExpired ? (
                 <span className="px-3 py-1.5 bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/30 text-red-300 rounded-full text-xs font-medium shadow-lg shadow-red-500/10">
                   Expired

@@ -41,8 +41,11 @@ export default function AnnouncementTrackingBadge({ announcementId }) {
       if (!res.ok) throw new Error('CSV fetch failed')
       const text = await res.text()
 
-      const rows = text.trim().split("\n")
-      // Assume first row is header
+      // Split into rows and filter out empty rows
+      const rows = text.trim().split("\n").filter(row => row.trim().length > 0)
+      
+      // Count data rows (excluding header)
+      // rows[0] is the header, so actual respondents = rows.length - 1
       const count = Math.max(0, rows.length - 1)
 
       setLiveCount(count)
@@ -57,7 +60,7 @@ export default function AnnouncementTrackingBadge({ announcementId }) {
     }
   }, [])
 
-  // Initial load + polling every 15s
+  // Initial load + polling every 2s
   useEffect(() => {
     let interval
 
@@ -65,7 +68,7 @@ export default function AnnouncementTrackingBadge({ announcementId }) {
       const url = await fetchAnnouncementDetails()
       if (url) {
         await fetchLiveCount(url)
-        interval = setInterval(() => fetchLiveCount(url), 15000)
+        interval = setInterval(() => fetchLiveCount(url), 2000)
       }
     }
 
@@ -83,7 +86,7 @@ export default function AnnouncementTrackingBadge({ announcementId }) {
     <div className="flex items-center gap-2">
       <span className="px-3 py-1.5 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-400/30 text-blue-300 rounded-full text-xs font-medium flex items-center gap-2 shadow-lg shadow-blue-500/10">
         {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Users className="w-3.5 h-3.5" />}
-        {liveCount} registrant{liveCount === 1 ? '' : 's'}
+        {liveCount} {liveCount === 1 ? 'registrant' : 'registrants'}
       </span>
 
       <Button
