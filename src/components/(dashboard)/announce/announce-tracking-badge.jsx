@@ -37,7 +37,6 @@ export default function AnnouncementTrackingBadge({ announcementId }) {
     setError(null)
 
     try {
-      // Fetch CSV directly (no need for /api/count if you prefer)
       const res = await fetch(csvUrl)
       if (!res.ok) throw new Error('CSV fetch failed')
       const text = await res.text()
