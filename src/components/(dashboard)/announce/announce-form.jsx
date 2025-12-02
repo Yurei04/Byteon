@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react"
+import { AlertCircle, CheckCircle, Loader2, Info } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
 export default function AnnounceForm({ onSuccess }) {
@@ -32,7 +32,8 @@ export default function AnnounceForm({ onSuccess }) {
     prizes: "",
     website_link: "",
     dev_link: "",
-    color_scheme: "purple"
+    color_scheme: "purple",
+    google_sheet_csv_url: ""
   })
 
   useEffect(() => {
@@ -66,17 +67,37 @@ export default function AnnounceForm({ onSuccess }) {
       return
     }
 
+    if (!formData.google_sheet_csv_url) {
+      setAlert({ type: 'error', message: 'Please provide the Google Sheet CSV URL' })
+      return
+    }
+
+    // Validate URL format
+    if (!formData.google_sheet_csv_url.includes('docs.google.com/spreadsheets')) {
+      setAlert({ type: 'error', message: 'Invalid Google Sheets URL' })
+      return
+    }
+
     setIsLoading(true)
     setAlert(null)
 
     try {
       const announcementData = {
-        ...formData,
+        title: formData.title,
+        des: formData.des,
+        author: formData.author,
+        date_begin: formData.date_begin,
+        date_end: formData.date_end,
+        open_to: formData.open_to,
+        countries: formData.countries,
         prizes: formData.prizes ? parseInt(formData.prizes) : null,
+        website_link: formData.website_link,
+        dev_link: formData.dev_link,
+        color_scheme: formData.color_scheme,
         organization: selectedOrg.name,
         organization_id: selectedOrg.id,
-        record: 0,
-        record_after: 0
+        registrants_count: 0,
+        google_sheet_csv_url: formData.google_sheet_csv_url.trim()
       }
 
       const { data, error } = await supabase
@@ -99,7 +120,8 @@ export default function AnnounceForm({ onSuccess }) {
         prizes: "",
         website_link: "",
         dev_link: "",
-        color_scheme: selectedOrg.color_scheme || "purple"
+        color_scheme: selectedOrg.color_scheme || "purple",
+        google_sheet_csv_url: ""
       })
 
       setTimeout(() => {
@@ -126,7 +148,7 @@ export default function AnnounceForm({ onSuccess }) {
 
         <div className="space-y-6">
           <div className="space-y-2 p-2 border border-red-400 rounded-xl">
-            <Label className="text-white">Organization - This Is For Testing Purposes Only!</Label>
+            <Label className="text-white">Organization</Label>
             <Select onValueChange={(val) => setSelectedOrg(organizations.find(o => o.id === parseInt(val)))} value={selectedOrg?.id?.toString()}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Select organization" />
@@ -238,6 +260,47 @@ export default function AnnounceForm({ onSuccess }) {
                 className="bg-white/10 border-white/20 text-white"
               />
             </div>
+          </div>
+
+          {/* Google Forms Tracking */}
+          <div className="space-y-4 p-4 border border-blue-400/30 rounded-xl bg-blue-950/20">
+            <div className="flex items-start gap-2">
+              <Info className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <Label className="text-white text-base font-semibold">Google Forms Registration Tracking</Label>
+                <p className="text-sm text-gray-300 mt-1">Automatically count form responses</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-white">
+                Google Sheet Published CSV URL *
+              </Label>
+              <Input
+                value={formData.google_sheet_csv_url}
+                onChange={(e) => setFormData({ ...formData, google_sheet_csv_url: e.target.value })}
+                className="bg-white/10 border-white/20 text-white font-mono text-xs"
+                placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv"
+              />
+              <p className="text-xs text-gray-400">
+                Paste the FULL CSV URL from: File → Share → Publish to web → CSV
+              </p>
+            </div>
+
+            <Alert className="border-green-500/50 bg-green-500/10">
+              <CheckCircle className="h-4 w-4 text-green-400" />
+              <AlertDescription className="text-green-200 text-sm">
+                <strong>Setup Steps:</strong>
+                <ol className="list-decimal list-inside mt-2 space-y-1 text-xs">
+                  <li>Create Google Form and link to Sheet</li>
+                  <li>Open the response sheet</li>
+                  <li>Click: File → Share → Publish to web</li>
+                  <li>Choose "Entire Document" and "Comma-separated values (.csv)"</li>
+                  <li>Click "Publish" and copy the CSV URL</li>
+                  <li>Paste the complete URL above</li>
+                </ol>
+              </AlertDescription>
+            </Alert>
           </div>
 
           <Button onClick={handleSubmit} className="w-full" disabled={isLoading}>

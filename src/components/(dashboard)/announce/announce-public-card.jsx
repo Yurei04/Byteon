@@ -1,11 +1,58 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
-import { Calendar, ExternalLink, Award, Trash2 } from "lucide-react"
+import { Calendar, ExternalLink, Award, Users, AlertCircle, MousePointerClick } from "lucide-react"
 import { Button } from "../../ui/button"
+import { supabase } from "@/lib/supabase"
 
 export default function AnnouncementPublicCard({ item, onDelete }) {
   const isExpired = new Date(item.date_end) < new Date()
   
+  const handleWebsiteLinkClick = async (e) => {
+    // Track click if using manual tracking
+    if (item.tracking_method === 'manual' && item.website_link) {
+      try {
+        // Increment website_clicks and registrants_count
+        const { error } = await supabase
+          .from('announcements')
+          .update({ 
+            website_clicks: (item.website_clicks || 0) + 1,
+            registrants_count: (item.registrants_count || 0) + 1
+          })
+          .eq('id', item.id)
+
+        if (error) console.error('Error tracking click:', error)
+      } catch (error) {
+        console.error('Error tracking click:', error)
+      }
+    }
+    // Link will open normally due to <a> tag
+  }
+
+  // Determine tracking display for admin view
+  const getTrackingStats = () => {
+    const trackingMethod = item.tracking_method || 'manual' // Default to manual if not set
+    
+    if (trackingMethod === 'manual') {
+      return {
+        icon: <MousePointerClick className="w-3.5 h-3.5" />,
+        label: 'Clicks',
+        count: item.website_clicks || 0,
+        color: 'from-cyan-500/20 to-blue-500/20 border-cyan-400/30 text-cyan-300 shadow-cyan-500/10'
+      }
+    } else if (trackingMethod === 'automatic') {
+      return {
+        icon: <Users className="w-3.5 h-3.5" />,
+        label: 'Registrants',
+        count: item.registrants_count || 0,
+        color: 'from-blue-500/20 to-indigo-500/20 border-blue-400/30 text-blue-300 shadow-blue-500/10',
+        hasError: item.sync_error,
+        lastSync: item.last_synced_at
+      }
+    }
+    
+    return null
+  }
+  const trackingStats = getTrackingStats()
   return (
     <Card className="group relative bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 hover:border-fuchsia-400/60 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-fuchsia-500/20">
       {/* Animated gradient overlay */}
@@ -48,7 +95,28 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
                   Active
                 </span>
               )}
+              {/* Tracking Stats Badge - Always Show */}
+              {trackingStats && (
+                <span className={`px-3 py-1.5 bg-gradient-to-r ${trackingStats.color} rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg`}>
+                  {trackingStats.icon}
+                  {trackingStats.count} {trackingStats.label}
+                </span>
+              )}
+              
+              {/* Sync Error Indicator for Automatic Tracking */}
+              {trackingStats && trackingStats.hasError && (
+                <span 
+                  className="px-3 py-1.5 bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 text-red-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-red-500/10 cursor-help" 
+                  title={item.sync_error}
+                >
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  Sync Error
+                </span>
+              )}
             </div>
+                          
+
+              
             
             {/* Info Section */}
             <div className="text-sm text-gray-400 space-y-2 bg-black/20 rounded-lg p-3 border border-purple-500/10">
@@ -79,13 +147,19 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
         {(item.website_link || item.dev_link) && (
           <div className="flex gap-3 mt-5 pt-4 border-t border-purple-500/10">
             {item.website_link && (
-              <a href={item.website_link} target="_blank" rel="noopener noreferrer" className="flex-1">
+              <a 
+                href={item.website_link} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="flex-1"
+                onClick={handleWebsiteLinkClick}
+              >
                 <Button 
                   size="sm" 
                   className="w-full cursor-pointer bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-fuchsia-500/30 transition-all duration-300"
                 >
                   <ExternalLink className="w-3.5 h-3.5 mr-2" />
-                  Website
+                  {item.tracking_method === 'manual' ? 'Register Now' : 'Website'}
                 </Button>
               </a>
             )}

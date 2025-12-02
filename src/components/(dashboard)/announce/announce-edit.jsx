@@ -1,78 +1,82 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { supabase } from "@/lib/supabase"
-import { Loader2 } from "lucide-react"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/lib/supabase";
+import { Loader2, Info, CheckCircle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function AnnouncementEdit({ announcement, onUpdate, children }) {
   const [form, setForm] = useState({
-    title: announcement.title || "",
-    des: announcement.des || "",
-    author: announcement.author || "",
-    date_begin: announcement.date_begin || "",
-    date_end: announcement.date_end || "",
-    open_to: announcement.open_to || "",
-    countries: announcement.countries || "",
-    prizes: announcement.prizes || "",
-    website_link: announcement.website_link || "",
-    dev_link: announcement.dev_link || "",
-  })
+    title: announcement.title ?? "",
+    des: announcement.des ?? "",
+    author: announcement.author ?? "",
+    date_begin: announcement.date_begin ?? "",
+    date_end: announcement.date_end ?? "",
+    open_to: announcement.open_to ?? "",
+    countries: announcement.countries ?? "",
+    prizes: announcement.prizes ?? "",
+    website_link: announcement.website_link ?? "",
+    dev_link: announcement.dev_link ?? "",
+    google_sheet_csv_url: announcement.google_sheet_csv_url ?? "",
+  });
 
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value })
-  }
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSave = async () => {
-    setSaving(true)
+    setSaving(true);
+
+    const updateData = {
+      title: form.title,
+      des: form.des,
+      author: form.author,
+      date_begin: form.date_begin,
+      date_end: form.date_end,
+      open_to: form.open_to,
+      countries: form.countries,
+      prizes: form.prizes ? Number(form.prizes) : null,
+      website_link: form.website_link,
+      dev_link: form.dev_link,
+      google_sheet_csv_url: form.google_sheet_csv_url ? form.google_sheet_csv_url.trim() : null
+    };
 
     const { error } = await supabase
       .from("announcements")
-      .update({
-        title: form.title,
-        des: form.des,
-        author: form.author,
-        date_begin: form.date_begin,
-        date_end: form.date_end,
-        open_to: form.open_to,
-        countries: form.countries,
-        prizes: form.prizes ? parseInt(form.prizes) : null,
-        website_link: form.website_link,
-        dev_link: form.dev_link,
-      })
-      .eq("id", announcement.id)
+      .update(updateData)
+      .eq("id", announcement.id);
 
-    setSaving(false)
+    setSaving(false);
 
     if (error) {
-      console.error(error)
-      return
+      alert("Error saving changes: " + error.message);
+      return;
     }
 
-    if (onUpdate) onUpdate()
-    document.querySelector("button[aria-label='Close']")?.click()
-  }
+    onUpdate?.();
+    document.querySelector("button[aria-label='Close']")?.click();
+  };
 
   return (
-    <Dialog className="overflow-hidden">
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+    <Dialog>
+      <DialogTrigger asChild>{children}</DialogTrigger>
 
-      <DialogContent className="bg-gradient-to-br from-slate-900 via-purple-900 to-fuchsia-900 border-fuchsia-500/30 max-w-2xl max-h-[90vh]">
+      <DialogContent className="bg-gradient-to-br from-slate-900 via-purple-900 to-fuchsia-900 border-fuchsia-500/30 max-w-3xl w-full max-h-[90vh] overflow-hidden">
         <DialogTitle className="text-fuchsia-200 mb-4">
           Edit Announcement – {announcement.title}
         </DialogTitle>
 
         <ScrollArea className="h-[calc(90vh-120px)] pr-4">
           <div className="space-y-4">
+
             <div>
               <Label className="text-fuchsia-300 text-sm">Title *</Label>
               <Input
@@ -80,7 +84,6 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
                 value={form.title}
                 onChange={handleChange}
                 className="bg-black/30 text-fuchsia-200 border-fuchsia-500/30 mt-1"
-                placeholder="AI Hackathon 2025"
               />
             </div>
 
@@ -150,7 +153,6 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
                   value={form.open_to}
                   onChange={handleChange}
                   className="bg-black/30 text-fuchsia-200 border-fuchsia-500/30 mt-1"
-                  placeholder="Students, Professionals, Everyone"
                 />
               </div>
 
@@ -161,7 +163,6 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
                   value={form.countries}
                   onChange={handleChange}
                   className="bg-black/30 text-fuchsia-200 border-fuchsia-500/30 mt-1"
-                  placeholder="Global, USA, Canada"
                 />
               </div>
             </div>
@@ -190,6 +191,43 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
               </div>
             </div>
 
+            <div className="space-y-4 p-4 border border-blue-400/30 rounded-xl bg-blue-950/20 mt-6">
+              <div className="flex items-start gap-2">
+                <Info className="w-5 h-5 text-blue-400 mt-0.5" />
+                <div>
+                  <Label className="text-blue-200 text-base font-semibold">
+                    Registration Tracking
+                  </Label>
+                  <p className="text-sm text-blue-300/80 mt-1">
+                    Current count: {announcement.registrants_count || 0} registrants
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-fuchsia-300 text-sm">
+                  Google Sheet Published CSV URL
+                </Label>
+                <Input
+                  name="google_sheet_csv_url"
+                  value={form.google_sheet_csv_url}
+                  onChange={handleChange}
+                  className="bg-black/30 text-fuchsia-200 border-fuchsia-500/30 mt-1 font-mono text-xs"
+                  placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv"
+                />
+                <p className="text-xs text-fuchsia-400/60 mt-1">
+                  Paste the FULL CSV URL from: File → Share → Publish to web → CSV
+                </p>
+              </div>
+
+              <Alert className="border-green-500/50 bg-green-500/10">
+                <CheckCircle className="h-4 w-4 text-green-400" />
+                <AlertDescription className="text-green-200 text-sm">
+                  Updates automatically every 30 seconds when CSV URL is set
+                </AlertDescription>
+              </Alert>
+            </div>
+
             <Button
               onClick={handleSave}
               disabled={saving}
@@ -207,5 +245,5 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
         </ScrollArea>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
