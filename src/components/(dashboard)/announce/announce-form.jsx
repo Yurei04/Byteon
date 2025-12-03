@@ -16,6 +16,17 @@ import {
 import { AlertCircle, CheckCircle, Loader2, Info } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 
+const CURRENCIES = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  { code: "PHP", symbol: "₱", name: "Philippine Peso" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+]
+
 export default function AnnounceForm({ onSuccess }) {
   const [organizations, setOrganizations] = useState([])
   const [selectedOrg, setSelectedOrg] = useState(null)
@@ -30,6 +41,7 @@ export default function AnnounceForm({ onSuccess }) {
     open_to: "",
     countries: "",
     prizes: "",
+    prize_currency: "USD",
     website_link: "",
     dev_link: "",
     color_scheme: "purple",
@@ -91,13 +103,14 @@ export default function AnnounceForm({ onSuccess }) {
         open_to: formData.open_to,
         countries: formData.countries,
         prizes: formData.prizes ? parseInt(formData.prizes) : null,
+        prize_currency: formData.prize_currency,
         website_link: formData.website_link,
         dev_link: formData.dev_link,
         color_scheme: formData.color_scheme,
         organization: selectedOrg.name,
         organization_id: selectedOrg.id,
         registrants_count: 0,
-        google_sheet_csv_url: formData.google_sheet_csv_url.trim()
+        google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
       }
 
       const { data, error } = await supabase
@@ -118,6 +131,7 @@ export default function AnnounceForm({ onSuccess }) {
         open_to: "",
         countries: "",
         prizes: "",
+        prize_currency: "USD",
         website_link: "",
         dev_link: "",
         color_scheme: selectedOrg.color_scheme || "purple",
@@ -192,13 +206,28 @@ export default function AnnounceForm({ onSuccess }) {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-white">Prizes (USD)</Label>
-              <Input
-                type="number"
-                value={formData.prizes}
-                onChange={(e) => setFormData({...formData, prizes: e.target.value})}
-                className="bg-white/10 border-white/20 text-white"
-              />
+              <Label className="text-white">Prize Amount</Label>
+              <div className="flex gap-2">
+                <Select value={formData.prize_currency} onValueChange={(val) => setFormData({...formData, prize_currency: val})}>
+                  <SelectTrigger className="w-28 bg-white/10 border-white/20 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((curr) => (
+                      <SelectItem key={curr.code} value={curr.code}>
+                        {curr.symbol} {curr.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  type="number"
+                  value={formData.prizes}
+                  onChange={(e) => setFormData({...formData, prizes: e.target.value})}
+                  className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  placeholder="10000"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -101,14 +101,7 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
                   Active
                 </span>
               )}
-              {/* Tracking Stats Badge - Always Show */}
-              {trackingStats && (
-                <span className={`px-3 py-1.5 bg-gradient-to-r ${trackingStats.color} rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg`}>
-                  {trackingStats.icon}
-                  {trackingStats.count} {trackingStats.label}
-                </span>
-              )}
-              
+
               {/* Sync Error Indicator for Automatic Tracking */}
               {trackingStats && trackingStats.hasError && (
                 <span 

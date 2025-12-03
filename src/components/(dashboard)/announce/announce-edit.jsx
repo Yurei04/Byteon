@@ -10,26 +10,53 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
 import { Loader2, Info, CheckCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const CURRENCIES = [
+  { code: "USD", symbol: "$", name: "US Dollar" },
+  { code: "EUR", symbol: "€", name: "Euro" },
+  { code: "GBP", symbol: "£", name: "British Pound" },
+  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
+  { code: "PHP", symbol: "₱", name: "Philippine Peso" },
+  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
+  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
+  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+]
 
 export default function AnnouncementEdit({ announcement, onUpdate, children }) {
-  const [form, setForm] = useState({
-    title: announcement.title ?? "",
-    des: announcement.des ?? "",
-    author: announcement.author ?? "",
-    date_begin: announcement.date_begin ?? "",
-    date_end: announcement.date_end ?? "",
-    open_to: announcement.open_to ?? "",
-    countries: announcement.countries ?? "",
-    prizes: announcement.prizes ?? "",
-    website_link: announcement.website_link ?? "",
-    dev_link: announcement.dev_link ?? "",
-    google_sheet_csv_url: announcement.google_sheet_csv_url ?? "",
-  });
+const safe = announcement || {};
+
+const [form, setForm] = useState({
+  title: safe.title ?? "",
+  des: safe.des ?? "",
+  author: safe.author ?? "",
+  date_begin: safe.date_begin ?? "",
+  date_end: safe.date_end ?? "",
+  open_to: safe.open_to ?? "",
+  countries: safe.countries ?? "",
+  prizes: safe.prizes ?? "",
+  prize_currency: safe.prize_currency ?? "USD",
+  website_link: safe.website_link ?? "",
+  dev_link: safe.dev_link ?? "",
+  google_sheet_csv_url: safe.google_sheet_csv_url ?? "",
+});
+
 
   const [saving, setSaving] = useState(false);
-
+  const [isOpen, setIsOpen] = useState(false);
+  
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSelectChange = (name, value) => {
+    setForm({ ...form, [name]: value });
   };
 
   const handleSave = async () => {
@@ -44,6 +71,7 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
       open_to: form.open_to,
       countries: form.countries,
       prizes: form.prizes ? Number(form.prizes) : null,
+      prize_currency: form.prize_currency,
       website_link: form.website_link,
       dev_link: form.dev_link,
       google_sheet_csv_url: form.google_sheet_csv_url ? form.google_sheet_csv_url.trim() : null
@@ -62,11 +90,10 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
     }
 
     onUpdate?.();
-    document.querySelector("button[aria-label='Close']")?.click();
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
 
       <DialogContent className="bg-gradient-to-br from-slate-900 via-purple-900 to-fuchsia-900 border-fuchsia-500/30 max-w-3xl w-full max-h-[90vh] overflow-hidden">
@@ -110,14 +137,28 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
               </div>
 
               <div>
-                <Label className="text-fuchsia-300 text-sm">Prizes (USD)</Label>
-                <Input
-                  name="prizes"
-                  type="number"
-                  value={form.prizes}
-                  onChange={handleChange}
-                  className="bg-black/30 text-fuchsia-200 border-fuchsia-500/30 mt-1"
-                />
+                <Label className="text-fuchsia-300 text-sm">Prize Amount</Label>
+                <div className="flex gap-2 mt-1">
+                  <Select value={form.prize_currency} onValueChange={(val) => handleSelectChange('prize_currency', val)}>
+                    <SelectTrigger className="w-28 bg-black/30 text-fuchsia-200 border-fuchsia-500/30">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map((curr) => (
+                        <SelectItem key={curr.code} value={curr.code}>
+                          {curr.symbol} {curr.code}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    name="prizes"
+                    type="number"
+                    value={form.prizes}
+                    onChange={handleChange}
+                    className="flex-1 bg-black/30 text-fuchsia-200 border-fuchsia-500/30"
+                  />
+                </div>
               </div>
             </div>
 
@@ -223,7 +264,7 @@ export default function AnnouncementEdit({ announcement, onUpdate, children }) {
               <Alert className="border-green-500/50 bg-green-500/10">
                 <CheckCircle className="h-4 w-4 text-green-400" />
                 <AlertDescription className="text-green-200 text-sm">
-                  Updates automatically every 30 seconds when CSV URL is set
+                  Updates automatically when CSV URL is set
                 </AlertDescription>
               </Alert>
             </div>
