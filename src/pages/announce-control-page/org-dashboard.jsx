@@ -142,25 +142,6 @@ export default function DashboardCenter() {
     }
   }
 
-  const handleDeleteAnnouncement = async (id) => {
-    const confirmDelete = confirm("Are you sure you want to delete this announcement?");
-    if (!confirmDelete) return;
-
-    const { error } = await supabase
-      .from("announcements")
-      .delete()
-      .eq("id", id);
-
-    if (error) {
-      console.error("Delete error:", error);
-      return;
-    }
-
-    // ⬅️ Re-fetch properly
-    fetchAnnouncements();
-  };
-
-
   const paginateData = (data, currentPage, itemsPerPage) => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
