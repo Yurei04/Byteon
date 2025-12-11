@@ -72,8 +72,8 @@ export default function AnnouncementTrackingBadge({ announcementId }) {
   useEffect(() => {
     const urlPromise = fetchAnnouncementDetails()
     let initialCountSet = false;
-    const POLLING_INTERVAL = 2000;
-    const QUICK_INTERVAL = 500; // Faster check after an increase is observed
+    const POLLING_INTERVAL = 3000;
+    const QUICK_INTERVAL = 2000; // Faster check after an increase is observed
 
     const poll = async () => {
         const url = await urlPromise;
@@ -88,9 +88,35 @@ export default function AnnouncementTrackingBadge({ announcementId }) {
             if (intervalRef.current) clearInterval(intervalRef.current);
             intervalRef.current = setInterval(poll, POLLING_INTERVAL);
         } else if (newCount > oldCount) {
-            // OPTIONAL: If count increased, restart interval for a QUICKER check
-            // to confirm the rising trend faster, then revert to slow polling.
-            // This is complex, so we'll simplify and just stick to the POLLING_INTERVAL to meet simplicity.
+          console.log(`📈 Count increased: ${oldCount} → ${newCount}. Switching to quick confirmation.`);
+          
+          // Clear the current interval
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          
+          // Set up QUICK interval for fast confirmation
+          let quickCheckCount = 0;
+          const MAX_QUICK_CHECKS = 2; // Do 2 quick checks then revert
+          
+          const quickPoll = async () => {
+              const url = await urlPromise;
+              if (!url) return;
+              
+              quickCheckCount++;
+              console.log(`⚡ Quick check ${quickCheckCount}/${MAX_QUICK_CHECKS}`);
+              
+              await fetchLiveCount(url);
+              
+              // After max quick checks, revert to normal polling
+              if (quickCheckCount >= MAX_QUICK_CHECKS) {
+                  console.log(`🔄 Reverting to normal ${POLLING_INTERVAL}ms interval`);
+                  if (intervalRef.current) clearInterval(intervalRef.current);
+                  intervalRef.current = setInterval(poll, POLLING_INTERVAL);
+              }
+          };
+          
+          // Start quick polling (2 second interval)
+          intervalRef.current = setInterval(quickPoll, QUICK_INTERVAL);
+
         }
     }
 
