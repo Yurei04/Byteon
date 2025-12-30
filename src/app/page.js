@@ -6,6 +6,7 @@ import Footer from "@/components/footer";
 import AboutSection from "@/pages/about-page/about-page";
 import AnnounceSection from "@/pages/announce-control-page/announce-section";
 import ClientFooterLoader from "@/components/client-footer-loader";
+import TipPage from "@/pages/home-page/tipPage";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <Homepage />
       <AboutSection />
       <AnnounceSection />
+      <TipPage />
       <ClientFooterLoader />
     </div>
   );
