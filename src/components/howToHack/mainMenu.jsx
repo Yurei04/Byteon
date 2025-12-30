@@ -10,6 +10,10 @@ const styling = [
   "w-52 py-6 bg-fuchsia-900/20 hover:bg-fuchsia-700 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 cursor-pointer transition-all duration-300"
 ];
 
+const disabled = [
+  "cursor w-52 py-6 bg-fuchsia-900/20 hover:bg-fuchsia-700 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 cursor-pointer transition-all duration-300"
+];
+
 const MainMenu = ({ onStartGame }) => {
   if (typeof onStartGame !== "function") {
     console.error("[MainMenu] onStartGame prop is not a function:", onStartGame);
@@ -63,8 +67,8 @@ const MainMenu = ({ onStartGame }) => {
           Begin Journey
         </Button>
 
-        <Button className={styling}>Load Game</Button>
-        <Button className={styling}>Settings</Button>
+        <Button variant="disabled" className={styling}>Load Game</Button>
+        <Button variant="disabled" className={styling}>Settings</Button>
         <Link href={"/"}>
             <Button
             className={styling}

@@ -95,7 +95,11 @@ export default function HowToHackPage() {
     }, []);
 
     const handleBackToMenu = useCallback(() => {
+        console.log('[HowToHackPage] Returning to main menu');
         setIsMainMenu(true);
+        setIsStartGame(false); // KEY FIX: Reset game state
+        setIsSettings(false);
+        setIsExit(false);
     }, []);
 
     const handleStateChange = useCallback((state) => {
@@ -167,8 +171,10 @@ export default function HowToHackPage() {
     /* ------------------------------ CHAPTER EFFECT ------------------------------ */
 
     useEffect(() => {
-        loadChapter(chapter);
-    }, [chapter, loadChapter]);
+        if (isStartGame) {
+            loadChapter(chapter);
+        }
+    }, [chapter, isStartGame, loadChapter]);
 
     /* ------------------------------ MEMOIZED UI BLOCKS ------------------------------ */
 
@@ -249,12 +255,14 @@ export default function HowToHackPage() {
                                             window.audioManager.playClick();
                                         }
                                         setIsSettings(true);
+                                        setIsMainMenu(false);
                                     }}
                                     onExit={() => {
                                         if (audioEnabled && window.audioManager) {
                                             window.audioManager.playClick();
                                         }
                                         setIsExit(true);
+                                        setIsMainMenu(false);
                                     }}
                                 />
                             </div>
@@ -265,6 +273,7 @@ export default function HowToHackPage() {
                                         window.audioManager.playClick();
                                     }
                                     setIsSettings(false);
+                                    setIsMainMenu(true);
                                 }} />
                             </div>
                         ) : isExit ? (
@@ -274,13 +283,14 @@ export default function HowToHackPage() {
                                         window.audioManager.playClick();
                                     }
                                     setIsExit(false);
+                                    setIsMainMenu(true);
                                 }} />
                             </div>
-                        ) : (
+                        ) : isStartGame ? (
                             <div className="h-full">
                                 {chapterManagerElement}
                             </div>
-                        )}
+                        ) : null}
                     </div>
 
                     {/* Mobile Sidebar Overlay */}
@@ -310,8 +320,8 @@ export default function HowToHackPage() {
                     )}
                 </div>
 
-                {/* Mobile Bottom Tips (when not in game) */}
-                {!isStartGame && !isSettings && !isExit && isMainMenu && (
+                {/* Mobile Bottom Tips (when in main menu) */}
+                {isMainMenu && (
                     <div className="border-t border-fuchsia-400/50 bg-gray-900 p-4 max-h-48 overflow-y-auto">
                         <TipsAndResources />
                     </div>
@@ -349,12 +359,14 @@ export default function HowToHackPage() {
                                                 window.audioManager.playClick();
                                             }
                                             setIsSettings(true);
+                                            setIsMainMenu(false);
                                         }}
                                         onExit={() => {
                                             if (audioEnabled && window.audioManager) {
                                                 window.audioManager.playClick();
                                             }
                                             setIsExit(true);
+                                            setIsMainMenu(false);
                                         }}
                                     />
                                 ) : isSettings ? (
@@ -363,6 +375,7 @@ export default function HowToHackPage() {
                                             window.audioManager.playClick();
                                         }
                                         setIsSettings(false);
+                                        setIsMainMenu(true);
                                     }} />
                                 ) : isExit ? (
                                     <GameExit onBack={() => {
@@ -370,10 +383,11 @@ export default function HowToHackPage() {
                                             window.audioManager.playClick();
                                         }
                                         setIsExit(false);
+                                        setIsMainMenu(true);
                                     }} />
-                                ) : (
+                                ) : isStartGame ? (
                                     chapterManagerElement
-                                )}
+                                ) : null}
                             </div>
                         </ResizablePanel>
 
@@ -383,17 +397,21 @@ export default function HowToHackPage() {
                         {/* RIGHT SIDE */}
                         <ResizablePanel defaultSize={30}>
                             <ResizablePanelGroup direction="vertical">
-                                {/* Top: GameFlow */}
+                                {/* Top: GameFlow or Tips */}
                                 <ResizablePanel defaultSize={60}>
-                                    {isStartGame ? (
-                                        <div className="h-full bg-gray-950 p-2 sm:p-4 overflow-hidden">
-                                            {gameFlowElement}
-                                        </div>
-                                    ) : (
-                                        <div className="text-white flex h-full justify-center items-center p-2 sm:p-4">
-                                           <TipsAndResources />
-                                        </div>
-                                    )}
+                                    <div className="h-full bg-gray-950 p-2 sm:p-4 overflow-hidden">
+                                        {isStartGame ? (
+                                            gameFlowElement
+                                        ) : isMainMenu ? (
+                                            <div className="text-white flex h-full justify-center items-center">
+                                                <TipsAndResources />
+                                            </div>
+                                        ) : (
+                                            <div className="text-white flex h-full justify-center items-center">
+                                                <h1>Preparing...</h1>
+                                            </div>
+                                        )}
+                                    </div>
                                 </ResizablePanel>
 
                             </ResizablePanelGroup>
