@@ -1,3 +1,8 @@
+/*
+  This is the before the main menu dialog box for audio permission
+
+*/
+
 "use client"
 
 import { Button } from "@/components/ui/button";
@@ -42,18 +47,18 @@ export default function AudioPermissionDialog({ isOpen, onAccept, onDecline }) {
           </p>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="flex gap-2 ">
           <Button
             onClick={onDecline}
             variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white"
+            className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer"
           >
             <VolumeX className="w-4 h-4 mr-2" />
             No Audio
           </Button>
           <Button
             onClick={onAccept}
-            className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
+            className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white cursor-pointer"
           >
             <Volume2 className="w-4 h-4 mr-2" />
             Enable Audio

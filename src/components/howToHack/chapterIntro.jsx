@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState, useEffect, useRef } from "react";
-
+import audioService from "@/lib/audioService";
 /**
  * Simple fade-in/fade-out intro scene for each chapter. 
  * Props:
@@ -66,6 +66,7 @@ export default function ChapterIntro({ visible, title, onStart, onStay, onNextCh
             <button
               onClick={() => {
                 if (onStay) onStay();
+                 audioService.stopBackgroundMusic()
               }}
               className="px-6 py-3 rounded-md bg-white/10 hover:bg-white/20 cursor-pointer"
             >

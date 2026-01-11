@@ -26,7 +26,7 @@ class AudioService {
       this.bgMusic.volume = this.musicVolume;
 
       // Typewriter sound effect
-      this.typewriterSound = new Audio('/audio/typewriter.mp3');
+      this.typewriterSound = new Audio('/audio/trypewriter.mp3');
       this.typewriterSound.volume = this.sfxVolume;
 
       // Click sound effect
@@ -94,7 +94,7 @@ class AudioService {
   }
 
   // Start looping typewriter sound for dialog typing
-  startTypewriterLoop(intervalMs = 50) {
+  startTypewriterLoop(intervalMs = 2000) {
     this.stopTypewriterLoop(); // Clear any existing loop
     
     this.typewriterInterval = setInterval(() => {

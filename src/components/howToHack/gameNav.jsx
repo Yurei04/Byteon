@@ -44,11 +44,11 @@ export default function GameNav() {
                 Audio Settings
               </Button>
               <Button
-                variant="ghost"
+                variant="disabled"
                 size="sm"
                 className="w-full cursor-pointer justify-start text-sm border border-transparent text-fuchsia-200 hover:border-fuchsia-400 hover:bg-fuchsia-950/40 transition-colors"
               >
-                Load Game
+                Load & Exit
               </Button>
 
               <Link href="/">

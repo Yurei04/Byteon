@@ -16,6 +16,7 @@ export default function GameDialogBox({
   const [isTyping, setIsTyping] = useState(false);
   const timeoutRef = useRef(null);
   const isFinished = displayedText.length === text.length && !isTyping;
+  const 
 
   // Reset when text changes
   useEffect(() => {
@@ -49,29 +50,11 @@ export default function GameDialogBox({
 
   // Handle typing animation
   useEffect(() => {
-    if (!isTyping || currentIndex >= text.length) {
-      if (currentIndex >= text.length && isTyping) {
-        setIsTyping(false);
-        // Stop typewriter sound
-        if (typeof window !== 'undefined' && window.audioManager) {
-          window.audioManager.stopTypewriterLoop();
-        }
-      }
-      return;
+    if(isTyping) {
+      window.audioManager.playTypewriter();
     }
-
-    const speed = 25;
-    timeoutRef.current = setTimeout(() => {
-      setDisplayedText(text.substring(0, currentIndex + 1));
-      setCurrentIndex(prev => prev + 1);
-    }, speed);
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [currentIndex, isTyping, text]);
+    
+  })
 
   const handleClick = () => {
     // Play click sound

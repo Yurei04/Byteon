@@ -1,3 +1,8 @@
+/*
+  This is the in-game audio manger in the game navigation
+
+*/
+
 "use client"
 
 import { useState, useEffect } from "react";
@@ -6,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Slider } from "@/components/ui/slider";
 import { Volume2, VolumeX, Music, Headphones } from "lucide-react";
 
-export default function AudioManager({ isOpen, onClose }) {
+export default function AudioManager({ isOpen, onClose, onAccept, onDecline }) {
   const [musicVolume, setMusicVolume] = useState(70);
   const [sfxVolume, setSfxVolume] = useState(80);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
@@ -125,20 +130,39 @@ export default function AudioManager({ isOpen, onClose }) {
             <div className="flex gap-2">
               <Button
                 onClick={() => window.audioManager?.playClick()}
-                className="flex-1 bg-fuchsia-900/30 hover:bg-fuchsia-700/40 border border-fuchsia-400/40 text-fuchsia-200"
+                className="flex-1 bg-fuchsia-900/30 hover:bg-fuchsia-700/40 border border-fuchsia-400/40 text-fuchsia-200 cursor-pointer"
                 size="sm"
               >
                 Test Click
               </Button>
               <Button
                 onClick={() => window.audioManager?.playTypewriter()}
-                className="flex-1 bg-fuchsia-900/30 hover:bg-fuchsia-700/40 border border-fuchsia-400/40 text-fuchsia-200"
+                className="flex-1 bg-fuchsia-900/30 hover:bg-fuchsia-700/40 border border-fuchsia-400/40 text-fuchsia-200 cursor-pointer"
                 size="sm"
               >
                 Test Typing
               </Button>
             </div>
           </div>
+        </div>
+
+        <div className="w-full flex justify-center gap-2">
+          <Button
+            onClick={onAccept}
+            className="flex-1 bg-fuchsia-900/30 hover:bg-fuchsia-700/40 border border-fuchsia-400/40 text-fuchsia-200 cursor-pointer"
+          >
+            <VolumeX className="w-4 h-4 mr-2" />
+            Enable Audio
+          </Button>
+          <Button
+            onClick={onDecline}
+            variant="outline"
+            className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer"
+          >
+            <Volume2 className="w-4 h-4 mr-2" />
+            Disable Audio
+          </Button>
+
         </div>
 
         <div className="flex justify-end pt-4 border-t border-fuchsia-500/20">
