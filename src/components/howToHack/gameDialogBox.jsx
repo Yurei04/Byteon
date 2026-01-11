@@ -15,10 +15,8 @@ export default function GameDialogBox({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const timeoutRef = useRef(null);
-  const isFinished = displayedText.length === text.length && !isTyping;
-  const 
 
-  // Reset when text changes
+  // Reset and play typewriter sound once when text changes
   useEffect(() => {
     if (!text) {
       setDisplayedText("");
@@ -27,34 +25,51 @@ export default function GameDialogBox({
       return;
     }
 
-    // Reset everything for new text
     setDisplayedText("");
     setCurrentIndex(0);
     setIsTyping(true);
 
-    // Start typewriter sound loop
+    // Play typewriter sound once for this dialogue
     if (typeof window !== 'undefined' && window.audioManager) {
-      window.audioManager.startTypewriterLoop(50);
+      window.audioManager.playTypewriterOnce();
     }
 
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      // Cleanup typewriter sound
+      // Stop typewriter sound when dialogue changes
       if (typeof window !== 'undefined' && window.audioManager) {
-        window.audioManager.stopTypewriterLoop();
+        window.audioManager.stopTypewriter();
       }
     };
   }, [text]);
 
   // Handle typing animation
   useEffect(() => {
-    if(isTyping) {
-      window.audioManager.playTypewriter();
+    if (!isTyping || currentIndex >= text.length) {
+      if (currentIndex >= text.length && isTyping) {
+        setIsTyping(false);
+        // Stop typewriter sound when typing finishes
+        if (typeof window !== 'undefined' && window.audioManager) {
+          window.audioManager.stopTypewriter();
+        }
+      }
+      return;
     }
-    
-  })
+
+    const speed = 25;
+    timeoutRef.current = setTimeout(() => {
+      setDisplayedText(text.substring(0, currentIndex + 1));
+      setCurrentIndex(prev => prev + 1);
+    }, speed);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [currentIndex, isTyping, text]);
 
   const handleClick = () => {
     // Play click sound
@@ -68,9 +83,9 @@ export default function GameDialogBox({
       setCurrentIndex(text.length);
       setIsTyping(false);
       
-      // Stop typewriter sound immediately
+      // Stop typewriter sound immediately when skipping
       if (typeof window !== 'undefined' && window.audioManager) {
-        window.audioManager.stopTypewriterLoop();
+        window.audioManager.stopTypewriter();
       }
     } else {
       // Dialogue line is finished, move to next
@@ -109,7 +124,6 @@ export default function GameDialogBox({
           {buttonText}
         </button>
         
-        {/* Debug button - remove in production */}
         {onNextChapter && (
           <button
             onClick={() => {

@@ -93,20 +93,24 @@ class AudioService {
     }
   }
 
-  // Start looping typewriter sound for dialog typing
-  startTypewriterLoop(intervalMs = 2000) {
-    this.stopTypewriterLoop(); // Clear any existing loop
-    
-    this.typewriterInterval = setInterval(() => {
-      this.playTypewriter();
-    }, intervalMs);
+  // Play typewriter sound once (for entire dialogue)
+  playTypewriterOnce() {
+    if (this.typewriterSound && this.sfxVolume > 0) {
+      // Stop any currently playing typewriter sound
+      this.typewriterSound.pause();
+      this.typewriterSound.currentTime = 0;
+      
+      // Play from the beginning
+      this.typewriterSound.volume = this.sfxVolume * 0.6;
+      this.typewriterSound.play().catch(err => console.warn('[AudioService] Typewriter sound failed:', err));
+    }
   }
 
-  // Stop typewriter loop
-  stopTypewriterLoop() {
-    if (this.typewriterInterval) {
-      clearInterval(this.typewriterInterval);
-      this.typewriterInterval = null;
+  // Stop typewriter sound
+  stopTypewriter() {
+    if (this.typewriterSound) {
+      this.typewriterSound.pause();
+      this.typewriterSound.currentTime = 0;
     }
   }
 
