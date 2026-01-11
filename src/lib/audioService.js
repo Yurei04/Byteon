@@ -21,7 +21,7 @@ class AudioService {
 
     try {
       // Background music (looped)
-      this.bgMusic = new Audio('/audio/bkg.mp3');
+      this.bgMusic = new Audio('/');
       this.bgMusic.loop = true;
       this.bgMusic.volume = this.musicVolume;
 

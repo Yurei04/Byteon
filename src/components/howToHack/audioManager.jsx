@@ -14,7 +14,7 @@ import { Volume2, VolumeX, Music, Headphones } from "lucide-react";
 export default function AudioManager({ isOpen, onClose, onAccept, onDecline }) {
   const [musicVolume, setMusicVolume] = useState(70);
   const [sfxVolume, setSfxVolume] = useState(80);
-  const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [isMusicMuted, setIsMusicMuted] = useState(true);
   const [isSfxMuted, setIsSfxMuted] = useState(false);
 
   // Apply volume changes to global audio manager
@@ -70,7 +70,7 @@ export default function AudioManager({ isOpen, onClose, onAccept, onDecline }) {
                 <span className="text-sm font-medium">Background Music</span>
               </div>
               <Button
-                variant="ghost"
+                variant="diasbled"
                 size="icon"
                 onClick={toggleMusicMute}
                 className="text-fuchsia-300 hover:bg-fuchsia-800/40"
@@ -145,7 +145,7 @@ export default function AudioManager({ isOpen, onClose, onAccept, onDecline }) {
             </div>
           </div>
         </div>
-
+      {/* Removed until further developement
         <div className="w-full flex justify-center gap-2">
           <Button
             onClick={onAccept}
@@ -164,7 +164,7 @@ export default function AudioManager({ isOpen, onClose, onAccept, onDecline }) {
           </Button>
 
         </div>
-
+        */}
         <div className="flex justify-end pt-4 border-t border-fuchsia-500/20">
           <Button
             onClick={onClose}
