@@ -1,7 +1,7 @@
+"use client";
+
 import { LoginForm } from "@/components/login/loginForm"
 import { GalleryVerticalEnd } from "lucide-react"
-
-import Image from "next/image"
 
 export default function LoginPage() {
   return (

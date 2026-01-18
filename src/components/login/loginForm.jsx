@@ -1,5 +1,7 @@
 "use client"
-
+import { supabase } from "@/lib/supabase";
+import { useRouter  } from "next/navigation";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button"
 import {
@@ -10,8 +12,23 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import Link from "next/link";
 
 export function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const router = useRouter()
+
+  const handleLogin = async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (!error) router.push("/")
+    else alert(error.message)
+  };
+
   return (
     <form className="w-full h-full flex flex-col gap-6 mx-auto p-8 sm-p-4 rounded-lg bg-purple-950/40 border-purple-400/40 hover:border-purple-400/70 hover:shadow-purple-500/20 shadow-2xl backdrop-blur-xl border-2 text-purple-50 transition-all duration-500 hover:shadow-2xl shadow-purple-500/30 relative overflow-hidden group">
       <motion.div 
@@ -29,7 +46,14 @@ export function LoginForm() {
         </div>
         <Field className="w-full">
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input className="w-full"  id="email" type="email" placeholder="m@example.com" required />
+          <Input 
+            className="w-full"  
+            id="email" 
+            type="email" 
+            placeholder="m@example.com" 
+            required 
+            onChange={(e) => setEmail(e.targert.value)}
+          />
         </Field>
         <Field>
           <div className="flex items-center">
@@ -41,17 +65,32 @@ export function LoginForm() {
               Forgot your password?
             </a>
           </div>
-          <Input id="password" type="password" required />
+          <Input 
+            className=""
+            id="password" 
+            type="password" 
+            required 
+            onChange={(e => setPassword(e.target.value))}
+          />
         </Field>
         <Field>
-          <Button className="cursor-pointer" type="submit">Login</Button>
+          <Button 
+            className="cursor-pointer" 
+            type="submit"
+            onClick={handleLogin}
+          >
+            Login
+          </Button>
         </Field>
         <Field>
           <FieldDescription className="text-center">
             Don&apos;t have an account?{" "}
-            <a href="#" className="underline underline-offset-4">
+            <Link 
+            className=""
+            href="/sign-up"
+            > 
               Sign up
-            </a>
+            </Link>
           </FieldDescription>
         </Field>
       </FieldGroup>
