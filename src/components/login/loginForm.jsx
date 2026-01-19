@@ -27,8 +27,10 @@ export function LoginForm() {
       password,
     })
 
-    if (!error) router.push("/")
+    if(error) router.push("/log-in")
+    if (!error) router.push("/homepage")
     else alert(error.message)
+  
   }
 
   return (

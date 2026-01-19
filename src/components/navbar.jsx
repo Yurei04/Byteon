@@ -1,9 +1,11 @@
 "use client"
 
-import * as React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
+import Image from "next/image"
+import { useState } from "react"
+import { supabase } from "@/lib/supabase"
 
 const navLinks = [
     { title: "Home", href: "/" },
@@ -14,7 +16,8 @@ const navLinks = [
 ]
 
 export default function NavBar() {
-    const [isOpen, setIsOpen] = React.useState(false)
+    const [isOpen, setIsOpen] = useState(false)
+    const [userProfile, setUserProfile] = useState("")
 
 return (
     <div className="fixed z-50 w-full flex justify-center mt-4 px-4 sm:px-6">
@@ -25,7 +28,7 @@ return (
             </div>
 
             {/* Desktop Menu */}
-            <div className="hidden md:flex gap-2 flex-wrap">
+            <div className="hidden md:flex gap-4 flex-wrap justify-center items-center">
                 {navLinks.map((link) => (
                 <Button
                     key={link.title}
@@ -38,12 +41,22 @@ return (
                 </Button>
                 ))}
                 <Button
-                variant="ghost"
-                size="sm"
-                className="text-sm border border-fuchsia-500 hover:border-purple-400 hover:bg-purple-900/50 transition-colors"
-                >
-                <Link href="/how-to-hackathon">HowToHack</Link>
+                    variant="ghost"
+                    size="sm"
+                    className="text-sm border border-fuchsia-500 hover:border-purple-400 hover:bg-purple-900/50 transition-colors"
+                    >
+                    <Link href="/how-to-hackathon">HowToHack</Link>
                 </Button>
+                <Link href="/userDashboard">
+                    <Image
+                        src={userProfile}
+                        alt={userProfile.username}
+                        width={50}
+                        height={50}
+                        className="rounded-full border border-fuchsia-500"
+                    >
+                    </Image>
+                </Link>
             </div>
 
             {/* Mobile Menu Button */}
@@ -75,11 +88,11 @@ return (
                 </Button>
                 ))}
                 <Button
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start text-sm border border-fuchsia-500 hover:border-purple-300 hover:bg-purple-900/40 transition-colors"
-                >
-                <Link href="/how-to-hackathon">HowToHack</Link>
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-sm border border-fuchsia-500 hover:border-purple-300 hover:bg-purple-900/40 transition-colors"
+                    >
+                    <Link href="/how-to-hackathon">HowToHack</Link>
                 </Button>
             </div>
             )}

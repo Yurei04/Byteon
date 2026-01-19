@@ -24,7 +24,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
+import { useRouter } from "next/navigation"
+
 export function SignupForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPass, setConfirmPass] = useState("")
@@ -32,6 +35,10 @@ export function SignupForm() {
   const [mode, setMode] = useState("user")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [userName, setUserName] = useState("")
+  const [age, setAge] = useState("")
+  const [country, setCountry] = useState("")
+  const [occupation, setOccupation] = useState("")
 
   const handleSignUp = async (e) => {
     e.preventDefault()
@@ -76,8 +83,13 @@ export function SignupForm() {
       }
     }
 
+    
+    if(error) router.push("/login")
+    //Add a toast to show the login is  unsuccessfull
     setLoading(false)
     alert("Account created successfully")
+    if(!error) router.push("/homepage")
+    //Add a toast to show the login is successfull
   }
 
   return (
