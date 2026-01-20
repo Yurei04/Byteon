@@ -15,6 +15,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
 import { useState } from "react"
 import {
@@ -39,6 +40,7 @@ export function SignupForm() {
   const [age, setAge] = useState("")
   const [country, setCountry] = useState("")
   const [occupation, setOccupation] = useState("")
+  const [orgDescription, setOrgDescription] = useState("")
   const [step, setStep] = useState(1)
 
   const handleNext = () => {
@@ -77,35 +79,48 @@ export function SignupForm() {
   const handleSignUp = async () => {
     setError(null)
 
-    if (!userName) {
-      setError("Name is required")
-      return
-    }
-    if (!age) {
-      setError("Age is required")
-      return
-    }
-    if (!country) {
-      setError("Country is required")
-      return
-    }
-    if (!occupation) {
-      setError("Occupation is required")
-      return
+    if (mode === "user") {
+      if (!userName) {
+        setError("Name is required")
+        return
+      }
+      if (!age) {
+        setError("Age is required")
+        return
+      }
+      if (!country) {
+        setError("Country is required")
+        return
+      }
+      if (!occupation) {
+        setError("Occupation is required")
+        return
+      }
+    } else {
+      if (!orgDescription) {
+        setError("Organization description is required")
+        return
+      }
     }
 
     setLoading(true)
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
+    const userData = mode === "user" 
+      ? {
           name: userName,
           age: age,
           country: country,
           occupation: occupation,
         }
+      : {
+          description: orgDescription,
+        }
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: userData
       }
     })
 
@@ -115,6 +130,23 @@ export function SignupForm() {
       return
     }
 
+  if (mode === "user") {
+    const { error: userError } = await supabase
+      .from("user")
+      .insert({
+        name: userName,
+        age: parseInt(age),
+        country: country,
+        affiliation: occupation,
+      })
+
+    if (userError) {
+      setError(userError.message)
+      setLoading(false)
+      return
+    }
+}
+
     if (mode === "organization") {
       const { error: orgError } = await supabase
         .from("organization")
@@ -122,6 +154,7 @@ export function SignupForm() {
           user_id: data.user.id,
           name: orgName,
           author_name: email,
+          description: orgDescription,
         })
 
       if (orgError) {
@@ -192,7 +225,9 @@ export function SignupForm() {
                     ? (type === "user"
                         ? "Enter your login credentials"
                         : "Organization details and credentials")
-                    : "Tell us more about yourself"}
+                    : (type === "user"
+                        ? "Tell us more about yourself"
+                        : "Tell us about your organization")}
                 </CardDescription>
               </CardHeader>
 
@@ -271,54 +306,72 @@ export function SignupForm() {
                 ) : (
                   <div onKeyPress={handleKeyPress}>
                     <FieldGroup>
-                      <Field>
-                        <FieldLabel>Full Name</FieldLabel>
-                        <Input
-                          type="text"
-                          placeholder="John Doe"
-                          value={userName}
-                          onChange={(e) => setUserName(e.target.value)}
-                          required
-                        />
-                      </Field>
-
-                      <Field>
-                        <div className="grid grid-cols-2 gap-4">
+                      {type === "user" ? (
+                        <>
                           <Field>
-                            <FieldLabel>Age</FieldLabel>
-                            <Input
-                              type="number"
-                              placeholder="25"
-                              min="1"
-                              max="120"
-                              value={age}
-                              onChange={(e) => setAge(e.target.value)}
-                              required
-                            />
-                          </Field>
-                          <Field>
-                            <FieldLabel>Country</FieldLabel>
+                            <FieldLabel>Full Name</FieldLabel>
                             <Input
                               type="text"
-                              placeholder="Philippines"
-                              value={country}
-                              onChange={(e) => setCountry(e.target.value)}
+                              placeholder="John Doe"
+                              value={userName}
+                              onChange={(e) => setUserName(e.target.value)}
                               required
                             />
                           </Field>
-                        </div>
-                      </Field>
 
-                      <Field>
-                        <FieldLabel>Occupation</FieldLabel>
-                        <Input
-                          type="text"
-                          placeholder="Software Developer"
-                          value={occupation}
-                          onChange={(e) => setOccupation(e.target.value)}
-                          required
-                        />
-                      </Field>
+                          <Field>
+                            <div className="grid grid-cols-2 gap-4">
+                              <Field>
+                                <FieldLabel>Age</FieldLabel>
+                                <Input
+                                  type="number"
+                                  placeholder="25"
+                                  min="1"
+                                  max="120"
+                                  value={age}
+                                  onChange={(e) => setAge(e.target.value)}
+                                  required
+                                />
+                              </Field>
+                              <Field>
+                                <FieldLabel>Country</FieldLabel>
+                                <Input
+                                  type="text"
+                                  placeholder="Philippines"
+                                  value={country}
+                                  onChange={(e) => setCountry(e.target.value)}
+                                  required
+                                />
+                              </Field>
+                            </div>
+                          </Field>
+
+                          <Field>
+                            <FieldLabel>Occupation</FieldLabel>
+                            <Input
+                              type="text"
+                              placeholder="Software Developer"
+                              value={occupation}
+                              onChange={(e) => setOccupation(e.target.value)}
+                              required
+                            />
+                          </Field>
+                        </>
+                      ) : (
+                        <Field>
+                          <FieldLabel>Organization Description</FieldLabel>
+                          <Textarea
+                            placeholder="Tell us about your organization, what you do, your mission, etc."
+                            value={orgDescription}
+                            onChange={(e) => setOrgDescription(e.target.value)}
+                            required
+                            className="min-h-[120px]"
+                          />
+                          <FieldDescription className="text-purple-300">
+                            Provide a brief description of your organization.
+                          </FieldDescription>
+                        </Field>
+                      )}
 
                       {error && (
                         <FieldDescription className="text-red-400 text-center">
