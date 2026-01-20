@@ -39,18 +39,58 @@ export function SignupForm() {
   const [age, setAge] = useState("")
   const [country, setCountry] = useState("")
   const [occupation, setOccupation] = useState("")
+  const [step, setStep] = useState(1)
 
-  const handleSignUp = async (e) => {
-    e.preventDefault()
+  const handleNext = () => {
     setError(null)
 
-    if (password !== confirmPass) {
-      setError("Passwords do not match")
+    if (step === 1) {
+      if (mode === "organization" && !orgName) {
+        setError("Organization name is required")
+        return
+      }
+      if (!email) {
+        setError("Email is required")
+        return
+      }
+      if (!password) {
+        setError("Password is required")
+        return
+      }
+      if (password !== confirmPass) {
+        setError("Passwords do not match")
+        return
+      }
+      if (password.length < 8) {
+        setError("Password must be at least 8 characters long")
+        return
+      }
+      setStep(2)
+    }
+  }
+
+  const handleBack = () => {
+    setError(null)
+    setStep(1)
+  }
+
+  const handleSignUp = async () => {
+    setError(null)
+
+    if (!userName) {
+      setError("Name is required")
       return
     }
-
-    if (mode === "organization" && !orgName) {
-      setError("Organization name is required")
+    if (!age) {
+      setError("Age is required")
+      return
+    }
+    if (!country) {
+      setError("Country is required")
+      return
+    }
+    if (!occupation) {
+      setError("Occupation is required")
       return
     }
 
@@ -59,6 +99,14 @@ export function SignupForm() {
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          name: userName,
+          age: age,
+          country: country,
+          occupation: occupation,
+        }
+      }
     })
 
     if (signUpError) {
@@ -85,18 +133,30 @@ export function SignupForm() {
 
     
     if(error) router.push("/login")
-    //Add a toast to show the login is  unsuccessfull
     setLoading(false)
     alert("Account created successfully")
     if(!error) router.push("/homepage")
-    //Add a toast to show the login is successfull
+  }
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      if (step === 1) {
+        handleNext()
+      } else {
+        handleSignUp()
+      }
+    }
   }
 
   return (
     <div className="flex flex-col gap-6 items-center">
       <Tabs
         defaultValue="user"
-        onValueChange={setMode}
+        onValueChange={(value) => {
+          setMode(value)
+          setStep(1)
+          setError(null)
+        }}
         className="w-full"
       >
         <div className="flex justify-center">
@@ -128,83 +188,162 @@ export function SignupForm() {
                     : "Create your organization account"}
                 </CardTitle>
                 <CardDescription className="text-purple-200">
-                  {type === "user"
-                    ? "Enter your details below to create your account"
-                    : "Organization details and admin account"}
+                  {step === 1 
+                    ? (type === "user"
+                        ? "Enter your login credentials"
+                        : "Organization details and credentials")
+                    : "Tell us more about yourself"}
                 </CardDescription>
               </CardHeader>
 
               <CardContent>
-                <form onSubmit={handleSignUp}>
-                  <FieldGroup>
-                    {type === "organization" && (
+                {step === 1 ? (
+                  <div onKeyPress={handleKeyPress}>
+                    <FieldGroup>
+                      {type === "organization" && (
+                        <Field>
+                          <FieldLabel>Organization Name</FieldLabel>
+                          <Input
+                            placeholder="My Organization"
+                            value={orgName}
+                            onChange={(e) => setOrgName(e.target.value)}
+                          />
+                        </Field>
+                      )}
+
                       <Field>
-                        <FieldLabel>Organization Name</FieldLabel>
+                        <FieldLabel>Email</FieldLabel>
                         <Input
-                          placeholder="My Organization"
-                          onChange={(e) => setOrgName(e.target.value)}
+                          type="email"
+                          placeholder="m@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
                         />
                       </Field>
-                    )}
 
-                    <Field>
-                      <FieldLabel>Email</FieldLabel>
-                      <Input
-                        type="email"
-                        placeholder="m@example.com"
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </Field>
+                      <Field>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Field>
+                            <FieldLabel>Password</FieldLabel>
+                            <Input
+                              type="password"
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              required
+                            />
+                          </Field>
+                          <Field>
+                            <FieldLabel>Confirm Password</FieldLabel>
+                            <Input
+                              type="password"
+                              value={confirmPass}
+                              onChange={(e) =>
+                                setConfirmPass(e.target.value)
+                              }
+                              required
+                            />
+                          </Field>
+                        </div>
+                        <FieldDescription className="text-purple-300">
+                          Must be at least 8 characters long.
+                        </FieldDescription>
+                      </Field>
 
-                    <Field>
+                      {error && (
+                        <FieldDescription className="text-red-400 text-center">
+                          {error}
+                        </FieldDescription>
+                      )}
+
+                      <Button onClick={handleNext} className="w-full">
+                        Next
+                      </Button>
+
+                      <FieldDescription className="text-center text-purple-300">
+                        Already have an account?{" "}
+                        <a href="/log-in" className="underline">
+                          Sign in
+                        </a>
+                      </FieldDescription>
+                    </FieldGroup>
+                  </div>
+                ) : (
+                  <div onKeyPress={handleKeyPress}>
+                    <FieldGroup>
+                      <Field>
+                        <FieldLabel>Full Name</FieldLabel>
+                        <Input
+                          type="text"
+                          placeholder="John Doe"
+                          value={userName}
+                          onChange={(e) => setUserName(e.target.value)}
+                          required
+                        />
+                      </Field>
+
+                      <Field>
+                        <div className="grid grid-cols-2 gap-4">
+                          <Field>
+                            <FieldLabel>Age</FieldLabel>
+                            <Input
+                              type="number"
+                              placeholder="25"
+                              min="1"
+                              max="120"
+                              value={age}
+                              onChange={(e) => setAge(e.target.value)}
+                              required
+                            />
+                          </Field>
+                          <Field>
+                            <FieldLabel>Country</FieldLabel>
+                            <Input
+                              type="text"
+                              placeholder="Philippines"
+                              value={country}
+                              onChange={(e) => setCountry(e.target.value)}
+                              required
+                            />
+                          </Field>
+                        </div>
+                      </Field>
+
+                      <Field>
+                        <FieldLabel>Occupation</FieldLabel>
+                        <Input
+                          type="text"
+                          placeholder="Software Developer"
+                          value={occupation}
+                          onChange={(e) => setOccupation(e.target.value)}
+                          required
+                        />
+                      </Field>
+
+                      {error && (
+                        <FieldDescription className="text-red-400 text-center">
+                          {error}
+                        </FieldDescription>
+                      )}
+
                       <div className="grid grid-cols-2 gap-4">
-                        <Field>
-                          <FieldLabel>Password</FieldLabel>
-                          <Input
-                            type="password"
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel>Confirm Password</FieldLabel>
-                          <Input
-                            type="password"
-                            onChange={(e) =>
-                              setConfirmPass(e.target.value)
-                            }
-                            required
-                          />
-                        </Field>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleBack}
+                          className="border-purple-400/50 hover:bg-purple-900/20"
+                        >
+                          Back
+                        </Button>
+                        <Button onClick={handleSignUp} disabled={loading}>
+                          {loading
+                            ? "Creating..."
+                            : "Create Account"}
+                        </Button>
                       </div>
-                      <FieldDescription className="text-purple-300">
-                        Must be at least 8 characters long.
-                      </FieldDescription>
-                    </Field>
-
-                    {error && (
-                      <FieldDescription className="text-red-400 text-center">
-                        {error}
-                      </FieldDescription>
-                    )}
-
-                    <Button type="submit" disabled={loading}>
-                      {loading
-                        ? "Creating..."
-                        : type === "user"
-                        ? "Create Account"
-                        : "Create Organization"}
-                    </Button>
-
-                    <FieldDescription className="text-center text-purple-300">
-                      Already have an account?{" "}
-                      <a href="/log-in" className="underline">
-                        Sign in
-                      </a>
-                    </FieldDescription>
-                  </FieldGroup>
-                </form>
+                    </FieldGroup>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
