@@ -24,8 +24,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-
 import { useRouter } from "next/navigation"
+import Image from "next/image"
 
 export function SignupForm() {
   const router = useRouter();
@@ -42,6 +42,50 @@ export function SignupForm() {
   const [occupation, setOccupation] = useState("")
   const [orgDescription, setOrgDescription] = useState("")
   const [step, setStep] = useState(1)
+  const [profilePhoto, setProfilePhoto] = useState(null)
+  const [photoPreview, setPhotoPreview] = useState(null)
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError("Please select an image file")
+        return
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image must be less than 5MB")
+        return
+      }
+      setProfilePhoto(file)
+      setPhotoPreview(URL.createObjectURL(file))
+      setError(null)
+    }
+  }
+
+  const uploadProfilePhoto = async (userId) => {
+    if (!profilePhoto) return null
+
+    const fileExt = profilePhoto.name.split('.').pop()
+    const fileName = `${userId}/profile.${fileExt}`
+    
+    const { error: uploadError } = await supabase.storage
+      .from('profile-photos')
+      .upload(fileName, profilePhoto, {
+        upsert: true
+      })
+
+    if (uploadError) {
+      throw uploadError
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profile-photos')
+      .getPublicUrl(fileName)
+
+    return publicUrl
+  }
 
   const handleNext = () => {
     setError(null)
@@ -105,70 +149,91 @@ export function SignupForm() {
 
     setLoading(true)
 
-    const userData = mode === "user" 
-      ? {
-          name: userName,
-          age: age,
-          country: country,
-          occupation: occupation,
-        }
-      : {
-          description: orgDescription,
-        }
-
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: userData
-      }
-    })
-
-    if (signUpError) {
-      setError(signUpError.message)
-      setLoading(false)
-      return
-    }
-
-  if (mode === "user") {
-    const { error: userError } = await supabase
-      .from("user")
-      .insert({
-        name: userName,
-        age: parseInt(age),
-        country: country,
-        affiliation: occupation,
+    try {
+      // Step 1: Create auth user
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
       })
 
-    if (userError) {
-      setError(userError.message)
-      setLoading(false)
-      return
-    }
-}
-
-    if (mode === "organization") {
-      const { error: orgError } = await supabase
-        .from("organization")
-        .insert({
-          user_id: data.user.id,
-          name: orgName,
-          author_name: email,
-          description: orgDescription,
-        })
-
-      if (orgError) {
-        setError(orgError.message)
+      if (signUpError) {
+        setError(signUpError.message)
         setLoading(false)
         return
       }
-    }
 
-    
-    if(error) router.push("/login")
-    setLoading(false)
-    alert("Account created successfully")
-    if(!error) router.push("/homepage")
+      if (!data.user) {
+        setError("Failed to create user account")
+        setLoading(false)
+        return
+      }
+
+      // IMPORTANT: Wait for session to be established
+      // Check if we need to wait for email confirmation
+      if (data.session === null) {
+        setLoading(false)
+        alert("Please check your email to verify your account before completing signup.")
+        router.push("/log-in")
+        return
+      }
+
+      // Step 2: Upload profile photo (if provided)
+      let profilePhotoUrl = null
+      if (profilePhoto) {
+        try {
+          profilePhotoUrl = await uploadProfilePhoto(data.user.id)
+        } catch (uploadError) {
+          console.error("Photo upload error:", uploadError)
+          // Continue without photo - don't fail the whole signup
+        }
+      }
+
+      // Step 3: Create profile in appropriate table
+      if (mode === "user") {
+        const { error: userError } = await supabase
+          .from("users")
+          .insert({
+            user_id: data.user.id,
+            name: userName,
+            age: parseInt(age),
+            country: country,
+            affiliation: occupation,
+            profile_photo_url: profilePhotoUrl,
+          })
+
+        if (userError) {
+          setError(userError.message)
+          setLoading(false)
+          return
+        }
+      }
+
+      if (mode === "organization") {
+        const { error: orgError } = await supabase
+          .from("organizations")
+          .insert({
+            user_id: data.user.id,
+            name: orgName,
+            author_name: email,
+            description: orgDescription,
+            profile_photo_url: profilePhotoUrl,
+          })
+
+        if (orgError) {
+          setError(orgError.message)
+          setLoading(false)
+          return
+        }
+      }
+
+      setLoading(false)
+      alert("Account created successfully!")
+      router.push("/log-in")
+      
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred")
+      setLoading(false)
+    }
   }
 
   const handleKeyPress = (e) => {
@@ -189,6 +254,8 @@ export function SignupForm() {
           setMode(value)
           setStep(1)
           setError(null)
+          setProfilePhoto(null)
+          setPhotoPreview(null)
         }}
         className="w-full"
       >
@@ -306,6 +373,31 @@ export function SignupForm() {
                 ) : (
                   <div onKeyPress={handleKeyPress}>
                     <FieldGroup>
+                      {/* Profile Photo Upload */}
+                      <Field>
+                        <FieldLabel>Profile Photo (Optional)</FieldLabel>
+                        <div className="flex items-center gap-4">
+                          {photoPreview && (
+                            <Image
+                              width={20}
+                              height={20}
+                              src={photoPreview} 
+                              alt="Preview" 
+                              className="w-20 h-20 rounded-full object-cover border-2 border-purple-400/50"
+                            />
+                          )}
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handlePhotoChange}
+                            className="cursor-pointer"
+                          />
+                        </div>
+                        <FieldDescription className="text-purple-300">
+                          Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
+                        </FieldDescription>
+                      </Field>
+
                       {type === "user" ? (
                         <>
                           <Field>
