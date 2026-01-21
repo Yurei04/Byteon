@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect, Children } from "react"
+import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
 import SignLogInDialog from "@/app/(auth)/loginSigninDialog"
 
-export default function RequireAuth (
-    
-) {
+export default function RequireAuth({ 
+    children 
+}) {  
     const [session, setSession] = useState(null)
     const [loading, setLoading] = useState(true)
 
@@ -26,11 +26,11 @@ export default function RequireAuth (
         return () => subscription.unsubscribe()
     }, [])
 
-    if (loading) return null
+    if (loading) return <div>Loading...</div> 
 
     if (!session) {
         return <SignLogInDialog/>
     }
 
-    return children
+    return <>{children}</>
 }

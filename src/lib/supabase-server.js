@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export function createSupabaseServer() {
@@ -10,16 +10,23 @@ export function createSupabaseServer() {
         {
             cookies: {
                 get(name) {
-                    return cookieStore.get(name)?.name
+                    return cookieStore.get(name)?.value
                 },
                 set(name, value, options) {
-                    cookieStore.set({ name, value, ...options})
+                    try {
+                        cookieStore.set({ name, value, ...options})
+                    } catch (error) {
+                        // Cookie setting can fail in middleware
+                    }
                 },
                 remove(name, options) {
-                    cookieStore.remove({name, value: "", ...options})
+                    try {
+                        cookieStore.set({ name, value: "", ...options})
+                    } catch (error) {
+                        // Cookie removal can fail in middleware
+                    }
                 }
             }
         }
     )
-
 }
