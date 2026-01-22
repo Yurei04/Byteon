@@ -17,31 +17,46 @@ import Link from "next/link"
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
   const router = useRouter()
 
   const handleLogin = async (e) => {
     e.preventDefault()
+    setIsLoading(true)
+    setErrorMessage("")
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if(error) router.push("/log-in")
-    if (!error) router.push("/homepage")
-    else alert(error.message)
-  
+      if (error) {
+        setErrorMessage(error.message)
+        setIsLoading(false)
+        return
+      }
+
+      // Login successful - the auth state listener in NavBar will handle the UI update
+      console.log('Login successful:', data.user.id)
+      
+      // Redirect to home page
+      router.push("/")
+      router.refresh() // Force a refresh to ensure the auth state is updated
+      
+    } catch (err) {
+      setErrorMessage("An unexpected error occurred")
+      setIsLoading(false)
+    }
   }
 
   return (
-    <form
-      onSubmit={handleLogin}
-      className="relative w-full h-full flex flex-col gap-6 mx-auto p-8 sm-p-4 rounded-lg 
+    <div className="relative w-full h-full flex flex-col gap-6 mx-auto p-8 sm-p-4 rounded-lg 
         bg-purple-950/40 border-2 border-purple-400/40 text-purple-50 
         backdrop-blur-xl shadow-2xl shadow-purple-500/30 
         transition-all duration-500 hover:border-purple-400/70 hover:shadow-purple-500/20 
-        overflow-hidden group"
-    >
+        overflow-hidden group">
       <motion.div
         className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
@@ -58,13 +73,21 @@ export function LoginForm() {
           </p>
         </div>
 
+        {errorMessage && (
+          <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm">
+            {errorMessage}
+          </div>
+        )}
+
         <Field className="w-full">
           <FieldLabel htmlFor="email">Email</FieldLabel>
           <Input
             id="email"
             type="email"
             placeholder="m@example.com"
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
             required
           />
         </Field>
@@ -82,14 +105,16 @@ export function LoginForm() {
           <Input
             id="password"
             type="password"
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
             required
           />
         </Field>
 
         <Field>
-          <Button type="submit" className="w-full">
-            Login
+          <Button type="button" onClick={handleLogin} className="w-full" disabled={isLoading}>
+            {isLoading ? "Logging in..." : "Login"}
           </Button>
         </Field>
 
@@ -102,6 +127,6 @@ export function LoginForm() {
           </FieldDescription>
         </Field>
       </FieldGroup>
-    </form>
+    </div>
   )
 }
