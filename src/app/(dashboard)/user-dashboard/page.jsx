@@ -1,11 +1,11 @@
 import RequireAuth from "@/components/(auth)/requireAuth";
-import UserDashboard from "@/components/(dashboard)/user-dashboard";
+import UserDashboardPage from "@/pages/user-dashboard/user-dashboard-page";
 
 export default function Dashboard () {
     return (
         <div className="w-full min-h-screen">
             <RequireAuth>
-                <UserDashboard />
+                <UserDashboardPage />
             </RequireAuth>
         </div>
     )
