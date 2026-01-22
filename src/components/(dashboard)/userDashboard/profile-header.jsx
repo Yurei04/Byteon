@@ -1,7 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Save, X, Calendar, MapPin, Award, User2, Loader2 } from "lucide-react"
+import { Edit, Save, X, Calendar, MapPin, Award, User2, Loader2, LogOut } from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('en-US', { 
@@ -29,6 +31,26 @@ export default function ProfileHeader({
   onSave, 
   onCancel 
 }) {
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Sign out error:', error)
+        alert('Failed to sign out. Please try again.')
+        return
+      }
+      
+      // Redirect to home page after successful sign out
+      router.push('/')
+      router.refresh()
+    } catch (err) {
+      console.error('Sign out exception:', err)
+      alert('An error occurred while signing out.')
+    }
+  }
+
   return (
     <Card className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg border-white/20 overflow-hidden">
       <div className="h-32 bg-gradient-to-r from-fuchsia-600 via-purple-600 to-pink-600 relative">
@@ -61,15 +83,25 @@ export default function ProfileHeader({
                   Member since {profile?.created_at ? formatDate(profile.created_at) : 'N/A'}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {!isEditing ? (
-                  <Button 
-                    onClick={onEdit}
-                    className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
-                  >
-                    <Edit className="w-4 h-4 mr-2" />
-                    Edit Profile
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={onEdit}
+                      className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+                    >
+                      <Edit className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Edit Profile</span>
+                    </Button>
+                    <Button 
+                      onClick={handleSignOut}
+                      variant="outline"
+                      className="border-red-500/50 text-red-300 hover:bg-red-500/20 hover:border-red-500"
+                    >
+                      <LogOut className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Sign Out</span>
+                    </Button>
+                  </>
                 ) : (
                   <>
                     <Button 
@@ -77,16 +109,16 @@ export default function ProfileHeader({
                       disabled={isLoading}
                       className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                     >
-                      {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                      Save Changes
+                      {isLoading ? <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" /> : <Save className="w-4 h-4 sm:mr-2" />}
+                      <span className="hidden sm:inline">Save Changes</span>
                     </Button>
                     <Button 
                       onClick={onCancel}
                       variant="outline"
                       className="border-white/20 hover:bg-white/10"
                     >
-                      <X className="w-4 h-4 mr-2" />
-                      Cancel
+                      <X className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Cancel</span>
                     </Button>
                   </>
                 )}
