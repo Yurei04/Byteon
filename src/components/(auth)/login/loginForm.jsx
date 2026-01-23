@@ -1,10 +1,13 @@
 "use client"
 
-import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
-import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import {
   Field,
   FieldDescription,
@@ -12,121 +15,180 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 export function LoginForm() {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
-  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
-  const handleLogin = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setErrorMessage("")
+  const handleLogin = async () => {
+    setError(null)
+
+    if (!email.trim()) {
+      setError("Email is required")
+      return
+    }
+
+    if (!password) {
+      setError("Password is required")
+      return
+    }
+
+    setLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      // Sign in with Supabase
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       })
 
-      if (error) {
-        setErrorMessage(error.message)
-        setIsLoading(false)
+      if (signInError) {
+        setError(signInError.message)
+        setLoading(false)
         return
       }
 
-      // Login successful - the auth state listener in NavBar will handle the UI update
-      console.log('Login successful:', data.user.id)
-      
-      // Redirect to home page
-      router.push("/")
-      router.refresh() // Force a refresh to ensure the auth state is updated
-      
+      if (!data.user) {
+        setError("Login failed. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      // Check if user has a profile in users table
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("*")
+        .eq("user_id", data.user.id)
+        .single()
+
+      if (!userError && userData) {
+        // User profile found - redirect to user dashboard
+        setLoading(false)
+        router.push("/user-dashboard")
+        return
+      }
+
+      // Check if user has an organization profile
+      const { data: orgData, error: orgError } = await supabase
+        .from("organizations")
+        .select("*")
+        .eq("user_id", data.user.id)
+        .single()
+
+      if (!orgError && orgData) {
+        // Organization profile found - redirect to org dashboard
+        setLoading(false)
+        router.push("/org-dashboard")
+        return
+      }
+
+      // No profile found in either table
+      setError("No profile found. Please complete your signup.")
+      await supabase.auth.signOut()
+      setLoading(false)
+
     } catch (err) {
-      setErrorMessage("An unexpected error occurred")
-      setIsLoading(false)
+      console.error("Login error:", err)
+      setError(err.message || "An unexpected error occurred")
+      setLoading(false)
+    }
+  }
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleLogin()
     }
   }
 
   return (
-    <div className="relative w-full h-full flex flex-col gap-6 mx-auto p-8 sm-p-4 rounded-lg 
-        bg-purple-950/40 border-2 border-purple-400/40 text-purple-50 
-        backdrop-blur-xl shadow-2xl shadow-purple-500/30 
-        transition-all duration-500 hover:border-purple-400/70 hover:shadow-purple-500/20 
-        overflow-hidden group">
-      <motion.div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(circle at var(--mouse-x,50%) var(--mouse-y,50%), rgba(168,85,247,0.15), transparent 50%)",
-        }}
-      />
+    <div className="flex flex-col gap-6 items-center">
+      <div className="relative overflow-hidden rounded-lg bg-purple-950/40 border-2 border-purple-400/40 text-purple-50 backdrop-blur-xl shadow-2xl shadow-purple-500/30 transition-all duration-500 hover:border-purple-400/70 hover:shadow-purple-500/20 group w-full">
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(circle at var(--mouse-x,50%) var(--mouse-y,50%), rgba(168,85,247,0.15), transparent 50%)",
+          }}
+        />
 
-      <FieldGroup className="relative z-10 w-full h-full">
-        <div className="flex flex-col items-center gap-1 text-center">
-          <h1 className="text-2xl font-bold">Login to your account</h1>
-          <p className="text-sm text-purple-300 text-balance">
-            Enter your email below to login to your account
-          </p>
-        </div>
+        <Card className="bg-transparent border-none shadow-none">
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Welcome back</CardTitle>
+            <CardDescription className="text-purple-200">
+              Sign in to your account
+            </CardDescription>
+          </CardHeader>
 
-        {errorMessage && (
-          <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm">
-            {errorMessage}
-          </div>
-        )}
+          <CardContent>
+            <div onKeyPress={handleKeyPress}>
+              <FieldGroup>
+                <Field>
+                  <FieldLabel>Email</FieldLabel>
+                  <Input
+                    type="email"
+                    placeholder="m@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </Field>
 
-        <Field className="w-full">
-          <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input
-            id="email"
-            type="email"
-            placeholder="m@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
-            required
-          />
-        </Field>
+                <Field>
+                  <FieldLabel>Password</FieldLabel>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </Field>
 
-        <Field>
-          <div className="flex items-center">
-            <FieldLabel htmlFor="password">Password</FieldLabel>
-            <a
-              href="#"
-              className="ml-auto text-sm text-purple-300 underline-offset-4 hover:underline"
-            >
-              Forgot your password?
-            </a>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            required
-          />
-        </Field>
+                {error && (
+                  <FieldDescription className="text-red-400 text-center">
+                    {error}
+                  </FieldDescription>
+                )}
 
-        <Field>
-          <Button type="button" onClick={handleLogin} className="w-full" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </Button>
-        </Field>
+                <Button onClick={handleLogin} disabled={loading} className="w-full">
+                  {loading ? "Signing in..." : "Sign in"}
+                </Button>
 
-        <Field>
-          <FieldDescription className="text-center text-purple-300">
-            Don&apos;t have an account?{" "}
-            <Link href="/sign-up" className="underline">
-              Sign up
-            </Link>
-          </FieldDescription>
-        </Field>
-      </FieldGroup>
+                <FieldDescription className="text-center text-purple-300">
+                  Don&apos;t have an account?{" "}
+                  <a href="/sign-up" className="underline">
+                    Sign up
+                  </a>
+                </FieldDescription>
+
+                <FieldDescription className="text-center text-purple-300">
+                  <a href="/forgot-password" className="underline">
+                    Forgot password?
+                  </a>
+                </FieldDescription>
+              </FieldGroup>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <FieldDescription className="text-center text-purple-300 px-6">
+        By continuing, you agree to our{" "}
+        <a className="underline" href="#">
+          Terms of Service
+        </a>{" "}
+        and{" "}
+        <a className="underline" href="#">
+          Privacy Policy
+        </a>
+        .
+      </FieldDescription>
     </div>
   )
 }

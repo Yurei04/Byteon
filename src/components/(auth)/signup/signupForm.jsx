@@ -48,12 +48,10 @@ export function SignupForm() {
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0]
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         setError("Please select an image file")
         return
       }
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError("Image must be less than 5MB")
         return
@@ -77,6 +75,7 @@ export function SignupForm() {
       })
 
     if (uploadError) {
+      console.error("Upload error:", uploadError)
       throw uploadError
     }
 
@@ -91,11 +90,11 @@ export function SignupForm() {
     setError(null)
 
     if (step === 1) {
-      if (mode === "organization" && !orgName) {
+      if (mode === "organization" && !orgName.trim()) {
         setError("Organization name is required")
         return
       }
-      if (!email) {
+      if (!email.trim()) {
         setError("Email is required")
         return
       }
@@ -124,24 +123,24 @@ export function SignupForm() {
     setError(null)
 
     if (mode === "user") {
-      if (!userName) {
+      if (!userName.trim()) {
         setError("Name is required")
         return
       }
-      if (!age) {
-        setError("Age is required")
+      if (!age || parseInt(age) < 1 || parseInt(age) > 120) {
+        setError("Please enter a valid age")
         return
       }
-      if (!country) {
+      if (!country.trim()) {
         setError("Country is required")
         return
       }
-      if (!occupation) {
+      if (!occupation.trim()) {
         setError("Occupation is required")
         return
       }
     } else {
-      if (!orgDescription) {
+      if (!orgDescription.trim()) {
         setError("Organization description is required")
         return
       }
@@ -152,11 +151,12 @@ export function SignupForm() {
     try {
       // Step 1: Create auth user
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
       })
 
       if (signUpError) {
+        console.error("Sign up error:", signUpError)
         setError(signUpError.message)
         setLoading(false)
         return
@@ -165,15 +165,6 @@ export function SignupForm() {
       if (!data.user) {
         setError("Failed to create user account")
         setLoading(false)
-        return
-      }
-
-      // IMPORTANT: Wait for session to be established
-      // Check if we need to wait for email confirmation
-      if (data.session === null) {
-        setLoading(false)
-        alert("Please check your email to verify your account before completing signup.")
-        router.push("/log-in")
         return
       }
 
@@ -194,15 +185,16 @@ export function SignupForm() {
           .from("users")
           .insert({
             user_id: data.user.id,
-            name: userName,
+            name: userName.trim(),
             age: parseInt(age),
-            country: country,
-            affiliation: occupation,
+            country: country.trim(),
+            affiliation: occupation.trim(),
             profile_photo_url: profilePhotoUrl,
           })
 
         if (userError) {
-          setError(userError.message)
+          console.error("User insert error:", userError)
+          setError(`Failed to create user profile: ${userError.message}`)
           setLoading(false)
           return
         }
@@ -213,24 +205,26 @@ export function SignupForm() {
           .from("organizations")
           .insert({
             user_id: data.user.id,
-            name: orgName,
-            author_name: email,
-            description: orgDescription,
+            name: orgName.trim(),
+            author_name: email.trim(),
+            description: orgDescription.trim(),
             profile_photo_url: profilePhotoUrl,
           })
 
         if (orgError) {
-          setError(orgError.message)
+          console.error("Organization insert error:", orgError)
+          setError(`Failed to create organization profile: ${orgError.message}`)
           setLoading(false)
           return
         }
       }
 
       setLoading(false)
-      alert("Account created successfully!")
+      alert("Account created successfully! You can now log in.")
       router.push("/log-in")
       
     } catch (err) {
+      console.error("Signup error:", err)
       setError(err.message || "An unexpected error occurred")
       setLoading(false)
     }
@@ -238,6 +232,7 @@ export function SignupForm() {
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
+      e.preventDefault()
       if (step === 1) {
         handleNext()
       } else {
@@ -379,8 +374,8 @@ export function SignupForm() {
                         <div className="flex items-center gap-4">
                           {photoPreview && (
                             <Image
-                              width={20}
-                              height={20}
+                              width={80}
+                              height={80}
                               src={photoPreview} 
                               alt="Preview" 
                               className="w-20 h-20 rounded-full object-cover border-2 border-purple-400/50"

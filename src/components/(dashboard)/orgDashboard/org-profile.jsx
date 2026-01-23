@@ -1,32 +1,22 @@
 "use client"
+
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
-import { useState, useEffect } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabase"
-import OrgProfileHeader from "./org-profile-header"
-import OrgAboutSection from "./org-about-section"
-import OrgAchievementsSection from "./org-achievement-section"
-import OrgBrandIdentity from "./org-brand-identity"
-import OrgQuickStats from "./org-quick-stats"
-import { availableOrgAchievements } from "./org-achievements"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ResourceForm from "@/components/resourceHub/resource-form"
-import BlogForm from "@/components/blog/blog-form"
-import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
-import ResourceCard from "@/components/resourceHub/resourceHub-card"
-import BlogCard from "@/components/blog/blogCard"
-import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
 import { 
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination"
-
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { 
   Plus, 
   FileText, 
@@ -42,12 +32,63 @@ import {
   AlertCircle,
   CheckCircle,
   Award,
-  User2
+  User2,
+  Building2,
+  Palette,
+  Save,
+  X,
+  LogOut
 } from "lucide-react"
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination"
 
-export default function OrganizationProfile({ onSuccess }) {
+import ResourceForm from "@/components/resourceHub/resource-form"
+import BlogForm from "@/components/blog/blog-form"
+import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
+import ResourceCard from "@/components/resourceHub/resourceHub-card"
+import BlogCard from "@/components/blog/blogCard"
+import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
+import OrgProfileHeader from "./org-profile-header"
+import OrgAboutSection from "./org-about-section"
+import OrgAchievementsSection from "./org-achievement-section"
+import OrgBrandIdentity from "./org-brand-identity"
+import OrgQuickStats from "./org-quick-stats"
+import { availableOrgAchievements } from "./org-achievements"
+
+const ITEMS_PER_PAGE = 6;
+
+export default function DashboardCenter() {
+  const [activeTab, setActiveTab] = useState("view")
+  const [activeViewTab, setActiveViewTab] = useState("viewAnnouncement")
+  const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
+  
+  const [announcements, setAnnouncements] = useState([])
+  const [blogs, setBlogs] = useState([])
+  const [resources, setResources] = useState([])
+  const [organizations, setOrganizations] = useState([])
+  
+  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalAnnouncements: 0,
+    totalBlogs: 0,
+    totalResources: 0,
+    activeAnnouncements: 0
+  })
+
+  const [currentPageAnnouncement, setCurrentPageAnnouncement] = useState(1);
+  const [currentPageBlogs, setCurrentPageBlogs] = useState(1);
+  const [currentPageResources, setCurrentPageResources] = useState(1);
+
+  // Organization Profile State
   const [profile, setProfile] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isProfileLoading, setIsProfileLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [alert, setAlert] = useState(null)
   const [orgId, setOrgId] = useState(null)
@@ -63,13 +104,13 @@ export default function OrganizationProfile({ onSuccess }) {
     achievements: [],
   })
 
-
   useEffect(() => {
     const getAuthOrg = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setOrgId(session.user.id)
         await fetchOrgProfile(session.user.id)
+        await fetchAllData()
       } else {
         setAlert({ type: 'error', message: 'You must be logged in to view this page.' })
         setIsLoading(false)
@@ -93,7 +134,7 @@ export default function OrganizationProfile({ onSuccess }) {
   }, [])
 
   const fetchOrgProfile = async (authOrgId) => {
-    setIsLoading(true)
+    setIsProfileLoading(true)
     try {
       console.log('Fetching org profile for:', authOrgId)
       
@@ -126,14 +167,13 @@ export default function OrganizationProfile({ onSuccess }) {
           achievements: orgAchievements,
         })
       } else {
-        // Create org profile if doesn't exist
         await createOrgProfile(authOrgId)
       }
     } catch (error) {
       console.error('Error fetching org profile:', error.message)
       setAlert({ type: 'error', message: 'Failed to load organization profile.' })
     } finally {
-      setIsLoading(false)
+      setIsProfileLoading(false)
     }
   }
 
@@ -178,7 +218,7 @@ export default function OrganizationProfile({ onSuccess }) {
     }
   }
 
-  const handleChange = (e) => {
+  const handleProfileChange = (e) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({ 
       ...prev, 
@@ -190,7 +230,7 @@ export default function OrganizationProfile({ onSuccess }) {
     setFormData(prev => ({ ...prev, [colorType]: value }))
   }
 
-  const handleSubmit = async () => {
+  const handleProfileSubmit = async () => {
     if (!formData.name || !formData.des) {
       setAlert({ type: 'error', message: 'Organization Name and Description are required fields.' })
       return
@@ -201,7 +241,7 @@ export default function OrganizationProfile({ onSuccess }) {
         return
     }
 
-    setIsLoading(true)
+    setIsProfileLoading(true)
     setAlert(null)
 
     try {
@@ -232,63 +272,304 @@ export default function OrganizationProfile({ onSuccess }) {
 
       setTimeout(() => {
         setAlert(null)
-        if (onSuccess) onSuccess()
       }, 2000)
 
     } catch (error) {
       console.error('Error updating profile:', error.message)
       setAlert({ type: 'error', message: `Failed to update profile: ${error.message}` })
     } finally {
-      setIsLoading(false)
+      setIsProfileLoading(false)
     }
   }
 
-  const handleCancel = () => {
+  const handleProfileCancel = () => {
     setIsEditing(false)
     if (profile) {
       fetchOrgProfile(orgId)
     }
   }
 
-  if (isLoading && !profile) {
-    return (
-      <div className="flex justify-center items-center p-12 text-white">
-        <Loader2 className="mr-2 h-8 w-8 animate-spin" /> Loading Organization Profile...
-      </div>
-    )
+  const fetchAllData = async () => {
+    setIsLoading(true)
+    try {
+      await Promise.all([
+        fetchAnnouncements(),
+        fetchBlogs(),
+        fetchResources(),
+        fetchOrganizations()
+      ])
+      setCurrentPageAnnouncement(1);
+      setCurrentPageBlogs(1);
+      setCurrentPageResources(1);
+    } catch (error) {
+      console.error('Error:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  const organizationNames = ["Hack United", "Maximally", "CS Base", "Medi Hacks", "ByteonAdmin"]
+
+  const fetchAnnouncements = async () => {
+    const { data } = await supabase.from('announcements').select('*').in('organization', organizationNames);
+    setAnnouncements(data || [])
+    const now = new Date()
+    const active = data?.filter(a => new Date(a.date_end) >= now).length || 0
+    setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: active }))
+  }
+
+  const fetchBlogs = async () => {
+    const { data } = await supabase.from('blogs').select('*').in('organization', organizationNames);
+    setBlogs(data || [])
+    setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
+  }
+
+  const fetchResources = async () => {
+    const { data } = await supabase.from('resource_hub').select('*')
+    setResources(data || [])
+    setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
+  }
+
+  const fetchOrganizations = async () => {
+    const { data } = await supabase.from('organization').select('*').in('organization', organizationNames);
+    setOrganizations(data || [])
+  }
+
+  const handleDelete = async (type, id) => {
+    if (!confirm(`Are you sure you want to delete this ${type}?`)) return
+    
+    try {
+      await supabase.from(type === 'announcement' ? 'announcements' : type === 'blog' ? 'blogs' : 'resource_hub').delete().eq('id', id)
+      
+      if (type === 'announcement') fetchAnnouncements()
+      else if (type === 'blog') fetchBlogs()
+      else fetchResources()
+    } catch (error) {
+      console.error('Error:', error)
+    }
+  }
+
+  const paginateData = (data, currentPage, itemsPerPage) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return data.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (data) => {
+    return Math.ceil(data.length / ITEMS_PER_PAGE);
+  };
+
+  const generatePaginationItems = (totalPages, currentPage, onPageChange) => {
+    const items = [];
+    const maxVisiblePages = 5; 
+
+    items.push(
+      <PaginationItem key="prev">
+        <PaginationPrevious
+          onClick={() => onPageChange(currentPage - 1)}
+          isActive={currentPage > 1}
+          className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
+        />
+      </PaginationItem>
+    );
+
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      items.push(
+        <PaginationItem key={1}>
+          <PaginationLink onClick={() => onPageChange(1)} className="cursor-pointer hover:bg-fuchsia-800/20">1</PaginationLink>
+        </PaginationItem>
+      );
+      if (startPage > 2) {
+        items.push(<PaginationItem key="ellipsis-start"><PaginationEllipsis /></PaginationItem>);
+      }
+    }
+
+    for (let page = startPage; page <= endPage; page++) {
+      items.push(
+        <PaginationItem key={page}>
+          <PaginationLink 
+            onClick={() => onPageChange(page)} 
+            isActive={page === currentPage} 
+            className={`cursor-pointer ${page === currentPage ? 'bg-fuchsia-600/50 text-white' : 'hover:bg-fuchsia-800/20'}`}
+          >
+            {page}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        items.push(<PaginationItem key="ellipsis-end"><PaginationEllipsis /></PaginationItem>);
+      }
+      items.push(
+        <PaginationItem key={totalPages}>
+          <PaginationLink onClick={() => onPageChange(totalPages)} className="cursor-pointer hover:bg-fuchsia-800/20">{totalPages}</PaginationLink>
+        </PaginationItem>
+      );
+    }
+
+    items.push(
+      <PaginationItem key="next">
+        <PaginationNext
+          onClick={() => onPageChange(currentPage + 1)}
+          isActive={currentPage < totalPages}
+          className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
+        />
+      </PaginationItem>
+    );
+
+    return items;
+  };
   
+  const paginatedAnnouncements = useMemo(() => {
+    return paginateData(announcements, currentPageAnnouncement, ITEMS_PER_PAGE);
+  }, [announcements, currentPageAnnouncement]);
+
+  const paginatedBlogs = useMemo(() => {
+    return paginateData(blogs, currentPageBlogs, ITEMS_PER_PAGE);
+  }, [blogs, currentPageBlogs]);
+
+  const paginatedResources = useMemo(() => {
+    return paginateData(resources, currentPageResources, ITEMS_PER_PAGE);
+  }, [resources, currentPageResources]);
+
+  const totalPagesAnnouncement = getTotalPages(announcements);
+  const totalPagesBlogs = getTotalPages(blogs);
+  const totalPagesResources = getTotalPages(resources);
+  /*
   if (!orgId) {
     return (
-      <div className="flex justify-center items-center p-12">
+      <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 flex items-center justify-center p-6">
         <Alert variant="destructive" className="max-w-md">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Please log in as an organization to view this page.</AlertDescription>
+          <AlertDescription>Please log in as an organization to access the dashboard.</AlertDescription>
         </Alert>
       </div>
     )
   }
+    */
 
   return (
-    <div className="space-y-6">
-      {alert && (
-        <Alert variant={alert.type === 'error' ? "destructive" : "default"} className={`${alert.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-100' : 'bg-green-500/20 border-green-500 text-green-100'}`}>
-          {alert.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-          <AlertDescription>{alert.message}</AlertDescription>
-        </Alert>
-      )}
+    <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6">
 
-      <OrgProfileHeader
-        formData={formData}
-        profile={profile}
-        isEditing={isEditing}
-        isLoading={isLoading}
-        onEdit={() => setIsEditing(true)}
-        onSave={handleSubmit}
-        onCancel={handleCancel}
-      />
+      <div className="max-w-7xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="mb-8"
+        >
+          <div className="text-center mb-8">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
+                Dashboard Center
+              </span>
+            </h1>
+            <p className="text-fuchsia-200/80 max-w-2xl mx-auto text-lg">
+              Manage your organization, announcements, blogs, and resources
+            </p>
+          </div>
 
-      <motion.div
+          {!isLoading && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
+            >
+              <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardContent className="relative p-4 sm:p-6">
+                  <div className="flex flex-col items-center justify-center text-center space-y-2">
+                    <div className="p-3 bg-purple-500/20 rounded-full border border-purple-400/30">
+                      <User2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <p className="text-purple-200/70 text-xs sm:text-sm">Your Profile</p>
+                      <p className="text-lg sm:text-xl font-bold text-purple-300">{formData.active ? 'Active' : 'Inactive'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="group relative bg-gradient-to-br from-fuchsia-900/40 via-purple-900/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-fuchsia-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-purple-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-fuchsia-200/70 text-sm mb-1">Total Announcements</p>
+                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
+                        {stats.totalAnnouncements}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-fuchsia-500/20 rounded-lg border border-fuchsia-400/30">
+                      <Megaphone className="w-8 h-8 text-fuchsia-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group relative bg-gradient-to-br from-emerald-900/40 via-green-900/40 to-slate-950/40 backdrop-blur-xl border border-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-emerald-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/0 via-green-600/5 to-emerald-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-emerald-200/70 text-sm mb-1">Total Resources</p>
+                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-green-300">
+                        {stats.totalResources}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-emerald-500/20 rounded-lg border border-emerald-400/30">
+                      <BookOpen className="w-8 h-8 text-emerald-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-200/70 text-sm mb-1">Total Blogs</p>
+                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-violet-300">
+                        {stats.totalBlogs}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-purple-500/20 rounded-lg border border-purple-400/30">
+                      <FileText className="w-8 h-8 text-purple-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="group relative bg-gradient-to-br from-orange-900/40 via-amber-900/40 to-slate-950/40 backdrop-blur-xl border border-orange-500/30 hover:border-orange-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-orange-500/20">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-600/0 via-amber-600/5 to-orange-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardContent className="relative p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-orange-200/70 text-sm mb-1">Active Events</p>
+                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-300 to-amber-300">
+                        {stats.activeAnnouncements}
+                      </p>
+                    </div>
+                    <div className="p-3 bg-orange-500/20 rounded-lg border border-orange-400/30">
+                      <TrendingUp className="w-8 h-8 text-orange-300" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -301,7 +582,7 @@ export default function OrganizationProfile({ onSuccess }) {
                       value="profile" 
                       className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
                     >
-                      <FileText className="w-4 h-4" />Profile
+                      <Building2 className="w-4 h-4" />Profile
                     </TabsTrigger>
                     <TabsTrigger 
                       value="view" 
@@ -317,6 +598,70 @@ export default function OrganizationProfile({ onSuccess }) {
                     </TabsTrigger>
                   </TabsList>
 
+                  {/* Profile Tab - Integrated Organization Profile */}
+                  <TabsContent value="profile" className="mt-0">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <div className="space-y-6">
+                        {alert && (
+                          <Alert variant={alert.type === 'error' ? "destructive" : "default"} className={`${alert.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-100' : 'bg-green-500/20 border-green-500 text-green-100'}`}>
+                            {alert.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
+                            <AlertDescription>{alert.message}</AlertDescription>
+                          </Alert>
+                        )}
+
+                        {isProfileLoading && !profile ? (
+                          <div className="flex justify-center items-center p-12 text-white">
+                            <Loader2 className="mr-2 h-8 w-8 animate-spin" /> Loading Organization Profile...
+                          </div>
+                        ) : (
+                          <>
+                            <OrgProfileHeader
+                              formData={formData}
+                              profile={profile}
+                              isEditing={isEditing}
+                              isLoading={isProfileLoading}
+                              onEdit={() => setIsEditing(true)}
+                              onSave={handleProfileSubmit}
+                              onCancel={handleProfileCancel}
+                            />
+
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                              <div className="lg:col-span-2 space-y-6">
+                                <OrgAboutSection
+                                  formData={formData}
+                                  isEditing={isEditing}
+                                  onChange={handleProfileChange}
+                                />
+
+                                <OrgAchievementsSection
+                                  achievements={formData.achievements}
+                                  availableAchievements={availableOrgAchievements}
+                                />
+                              </div>
+
+                              <div className="space-y-6">
+                                <OrgBrandIdentity
+                                  formData={formData}
+                                  isEditing={isEditing}
+                                  onChange={handleProfileChange}
+                                  onColorChange={handleColorChange}
+                                />
+
+                                <OrgQuickStats
+                                  formData={formData}
+                                  totalAchievements={availableOrgAchievements.length}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </motion.div>
+                  </TabsContent>
 
                   {/* View Tab */}
                   <TabsContent value="view">
@@ -344,7 +689,6 @@ export default function OrganizationProfile({ onSuccess }) {
                             </TabsTrigger>
                           </TabsList>
 
-                          {/* --- View Announcement Tab Content with Pagination --- */}
                           <TabsContent value="viewAnnouncement">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent mb-6">
                               All Announcements
@@ -363,13 +707,11 @@ export default function OrganizationProfile({ onSuccess }) {
                             ) : (
                               <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {/* Render only the paginated items */}
                                   {paginatedAnnouncements.map((item) => (
-                                      <AnnouncementCard key={item.id} item={item} onUpdate={fetchAnnouncements} onDelete={(id) => handleDelete('announcements', id)} />
-                                    ))}
+                                    <AnnouncementCard key={item.id} item={item} onUpdate={fetchAnnouncements} onDelete={(id) => handleDelete('announcements', id)} />
+                                  ))}
                                 </div>
                                 
-                                {/* Pagination Component */}
                                 {totalPagesAnnouncement > 1 && (
                                   <Pagination className="mt-8">
                                     <PaginationContent>
@@ -385,7 +727,6 @@ export default function OrganizationProfile({ onSuccess }) {
                             )}
                           </TabsContent>
 
-                          {/* --- View Blogs Tab Content with Pagination --- */}
                           <TabsContent value="viewBlogs">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent mb-6">
                               All Blogs
@@ -404,13 +745,11 @@ export default function OrganizationProfile({ onSuccess }) {
                             ) : (
                               <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {/* Render only the paginated items */}
                                   {paginatedBlogs.map((item) => (
                                     <BlogCard key={item.id} item={item} onUpdate={fetchBlogs} onDelete={(id) => handleDelete('blog', id)} />
                                   ))}
                                 </div>
 
-                                {/* Pagination Component */}
                                 {totalPagesBlogs > 1 && (
                                   <Pagination className="mt-8">
                                     <PaginationContent>
@@ -426,7 +765,6 @@ export default function OrganizationProfile({ onSuccess }) {
                             )}
                           </TabsContent>
 
-                          {/* --- View Resources Tab Content with Pagination --- */}
                           <TabsContent value="viewResources">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-green-300 bg-clip-text text-transparent mb-6">
                               All Resources
@@ -445,13 +783,11 @@ export default function OrganizationProfile({ onSuccess }) {
                             ) : (
                               <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {/* Render only the paginated items */}
                                   {paginatedResources.map((item) => (
                                     <ResourceCard key={item.id} item={item} onDelete={(id) => handleDelete('resource', id)} />
                                   ))}
                                 </div>
 
-                                {/* Pagination Component */}
                                 {totalPagesResources > 1 && (
                                   <Pagination className="mt-8">
                                     <PaginationContent>
@@ -466,7 +802,6 @@ export default function OrganizationProfile({ onSuccess }) {
                               </>
                             )}
                           </TabsContent>
-                          
                         </Tabs>
                       </CardContent>
                     </Card>
@@ -517,34 +852,7 @@ export default function OrganizationProfile({ onSuccess }) {
               </CardContent>
             </Card>
           </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <OrgAboutSection
-            formData={formData}
-            isEditing={isEditing}
-            onChange={handleChange}
-          />
-
-          <OrgAchievementsSection
-            achievements={formData.achievements}
-            availableAchievements={availableOrgAchievements}
-          />
-        </div>
-
-        <div className="space-y-6">
-          <OrgBrandIdentity
-            formData={formData}
-            isEditing={isEditing}
-            onChange={handleChange}
-            onColorChange={handleColorChange}
-          />
-
-          <OrgQuickStats
-            formData={formData}
-            totalAchievements={availableOrgAchievements.length}
-          />
-        </div>
+        </motion.div>
       </div>
     </div>
   )
