@@ -3,7 +3,7 @@ const nextConfig = {
   experimental: {
     inlineCss: true, 
   },
-   images: {
+  images: {
     remotePatterns: [
       {
         protocol: 'https',
@@ -13,9 +13,13 @@ const nextConfig = {
         protocol: "https",
         hostname: "example.com",
       },
+      {
+        protocol: 'https',
+        hostname: 'qplfokkxzudeaeyrzvhs.supabase.co',
+        pathname: '/storage/v1/object/public/**',
+      },
     ]
   }
-  
 };
 
 export default nextConfig;

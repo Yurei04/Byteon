@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 import { 
   Select,
   SelectContent,
@@ -37,7 +38,9 @@ import {
   Palette,
   Save,
   X,
-  LogOut
+  LogOut,
+  Mail,
+  AtSign
 } from "lucide-react"
 import { 
   Pagination,
@@ -60,11 +63,13 @@ import OrgAboutSection from "./org-about-section"
 import OrgAchievementsSection from "./org-achievement-section"
 import OrgBrandIdentity from "./org-brand-identity"
 import OrgQuickStats from "./org-quick-stats"
+import DeleteAccountModal from "./delete-account"
 import { availableOrgAchievements } from "./org-achievements"
 
 const ITEMS_PER_PAGE = 6;
 
-export default function DashboardCenter() {
+export default function OrganizationProfile() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("view")
   const [activeViewTab, setActiveViewTab] = useState("viewAnnouncement")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
@@ -72,7 +77,6 @@ export default function DashboardCenter() {
   const [announcements, setAnnouncements] = useState([])
   const [blogs, setBlogs] = useState([])
   const [resources, setResources] = useState([])
-  const [organizations, setOrganizations] = useState([])
   
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({
@@ -91,11 +95,13 @@ export default function DashboardCenter() {
   const [isProfileLoading, setIsProfileLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [alert, setAlert] = useState(null)
-  const [orgId, setOrgId] = useState(null)
+  const [userId, setUserId] = useState(null)
+  const [userEmail, setUserEmail] = useState(null)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
-    des: "",
+    description: "",
     author_name: "",
     primary_color: "#000000",
     secondary_color: "#1F2937",
@@ -108,12 +114,14 @@ export default function DashboardCenter() {
     const getAuthOrg = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
-        setOrgId(session.user.id)
+        setUserId(session.user.id)
+        setUserEmail(session.user.email)
         await fetchOrgProfile(session.user.id)
-        await fetchAllData()
+        await fetchAllData(session.user.id)
       } else {
         setAlert({ type: 'error', message: 'You must be logged in to view this page.' })
         setIsLoading(false)
+        router.push('/log-in')
       }
     }
 
@@ -122,26 +130,30 @@ export default function DashboardCenter() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Org Auth state changed:', event, session?.user?.id)
       if (session?.user) {
-        setOrgId(session.user.id)
+        setUserId(session.user.id)
+        setUserEmail(session.user.email)
         await fetchOrgProfile(session.user.id)
+        await fetchAllData(session.user.id)
       } else {
         setProfile(null)
-        setOrgId(null)
+        setUserId(null)
+        setUserEmail(null)
+        router.push('/log-in')
       }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  const fetchOrgProfile = async (authOrgId) => {
+  const fetchOrgProfile = async (authUserId) => {
     setIsProfileLoading(true)
     try {
-      console.log('Fetching org profile for:', authOrgId)
+      console.log('Fetching org profile for user_id:', authUserId)
       
       const { data, error } = await supabase
         .from('organizations')
         .select('*')
-        .eq('org_id', authOrgId)
+        .eq('user_id', authUserId)
         .maybeSingle()
 
       if (error) throw error
@@ -158,7 +170,7 @@ export default function DashboardCenter() {
         
         setFormData({
           name: data.name || "",
-          des: data.des || "",
+          description: data.description || "",
           author_name: data.author_name || "",
           primary_color: data.primary_color || "#000000",
           secondary_color: data.secondary_color || "#1F2937",
@@ -167,54 +179,13 @@ export default function DashboardCenter() {
           achievements: orgAchievements,
         })
       } else {
-        await createOrgProfile(authOrgId)
+        setAlert({ type: 'error', message: 'Organization profile not found. Please contact support.' })
       }
     } catch (error) {
       console.error('Error fetching org profile:', error.message)
       setAlert({ type: 'error', message: 'Failed to load organization profile.' })
     } finally {
       setIsProfileLoading(false)
-    }
-  }
-
-  const createOrgProfile = async (authOrgId) => {
-    try {
-      const { data: authUser } = await supabase.auth.getUser()
-      
-      const newProfile = {
-        org_id: authOrgId,
-        name: authUser.user?.user_metadata?.organization_name || "Organization",
-        des: "",
-        achievements: JSON.stringify([]),
-        active: true,
-        created_at: new Date().toISOString(),
-      }
-
-      const { data, error } = await supabase
-        .from('organizations')
-        .insert([newProfile])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setProfile(data)
-      setFormData({
-        name: data.name,
-        des: "",
-        author_name: "",
-        primary_color: "#000000",
-        secondary_color: "#1F2937",
-        color_scheme: "black",
-        active: true,
-        achievements: [],
-      })
-      
-      setAlert({ type: 'success', message: 'Organization profile created! Please complete your information.' })
-      setIsEditing(true)
-    } catch (error) {
-      console.error('Error creating org profile:', error.message)
-      setAlert({ type: 'error', message: 'Failed to create organization profile.' })
     }
   }
 
@@ -231,12 +202,17 @@ export default function DashboardCenter() {
   }
 
   const handleProfileSubmit = async () => {
-    if (!formData.name || !formData.des) {
+    if (!formData.name || !formData.description) {
       setAlert({ type: 'error', message: 'Organization Name and Description are required fields.' })
       return
     }
 
-    if (!profile?.org_id) {
+    if (!formData.author_name) {
+      setAlert({ type: 'error', message: 'Username (Author Name) is required.' })
+      return
+    }
+
+    if (!profile?.user_id) {
         setAlert({ type: 'error', message: 'Cannot update: Organization profile not found.' })
         return
     }
@@ -247,7 +223,7 @@ export default function DashboardCenter() {
     try {
       const profileUpdates = {
         name: formData.name,
-        des: formData.des,
+        description: formData.description,
         author_name: formData.author_name,
         primary_color: formData.primary_color,
         secondary_color: formData.secondary_color,
@@ -260,7 +236,7 @@ export default function DashboardCenter() {
       const { data, error } = await supabase
         .from('organizations')
         .update(profileUpdates)
-        .eq('org_id', profile.org_id)
+        .eq('user_id', profile.user_id)
         .select()
         .single()
       
@@ -285,18 +261,17 @@ export default function DashboardCenter() {
   const handleProfileCancel = () => {
     setIsEditing(false)
     if (profile) {
-      fetchOrgProfile(orgId)
+      fetchOrgProfile(userId)
     }
   }
 
-  const fetchAllData = async () => {
+  const fetchAllData = async (authUserId) => {
     setIsLoading(true)
     try {
       await Promise.all([
-        fetchAnnouncements(),
-        fetchBlogs(),
-        fetchResources(),
-        fetchOrganizations()
+        fetchAnnouncements(authUserId),
+        fetchBlogs(authUserId),
+        fetchResources(authUserId)
       ])
       setCurrentPageAnnouncement(1);
       setCurrentPageBlogs(1);
@@ -308,31 +283,60 @@ export default function DashboardCenter() {
     }
   }
 
-  const organizationNames = ["Hack United", "Maximally", "CS Base", "Medi Hacks", "ByteonAdmin"]
+  const fetchAnnouncements = async (authUserId) => {
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('user_id', authUserId)
+      .single()
 
-  const fetchAnnouncements = async () => {
-    const { data } = await supabase.from('announcements').select('*').in('organization', organizationNames);
+    if (!orgData) return
+
+    const { data } = await supabase
+      .from('announcements')
+      .select('*')
+      .eq('organization', orgData.name)
+      
     setAnnouncements(data || [])
     const now = new Date()
     const active = data?.filter(a => new Date(a.date_end) >= now).length || 0
     setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: active }))
   }
 
-  const fetchBlogs = async () => {
-    const { data } = await supabase.from('blogs').select('*').in('organization', organizationNames);
+  const fetchBlogs = async (authUserId) => {
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('user_id', authUserId)
+      .single()
+
+    if (!orgData) return
+
+    const { data } = await supabase
+      .from('blogs')
+      .select('*')
+      .eq('organization', orgData.name)
+      
     setBlogs(data || [])
     setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
   }
 
-  const fetchResources = async () => {
-    const { data } = await supabase.from('resource_hub').select('*')
+  const fetchResources = async (authUserId) => {
+    const { data: orgData } = await supabase
+      .from('organizations')
+      .select('name')
+      .eq('user_id', authUserId)
+      .single()
+
+    if (!orgData) return
+
+    const { data } = await supabase
+      .from('resource_hub')
+      .select('*')
+      .eq('organization', orgData.name)
+      
     setResources(data || [])
     setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
-  }
-
-  const fetchOrganizations = async () => {
-    const { data } = await supabase.from('organization').select('*').in('organization', organizationNames);
-    setOrganizations(data || [])
   }
 
   const handleDelete = async (type, id) => {
@@ -341,9 +345,9 @@ export default function DashboardCenter() {
     try {
       await supabase.from(type === 'announcement' ? 'announcements' : type === 'blog' ? 'blogs' : 'resource_hub').delete().eq('id', id)
       
-      if (type === 'announcement') fetchAnnouncements()
-      else if (type === 'blog') fetchBlogs()
-      else fetchResources()
+      if (type === 'announcement') fetchAnnouncements(userId)
+      else if (type === 'blog') fetchBlogs(userId)
+      else fetchResources(userId)
     } catch (error) {
       console.error('Error:', error)
     }
@@ -444,8 +448,8 @@ export default function DashboardCenter() {
   const totalPagesAnnouncement = getTotalPages(announcements);
   const totalPagesBlogs = getTotalPages(blogs);
   const totalPagesResources = getTotalPages(resources);
-  /*
-  if (!orgId) {
+
+  if (!userId) {
     return (
       <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 flex items-center justify-center p-6">
         <Alert variant="destructive" className="max-w-md">
@@ -455,11 +459,9 @@ export default function DashboardCenter() {
       </div>
     )
   }
-    */
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6">
-
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -490,7 +492,7 @@ export default function DashboardCenter() {
                 <CardContent className="relative p-4 sm:p-6">
                   <div className="flex flex-col items-center justify-center text-center space-y-2">
                     <div className="p-3 bg-purple-500/20 rounded-full border border-purple-400/30">
-                      <User2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
+                      <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
                     </div>
                     <div>
                       <p className="text-purple-200/70 text-xs sm:text-sm">Your Profile</p>
@@ -499,12 +501,13 @@ export default function DashboardCenter() {
                   </div>
                 </CardContent>
               </Card>
+
               <Card className="group relative bg-gradient-to-br from-fuchsia-900/40 via-purple-900/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-fuchsia-500/20">
                 <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-purple-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <CardContent className="relative p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-fuchsia-200/70 text-sm mb-1">Total Announcements</p>
+                      <p className="text-fuchsia-200/70 text-sm mb-1">Announcements</p>
                       <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
                         {stats.totalAnnouncements}
                       </p>
@@ -521,7 +524,7 @@ export default function DashboardCenter() {
                 <CardContent className="relative p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-emerald-200/70 text-sm mb-1">Total Resources</p>
+                      <p className="text-emerald-200/70 text-sm mb-1">Resources</p>
                       <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-green-300">
                         {stats.totalResources}
                       </p>
@@ -538,7 +541,7 @@ export default function DashboardCenter() {
                 <CardContent className="relative p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-purple-200/70 text-sm mb-1">Total Blogs</p>
+                      <p className="text-purple-200/70 text-sm mb-1">Blogs</p>
                       <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-violet-300">
                         {stats.totalBlogs}
                       </p>
@@ -598,7 +601,6 @@ export default function DashboardCenter() {
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Profile Tab - Integrated Organization Profile */}
                   <TabsContent value="profile" className="mt-0">
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -637,6 +639,47 @@ export default function DashboardCenter() {
                                   onChange={handleProfileChange}
                                 />
 
+                                <Card className="bg-black/20 backdrop-blur-lg border border-purple-500/20">
+                                  <CardContent className="p-6">
+                                    <h3 className="text-xl font-bold text-purple-200 mb-4 flex items-center gap-2">
+                                      <AtSign className="w-5 h-5" />
+                                      Account Information
+                                    </h3>
+                                    <div className="space-y-4">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                          <Label className="text-purple-300 mb-2 block flex items-center gap-2">
+                                            <AtSign className="w-4 h-4" />
+                                            Username (Author Name)
+                                          </Label>
+                                          {isEditing ? (
+                                            <Input
+                                              name="author_name"
+                                              value={formData.author_name}
+                                              onChange={handleProfileChange}
+                                              className="bg-black/30 border-purple-500/30 text-white"
+                                              placeholder="johndoe"
+                                            />
+                                          ) : (
+                                            <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">
+                                              {formData.author_name || "Not set"}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <div>
+                                          <Label className="text-purple-300 mb-2 block flex items-center gap-2">
+                                            <Mail className="w-4 h-4" />
+                                            Email (Login)
+                                          </Label>
+                                          <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">
+                                            {userEmail}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+
                                 <OrgAchievementsSection
                                   achievements={formData.achievements}
                                   availableAchievements={availableOrgAchievements}
@@ -655,6 +698,23 @@ export default function DashboardCenter() {
                                   formData={formData}
                                   totalAchievements={availableOrgAchievements.length}
                                 />
+
+                                <Card className="bg-gradient-to-br from-red-900/40 to-slate-950/40 backdrop-blur-lg border border-red-500/30">
+                                  <CardContent className="p-6">
+                                    <h3 className="text-xl font-bold text-red-300 mb-4 flex items-center gap-2">
+                                      <AlertCircle className="w-5 h-5" />
+                                      Danger Zone
+                                    </h3>
+                                    <Button
+                                      onClick={() => setShowDeleteModal(true)}
+                                      variant="destructive"
+                                      className="w-full bg-red-600 hover:bg-red-700"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Delete Account
+                                    </Button>
+                                  </CardContent>
+                                </Card>
                               </div>
                             </div>
                           </>
@@ -663,7 +723,6 @@ export default function DashboardCenter() {
                     </motion.div>
                   </TabsContent>
 
-                  {/* View Tab */}
                   <TabsContent value="view">
                     <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                       <CardContent className="p-6">
@@ -691,7 +750,7 @@ export default function DashboardCenter() {
 
                           <TabsContent value="viewAnnouncement">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent mb-6">
-                              All Announcements
+                              Your Announcements
                             </h3>
                             {isLoading ? (
                               <div className="flex justify-center py-12">
@@ -708,7 +767,7 @@ export default function DashboardCenter() {
                               <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {paginatedAnnouncements.map((item) => (
-                                    <AnnouncementCard key={item.id} item={item} onUpdate={fetchAnnouncements} onDelete={(id) => handleDelete('announcements', id)} />
+                                    <AnnouncementCard key={item.id} item={item} onUpdate={() => fetchAnnouncements(userId)} onDelete={(id) => handleDelete('announcement', id)} />
                                   ))}
                                 </div>
                                 
@@ -729,7 +788,7 @@ export default function DashboardCenter() {
 
                           <TabsContent value="viewBlogs">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent mb-6">
-                              All Blogs
+                              Your Blogs
                             </h3>
                             {isLoading ? (
                               <div className="flex justify-center py-12">
@@ -746,7 +805,7 @@ export default function DashboardCenter() {
                               <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {paginatedBlogs.map((item) => (
-                                    <BlogCard key={item.id} item={item} onUpdate={fetchBlogs} onDelete={(id) => handleDelete('blog', id)} />
+                                    <BlogCard key={item.id} item={item} onUpdate={() => fetchBlogs(userId)} onDelete={(id) => handleDelete('blog', id)} />
                                   ))}
                                 </div>
 
@@ -767,7 +826,7 @@ export default function DashboardCenter() {
 
                           <TabsContent value="viewResources">
                             <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-green-300 bg-clip-text text-transparent mb-6">
-                              All Resources
+                              Your Resources
                             </h3>
                             {isLoading ? (
                               <div className="flex justify-center py-12">
@@ -807,7 +866,6 @@ export default function DashboardCenter() {
                     </Card>
                   </TabsContent>
 
-                  {/* Create Tab */}
                   <TabsContent value="create">
                     <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                       <CardContent className="p-6">
@@ -834,15 +892,15 @@ export default function DashboardCenter() {
                           </TabsList>
 
                           <TabsContent value="createAnnouncement">
-                            <AnnounceForm onSuccess={fetchAllData} />
+                            <AnnounceForm onSuccess={() => fetchAllData(userId)} organizationName={profile?.name} />
                           </TabsContent>
 
                           <TabsContent value="createBlogs">
-                            <BlogForm onSuccess={fetchAllData} />
+                            <BlogForm onSuccess={() => fetchAllData(userId)} organizationName={profile?.name} />
                           </TabsContent>
 
                           <TabsContent value="createResources">
-                            <ResourceForm onSuccess={fetchAllData} />
+                            <ResourceForm onSuccess={() => fetchAllData(userId)} organizationName={profile?.name} />
                           </TabsContent>
                         </Tabs>
                       </CardContent>
@@ -854,6 +912,14 @@ export default function DashboardCenter() {
           </motion.div>
         </motion.div>
       </div>
+
+      {showDeleteModal && (
+        <DeleteAccountModal
+          organizationName={profile?.name}
+          userId={userId}
+          onClose={() => setShowDeleteModal(false)}
+        />
+      )}
     </div>
   )
 }
