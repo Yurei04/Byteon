@@ -1,6 +1,6 @@
 "use client"
 import { ReturnButton } from "@/components/return"
-import OrganizationProfile from './org-profile'
+import OrganizationProfile from "./org-profile"
 import { useRouter } from 'next/navigation'
 import { motion } from "framer-motion"
 import { AlertCircle } from "lucide-react"
