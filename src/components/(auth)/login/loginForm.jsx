@@ -42,11 +42,12 @@ export function LoginForm() {
     setLoading(true)
 
     try {
-      // Sign in with Supabase
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
+      // 1️⃣ Sign in with Supabase Auth
+      const { data, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        })
 
       if (signInError) {
         setError(signInError.message)
@@ -54,48 +55,59 @@ export function LoginForm() {
         return
       }
 
-      if (!data.user) {
+      const user = data?.user
+      if (!user) {
         setError("Login failed. Please try again.")
         setLoading(false)
         return
       }
 
-      // Check if user has a profile in users table
+      // 2️⃣ Check if user exists in users table
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("*")
-        .eq("user_id", data.user.id)
-        .single()
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle()
 
-      if (!userError && userData) {
-        // User profile found - redirect to user dashboard
-        setLoading(false)
+      if (userError && userError.code !== 'PGRST116') {
+        console.error("Error checking users table:", userError)
+      }
+
+      if (userData) {
+        // User found - redirect to user dashboard
+        console.log("User account found, redirecting to user dashboard")
         router.push("/user-dashboard")
+        setLoading(false)
         return
       }
 
-      // Check if user has an organization profile
+      // 3️⃣ Check if user exists in organizations table
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
-        .select("*")
-        .eq("user_id", data.user.id)
-        .single()
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle()
 
-      if (!orgError && orgData) {
-        // Organization profile found - redirect to org dashboard
-        setLoading(false)
+      if (orgError && orgError.code !== 'PGRST116') {
+        console.error("Error checking organizations table:", orgError)
+      }
+
+      if (orgData) {
+        // Organization found - redirect to org dashboard
+        console.log("Organization account found, redirecting to org dashboard")
         router.push("/org-dashboard")
+        setLoading(false)
         return
       }
 
-      // No profile found in either table
-      setError("No profile found. Please complete your signup.")
+      // 4️⃣ No profile found in either table
+      setError("Profile not found. Please complete your signup.")
       await supabase.auth.signOut()
       setLoading(false)
 
     } catch (err) {
       console.error("Login error:", err)
-      setError(err.message || "An unexpected error occurred")
+      setError(err.message || "Unexpected error occurred")
       setLoading(false)
     }
   }

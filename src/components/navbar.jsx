@@ -26,8 +26,6 @@ export default function NavBar() {
     const [loading, setLoading] = useState(true)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-    
-
     const fetchProfileData = async (userId) => {
         try {
             console.log('Fetching profile for:', userId)
@@ -39,7 +37,7 @@ export default function NavBar() {
                 .eq("user_id", userId)
                 .maybeSingle()
 
-            if (userError) {
+            if (userError && userError.code !== 'PGRST116') {
                 console.error('User fetch error:', userError)
             }
 
@@ -54,14 +52,14 @@ export default function NavBar() {
                 return
             }
 
-            // Try to fetch org profile
+            // Try to fetch org profile - using user_id not org_id
             const { data: orgData, error: orgError } = await supabase
                 .from("organizations")
                 .select("name, profile_photo_url")
-                .eq("org_id", userId)
+                .eq("user_id", userId)
                 .maybeSingle()
 
-            if (orgError) {
+            if (orgError && orgError.code !== 'PGRST116') {
                 console.error('Org fetch error:', orgError)
             }
 
@@ -91,8 +89,6 @@ export default function NavBar() {
             setLoading(false)
         }
     }
-
-    
 
     const checkSession = async () => {
         try {
@@ -147,8 +143,6 @@ export default function NavBar() {
         return () => subscription.unsubscribe()
     }, [])
 
-    
-
     const handleProfileClick = () => {
         if (userProfile?.dashboardUrl) {
             router.push(userProfile.dashboardUrl)
@@ -178,7 +172,7 @@ export default function NavBar() {
                             alt={userProfile.name || "Profile"}
                             width={40}
                             height={40}
-                            className="rounded-full border-2 border-fuchsia-500"
+                            className="rounded-full border-2 border-fuchsia-500 object-cover"
                         />
                     ) : (
                         <div className="w-10 h-10 rounded-full border-2 border-fuchsia-500 bg-fuchsia-700 flex items-center justify-center text-sm font-semibold">
@@ -230,7 +224,7 @@ export default function NavBar() {
                             alt={userProfile.name || "Profile"}
                             width={32}
                             height={32}
-                            className="rounded-full border-2 border-fuchsia-500"
+                            className="rounded-full border-2 border-fuchsia-500 object-cover"
                         />
                     ) : (
                         <div className="w-8 h-8 rounded-full border-2 border-fuchsia-500 bg-fuchsia-700 flex items-center justify-center text-xs font-semibold">

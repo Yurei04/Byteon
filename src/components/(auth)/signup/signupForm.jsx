@@ -33,7 +33,6 @@ export function SignupForm() {
   const [password, setPassword] = useState("")
   const [confirmPass, setConfirmPass] = useState("")
   const [orgName, setOrgName] = useState("")
-  const [orgUsername, setOrgUsername] = useState("")
   const [mode, setMode] = useState("user")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -95,10 +94,6 @@ export function SignupForm() {
         setError("Organization name is required")
         return
       }
-      if (mode === "organization" && !orgUsername.trim()) {
-        setError("Username is required")
-        return
-      }
       if (!email.trim()) {
         setError("Email is required")
         return
@@ -154,18 +149,7 @@ export function SignupForm() {
     setLoading(true)
 
     try {
-      // Step 1: Check if email already exists
-      const { data: existingUsers } = await supabase
-        .from('users')
-        .select('user_id')
-        .limit(1)
-
-      const { data: existingOrgs } = await supabase
-        .from('organizations')
-        .select('user_id')
-        .limit(1)
-
-      // Step 2: Create auth user
+      // Create auth user
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -188,7 +172,7 @@ export function SignupForm() {
         return
       }
 
-      // Step 3: Upload profile photo (if provided)
+      // Upload profile photo (if provided)
       let profilePhotoUrl = null
       if (profilePhoto) {
         try {
@@ -199,7 +183,7 @@ export function SignupForm() {
         }
       }
 
-      // Step 4: Create profile in appropriate table
+      // Create profile in appropriate table
       if (mode === "user") {
         const { error: userError } = await supabase
           .from("users")
@@ -226,7 +210,7 @@ export function SignupForm() {
           .insert({
             user_id: data.user.id,
             name: orgName.trim(),
-            author_name: orgUsername.trim(),
+            author_name: orgName.trim(), // Using org name as author_name (no email stored)
             description: orgDescription.trim(),
             profile_photo_url: profilePhotoUrl,
           })
@@ -318,28 +302,17 @@ export function SignupForm() {
                   <div onKeyPress={handleKeyPress}>
                     <FieldGroup>
                       {type === "organization" && (
-                        <>
-                          <Field>
-                            <FieldLabel>Organization Name</FieldLabel>
-                            <Input
-                              placeholder="My Organization"
-                              value={orgName}
-                              onChange={(e) => setOrgName(e.target.value)}
-                            />
-                          </Field>
-
-                          <Field>
-                            <FieldLabel>Username (Author Name)</FieldLabel>
-                            <Input
-                              placeholder="johndoe"
-                              value={orgUsername}
-                              onChange={(e) => setOrgUsername(e.target.value)}
-                            />
-                            <FieldDescription className="text-purple-300">
-                              This will be displayed as the author name for your organization.
-                            </FieldDescription>
-                          </Field>
-                        </>
+                        <Field>
+                          <FieldLabel>Organization Name</FieldLabel>
+                          <Input
+                            placeholder="My Organization"
+                            value={orgName}
+                            onChange={(e) => setOrgName(e.target.value)}
+                          />
+                          <FieldDescription className="text-purple-300">
+                            This will be displayed as the author name for your posts.
+                          </FieldDescription>
+                        </Field>
                       )}
 
                       <Field>
@@ -352,7 +325,7 @@ export function SignupForm() {
                           required
                         />
                         <FieldDescription className="text-purple-300">
-                          Each email can only be used once for either a user or organization account.
+                          Used for login only. Each email can only be used once.
                         </FieldDescription>
                       </Field>
 
