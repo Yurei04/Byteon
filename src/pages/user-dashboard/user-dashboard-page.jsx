@@ -49,7 +49,11 @@ export default function UserDashboardPage() {
 
 
   const fetchBlogs = async () => {
-    const { data } = await supabase.from('blogs').select('*').eq("user_id", userId)
+    const { data } = await supabase
+    .from('blogs')
+    .select('*')
+    .eq("user_id", userId)
+    
     setBlogs(data || [])
     setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
   }

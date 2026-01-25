@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -31,8 +32,11 @@ const THEME_OPTIONS = [
 ]
 
 export default function BlogUserForm({ onSuccess }) {
+  const router = useRouter()
   const [currentUser, setCurrentUser] = useState(null)
+  const [userId, setUserId] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFetchingUser, setIsFetchingUser] = useState(true)
   const [alert, setAlert] = useState(null)
   const [imageError, setImageError] = useState(false)
   const [formData, setFormData] = useState({
@@ -45,21 +49,62 @@ export default function BlogUserForm({ onSuccess }) {
 
   useEffect(() => {
     fetchCurrentUser()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUserId(session.user.id)
+        await fetchUserProfile(session.user.id)
+      } else {
+        setCurrentUser(null)
+        setUserId(null)
+        router.push('/log-in')
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const fetchCurrentUser = async () => {
+    setIsFetchingUser(true)
     try {
-      const { data, error } = await supabase
-        .from('user')
-        .select('*')
-        .eq('id', 2)
-        .single()
+      // Get authenticated user
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.user) {
+        setAlert({ type: 'error', message: 'You must be logged in to create a blog post.' })
+        router.push('/log-in')
+        return
+      }
 
-      if (error) throw error
-      setCurrentUser(data)
+      setUserId(session.user.id)
+      await fetchUserProfile(session.user.id)
+      
     } catch (error) {
       console.error('Error fetching user:', error)
       setAlert({ type: 'error', message: 'Failed to load user information' })
+    } finally {
+      setIsFetchingUser(false)
+    }
+  }
+
+  const fetchUserProfile = async (authUserId) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('user_id', authUserId)
+        .single()
+
+      if (error) throw error
+
+      if (data) {
+        setCurrentUser(data)
+      } else {
+        setAlert({ type: 'error', message: 'User profile not found. Please complete your profile.' })
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+      setAlert({ type: 'error', message: 'Failed to load user profile' })
     }
   }
 
@@ -69,12 +114,12 @@ export default function BlogUserForm({ onSuccess }) {
   }
 
   const handleSubmit = async () => {
-    if (!currentUser) {
-      setAlert({ type: 'error', message: 'User not found. Please refresh the page.' })
+    if (!currentUser || !userId) {
+      setAlert({ type: 'error', message: 'User not found. Please refresh the page and log in again.' })
       return
     }
 
-    if (!formData.title || !formData.content) {
+    if (!formData.title.trim() || !formData.content.trim()) {
       setAlert({ type: 'error', message: 'Please fill in all required fields (Title and Content)' })
       return
     }
@@ -84,20 +129,26 @@ export default function BlogUserForm({ onSuccess }) {
 
     try {
       const blogData = {
-        title: formData.title,
-        des: formData.des || null,
-        content: formData.content,
-        image: formData.image || null,
+        title: formData.title.trim(),
+        des: formData.des.trim() || null,
+        content: formData.content.trim(),
+        image: formData.image.trim() || null,
         theme: formData.theme || null,
-        user_id: currentUser.id
+        user_id: currentUser.id, 
+        author: currentUser.name, 
+        created_at: new Date().toISOString()
       }
 
-      const { error } = await supabase.from('blogs').insert([blogData]).select()
+      const { error } = await supabase
+        .from('blogs')
+        .insert([blogData])
+        .select()
       
       if (error) throw error
 
       setAlert({ type: 'success', message: 'Blog created successfully! 🎉' })
       
+      // Reset form
       setFormData({
         title: "",
         des: "",
@@ -118,13 +169,32 @@ export default function BlogUserForm({ onSuccess }) {
     }
   }
 
-  if (!currentUser) {
+  if (isFetchingUser) {
     return (
       <div className="w-full max-w-4xl mx-auto">
         <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
           <CardContent className="p-12 text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-fuchsia-300" />
             <p className="text-fuchsia-200/70">Loading user information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="bg-gradient-to-br from-red-900/20 via-slate-900/20 to-slate-950/20 backdrop-blur-xl border border-red-500/30">
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+            <p className="text-red-200 text-lg mb-4">You must be logged in to create a blog post.</p>
+            <Button 
+              onClick={() => router.push('/log-in')}
+              className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500"
+            >
+              Go to Login
+            </Button>
           </CardContent>
         </Card>
       </div>

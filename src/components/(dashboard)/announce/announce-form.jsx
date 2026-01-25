@@ -28,8 +28,11 @@ const CURRENCIES = [
 ]
 
 export default function AnnounceForm({ onSuccess }) {
+  const router = useRouter()
+  const [currentOrg, setCurrentOrg] = useState(null)
+  const [authUserId, setAuthUserId] = useState(null)
+  const [isFetchingOrg, setIsFetchingOrg] = useState(true)
   const [organizations, setOrganizations] = useState([])
-  const [selectedOrg, setSelectedOrg] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert] = useState(null)
   const [formData, setFormData] = useState({
@@ -49,31 +52,78 @@ export default function AnnounceForm({ onSuccess }) {
   })
 
   useEffect(() => {
-    fetchOrganizations()
+    fetchCurrentOrg()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setAuthUserId(session.user.id)
+        await fetchOrgProfile(session.user.id)
+      } else {
+        setCurrentOrg(null)
+        setAuthUserId(null)
+        router.push('/log-in')
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const fetchOrganizations = async () => {
+  const fetchCurrentOrg = async () => {
+    setIsFetchingOrg(true)
+    try {
+      // Get authenticated user
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.user) {
+        setAlert({ type: 'error', message: 'You must be logged in to create a blog post.' })
+        router.push('/log-in')
+        return
+      }
+
+      setAuthUserId(session.user.id)
+      await fetchOrgProfile(session.user.id)
+      
+    } catch (error) {
+      console.error('Error fetching organization:', error)
+      setAlert({ type: 'error', message: 'Failed to load organization information' })
+    } finally {
+      setIsFetchingOrg(false)
+    }
+  }
+
+  const fetchOrgProfile = async (userId) => {
     try {
       const { data, error } = await supabase
-        .from('organization')
+        .from('organizations')
         .select('*')
+        .eq('user_id', userId)
+        .single()
 
       if (error) throw error
-      setOrganizations(data || [])
-      if (data?.length > 0) {
-        setSelectedOrg(data[0])
-        setFormData(prev => ({ ...prev, color_scheme: data[0].color_scheme || 'purple' }))
+
+      if (data) {
+        setCurrentOrg(data)
+      } else {
+        setAlert({ type: 'error', message: 'Organization profile not found. Please complete your profile.' })
       }
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error fetching organization profile:', error)
+      setAlert({ type: 'error', message: 'Failed to load organization profile' })
     }
   }
 
   const handleSubmit = async () => {
-    if (!selectedOrg) {
-      setAlert({ type: 'error', message: 'Please select an organization' })
+
+    if (!currentOrg || !authUserId) {
+      setAlert({ type: 'error', message: 'Organization not found. Please refresh the page and log in again.' })
       return
     }
+
+    if (!formData.title.trim() || !formData.content.trim()) {
+      setAlert({ type: 'error', message: 'Please fill in all required fields (Title and Content)' })
+      return
+    }
+
     if (!formData.title || !formData.des || !formData.author || !formData.date_begin || !formData.date_end) {
       setAlert({ type: 'error', message: 'Please fill in all required fields' })
       return
@@ -107,8 +157,8 @@ export default function AnnounceForm({ onSuccess }) {
         website_link: formData.website_link,
         dev_link: formData.dev_link,
         color_scheme: formData.color_scheme,
-        organization: selectedOrg.name,
-        organization_id: selectedOrg.id,
+        organization: currentOrg.name,
+        organization_id: currentOrg.id,
         registrants_count: 0,
         google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
       }
@@ -134,7 +184,7 @@ export default function AnnounceForm({ onSuccess }) {
         prize_currency: "USD",
         website_link: "",
         dev_link: "",
-        color_scheme: selectedOrg.color_scheme || "purple",
+        color_scheme: currentOrg.color_scheme || "purple",
         google_sheet_csv_url: ""
       })
 
@@ -150,6 +200,39 @@ export default function AnnounceForm({ onSuccess }) {
     }
   }
 
+  if (isFetchingOrg) {
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
+          <CardContent className="p-12 text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-fuchsia-300" />
+            <p className="text-fuchsia-200/70">Loading organization information...</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!currentOrg) {
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <Card className="bg-gradient-to-br from-red-900/20 via-slate-900/20 to-slate-950/20 backdrop-blur-xl border border-red-500/30">
+          <CardContent className="p-12 text-center">
+            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+            <p className="text-red-200 text-lg mb-4">You must be logged in as an organization to create a blog post.</p>
+            <Button 
+              onClick={() => router.push('/log-in')}
+              className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500"
+            >
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+
   return (
     <Card className="bg-white/10 backdrop-blur-lg border-white/20">
       <CardContent className="p-6">
@@ -163,7 +246,7 @@ export default function AnnounceForm({ onSuccess }) {
         <div className="space-y-6">
           <div className="space-y-2 p-2 border border-red-400 rounded-xl">
             <Label className="text-white">Organization</Label>
-            <Select onValueChange={(val) => setSelectedOrg(organizations.find(o => o.id === parseInt(val)))} value={selectedOrg?.id?.toString()}>
+            <Select onValueChange={(val) => setCurrentOrg(organizations.find(o => o.id === parseInt(val)))} value={selectedOrg?.id?.toString()}>
               <SelectTrigger className="bg-white/10 border-white/20 text-white">
                 <SelectValue placeholder="Select organization" />
               </SelectTrigger>
