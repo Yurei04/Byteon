@@ -34,7 +34,7 @@ const THEME_OPTIONS = [
 export default function BlogUserForm({ onSuccess }) {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState(null)
-  const [userId, setUserId] = useState(null)
+  const [authUserId, setAuthUserId] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFetchingUser, setIsFetchingUser] = useState(true)
   const [alert, setAlert] = useState(null)
@@ -52,11 +52,11 @@ export default function BlogUserForm({ onSuccess }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        setUserId(session.user.id)
+        setAuthUserId(session.user.id)
         await fetchUserProfile(session.user.id)
       } else {
         setCurrentUser(null)
-        setUserId(null)
+        setAuthUserId(null)
         router.push('/log-in')
       }
     })
@@ -67,7 +67,6 @@ export default function BlogUserForm({ onSuccess }) {
   const fetchCurrentUser = async () => {
     setIsFetchingUser(true)
     try {
-      // Get authenticated user
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.user) {
@@ -76,7 +75,7 @@ export default function BlogUserForm({ onSuccess }) {
         return
       }
 
-      setUserId(session.user.id)
+      setAuthUserId(session.user.id)
       await fetchUserProfile(session.user.id)
       
     } catch (error) {
@@ -95,10 +94,14 @@ export default function BlogUserForm({ onSuccess }) {
         .eq('user_id', authUserId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
       if (data) {
         setCurrentUser(data)
+        console.log('User loaded:', data)
       } else {
         setAlert({ type: 'error', message: 'User profile not found. Please complete your profile.' })
       }
@@ -114,7 +117,7 @@ export default function BlogUserForm({ onSuccess }) {
   }
 
   const handleSubmit = async () => {
-    if (!currentUser || !userId) {
+    if (!currentUser || !authUserId) {
       setAlert({ type: 'error', message: 'User not found. Please refresh the page and log in again.' })
       return
     }
@@ -134,21 +137,28 @@ export default function BlogUserForm({ onSuccess }) {
         content: formData.content.trim(),
         image: formData.image.trim() || null,
         theme: formData.theme || null,
-        user_id: currentUser.id, 
-        author: currentUser.name, 
+        user_id: currentUser.id,
+        organization_id: null,
+        author: currentUser.name || 'Anonymous',
+        user_name: currentUser.name || null,
         created_at: new Date().toISOString()
       }
 
-      const { error } = await supabase
+      console.log('Submitting blog:', blogData)
+
+      const { data, error } = await supabase
         .from('blogs')
         .insert([blogData])
         .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('Insert error:', error)
+        throw error
+      }
 
+      console.log('Blog created:', data)
       setAlert({ type: 'success', message: 'Blog created successfully! 🎉' })
       
-      // Reset form
       setFormData({
         title: "",
         des: "",
@@ -323,7 +333,7 @@ export default function BlogUserForm({ onSuccess }) {
               {imageError && formData.image && (
                 <div className="mt-4 p-4 rounded-lg border border-red-500/30 bg-red-500/10">
                   <p className="text-red-200 text-sm flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
+                    <AlertCircle className="w-4 w-4" />
                     Unable to load image. Please check the URL.
                   </p>
                 </div>

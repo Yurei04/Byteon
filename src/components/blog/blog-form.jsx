@@ -70,7 +70,6 @@ export default function BlogOrgForm({ onSuccess }) {
   const fetchCurrentOrg = async () => {
     setIsFetchingOrg(true)
     try {
-      // Get authenticated user
       const { data: { session } } = await supabase.auth.getSession()
       
       if (!session?.user) {
@@ -98,10 +97,14 @@ export default function BlogOrgForm({ onSuccess }) {
         .eq('user_id', userId)
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
       if (data) {
         setCurrentOrg(data)
+        console.log('Organization loaded:', data)
       } else {
         setAlert({ type: 'error', message: 'Organization profile not found. Please complete your profile.' })
       }
@@ -137,25 +140,30 @@ export default function BlogOrgForm({ onSuccess }) {
         content: formData.content.trim(),
         author: formData.author.trim() || currentOrg.name,
         image: formData.image.trim() || null,
-        hackathon: formData.hackathon.trim() || null,
+        hackathon: formData.hackathon.trim() ? [formData.hackathon.trim()] : null,
         place: formData.place.trim() || null,
         theme: formData.theme || null,
-        org_id: currentOrg.id, // Store organization ID
-        organization_name: currentOrg.name, 
-        user_id: authUserId,
+        organization_id: currentOrg.id,
+        organization: currentOrg.name,
+        user_id: null,
         created_at: new Date().toISOString()
       }
 
-      const { error } = await supabase
+      console.log('Submitting blog:', blogData)
+
+      const { data, error } = await supabase
         .from('blogs')
         .insert([blogData])
         .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('Insert error:', error)
+        throw error
+      }
 
+      console.log('Blog created:', data)
       setAlert({ type: 'success', message: 'Blog created successfully! 🎉' })
       
-      // Reset form
       setFormData({
         title: "",
         des: "",
