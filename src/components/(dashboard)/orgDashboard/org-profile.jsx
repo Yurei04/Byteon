@@ -283,60 +283,123 @@ export default function OrganizationProfile() {
     }
   }
 
-  const fetchAnnouncements = async (authUserId) => {
-    const { data: orgData } = await supabase
-      .from('organizations')
-      .select('name')
-      .eq('user_id', authUserId)
-      .single()
+const fetchAnnouncements = async (authUserId) => {
+    try {
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .eq('user_id', authUserId)
+        .single()
 
-    if (!orgData) return
+      if (orgError) {
+        console.error('Error fetching org for announcements:', orgError)
+        return
+      }
 
-    const { data } = await supabase
-      .from('announcements')
-      .select('*')
-      .eq('organization', orgData.name)
-      
-    setAnnouncements(data || [])
-    const now = new Date()
-    const active = data?.filter(a => new Date(a.date_end) >= now).length || 0
-    setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: active }))
+      if (!orgData || !orgData.id) {
+        console.log('No organization found for user')
+        return
+      }
+
+      console.log('Fetching announcements for organization ID:', orgData.id, 'Name:', orgData.name)
+
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('organization_id', orgData.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching announcements:', error)
+        return
+      }
+
+      console.log('Announcements fetched:', data?.length || 0)
+      setAnnouncements(data || [])
+      const now = new Date()
+      const active = data?.filter(a => new Date(a.date_end) >= now).length || 0
+      setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: active }))
+    } catch (error) {
+      console.error('Unexpected error in fetchAnnouncements:', error)
+    }
   }
 
   const fetchBlogs = async (authUserId) => {
-    const { data: orgData } = await supabase
-      .from('organizations')
-      .select('name')
-      .eq('user_id', authUserId)
-      .single()
+    try {
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .eq('user_id', authUserId)
+        .single()
 
-    if (!orgData) return
+      if (orgError) {
+        console.error('Error fetching org for blogs:', orgError)
+        return
+      }
 
-    const { data } = await supabase
-      .from('blogs')
-      .select('*')
-      .eq('organization', orgData.name)
-      
-    setBlogs(data || [])
-    setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
+      if (!orgData || !orgData.id) {
+        console.log('No organization found for user')
+        return
+      }
+
+      console.log('Fetching blogs for organization ID:', orgData.id, 'Name:', orgData.name)
+
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('organization_id', orgData.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching blogs:', error)
+        return
+      }
+
+      console.log('Blogs fetched:', data?.length || 0)
+      setBlogs(data || [])
+      setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
+    } catch (error) {
+      console.error('Unexpected error in fetchBlogs:', error)
+    }
   }
 
   const fetchResources = async (authUserId) => {
-    const { data: orgData } = await supabase
-      .from('organizations')
-      .select('name')
-      .eq('user_id', authUserId)
-      .single()
+    try {
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .eq('user_id', authUserId)
+        .single()
 
-    if (!orgData) return
+      if (orgError) {
+        console.error('Error fetching org for resources:', orgError)
+        return
+      }
 
-    const { data } = await supabase
-      .from('resource_hub')
-      .select('*')
-      .eq('organization', orgData.name)
-      
-    setResources(data || [])
-    setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
+      if (!orgData || !orgData.id) {
+        console.log('No organization found for user')
+        return
+      }
+
+      console.log('Fetching resources for organization ID:', orgData.id, 'Name:', orgData.name)
+
+      const { data, error } = await supabase
+        .from('resource_hub')
+        .select('*')
+        .eq('organization_id', orgData.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching resources:', error)
+        return
+      }
+
+      console.log('Resources fetched:', data?.length || 0)
+      setResources(data || [])
+      setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
+    } catch (error) {
+      console.error('Unexpected error in fetchResources:', error)
+    }
   }
 
   const handleDelete = async (type, id) => {
@@ -767,7 +830,11 @@ export default function OrganizationProfile() {
                               <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {paginatedAnnouncements.map((item) => (
-                                    <AnnouncementCard key={item.id} item={item} onUpdate={() => fetchAnnouncements(userId)} onDelete={(id) => handleDelete('announcement', id)} />
+                                    <AnnouncementCard 
+                                    key={item.id} 
+                                    item={item} 
+                                    onUpdate={() => fetchAnnouncements(userId)} 
+                                    onDelete={(id) => handleDelete('announcement', id)} />
                                   ))}
                                 </div>
                                 
@@ -805,7 +872,11 @@ export default function OrganizationProfile() {
                               <>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                   {paginatedBlogs.map((item) => (
-                                    <BlogCard key={item.id} item={item} onUpdate={() => fetchBlogs(userId)} onDelete={(id) => handleDelete('blog', id)} />
+                                    <BlogCard 
+                                    key={item.id} 
+                                    item={item} 
+                                    onUpdate={() => fetchBlogs(userId)} 
+                                    onDelete={(id) => handleDelete('blog', id)} />
                                   ))}
                                 </div>
 
