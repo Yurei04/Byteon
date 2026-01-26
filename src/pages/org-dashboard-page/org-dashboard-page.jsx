@@ -58,17 +58,18 @@ import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
 import ResourceCard from "@/components/resourceHub/resourceHub-card"
 import BlogCard from "@/components/blog/blogCard"
 import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
-import OrgProfileHeader from "./org-profile-header"
-import OrgAboutSection from "./org-about-section"
-import OrgAchievementsSection from "./org-achievement-section"
-import OrgBrandIdentity from "./org-brand-identity"
-import OrgQuickStats from "./org-quick-stats"
-import DeleteAccountModal from "./delete-account"
-import { availableOrgAchievements } from "./org-achievements"
+import OrgProfileHeader from "../../components/(dashboard)/orgDashboard/org-profile-header"
+import OrgAboutSection from "../../components/(dashboard)/orgDashboard/org-about-section"
+import OrgAchievementsSection from "../../components/(dashboard)/orgDashboard/org-achievement-section"
+import OrgBrandIdentity from "../../components/(dashboard)/orgDashboard/org-brand-identity"
+import OrgQuickStats from "../../components/(dashboard)/orgDashboard/org-quick-stats"
+import DeleteAccountModal from "../../components/(dashboard)/orgDashboard/delete-account"
+import { availableOrgAchievements } from "../../components/(dashboard)/orgDashboard/org-achievements"
+import { ReturnButton } from "@/components/return"
 
 const ITEMS_PER_PAGE = 6;
 
-export default function OrganizationProfile() {
+export default function OrgDashboardPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("view")
   const [activeViewTab, setActiveViewTab] = useState("viewAnnouncement")
@@ -525,6 +526,22 @@ const fetchAnnouncements = async (authUserId) => {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6">
+      <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full flex justify-between max-w-7xl mx-auto mb-6 p-2"
+      >
+        <div className="p-2">
+          <ReturnButton />
+        </div>
+
+        <div className="w-full bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-3 px-3 rounded-lg shadow-lg shadow-fuchsia-500/10">
+          <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            ⚠️ This Page is currently in Beta Testing 
+          </p>
+        </div>
+      </motion.div>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
