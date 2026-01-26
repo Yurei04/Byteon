@@ -5,6 +5,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import audioService from "@/lib/audioService";
 import MainMenu from "@/components/howToHack/mainMenu";
 import dynamic from "next/dynamic";
+import ChapterList from "@/components/howToHack/chapterList";
 
 const GameSettings = dynamic(() => import("@/components/howToHack/gameSettings"), {
     ssr: false,
@@ -33,10 +34,12 @@ export default function HowToHackPage() {
     /* ----------------------------- STATE HOOKS FIRST ----------------------------- */
 
     const [chapter, setChapter] = useState(1);
+    const [chapterChosen, setChapterChosen] = useState(0) 
     const [chapterData, setChapterData] = useState(null);
     const [showAudioPermission, setShowAudioPermission] = useState(false);
     const [audioEnabled, setAudioEnabled] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isChapterList, setIsChapterList] = useState(false)
     const [isMainMenu, setIsMainMenu] = useState(true);
     const [isSettings, setIsSettings] = useState(false);
     const [isExit, setIsExit] = useState(false);
@@ -84,6 +87,20 @@ export default function HowToHackPage() {
     
     
     /* ------------------------------ STABLE CALLBACKS ----------------------------- */
+
+    const handleGameStartFromChapter = useCallback(() => {
+        console.log('[HowToHackPage] Starting from chapter:', chapterChosen);
+        
+        if (chapterChosen === 0) {
+            console.error('[HowToHackPage] Invalid chapter selection');
+            return;
+        }
+        
+        setChapter(chapterChosen);
+        setIsChapterList(false);
+        setIsMainMenu(false);
+        setIsStartGame(true);
+    }, [chapterChosen])  
 
     const handleStartGameFromMenu = useCallback(() => {
         setIsMainMenu(false);
@@ -349,10 +366,12 @@ export default function HowToHackPage() {
                                 {isMainMenu ? (
                                     <MainMenu
                                         onStartGame={handleStartGameFromMenu}
-                                        onLoadGame={() => {
+                                        onChapterList={() => {
                                             if (audioEnabled && window.audioManager) {
                                                 window.audioManager.playClick();
                                             }
+                                            setIsChapterList(true);
+                                            setIsMainMenu(false);
                                         }}
                                         onSettings={() => {
                                             if (audioEnabled && window.audioManager) {
@@ -368,6 +387,19 @@ export default function HowToHackPage() {
                                             setIsExit(true);
                                             setIsMainMenu(false);
                                         }}
+                                    />
+                                ) : isChapterList ? (
+                                    <ChapterList 
+                                        onBack={() => {
+                                            if (audioEnabled && window.audioManager) {
+                                                window.audioManager.playClick();
+                                            }
+                                            setIsChapterList(false)
+                                            setIsMainMenu(true)
+                                        }}
+                                        onStartGame={handleGameStartFromChapter}
+                                        chapterChosen={chapterChosen}
+                                        setChapterChosen={setChapterChosen}
                                     />
                                 ) : isSettings ? (
                                     <GameSettings onBack={() => {
