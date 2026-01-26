@@ -14,7 +14,7 @@ const disabled = [
   "cursor w-52 py-6 bg-fuchsia-900/20 hover:bg-fuchsia-700 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 cursor-pointer transition-all duration-300"
 ];
 
-const MainMenu = ({ onStartGame }) => {
+const MainMenu = ({ onStartGame, onChapterList }) => {
   if (typeof onStartGame !== "function") {
     console.error("[MainMenu] onStartGame prop is not a function:", onStartGame);
   }
@@ -67,7 +67,18 @@ const MainMenu = ({ onStartGame }) => {
           Begin Journey
         </Button>
 
-        <Button variant="disabled" className={styling}>Load Game</Button>
+
+        <Button 
+          onClick={() => {
+            console.log("[Chapter] Begin Journey clicked");
+            if (typeof onStartGame === "function") onChapterList();
+            else console.warn("[MainMenu] onChapterList is not a function!");
+          }}        
+          className={styling}
+          >
+            Chapters
+        </Button>
+
         <Button variant="disabled" className={styling}>Settings</Button>
         <Link href={"/"}>
             <Button
