@@ -14,7 +14,7 @@ export default function ClientLayout({ children }) {
     const checkSupabase = async () => {
       try {
         const { error } = await supabase
-          .from('organization')
+          .from('organizations')
           .select('count')
           .limit(1);
         
