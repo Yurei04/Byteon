@@ -11,7 +11,7 @@ export default function SignLogInDialog() {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="flex justify-center"
+      className="w-full h-screen flex justify-center items-center "
     >
       <Card className="w-full max-w-md relative overflow-hidden bg-fuchsia-950/40 border border-fuchsia-400/40 backdrop-blur-xl text-fuchsia-100 shadow-2xl transition-all duration-500 hover:border-fuchsia-400/70 hover:shadow-fuchsia-500/20 group">
         
@@ -34,7 +34,7 @@ export default function SignLogInDialog() {
 
         <CardContent className="flex flex-col gap-3 relative z-10">
           <Link href="/log-in">
-            <Button className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-md hover:shadow-fuchsia-500/30 transition-all">
+            <Button className="w-full cursor-pointer bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-md hover:shadow-fuchsia-500/30 transition-all">
               Login
             </Button>
           </Link>
@@ -42,7 +42,7 @@ export default function SignLogInDialog() {
           <Link href="/sign-up">
             <Button
               variant="outline"
-              className="w-full border-fuchsia-400/60 text-fuchsia-200 hover:bg-fuchsia-900/40 hover:text-white transition-all"
+              className="w-full cursor-pointer border-fuchsia-400/60 text-fuchsia-200 hover:bg-fuchsia-900/40 hover:text-white transition-all"
             >
               Create account
             </Button>

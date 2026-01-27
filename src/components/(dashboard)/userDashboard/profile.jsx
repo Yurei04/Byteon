@@ -262,7 +262,6 @@ export default function UserProfile({ onSuccess }) {
             formData={formData}
           />
 
-          <RecentActivity />
         </div>
       </div>
     </div>

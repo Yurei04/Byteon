@@ -1,49 +1,92 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Lock, CheckCircle, Circle } from "lucide-react";
+import { Lock, CheckCircle, Circle, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const ChapterList = ({ onBack, onStartGame, chapterChosen, setChapterChosen }) => {
-  // Define your chapters with their unlock status
+  const [chaptersUnlocked, setChaptersUnlocked] = useState(1); // Default: only chapter 1 unlocked
+  const [chaptersCompleted, setChaptersCompleted] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user progress on component mount
+  useEffect(() => {
+    const fetchUserProgress = async () => {
+      try {
+        setLoading(true);
+        
+        // Get current user
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError || !user) {
+          console.error("[ChapterList] Error fetching user:", userError);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch user's progress from database
+        const { data: userData, error: dbError } = await supabase
+          .from('users')
+          .select('chapters_unlocked, chapters_completed')
+          .eq('user_id', user.id)
+          .single();
+
+        if (dbError) {
+          console.error("[ChapterList] Error fetching user data:", dbError);
+          // Default values if user doesn't exist
+          setChaptersUnlocked(1);
+          setChaptersCompleted(0);
+        } else {
+          setChaptersUnlocked(userData?.chapters_unlocked || 1);
+          setChaptersCompleted(userData?.chapters_completed || 0);
+          console.log("[ChapterList] Progress loaded:", userData);
+        }
+      } catch (error) {
+        console.error("[ChapterList] Unexpected error:", error);
+        setChaptersUnlocked(1);
+        setChaptersCompleted(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProgress();
+  }, []);
+
+  // Define chapters
   const chapters = [
     { 
       id: 1, 
       title: "Chapter 1: The Beginning", 
       description: "Your journey into the digital underground starts here.",
-      unlocked: true,
-      completed: false
     },
     { 
       id: 2, 
       title: "Chapter 2: First Steps", 
       description: "Learn the basics of network infiltration.",
-      unlocked: true,
-      completed: false
     },
     { 
       id: 3, 
       title: "Chapter 3: Deep Dive", 
       description: "Advanced techniques and dangerous territory.",
-      unlocked: false,
-      completed: false
     },
     { 
       id: 4, 
       title: "Chapter 4: The Truth", 
       description: "Uncover the conspiracy behind it all.",
-      unlocked: false,
-      completed: false
     },
     { 
       id: 5, 
       title: "Chapter 5: Final Stand", 
       description: "The culmination of your choices.",
-      unlocked: false,
-      completed: false
     },
-  ];
+  ].map(chapter => ({
+    ...chapter,
+    unlocked: chapter.id <= chaptersUnlocked, // Chapter is unlocked if its ID <= chapters_unlocked
+    completed: chapter.id <= chaptersCompleted // Chapter is completed if its ID <= chapters_completed
+  }));
 
   const handleChapterSelect = (chapter) => {
     if (!chapter.unlocked) {
@@ -64,6 +107,18 @@ const ChapterList = ({ onBack, onStartGame, chapterChosen, setChapterChosen }) =
     onStartGame();
   };
 
+  // Show loading state while fetching user progress
+  if (loading) {
+    return (
+      <div className="relative w-full h-full bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-12 h-12 text-fuchsia-400 animate-spin" />
+          <p className="text-fuchsia-200 text-lg">Loading your progress...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className="relative w-full h-full bg-black overflow-hidden flex flex-col items-center justify-center p-8"
@@ -74,15 +129,25 @@ const ChapterList = ({ onBack, onStartGame, chapterChosen, setChapterChosen }) =
       {/* Background effect */}
       <div className="absolute inset-0 bg-gradient-to-b from-black via-gray-900 to-black opacity-80" />
 
-      {/* Title */}
-      <motion.h1
-        className="relative z-10 text-3xl font-bold text-fuchsia-400 tracking-widest drop-shadow-lg mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.6 }}
-      >
-        Select Chapter
-      </motion.h1>
+      {/* Title and Progress */}
+      <div className="relative z-10 text-center mb-8">
+        <motion.h1
+          className="text-3xl font-bold text-fuchsia-400 tracking-widest drop-shadow-lg mb-2"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+        >
+          Select Chapter
+        </motion.h1>
+        <motion.p
+          className="text-sm text-gray-400"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          Unlocked: {chaptersUnlocked} / {chapters.length} | Completed: {chaptersCompleted} / {chapters.length}
+        </motion.p>
+      </div>
 
       {/* Chapter List */}
       <div className="relative z-10 w-full max-w-2xl space-y-4 overflow-y-auto max-h-[60vh] pr-2">
@@ -118,12 +183,22 @@ const ChapterList = ({ onBack, onStartGame, chapterChosen, setChapterChosen }) =
                   }`}>
                     {chapter.title}
                   </h3>
+                  {chapter.completed && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-green-500/20 text-green-400 rounded-full border border-green-500/30">
+                      Completed
+                    </span>
+                  )}
                 </div>
                 <p className={`text-sm ${
                   chapter.unlocked ? 'text-gray-300' : 'text-gray-600'
                 }`}>
                   {chapter.description}
                 </p>
+                {!chapter.unlocked && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    🔒 Complete previous chapters to unlock
+                  </p>
+                )}
               </div>
               
               {chapterChosen === chapter.id && chapter.unlocked && (

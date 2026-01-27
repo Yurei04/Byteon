@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import GameScreen from "./gameScreen";
 import ChapterIntro from "./chapterIntro";
 import EndCredits from "./endCredits";
+import { unlockNextChapter } from "./chapterUtils";
 
 export default function ChapterManager({ 
   chapterData, 
@@ -108,6 +109,41 @@ export default function ChapterManager({
     }, 100);
   };
 
+  // ✨ NEW: Function to mark chapter as completed and unlock next chapter
+  const handleChapterComplete = async () => {
+    if (calledChapterEndRef.current) {
+      return; // Already called
+    }
+    
+    calledChapterEndRef.current = true;
+    console.log(`[ChapterManager] 🎉 Chapter ${chapterGameIndex} complete!`);
+    
+    // Update database to unlock next chapter
+    try {
+      const result = await unlockNextChapter(chapterGameIndex);
+      
+      if (result.success) {
+        console.log(`[ChapterManager]  ${result.message}`);
+        console.log(`[ChapterManager] Chapter ${chapterGameIndex} marked as completed`);
+        console.log(`[ChapterManager] Chapter ${chapterGameIndex + 1} is now unlocked`);
+      } else {
+        console.error(`[ChapterManager]  Failed to unlock next chapter:`, result.message);
+      }
+    } catch (error) {
+      console.error("[ChapterManager]  Error updating chapter progress:", error);
+    }
+    
+    // Handle final chapter vs regular chapter
+    if (chapterGameIndex === 5) {
+      console.log("[ChapterManager] Final chapter complete! Showing end credits...");
+      setEndGame(true);
+      setShowGame(false);
+    } else {
+      console.log(`[ChapterManager] Moving to chapter ${chapterGameIndex + 1}`);
+      onNextChapter?.();
+    }
+  };
+
   // Handle progression logic (dialogs -> events -> chapter end)
   const handleNextDialog = () => {
     if (!events.length) {
@@ -160,19 +196,8 @@ export default function ChapterManager({
       return;
     }
 
-    // 4) Chapter complete
-    if (!calledChapterEndRef.current) {
-      calledChapterEndRef.current = true;
-      console.log("[ChapterManager] Chapter complete! Triggering next chapter...");
-      
-      if (chapterGameIndex === 4) {
-        console.log("[ChapterManager] Final chapter complete! Showing end credits...");
-        setEndGame(true);
-        setShowGame(false);
-      } else {
-        onNextChapter?.();
-      }
-    }
+    // 4) Chapter complete - call the new function
+    handleChapterComplete();
   };
 
   // Handler for minigame completion
@@ -212,10 +237,7 @@ export default function ChapterManager({
         setShowTutorial(false);
       } else {
         console.log("[ChapterManager] 🏁 Chapter complete after minigame!");
-        if (!calledChapterEndRef.current) {
-          calledChapterEndRef.current = true;
-          onNextChapter?.();
-        }
+        handleChapterComplete();
       }
     }, 300);
   };
@@ -262,13 +284,7 @@ export default function ChapterManager({
           onTutorialComplete={handleTutorialComplete}
           onNext={handleNextDialog}
           onMinigameComplete={handleMinigameComplete}
-          onChapterEnd={() => {
-            if (!calledChapterEndRef.current) {
-              calledChapterEndRef.current = true;
-              console.log("[GameScreen] Chapter end triggered via onChapterEnd.");
-              onNextChapter?.();
-            }
-          }}
+          onChapterEnd={handleChapterComplete}
         />
       ) : endGame ? (
         <EndCredits onComplete={() => {

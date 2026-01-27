@@ -26,7 +26,13 @@ export default function RequireAuth({
         return () => subscription.unsubscribe()
     }, [])
 
-    if (loading) return <div>Loading...</div> 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen w-full">
+                <div className="text-lg">Loading...</div>
+            </div>
+        )
+    }
 
     if (!session) {
         return <SignLogInDialog/>
