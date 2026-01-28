@@ -14,19 +14,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { AlertCircle, CheckCircle, Loader2, Info } from "lucide-react"
+import { AlertCircle, CheckCircle, Loader2, Info, Trophy, Plus, X } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 
-const CURRENCIES = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "PHP", symbol: "₱", name: "Philippine Peso" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-  { code: "INR", symbol: "₹", name: "Indian Rupee" },
+const PRIZE_TEMPLATES = [
+  { name: "1st Place", value: "$5,000" },
+  { name: "2nd Place", value: "$3,000" },
+  { name: "3rd Place", value: "$2,000" },
+  { name: "Best Design", value: "$1,000" },
+  { name: "Most Innovative", value: "$1,500" },
+  { name: "Best Technical", value: "$1,000" },
+  { name: "People's Choice", value: "$500" },
+  { name: "NordVPN Subscription", value: "1 Year" },
+  { name: "GitHub Pro", value: "1 Year" },
+  { name: "Swag Pack", value: "T-shirt + Stickers" },
+  { name: "Participation Prize", value: "Certificate" },
 ]
 
 export default function AnnounceForm({ onSuccess }) {
@@ -44,13 +47,16 @@ export default function AnnounceForm({ onSuccess }) {
     date_end: "",
     open_to: "",
     countries: "",
-    prizes: "",
-    prize_currency: "USD",
     website_link: "",
     dev_link: "",
     color_scheme: "purple",
     google_sheet_csv_url: ""
   })
+
+  // Prizes stored as array of objects
+  const [prizes, setPrizes] = useState([
+    { id: Date.now(), name: "", value: "", description: "" }
+  ])
 
   useEffect(() => {
     fetchCurrentOrg()
@@ -116,6 +122,26 @@ export default function AnnounceForm({ onSuccess }) {
     }
   }
 
+  const addPrize = () => {
+    setPrizes([...prizes, { id: Date.now(), name: "", value: "", description: "" }])
+  }
+
+  const removePrize = (id) => {
+    if (prizes.length > 1) {
+      setPrizes(prizes.filter(p => p.id !== id))
+    }
+  }
+
+  const updatePrize = (id, field, value) => {
+    setPrizes(prizes.map(p => p.id === id ? { ...p, [field]: value } : p))
+  }
+
+  const usePrizeTemplate = (id, template) => {
+    setPrizes(prizes.map(p => 
+      p.id === id ? { ...p, name: template.name, value: template.value } : p
+    ))
+  }
+
   const handleSubmit = async () => {
     if (!currentOrg || !authUserId) {
       setAlert({ type: 'error', message: 'Organization not found. Please refresh the page and log in again.' })
@@ -126,21 +152,25 @@ export default function AnnounceForm({ onSuccess }) {
       setAlert({ type: 'error', message: 'Please fill in all required fields (Title, Description, Author, Start Date, End Date)' })
       return
     }
-    /*
-    if (!formData.google_sheet_csv_url) {
-      setAlert({ type: 'error', message: 'Please provide the Google Sheet CSV URL' })
+
+    // Validate prizes - at least one prize with name and value
+    const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
+    if (validPrizes.length === 0) {
+      setAlert({ type: 'error', message: 'Please add at least one prize with a name and value' })
       return
     }
 
-    if (!formData.google_sheet_csv_url.includes('docs.google.com/spreadsheets')) {
-      setAlert({ type: 'error', message: 'Invalid Google Sheets URL' })
-      return
-    }
-    */
     setIsLoading(true)
     setAlert(null)
 
     try {
+      // Clean up prize data - remove id field
+      const prizesData = validPrizes.map(({ id, ...prize }) => ({
+        name: prize.name.trim(),
+        value: prize.value.trim(),
+        description: prize.description.trim() || ""
+      }))
+
       const announcementData = {
         title: formData.title.trim(),
         des: formData.des.trim(),
@@ -149,8 +179,7 @@ export default function AnnounceForm({ onSuccess }) {
         date_end: formData.date_end,
         open_to: formData.open_to.trim() || null,
         countries: formData.countries.trim() || null,
-        prizes: formData.prizes ? parseInt(formData.prizes) : null,
-        prize_currency: formData.prize_currency,
+        prizes: prizesData, // Store as JSON
         website_link: formData.website_link.trim() || null,
         dev_link: formData.dev_link.trim() || null,
         color_scheme: formData.color_scheme,
@@ -158,7 +187,7 @@ export default function AnnounceForm({ onSuccess }) {
         organization_id: currentOrg.id,
         registrants_count: 0,
         tracking_method: 'automatic',
-        google_sheet_csv_url: formData.google_sheet_csv_url.trim(),
+        google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
       }
 
       console.log('Submitting announcement:', announcementData)
@@ -176,6 +205,7 @@ export default function AnnounceForm({ onSuccess }) {
       console.log('Announcement created:', data)
       setAlert({ type: 'success', message: 'Announcement created successfully!' })
       
+      // Reset form
       setFormData({
         title: "",
         des: "",
@@ -184,13 +214,12 @@ export default function AnnounceForm({ onSuccess }) {
         date_end: "",
         open_to: "",
         countries: "",
-        prizes: "",
-        prize_currency: "USD",
         website_link: "",
         dev_link: "",
         color_scheme: "purple",
         google_sheet_csv_url: ""
       })
+      setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
 
       setTimeout(() => {
         if (onSuccess) onSuccess()
@@ -273,7 +302,7 @@ export default function AnnounceForm({ onSuccess }) {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label className="text-white">Author *</Label>
               <Input
                 value={formData.author}
@@ -282,29 +311,97 @@ export default function AnnounceForm({ onSuccess }) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-white">Prize Amount</Label>
-              <div className="flex gap-2">
-                <Select value={formData.prize_currency} onValueChange={(val) => setFormData({...formData, prize_currency: val})}>
-                  <SelectTrigger className="w-28 bg-white/10 border-white/20 text-white">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CURRENCIES.map((curr) => (
-                      <SelectItem key={curr.code} value={curr.code}>
-                        {curr.symbol} {curr.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number"
-                  value={formData.prizes}
-                  onChange={(e) => setFormData({...formData, prizes: e.target.value})}
-                  className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                  placeholder="10000"
-                />
+            {/* Dynamic Prize Section */}
+            <div className="space-y-4 md:col-span-2 p-5 border border-amber-400/30 rounded-xl bg-gradient-to-br from-amber-950/30 to-yellow-950/20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                  <Label className="text-amber-200 text-base font-semibold">Prize Pool *</Label>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={addPrize}
+                  className="bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white shadow-lg"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Prize
+                </Button>
               </div>
+
+              <div className="space-y-4">
+                {prizes.map((prize, index) => (
+                  <div key={prize.id} className="relative bg-black/20 rounded-lg p-4 border border-amber-500/20">
+                    {prizes.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removePrize(prize.id)}
+                        className="absolute top-2 right-2 h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+
+                    <div className="space-y-3 pr-10">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                          <Label className="text-amber-300 text-xs">Prize Name *</Label>
+                          <Input
+                            value={prize.name}
+                            onChange={(e) => updatePrize(prize.id, 'name', e.target.value)}
+                            className="bg-white/5 border-amber-400/30 text-white placeholder:text-gray-500"
+                            placeholder="e.g., 1st Place, Best Design"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-amber-300 text-xs">Value / Prize *</Label>
+                          <Input
+                            value={prize.value}
+                            onChange={(e) => updatePrize(prize.id, 'value', e.target.value)}
+                            className="bg-white/5 border-amber-400/30 text-white placeholder:text-gray-500"
+                            placeholder="$5,000 / NordVPN 1yr / Swag Pack"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label className="text-amber-300 text-xs">Description (optional)</Label>
+                        <Textarea
+                          value={prize.description}
+                          onChange={(e) => updatePrize(prize.id, 'description', e.target.value)}
+                          className="bg-white/5 border-amber-400/30 text-white placeholder:text-gray-500 resize-none"
+                          placeholder="Additional details about this prize..."
+                          rows={2}
+                        />
+                      </div>
+                      
+                      {/* Quick Templates */}
+                      <div className="space-y-1.5">
+                        <Label className="text-amber-300 text-xs">Quick Templates:</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {PRIZE_TEMPLATES.map((template) => (
+                            <button
+                              key={template.name}
+                              type="button"
+                              onClick={() => usePrizeTemplate(prize.id, template)}
+                              className="px-2.5 py-1 text-xs bg-amber-900/40 hover:bg-amber-800/60 text-amber-200 rounded-md border border-amber-600/30 transition-all hover:scale-105"
+                            >
+                              {template.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-amber-300/70 mt-2 flex items-start gap-2">
+                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>Prizes can be cash, subscriptions (NordVPN, GitHub), swag, certificates, or anything else!</span>
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -379,7 +476,7 @@ export default function AnnounceForm({ onSuccess }) {
 
             <div className="space-y-2">
               <Label className="text-white">
-                Google Sheet Published CSV URL *
+                Google Sheet Published CSV URL
               </Label>
               <Input
                 value={formData.google_sheet_csv_url}
