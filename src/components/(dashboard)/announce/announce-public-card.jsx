@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { 
   Dialog,
@@ -11,17 +11,6 @@ import { Calendar, ExternalLink, Award, Users, AlertCircle, MousePointerClick, T
 import { Button } from "../../ui/button"
 import { supabase } from "@/lib/supabase"
 import AnnouncementTrackingBadge from "./announce-tracking-badge"
-
-const CURRENCY_SYMBOLS = {
-  USD: "$",
-  EUR: "€",
-  GBP: "£",
-  JPY: "¥",
-  PHP: "₱",
-  CAD: "C$",
-  AUD: "A$",
-  INR: "₹",
-}
 
 // Prize card color schemes based on common prize names
 const getPrizeColorScheme = (prizeName) => {
@@ -73,37 +62,10 @@ const getPrizeColorScheme = (prizeName) => {
 
 export default function AnnouncementPublicCard({ item, onDelete }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [prizes, setPrizes] = useState([])
-  const [loadingPrizes, setLoadingPrizes] = useState(false)
   const isExpired = new Date(item.date_end) < new Date()
   
-  // Fetch prizes when dialog opens
-  useEffect(() => {
-    if (isDialogOpen && prizes.length === 0) {
-      fetchPrizes()
-    }
-  }, [isDialogOpen])
-
-  const fetchPrizes = async () => {
-    setLoadingPrizes(true)
-    try {
-      const { data, error } = await supabase
-        .from('announcement_prizes')
-        .select('*')
-        .eq('announcement_id', item.id)
-        .order('prize_order', { ascending: true })
-
-      if (error) {
-        console.error('Error fetching prizes:', error)
-      } else {
-        setPrizes(data || [])
-      }
-    } catch (error) {
-      console.error('Error fetching prizes:', error)
-    } finally {
-      setLoadingPrizes(false)
-    }
-  }
+  // Get prizes from JSONB field
+  const prizes = item.prizes || []
 
   const handleWebsiteLinkClick = async (e) => {
     e.stopPropagation()
@@ -151,7 +113,6 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
   }
 
   const trackingStats = getTrackingStats()
-  const currencySymbol = CURRENCY_SYMBOLS[item.prize_currency] || "$"
 
   return (
     <>
@@ -179,10 +140,12 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
               <p className="text-gray-300 text-sm mb-4 leading-relaxed">{item.des}</p>
               
               <div className="flex flex-wrap gap-2 mb-4">
-                <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
-                  <Award className="w-3.5 h-3.5" />
-                  Prizes Available
-                </span>
+                {prizes.length > 0 && (
+                  <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
+                    <Award className="w-3.5 h-3.5" />
+                    {prizes.length} Prize{prizes.length !== 1 ? 's' : ''} Available
+                  </span>
+                )}
 
                 {item.google_sheet_csv_url && (
                   <AnnouncementTrackingBadge announcementId={item.id} />
@@ -276,7 +239,7 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
 
       {/* Full Details Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-950 via-purple-950/50 to-fuchsia-950/30 border-fuchsia-500/30 text-white">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-slate-950 via-purple-950/90 to-fuchsia-950/90 border-fuchsia-500/30 text-white">
           <DialogHeader>
             <div className="mb-4">
               {item.organization && (
@@ -302,23 +265,30 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
               <div className="bg-gradient-to-br from-amber-950/30 to-yellow-950/20 rounded-xl p-5 border border-amber-400/30">
                 <h4 className="text-sm font-semibold text-amber-300 mb-4 uppercase tracking-wide flex items-center gap-2">
                   <Trophy className="w-4 h-4" />
-                  Prize Pool
+                  Prize Pool ({prizes.length} Prize{prizes.length !== 1 ? 's' : ''})
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {prizes.map((prize, index) => {
-                    const colorScheme = getPrizeColorScheme(prize.prize_name)
+                    const colorScheme = getPrizeColorScheme(prize.name)
                     return (
                       <div 
-                        key={prize.id} 
-                        className={`bg-gradient-to-br ${colorScheme.gradient} rounded-lg p-4 border ${colorScheme.border} text-center transition-transform hover:scale-105`}
+                        key={index} 
+                        className={`bg-gradient-to-br ${colorScheme.gradient} rounded-lg p-4 border ${colorScheme.border} transition-transform hover:scale-105`}
                       >
-                        <Trophy className={`w-8 h-8 mx-auto mb-2 ${colorScheme.icon}`} />
-                        <div className={`text-xs ${colorScheme.label} uppercase tracking-wider mb-1`}>
-                          {prize.prize_name}
+                        <div className="text-center mb-3">
+                          <Trophy className={`w-8 h-8 mx-auto mb-2 ${colorScheme.icon}`} />
+                          <div className={`text-xs ${colorScheme.label} uppercase tracking-wider mb-1 font-semibold`}>
+                            {prize.name}
+                          </div>
+                          <div className={`text-2xl font-bold ${colorScheme.text}`}>
+                            {prize.value}
+                          </div>
                         </div>
-                        <div className={`text-2xl font-bold ${colorScheme.text}`}>
-                          {currencySymbol}{prize.prize_amount.toLocaleString()}
-                        </div>
+                        {prize.description && (
+                          <p className={`text-xs ${colorScheme.label} text-center mt-2 pt-2 border-t ${colorScheme.border}`}>
+                            {prize.description}
+                          </p>
+                        )}
                       </div>
                     )
                   })}

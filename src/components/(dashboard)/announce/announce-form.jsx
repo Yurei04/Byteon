@@ -59,21 +59,41 @@ export default function AnnounceForm({ onSuccess }) {
   ])
 
   useEffect(() => {
-    fetchCurrentOrg()
+    setIsFetchingOrg(true)
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange(async (_event, session) => {
+        if (!session?.user) {
+          setCurrentOrg(null)
+          setAuthUserId(null)
+          setIsFetchingOrg(false)
+          router.push("/log-in")
+          return
+        }
+
         setAuthUserId(session.user.id)
-        await fetchOrgProfile(session.user.id)
-      } else {
-        setCurrentOrg(null)
-        setAuthUserId(null)
-        router.push('/log-in')
-      }
-    })
+
+        try {
+          const { data, error } = await supabase
+            .from("organizations")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .single()
+
+          if (error) throw error
+
+          setCurrentOrg(data)
+        } catch (err) {
+          console.error(err)
+          setAlert({ type: "error", message: "Organization profile not found" })
+        } finally {
+          setIsFetchingOrg(false)
+        }
+      })
 
     return () => subscription.unsubscribe()
   }, [])
+
 
   const fetchCurrentOrg = async () => {
     setIsFetchingOrg(true)
@@ -136,102 +156,130 @@ export default function AnnounceForm({ onSuccess }) {
     setPrizes(prizes.map(p => p.id === id ? { ...p, [field]: value } : p))
   }
 
-  const usePrizeTemplate = (id, template) => {
+  const applyPrizeTemplate = (id, template) => {
     setPrizes(prizes.map(p => 
       p.id === id ? { ...p, name: template.name, value: template.value } : p
     ))
   }
 
   const handleSubmit = async () => {
-    if (!currentOrg || !authUserId) {
-      setAlert({ type: 'error', message: 'Organization not found. Please refresh the page and log in again.' })
-      return
-    }
+  if (!currentOrg || !authUserId) {
+    setAlert({ type: 'error', message: 'Organization not found. Please refresh the page and log in again.' })
+    return
+  }
 
-    if (!formData.title || !formData.des || !formData.author || !formData.date_begin || !formData.date_end) {
-      setAlert({ type: 'error', message: 'Please fill in all required fields (Title, Description, Author, Start Date, End Date)' })
-      return
-    }
+  if (!formData.title || !formData.des || !formData.author || !formData.date_begin || !formData.date_end) {
+    setAlert({ type: 'error', message: 'Please fill in all required fields (Title, Description, Author, Start Date, End Date)' })
+    return
+  }
 
-    // Validate prizes - at least one prize with name and value
-    const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
-    if (validPrizes.length === 0) {
-      setAlert({ type: 'error', message: 'Please add at least one prize with a name and value' })
-      return
-    }
+  // Validate prizes - at least one prize with name and value
+  const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
+  if (validPrizes.length === 0) {
+    setAlert({ type: 'error', message: 'Please add at least one prize with a name and value' })
+    return
+  }
 
-    setIsLoading(true)
-    setAlert(null)
+  setIsLoading(true)
+  setAlert(null)
 
-    try {
-      // Clean up prize data - remove id field
-      const prizesData = validPrizes.map(({ id, ...prize }) => ({
+  try {
+    // Clean up prize data - remove id field and ensure proper structure
+    const prizesData = validPrizes.map(({ id, ...prize }) => {
+      const cleanPrize = {
         name: prize.name.trim(),
         value: prize.value.trim(),
-        description: prize.description.trim() || ""
-      }))
-
-      const announcementData = {
-        title: formData.title.trim(),
-        des: formData.des.trim(),
-        author: formData.author.trim(),
-        date_begin: formData.date_begin,
-        date_end: formData.date_end,
-        open_to: formData.open_to.trim() || null,
-        countries: formData.countries.trim() || null,
-        prizes: prizesData, // Store as JSON
-        website_link: formData.website_link.trim() || null,
-        dev_link: formData.dev_link.trim() || null,
-        color_scheme: formData.color_scheme,
-        organization: currentOrg.name,
-        organization_id: currentOrg.id,
-        registrants_count: 0,
-        tracking_method: 'automatic',
-        google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
+        description: (prize.description || "").trim()
       }
+      console.log('Individual prize object:', cleanPrize)
+      return cleanPrize
+    })
 
-      console.log('Submitting announcement:', announcementData)
+    console.log('=== PRIZE DEBUG INFO ===')
+    console.log('Number of prizes:', prizesData.length)
+    console.log('Prizes array:', prizesData)
+    console.log('Prizes as JSON string:', JSON.stringify(prizesData))
+    console.log('Prizes JSON length:', JSON.stringify(prizesData).length)
+    console.log('======================')
 
-      const { data, error } = await supabase
-        .from('announcements')
-        .insert([announcementData])
-        .select()
-
-      if (error) {
-        console.error('Insert error:', error)
-        throw error
-      }
-
-      console.log('Announcement created:', data)
-      setAlert({ type: 'success', message: 'Announcement created successfully!' })
-      
-      // Reset form
-      setFormData({
-        title: "",
-        des: "",
-        author: "",
-        date_begin: "",
-        date_end: "",
-        open_to: "",
-        countries: "",
-        website_link: "",
-        dev_link: "",
-        color_scheme: "purple",
-        google_sheet_csv_url: ""
-      })
-      setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
-
-      setTimeout(() => {
-        if (onSuccess) onSuccess()
-      }, 1000)
-
-    } catch (error) {
-      console.error('Error:', error)
-      setAlert({ type: 'error', message: `Failed to create announcement: ${error.message}` })
-    } finally {
-      setIsLoading(false)
+    const announcementData = {
+      title: formData.title.trim(),
+      des: formData.des.trim(),
+      author: formData.author.trim(),
+      date_begin: formData.date_begin,
+      date_end: formData.date_end,
+      open_to: formData.open_to.trim() || null,
+      countries: formData.countries.trim() || null,
+      prizes: prizesData,
+      website_link: formData.website_link.trim() || null,
+      dev_link: formData.dev_link.trim() || null,
+      color_scheme: formData.color_scheme,
+      organization: currentOrg.name,
+      organization_id: currentOrg.id,
+      registrants_count: 0,
+      tracking_method: 'automatic',
+      google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
     }
+
+    console.log('Submitting announcement:', announcementData)
+    console.log('Full data as JSON:', JSON.stringify(announcementData, null, 2))
+
+    console.log('About to call Supabase insert...')
+    const insertStartTime = Date.now()
+
+    const { data, error } = await supabase
+      .from('announcements')
+      .insert([announcementData])
+      .select("id")
+
+    const insertEndTime = Date.now()
+    console.log(`Insert took ${insertEndTime - insertStartTime}ms`)
+
+    if (error) {
+      console.error('Insert error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        fullError: error
+      })
+      throw error
+    }
+
+    console.log('Announcement created successfully:', data)
+    setAlert({ type: 'success', message: 'Announcement created successfully!' })
+    
+    // Reset form
+    setFormData({
+      title: "",
+      des: "",
+      author: "",
+      date_begin: "",
+      date_end: "",
+      open_to: "",
+      countries: "",
+      website_link: "",
+      dev_link: "",
+      color_scheme: "purple",
+      google_sheet_csv_url: ""
+    })
+    setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
+
+    setTimeout(() => {
+      if (onSuccess) onSuccess()
+    }, 1000)
+
+  } catch (error) {
+    console.error('Submission error:', error)
+    console.error('Error type:', typeof error)
+    console.error('Error name:', error.name)
+    console.error('Error stack:', error.stack)
+    
+    setAlert({ type: 'error', message: `Failed to create announcement: ${error.message}` })
+  } finally {
+    setIsLoading(false)
   }
+}
 
   if (isFetchingOrg) {
     return (
@@ -382,14 +430,14 @@ export default function AnnounceForm({ onSuccess }) {
                         <Label className="text-amber-300 text-xs">Quick Templates:</Label>
                         <div className="flex flex-wrap gap-1.5">
                           {PRIZE_TEMPLATES.map((template) => (
-                            <button
+                            <Button
                               key={template.name}
                               type="button"
-                              onClick={() => usePrizeTemplate(prize.id, template)}
+                              onClick={() => applyPrizeTemplate(prize.id, template)}
                               className="px-2.5 py-1 text-xs bg-amber-900/40 hover:bg-amber-800/60 text-amber-200 rounded-md border border-amber-600/30 transition-all hover:scale-105"
                             >
                               {template.name}
-                            </button>
+                            </Button>
                           ))}
                         </div>
                       </div>
