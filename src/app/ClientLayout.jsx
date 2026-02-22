@@ -3,6 +3,7 @@ import { DatabaseErrorBlocker } from "@/components/errorHandling/database-error-
 import { MaintenanceBlocker } from "@/components/errorHandling/maintenance-blocker";
 import { OfflineBlocker } from "@/components/errorHandling/offline-blocker";
 import { ServerErrorBlocker } from "@/components/errorHandling/server-error-blocker";
+import { DbErrorBoundary } from "@/components/errorHandling/error-boundary-db-blocker";
 import { ThemeProvider } from "@/components/theme-provider";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
@@ -12,6 +13,10 @@ export default function ClientLayout({ children }) {
 
   useEffect(() => {
     const checkSupabase = async () => {
+      if (!supabase) {
+        setDbError(true);
+        return;
+      }
       try {
         const { error } = await supabase
           .from('organizations')
@@ -34,9 +39,10 @@ export default function ClientLayout({ children }) {
   }, []);
 
   const handleRetry = async () => {
+    if (!supabase) return; // 👈 guard added
     try {
       const { error } = await supabase
-        .from('organization')
+        .from('organizations')
         .select('count')
         .limit(1);
       
@@ -55,7 +61,9 @@ export default function ClientLayout({ children }) {
       enableSystem
       disableTransitionOnChange
     >
-      {children}
+      <DbErrorBoundary> {/* 👈 wraps children so crashes show your blocker */}
+        {children}
+      </DbErrorBoundary>
       
       <OfflineBlocker />
       <DatabaseErrorBlocker 

@@ -5,21 +5,6 @@
   scroll-behavior: smooth;
 }
 
-body {
-  background-image: linear-gradient(
-    to bottom right, 
-    rgba(8, 5, 18, 1), 
-    rgba(45, 5, 63, 0.7), 
-    rgba(72, 5, 75, 0.9)
-  ),
-  url('/images/bkg8.webp');
-  background-attachment: fixed;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

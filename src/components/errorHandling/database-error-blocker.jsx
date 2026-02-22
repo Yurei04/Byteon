@@ -1,5 +1,6 @@
 "use client"
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Database } from "lucide-react"; // 👈 this was missing, causing a crash
 import { BlockerLayout } from "./blocker-layout";
 
 export const DatabaseErrorBlocker = ({ isError, onRetry }) => {
