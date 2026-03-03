@@ -12,7 +12,7 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "‘Another quiet night,’ you thought to yourself while skimming through your emails — student newsletters, club updates, random spam — when one subject line catches your eye: “🚀 JOIN THE OPEN INNOVATION HACKATHON – BEGINNERS ARE WELCOME!”"
+              "text": "‘Another quiet night’ you thought to yourself while skimming through emails — student newsletters, club updates, random spam — when one subject line catches your eye: 🚀 JOIN THE OPEN INNOVATION HACKATHON – BEGINNERS WELCOME ON DEVPOST!"
             },
             {
               "character": "Narrator",
@@ -42,7 +42,7 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Bright colors, energetic text, and photos of smiling students greet you when you open the email. “Collaborate. Create. Innovate. Join the 48-hour Hackathon: The Byteon!”"
+              "text": "Bright colors, energetic text, and photos of smiling students greet you when you open the email. “Collaborate. Create. Innovate. Join the 48-hour Hackathon: The Byteon, hosted on Devpost!”"
             },
             {
               "character": "You",
@@ -92,7 +92,7 @@
             {
               "character": "Aira",
               "pose": "neutral",
-              "text": "Please don’t be alarmed. I’m Aira, your AI Resource Assistant — here to guide first-time innovators like you. Looks like you’ve just received an invitation to your first hackathon!"
+              "text": "Please don’t be alarmed. I’m Aira, your AI Resource Assistant. Looks like you’ve received an invitation to your first hackathon — hosted on Devpost, the official hackathon platform."
             },
             {
               "character": "You",
@@ -113,6 +113,11 @@
               "character": "Aira",
               "pose": "smile",
               "text": "Ah, there it is — the classic ‘I’m not ready’ line. Don’t worry, you’re not alone. Almost every first-timer feels that way."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "No worries. Hackathons need designers, storytellers, problem-solvers, presenters, and dreamers — like you."
             }
           ]
         },
@@ -268,9 +273,34 @@
               "text": "Okay, first challenge! Let’s clear your mind of myths about hackathons. Think of it as your warm-up quest."
             },
             {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Before we start, a quick checklist. Devpost requires you to confirm you’re eligible (not a judge, organizer, or immediate family of organizers)."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Decide if you’ll join solo or with a team."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Agree to official rules, including intellectual property and submission requirements."
+            },
+            {
               "character": "You",
               "pose": "neutral",
-              "text": "A quest? Like… a game?"
+              "text": "Sounds like a lot"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "It’s mostly straightforward. Let’s take it step by step — like a game."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "Like… a game?"
             },
             {
               "character": "Aira",

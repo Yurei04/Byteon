@@ -183,6 +183,11 @@
               "character": "You",
               "pose": "grin",
               "text": "Then… let’s do it, Aira. Let’s pitch."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Devpost submissions include a 3-minute demo video, project description, live URL, and open-source code. Let’s test your storytelling skills! Choose the best line for each part of the pitch."
             }
           ]
         },
