@@ -253,5 +253,60 @@
         }
       ]
     }
+  ],
+  "characters": [
+    {
+      "id": "You",
+      "name": "You",
+      "poses": {
+        "neutral": "you_neutral.png",
+        "thinking": "you_thinking.png",
+        "tired": "you_tired.png",
+        "determined": "you_determined.png",
+        "happy": "you_happy.png",
+        "proud": "you_proud.png"
+      }
+    },
+    {
+      "id": "Aira",
+      "name": "Aira",
+      "poses": {
+        "smiling": "aira_smiling.png",
+        "grinning": "aira_grinning.png",
+        "gentle": "aira_gentle.png",
+        "happy": "aira_happy.png",
+        "clapping": "aira_clapping.png",
+        "teaching": "aira_teaching.png"
+      }
+    },
+    {
+      "id": "Narrator",
+      "name": "Narrator",
+      "poses": {
+        "neutral": "bg_fade.png"
+      }
+    },
+    {
+      "id": "Luna",
+      "name": "Luna",
+      "poses": {
+        "smile": "luna_smile.png"
+      }
+    },
+    {
+      "id": "Kenji",
+      "name": "Kenji",
+      "poses": {
+        "neutral": "kenji_neutral.png",
+        "smile": "kenji_smile.png"
+      }
+    },
+    {
+      "id": "Maya",
+      "name": "Maya",
+      "poses": {
+        "smile": "maya_smile.png"
+      }
+    }
   ]
 }
