@@ -6,6 +6,9 @@ import audioService from "@/lib/audioService";
 import MainMenu from "@/components/howToHack/mainMenu";
 import dynamic from "next/dynamic";
 import ChapterList from "@/components/howToHack/chapterList";
+import { supabase } from "@/lib/supabase";
+import { AchievementProvider } from "@/components/achievements/achievementContext";
+import { useAchievement } from "@/components/achievements/achievementContext";
 
 const GameSettings = dynamic(() => import("@/components/howToHack/gameSettings"), {
     ssr: false,
@@ -30,7 +33,7 @@ const AudioPermissionDialog = dynamic(() => import("@/components/howToHack/audio
 });
 
 
-export default function HowToHackPage() {
+function HowToHackPageInner() {
     /* ----------------------------- STATE HOOKS FIRST ----------------------------- */
 
     const [chapter, setChapter] = useState(1);
@@ -46,6 +49,22 @@ export default function HowToHackPage() {
     const [isStartGame, setIsStartGame] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+
+    // ── ADDED: userId for achievement grants ──
+    const [userId, setUserId] = useState(null);
+    // ── ADDED: consume here — HowToHackPageInner is inside AchievementProvider ──
+    const { grantAchievement } = useAchievement();
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) setUserId(session.user.id);
+        });
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+            setUserId(session?.user?.id ?? null);
+        });
+        return () => subscription.unsubscribe();
+    }, []);
+    // ── END ADDED ──
 
     const [gameFlowState, setGameFlowState] = useState({
         eventIndex: 0,
@@ -114,7 +133,7 @@ export default function HowToHackPage() {
     const handleBackToMenu = useCallback(() => {
         console.log('[HowToHackPage] Returning to main menu');
         setIsMainMenu(true);
-        setIsStartGame(false); // KEY FIX: Reset game state
+        setIsStartGame(false);
         setIsSettings(false);
         setIsExit(false);
     }, []);
@@ -203,9 +222,11 @@ export default function HowToHackPage() {
                 onNextChapter={handleNextChapter}
                 onBackToMenu={handleBackToMenu}
                 onStateChange={handleStateChange}
+                userId={userId} // ── ADDED ──
+                grantAchievement={grantAchievement} // ── ADDED ──
             />
         );
-    }, [chapter, chapterData, handleNextChapter, handleBackToMenu, handleStateChange]);
+    }, [chapter, chapterData, handleNextChapter, handleBackToMenu, handleStateChange, userId]);
 
     const gameFlowElement = useMemo(() => {
         return (
@@ -453,5 +474,14 @@ export default function HowToHackPage() {
                 </ResizablePanel>
             </ResizablePanelGroup>
         </div>
+    );
+}
+
+// ── ADDED: wrap the page in AchievementProvider so useAchievement works in all children ──
+export default function HowToHackPage() {
+    return (
+        <AchievementProvider>
+            <HowToHackPageInner />
+        </AchievementProvider>
     );
 }

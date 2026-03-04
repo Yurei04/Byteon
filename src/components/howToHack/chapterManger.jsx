@@ -5,14 +5,29 @@ import GameScreen from "./gameScreen";
 import ChapterIntro from "./chapterIntro";
 import EndCredits from "./endCredits";
 import { unlockNextChapter } from "./chapterUtils";
+// ── ADDED ──
+import { useAchievement } from "../achievements/achievementContext";
+
+// ── ADDED: one entry per chapter — edit titles/descriptions freely ──
+const CHAPTER_ACHIEVEMENTS = {
+  1: { achievementId: "first_steps",        title: "First Steps",        description: "Completed Chapter 1 of How to Hackathon.", rewardPoints: 10 },
+  2: { achievementId: "chapter_2_complete", title: "Deeper In",          description: "Completed Chapter 2 of How to Hackathon.", rewardPoints: 10 },
+  3: { achievementId: "chapter_3_complete", title: "Halfway There",      description: "Completed Chapter 3 of How to Hackathon.", rewardPoints: 10 },
+  4: { achievementId: "chapter_4_complete", title: "Almost There",       description: "Completed Chapter 4 of How to Hackathon.", rewardPoints: 10 },
+  5: { achievementId: "chapter_5_complete", title: "How to Hackathon",   description: "Completed all chapters. You're ready to hack!", rewardPoints: 20 },
+};
 
 export default function ChapterManager({ 
   chapterData, 
   onNextChapter, 
   onBackToMenu, 
   chapterGameIndex,
-  onStateChange
+  onStateChange,
+  userId, // ── ADDED ──
 }) {
+  // ── ADDED ──
+  const { grantAchievement } = useAchievement();
+
   const [eventIndex, setEventIndex] = useState(0);
   const [dialogIndex, setDialogIndex] = useState(0);
   const [showChapterIntro, setShowChapterIntro] = useState(false);
@@ -132,6 +147,21 @@ export default function ChapterManager({
     } catch (error) {
       console.error("[ChapterManager]  Error updating chapter progress:", error);
     }
+
+    // ── ADDED: grant chapter achievement when dialogs run out ──
+    if (userId) {
+      const ach = CHAPTER_ACHIEVEMENTS[chapterGameIndex];
+      if (ach) {
+        await grantAchievement({
+          userId,
+          achievementId: ach.achievementId,
+          title: ach.title,
+          description: ach.description,
+          rewardPoints: ach.rewardPoints,
+        });
+      }
+    }
+    // ── END ADDED ──
     
     // Handle final chapter vs regular chapter
     if (chapterGameIndex === 5) {
@@ -274,7 +304,7 @@ export default function ChapterManager({
           chapterGameIndex={chapterGameIndex}
           key={`${chapterData.id}-${eventIndex}-${dialogIndex}-${isShowingMinigame}-${showTutorial}`}
           gameStart={true}
-          onNextChapter={onNextChapter}
+          onNextChapter={handleChapterComplete}
           data={chapterData}
           currentEvent={currentEvent}
           currentDialog={showTutorial || isShowingMinigame ? null : currentDialog}
