@@ -69,7 +69,17 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "This is the Collaboration Hub — a space where ideas meet people. Every hackathon begins here."
+              "text": "Welcome to the Collaboration Hub — a virtual space where ideas meet people. On Devpost, this is how teams coordinate."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Holographic avatars of students, designers, and coders float by."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Teams balance skills: Developers, Designers, Presenters, and Strategists. Devpost lets you register team members officially. Only real contributors count."
             },
             {
               "character": "You",

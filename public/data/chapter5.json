@@ -36,6 +36,16 @@
               "text": "Storms mean growth. You’ve weathered one — and look how much stronger you are now."
             },
             {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Byteon was your first hackathon — hosted on Devpost, a platform that tracks submissions, participants, and achievements. You followed all rules, contributed meaningfully, and learned the spirit of hackathons."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "And next time, maybe you’ll guide someone else."
+            },
+            {
               "character": "You",
               "pose": "smile",
               "text": "I still can’t believe I actually joined a hackathon. I thought I’d back out halfway."
