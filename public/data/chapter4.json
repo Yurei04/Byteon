@@ -13,29 +13,44 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "It’s the final day of your hackathon journey. You’ve learned what hackathons are, how teams work, and how ideas are built. Now, one last challenge remains — the pitch."
+              "text": "It’s the final moments of your hackathon journey. You’ve learned what hackathons are, how teams work, and how ideas are built. Now, one last challenge remains — the pitch."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You check your laptop. On screen: Presentation slides, Script draft, GitHub repository, Website preview, Devpost submission form"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "It’s no longer just about presenting. It’s about documenting, Publishing and Submitting."
             },
             {
               "character": "You",
               "pose": "concerned",
-              "text": "(sighs) Presenting in front of people… that’s gonna be the hardest part."
+              "text": "Okay… five-minute pitch video. Public repo. Live site. Project description. No pressure."
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Good morning, superstar! Nervous? Excited? Slightly terrified?"
+              "text": "Today, your idea becomes visible to the world."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You check your checklist: Record 5-minute MP4 demo, Upload to YouTube (Public or Unlisted), Push final code to GitHub, Deploy live website, Complete project description, Submit all links before deadline."
             },
             {
               "character": "You",
               "pose": "concerned",
-              "text": "All of the above. I’ve never presented anything before. What if I freeze up?"
+              "text": "I’ve never presented anything before. What if I freeze up?"
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Then you take a deep breath, smile, and keep going. Everyone’s first pitch feels scary — that’s also what makes it powerful."
+              "text": "Take a deep breath, smile, and keep going. Everyone’s first pitch feels scary — that’s also what makes it powerful."
             },
-            {
+                        {
               "character": "You",
               "pose": "thinking",
               "text": "So… how do I even start?"
@@ -44,160 +59,174 @@
               "character": "Aira",
               "pose": "grin",
               "text": "With a story. Always with a story."
-            }
-          ]
-        },
-        {
-          "id": "scene2",
-          "background": "holographic_baseball_field.jpg",
-          "music": "rising_melody.mp3",
-          "dialogs": [
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "You blink, and suddenly you’re standing in a massive holographic baseball field bathed in neon lights. Rows of glowing silhouettes cheer from the stands."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Welcome to the Pitch Arena! This is where ideas find their voice. And your voice — is your secret weapon."
-            },
-            {
-              "character": "You",
-              "pose": "concerned",
-              "text": "My voice feels like it’s hiding behind a firewall."
             },
             {
               "character": "Aira",
               "pose": "grin",
-              "text": "Then let’s unlock it. Let me show you the anatomy of a great pitch."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Five holographic cards spin in front of you — INTRO, PROBLEM, SOLUTION, IMPACT, CLOSING."
+              "text": "Let me show you the anatomy of a great pitch."
             },
             {
               "character": "Aira",
-              "pose": "smile",
+              "pose": "teaching",
+              "text": "There are five thing you need to know — INTRO, PROBLEM, SOLUTION, IMPACT, CLOSING."
+            },
+            {
+              "character": "Aira",
+              "pose": "teaching",
               "text": "These are your five building blocks. Master them, and you’ll pitch like a pro."
             }
           ]
         },
         {
-          "id": "scene3",
+          "id": "scene2",
           "music": "upbeat_instrumental.mp3",
           "dialogs": [
             {
               "character": "Aira",
-              "pose": "neutral",
+              "pose": "teaching",
               "text": "First — the INTRO. You grab attention. Start with a story, a question, or a powerful fact."
             },
             {
               "character": "Aira",
-              "pose": "neutral",
-              "text": "Did you know that over 80% of students lose focus while studying online?"
-            },
-            {
-              "character": "You",
-              "pose": "thinking",
-              "text": "Then comes the Problem, right?"
+              "pose": "teaching",
+              "text": "Next comes the Problem. Show what’s wrong — make them feel it. Numbers are good, but emotions connect."
             },
             {
               "character": "Aira",
-              "pose": "smile",
-              "text": "Exactly. Show what’s wrong — make them feel it. Numbers are good, but emotions connect."
+              "pose": "teaching",
+              "text": "Then — the Solution! Your hero moment."
             },
             {
               "character": "Aira",
-              "pose": "smile",
-              "text": "Many students struggle with motivation, especially when learning remotely."
+              "pose": "teaching",
+              "text": "Next is Impact! What difference does it make?"
             },
             {
               "character": "Aira",
-              "pose": "smile",
-              "text": "Then — the Solution! Your hero moment. Come on, your turn."
-            },
-            {
-              "character": "You",
-              "pose": "grin",
-              "text": "That’s why we created FocusFriend — an AI buddy that keeps students motivated and on track."
+              "pose": "teaching",
+              "text": "And Lasly! Now, end it with a bang. A perfect Closing."
             },
             {
               "character": "Aira",
-              "pose": "smile",
-              "text": "Beautiful! Next — Impact! What difference does it make?"
-            },
-            {
-              "character": "You",
-              "pose": "thinking",
-              "text": "Our app helps students stay engaged, turning goals into daily achievements."
-            },
-            {
-              "character": "Aira",
-              "pose": "grin",
-              "text": "Perfect! Now, end it with a bang."
-            },
-            {
-              "character": "You",
-              "pose": "smile",
-              "text": "We believe learning should never feel lonely — and with FocusFriend, it never will."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Simple. Human. Memorable. That’s the essence of a great pitch."
+              "pose": "teaching",
+              "text": "Make it Simple. Human. Memorable. That’s the essence of a great pitch."
             }
           ]
         },
+        {
+          "id": "scene3",
+          "background": "your_room_afternoon.jpg",
+          "music": "rising_melody.mp3",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Timer: 02:12:35 remaining"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your team joins a call."
+            },
+            {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "We’ll screen record the demo while someone narrates"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "Make sure the app doesn’t crash during recording."
+            },
+            {
+              "character": "Luna",
+              "pose": "smile",
+              "text": "I’ll share the final UI walkthrough."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira projecting guidelines: Pitch Video Structure (5 Minutes), Hook (30 sec), The Problem, The Solution Demo, Technical Stack, Impact & Future Plans."
+            }
+          ],
+          "minigame": {
+          "minigame_type": "MultipleChoice",
+          "minigame_title": "Recording Ready",
+          "description": "Choose the best answer!",
+          "tasks": [
+            {
+              "id": 1,
+              "task": "What’s MOST important when starting your hackathon pitch video?",
+              "options": [
+                "Grab attention with fancy effects",
+                "Clear explanation of the problem + solution",
+                "Long background music",
+                "Detailed technical slides"
+              ],
+              "correct_answer": ["Clear explanation of the problem + solution"]
+            },
+            {
+              "id": 2,
+              "task": "What should your demo focus on MOST?",
+              "options": [
+                "Highlighting the core functionality clearly",
+                "Showing every single feature",
+                "Adding exciting sound effects",
+                "Using transitions between clips"
+              ],
+              "correct_answer": ["Highlighting the core functionality clearly"]
+            },
+            {
+              "id": 3,
+              "task": "During your video, what matters most to judges?",
+              "options": [
+                "Fast camera movements",
+                "Trendy background music",
+                "Fancy lower-third graphics",
+                "Easy-to-understand demo and explanation"
+              ],
+              "correct_answer": ["Easy-to-understand demo and explanation"]
+            },
+            {
+              "id": 4,
+              "task": "What matters most for your audio during recording?",
+              "options": [
+                "Background music louder than speaking",
+                "Sound effects in every transition",
+                "Voice clearly audible and no distracting noise",
+                "Lots of echo for style"
+              ],
+              "correct_answer": ["Voice clearly audible and no distracting noise"]
+            },
+            {
+              "id": 5,
+              "task": "What is the MOST important storytelling element in a pitch video?",
+              "options": [
+                "Simple explanation of problem → solution → impact",
+                "Most transitions possible",
+                "Complex jargon and buzzwords",
+                "Lowest background music volume"
+              ],
+              "correct_answer": ["Simple explanation of problem → solution → impact"]
+            }
+          ]
+        }
+      },
         {
           "id": "scene4",
           "music": "soft_ambient.mp3",
           "dialogs": [
             {
-              "character": "You",
-              "pose": "concerned",
-              "text": "What if my voice shakes? Or I forget everything mid-sentence?"
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Then you smile, laugh, and keep going. People don’t remember perfect pitches — they remember honest ones."
-            },
-            {
-              "character": "You",
-              "pose": "thinking",
-              "text": "So… I don’t need to be perfect?"
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Not at all. You just need to be you. Speak with heart — that’s something no AI, no robot, no script can replace."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "You’ve grown so much since that first day. From uncertainty, to courage, to creation. Now it’s time to share your spark with the world."
-            },
-            {
-              "character": "You",
-              "pose": "grin",
-              "text": "Then… let’s do it, Aira. Let’s pitch."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Devpost submissions include a 3-minute demo video, project description, live URL, and open-source code. Let’s test your storytelling skills! Choose the best line for each part of the pitch."
+              "character": "Narrator",
+              "pose": " neutral",
+              "text": "You hit record. You introduce the problem. Demo the core feature. Show the SDG alignment. Explain the tech stack: Frontend framework, Backend server, Database, APIs used."
             }
-          ]
-        },
-        {
-          "id": "scene5",
-          "minigame": {
-          "minigame_type": "MultipleChoice",
-          "minigame_title": "Pitch Perfect",
-          "description": "Choose the best line for each part of your pitch.",
-          "tasks": [
+          ],
+            "minigame": {
+            "minigame_type": "MultipleChoice",
+            "minigame_title": "Pitch Perfect",
+            "description": "Choose the best line for each part of your pitch.",
+            "tasks": [
             {
               "id": 1,
               "task": "Intro",
@@ -244,17 +273,21 @@
               "correct_answer": ["Together, let’s make learning more human — one study session at a time."]
             }
           ]
-        },
-            "achievement": {
-              "title": "Pitch Master",
-              "description": "Completed the Pitch Perfect mini-game and delivered a successful pitch.",
-              "reward_points": 20,
-              "icon": "pitch_master.png"
-            }
+        }
         },
         {
-          "id": "scene6",
+          "id": "scene5", 
           "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": " neutral",
+              "text": "Five minutes later—"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "No crashes."
+            },
             {
               "character": "Luna",
               "pose": "smile",
@@ -268,7 +301,12 @@
             {
               "character": "Maya",
               "pose": "smile",
-              "text": "See? You always had it in you. You just needed to believe."
+              "text": "That was smooth! See? You always had it in you. You just needed to believe."
+            },
+                        {
+              "character": "You",
+              "pose": "thinking",
+              "text": "We actually sound… legit."
             },
             {
               "character": "Aira",
@@ -279,16 +317,157 @@
               "character": "You",
               "pose": "smile",
               "text": "Thanks, Aira. For everything."
+            }
+          ],
+            "achievement": {
+              "title": "Pitch Master",
+              "description": "Completed the Pitch Perfect mini-game and delivered a successful pitch.",
+              "reward_points": 20,
+              "icon": "pitch_master.png"
+            }
+        },
+        {
+          "id": "scene6",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You open YouTube. Upload in progress…"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "File name: Byteon_FinalPitch.mp4"
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "You earned this moment. Every click, every idea, every doubt — it brought you here."
+              "text": "Set visibility to Public or Unlisted. Judges must be able to access it."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Upload complete. You copy the link. YouTube URL — Ready."
+            },
+            {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "Wait. Remove API keys."
+            },
+            {
+              "character": "Luna",
+              "pose": "teaching",
+              "text": "Never upload sensitive credentials."
+            },
+            {
+              "character": "Narrator",
+              "pose": "smile",
+              "text": "Checklist appears: Clean README.md, Installation Instructions, Tech Stack Listed, Screenshots Added, License Included"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You push the final commit. GitHub shows: Final Commit — Submission Version"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You copy the repository link. GitHub URL — Ready."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The team refreshes the deployed site."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "It loads. Login works... Core feature runs... No errors."
+            },
+            {
+              "character": "Luna",
+              "pose": "teaching",
+              "text": "It’s live!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You copy the deployed link. Live Website URL — Ready."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The submission page opens. Empty text boxes stare at you"
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Congratulations. You’ve completed your first hackathon journey!"
+              "text": "This is where you tell your story clearly."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Fields appear: What inspired you?, What it does, How we built it, Challenges we ran into, Accomplishments, What we learned, What’s next"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You write honestly. About the bug that almost broke everything, the workshop that helped fix authentication, dividing roles, learning to trust each other."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You upload: Screenshots, Demo video link, GitHub link, Website link."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Everything is attached."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Double-check everything."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Video link works, GitHub public, Website accessible, SDG clearly stated, Team members listed, Submission description complete."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Timer: 00:18:52 remaining. Your cursor hovers over: Submit Project"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "..."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You click on submit project."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Loading…"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Loading…"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Then—"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Submission Successfully Received."
             }
           ]
         },
@@ -299,22 +478,87 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Your mouse hovers over the 'Register' button. For the first time, your hand doesn’t shake."
-            },
-            {
-              "character": "You",
-              "pose": "smile",
-              "text": "(softly) Let’s do this."
+              "text": "The countdown disappears. Confetti fills your screen."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "You click 'Register.' The screen fades to white as triumphant music plays."
+              "text": "Your Discord explodes: “WE DID IT!” “Team Byteon submitted!” “Let’s gooooo!”"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your team explodes in cheers. You lean back in your chair. Exhausted. Proud."
+            },
+            {
+              "character": "You",
+              "pose": "proud",
+              "text": "We actually built something"
+            },
+            {
+              "character": "You",
+              "pose": "proud",
+              "text": "We built it. We recorded it. We shipped it."
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "I’ll be right here — cheering you on, byte by byte."
+              "text": "You didn’t just participate. You published."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Today you learned something many people never do — how to turn an idea into something real."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your laptop shows: YouTube video views increasing, GitHub stars starting to appear, Website analytics ticking up"
+            },
+            {
+              "character": "Aira",
+              "pose": "grin",
+              "text": "Whether you win or not… you’ve already leveled up."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your team appears beside you one last time."
+            },
+            {
+              "character": "Luna",
+              "pose": "smile",
+              "text": "From blank canvas to live product."
+            },
+            {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "From bug panic to deployment."
+            },
+            {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "From nervous silence to confident pitch."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Every expert was once a beginner who dared to click ‘Register."
+            },
+            {
+              "character": "You",
+              "pose": "happy",
+              "text": "Thanks, Aira. For everything."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "You earned this moment. Every click, every idea, every doubt — it all brought you here."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Congratulations. You’ve completed your first hackathon journey."
             }
           ],
           "completion_message": "Complete Chapter 4",
@@ -327,6 +571,62 @@
           }
         }
       ]
+    }
+  ],
+  "characters": [
+    {
+      "id": "You",
+      "name": "You",
+      "poses": {
+        "neutral": "you_neutral.png",
+        "thinking": "you_thinking.png",
+        "tired": "you_tired.png",
+        "determined": "you_determined.png",
+        "happy": "you_happy.png",
+        "proud": "you_proud.png"
+      }
+    },
+    {
+      "id": "Aira",
+      "name": "Aira",
+      "poses": {
+        "neutral": "aira_neutral.png",
+        "smiling": "aira_smiling.png",
+        "grinning": "aira_grinning.png",
+        "gentle": "aira_gentle.png",
+        "happy": "aira_happy.png",
+        "clapping": "aira_clapping.png",
+        "teaching": "aira_teaching.png"
+      }
+    },
+    {
+      "id": "Narrator",
+      "name": "Narrator",
+      "poses": {
+        "neutral": "bg_fade.png"
+      }
+    },
+    {
+      "id": "Luna",
+      "name": "Luna",
+      "poses": {
+        "smile": "luna_smile.png"
+      }
+    },
+    {
+      "id": "Kenji",
+      "name": "Kenji",
+      "poses": {
+        "neutral": "kenji_neutral.png",
+        "smile": "kenji_smile.png"
+      }
+    },
+    {
+      "id": "Maya",
+      "name": "Maya",
+      "poses": {
+        "smile": "maya_smile.png"
+      }
     }
   ]
 }
