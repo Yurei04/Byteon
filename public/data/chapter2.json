@@ -641,7 +641,7 @@
               {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "The Discord #announcements channel pings: 36 hours remaining, Mentors available in #mentor-help, Midpoint Check-in tonight"
+              "text": "The Discord #announcements channel pings: The Hackathon starts tomorrow! Mentors available in #mentor-help, Midpoint Check-in tonight"
               },
               {
               "character": "Narrator",
@@ -651,12 +651,12 @@
               {
               "character": "Kenji",
               "pose": "smile",
-              "text": "We should create a prototype by tonight."
+              "text": "We should create a prototype."
               },
               {
               "character": "Luna",
               "pose": "smile",
-              "text": "I’ll finish wireframes in 3 hours."
+              "text": "I can finish wireframes in 3 hours."
               },
               {
               "character": "Maya",
