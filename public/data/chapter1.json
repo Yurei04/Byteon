@@ -42,12 +42,12 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Bright colors, energetic text, and photos of smiling students greet you when you open the email. “Collaborate. Create. Innovate. Join the 48-hour Hackathon: The Byteon, hosted on Devpost!”"
+              "text": "Bright colors, energetic text, and photos of smiling students greet you when you open the email. “Collaborate. Create. Innovate. Join the 48-hour Hackathon: The Byteon, hosted on Devpost! Register now. Compete remotely. Build from anywhere.”"
             },
             {
               "character": "You",
               "pose": "thinking",
-              "text": "A Hackathon…? Isn’t that where hardcore programmers compete and build apps overnight?"
+              "text": "An online hackathon? So… I don’t even have to go anywhere?"
             },
             {
               "character": "Narrator",
@@ -62,12 +62,12 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "You scroll past it. Then scroll back. Then scroll past it again. Something about that word hackathon just sticks in your mind."
+              "text": "You scroll past it. Then scroll back. Then scroll past it again. Something about that word hackathon just sticks in your mind. Why does that keep pulling you back?"
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "You finally give in and open the email."
+              "text": "You finally give in, you sigh… and click and open the email."
             },
             {
               "character": "Narrator",
@@ -82,7 +82,7 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Hello human! You seem to be… curious. Or maybe hesitant about this particular invitation."
+              "text": "Hello! I see you’re reviewing an invitation to the Byteon Online Hackathon."
             },
             {
               "character": "You",
@@ -93,6 +93,16 @@
               "character": "Aira",
               "pose": "neutral",
               "text": "Please don’t be alarmed. I’m Aira, your AI Resource Assistant. Looks like you’ve received an invitation to your first hackathon — hosted on Devpost, the official hackathon platform."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "And good news: this hackathon is completely online!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "She gestures, and a floating interface appears: Register Online, Join the Official Discord Server, Read the Rules, Attend the Opening Ceremony Livestream"
             },
             {
               "character": "You",
@@ -175,6 +185,11 @@
             {
               "character": "Narrator",
               "pose": "neutral",
+              "text": "(Aira snaps her fingers; holograms of diverse people appear — students, artists, even engineers)"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
               "text": "Dozens of people appear in glowing scenes — some coding, others sketching, presenting, or laughing together."
             },
             {
@@ -191,6 +206,101 @@
               "character": "Aira",
               "pose": "smile",
               "text": "Failure is a hackathoner’s secret ingredient. Every time you fail, you learn faster. Every bug you fix, every idea you pitch — it’s all experience."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Let’s break it down. Online hackathons are simple. Everything happens digitally."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A floating Register Now button pulses."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "First, create your participant account. It only takes a few minutes."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "That’s it? No interviews? No qualifications?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Nope. Just register, confirm eligibility, and you’re officially in."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A checklist appears: Confirm you’re not an organizer or judge, Choose Solo or Team, Agree to  intellectual property and submission requirements rules."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A large Discord icon appears."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "This is where everything happens."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Channels appear floating in midair: #announcements,  #team-formation,  #help-desk, #general-chat"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Need teammates? Ask in #team-formation. Confused about rules? Ask in help-desk, Stuck during coding? Ask in general-chat"
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "So… it’s like the event headquarters?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Exactly. Think of Discord as the hackathon’s digital campus."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Every hackathon has rules — submission format, deadlines, judging criteria."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Words highlight automatically: Project must be built during the event, Submit before deadline, Follow theme guidelines."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Reading the rules isn’t scary. It’s strategic."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A virtual stage forms. Livestream countdown appears: 00:12:45 until Opening Ceremony"
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "This is where organizers explain the theme, prizes, timeline, and sponsor challenges."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Clips flash: Hosts welcoming participants, Mentors introducing themselves, Prize announcements."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "It sets the tone. And trust me — the energy is contagious"
             }
           ]
         },
@@ -275,22 +385,7 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Before we start, a quick checklist. Devpost requires you to confirm you’re eligible (not a judge, organizer, or immediate family of organizers)."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Decide if you’ll join solo or with a team."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Agree to official rules, including intellectual property and submission requirements."
-            },
-            {
-              "character": "You",
-              "pose": "neutral",
-              "text": "Sounds like a lot"
+              "text": "Let’s see if you’re ready."
             },
             {
               "character": "Aira",
@@ -449,7 +544,14 @@
         },
         {
           "id": "scene14",
+          "background": "your_room_evening.jpg",
+          "music": "soft_typing_ambient.mp3",
           "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The virtual space fades back into your room."
+            },
             {
               "character": "Aira",
               "pose": "smile",
@@ -461,19 +563,39 @@
               "text": "Heh, not bad. Maybe this hackathon thing isn’t so scary after all."
             },
             {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You look at the email it is still open."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Two buttons glow at the bottom: Register Now and Close Tab"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Discord invite link pulses underneath. Opening Ceremony countdown continues ticking."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "You don’t need to be ready. You just need to begin."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your cursor hovers over the register button. This time… your hesitation feels different. Less fear. More anticipation."
+            },
+            {
               "character": "Aira",
               "pose": "smile",
               "text": "That’s the spirit! Remember — the hardest part isn’t joining… it’s deciding to try."
             },
             {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The virtual space fades back into your room. You glance again at the hackathon email, this time feeling something new — excitement."
-            },
-            {
               "character": "Aira",
               "pose": "neutral",
-              "text": "Tomorrow, we’ll talk about teams. Because every hacker needs their crew. Until then, keep that spark alive."
+              "text": "Tomorrow, we’ll talk about teams. Because even online… no one hacks alone."
             },
             {
               "character": "Narrator",

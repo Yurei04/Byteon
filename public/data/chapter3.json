@@ -54,6 +54,11 @@
               "character": "Aira",
               "pose": "teaching",
               "text": "Every great idea starts with three questions: 1️⃣ What problem do I want to solve? 2️⃣ Who am I helping? 3️⃣ How can technology make it better?"
+            },
+            {
+              "character": "Aira",
+              "pose": "teaching",
+              "text": "Time to brainstorm! Devpost challenges often ask for real-world solutions. Focus on a problem, the user, and a technological solution."
             }
           ]
         },
@@ -414,16 +419,6 @@
               "character": "You",
               "pose": "proud",
               "text": "Not bad for someone who almost ignored that hackathon email!"
-            },
-            {
-              "character": "Aira",
-              "pose": "smiling",
-              "text": "Not bad at all. You’ve gone from hesitant to hacker-minded. Now it’s time to prepare for the big stage — Pitch Day!"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The scene fades to black as upbeat synth music plays, Aira’s glowing outline fading last."
             }
           ],
           "completion_message": "Completed Chpater 3",
@@ -433,6 +428,405 @@
           "reward_points": 10,
           "icon": "chapter3complete.png"
           }
+        },
+                {
+          "id": "scene8_curious",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Curiosity is your compass. Keep exploring — even rough edges lead to brilliance. Every twist gives you something new."
+            }
+          ]
+        },
+        {
+          "id": "scene10",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your Discord pings: “The Byteon Hackathon officially starts NOW!” Opening Ceremony Live!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A countdown timer appears in the corner of your screen. 48:00:00 remaining"
+            },
+            {
+              "character": "You",
+              "pose": "determined",
+              "text": "This is it… it’s actually starting."
+            },
+            {
+              "character": "Aira",
+              "pose": "happy",
+              "text": "From this moment forward — everything you build counts!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The screen shifts to a livestream window. Organizers speak, The theme is revealed, submission criteria clarified, mentors are introduced."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Chat floods with messages"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "“Good luck everyone!”"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "“Let’s gooo!”"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "“Team CultureQuest ready!”"
+            },
+            {
+              "character": "Aira",
+              "pose": "gentle",
+              "text": "Pay attention. The judging criteria tells you what to prioritize."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A floating checklist appears: Innovation, Impact, Technical Implementation, Presentation"
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "So it’s not just about coding something flashy…"
+            },
+            {
+              "character": "Aira",
+              "pose": "clapping",
+              "text": "Exactly. It’s about solving the problem well."
+            }
+          ]
+        },
+        {
+          "id": "scene11",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your team jumps into a Discord voice channel. Cameras on. Slight chaos."
+            },
+            {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "Okay. We need a Minimum Viable Product (MVP)."
+            },
+            {
+              "character": "Luna",
+              "pose": "smiling",
+              "text": "I’ll start designing wireframes right now."
+            },
+            {
+              "character": "Maya",
+              "pose": "smiling",
+              "text": "I’ll refine the problem statement and SDG alignment for the submission page."
+            },
+            {
+              "character": "Maya",
+              "pose": "smiling",
+              "text": "What should we prioritize first?"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira summons a Kanban board again."
+            },
+            {
+              "character": "Aira",
+              "pose": "teaching",
+              "text": "Rule of hackathons: Build the core feature first. Fancy extras come later."
+            },
+            {
+              "character": "Aira",
+              "pose": "teaching",
+              "text": "Build the backbone. Decorate later."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A couple of hours later"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The timer reads: 36:12:44 remaining"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Suddenly—"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "Uh… guys? The login system isn’t connecting to the database."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "..."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Is that… bad?"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "Very."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Error messages flashes red. Aira appears calmly."
+            },
+            {
+              "character": "Aira",
+              "pose": "grinning",
+              "text": "Congratulations. You’ve unlocked your first bug."
+            },
+            {
+              "character": "You",
+              "pose": "tired",
+              "text": "That’s not funny."
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Hackathons aren’t defined by smooth builds. They’re defined by recovery."
+            }
+            ],
+              "minigame": {
+              "minigame_type":"MultipleChoice",
+              "minigame_title": "Bug Response",
+              "description": "Aira (voice-over): Drag and drop each role to the task. Choose the best response:",
+               "tasks": [
+                {
+                  "id": 1,
+                  "task": "What do you when there is a bug?",
+                  "options": ["Panic", "Scrap everything", "Debug step-by-step"],
+                  "correct_answer": ["Debug step-by-step"]
+                },
+                {
+                  "id": 2,
+                  "task": "Which technique helps you find errors by going through the code step by step?",
+                  "options": ["Guessing solutions", "Debug step-by-step", "Skipping tests"],
+                  "correct_answer": ["Debug step-by-step"]
+                },
+                {
+                  "id": 3,
+                  "task": "Which of the following is *not* a common debugging action?",
+                  "options": ["Check error messages", "Change random lines", "Test after fixes"],
+                  "correct_answer": ["Change random lines"]
+                },
+                {
+                "id": 4,
+                "task": "What is the first step in debugging a code issue?",
+                "options": ["Run the code without looking", "Identify and understand the problem", "Ask someone else to do it"],
+                "correct_answer": ["Identify and understand the problem"]
+                },
+                {
+                  "id": 5,
+                  "task": "What does debugging typically involve in programming?",
+                  "options": ["Coding without errors", "Improving performance", "Finding and resolving bugs", "Designing new features"],
+                  "correct_answer": ["Finding and resolving bugs"]
+                }
+              ],
+              "dialogue": [
+              {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Kenji shares screen. You help test inputs. After 20 tense minutes—"
+              },
+              {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "It’s fixed!"
+              },
+              {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Everyone cheers."
+              }
+              ]
+            }
+        },
+        {
+          "id": "scene12",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Discord announcement: Workshop Starting: “Rapid Prototyping with APIs” Live in #workshops"
+            },
+            {
+              "character": "Maya",
+              "pose": "smiling",
+              "text": "Should we watch it?"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "We’re kind of busy…"
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Strategic learning can save hours."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You open the workshop stream in a split screen. A mentor demonstrates a faster way to integrate authentication."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Kenji pauses."
+            },
+            {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "Wait… that’s way cleaner than what I’m doing."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Sometimes, stopping to learn speeds you up."
+            }
+          ]
+        },
+        {
+          "id": "scene13",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Time passes."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Timer: 18:05:11 remaining. Your eyes burn. Empty mug beside you."
+            },
+            {
+              "character": "Aira",
+              "pose": "gentle",
+              "text": "Hydration and rest improve performance."
+            },
+            {
+              "character": "You",
+              "pose": "tired",
+              "text": "Are you telling me to touch grass?"
+            },
+            {
+              "character": "Aira",
+              "pose": "gentle",
+              "text": "I’m telling you to stretch."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You grab coffee. Luna laughs about sleep deprivation. Kenji finally smiles. Maya shares memes in team chat."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Even during pressure — laughter happens. Core feature works. Now the team debates."
+            },
+            {
+              "character": "Luna",
+              "pose": "smiling",
+              "text": "Should we add progress tracking?"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "We have time for one extra feature."
+            },
+            {
+              "character": "Maya",
+              "pose": "smiling",
+              "text": "If it strengthens impact, it’s worth it."
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Impact clarity wins over decoration."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Couple of hours pass."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Discord pings: Midpoint submission reminder: 12 hours left"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You upload screenshots for feedback. A mentor comments: “Strong concept. Clarify user journey.”"
+            },
+            {
+              "character": "Luna",
+              "pose": "smiling",
+              "text": "I’ll improve onboarding screens."
+            },
+            {
+              "character": "Kenji",
+              "pose": "smiling",
+              "text": "I’ll clean up the code for demo stability."
+            },
+            {
+              "character": "You",
+              "pose": "determined",
+              "text": "We’re actually doing this…"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Timer: 03:14:32 remaining"
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Now it’s time to prepare for the big stage — The Pitch!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You have an idea on what comes up next now. You ask with the confidence of someone curious."
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "The pitch?"
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Exactly! we’ll craft your voice, your story, and your confidence. Because every great idea deserves to be heard!"
+            },
+            {
+              "character": "Aira",
+              "pose": "smiling",
+              "text": "Rest for a bit then we will record a video for the pitch."
+            }
+          ]
         }
       ]
     }
@@ -467,6 +861,28 @@
       "name": "Narrator",
       "poses": {
         "neutral": "bg_fade.png"
+      }
+    },
+    {
+      "id": "Luna",
+      "name": "Luna",
+      "poses": {
+        "smile": "luna_smile.png"
+      }
+    },
+    {
+      "id": "Kenji",
+      "name": "Kenji",
+      "poses": {
+        "neutral": "kenji_neutral.png",
+        "smile": "kenji_smile.png"
+      }
+    },
+    {
+      "id": "Maya",
+      "name": "Maya",
+      "poses": {
+        "smile": "maya_smile.png"
       }
     }
   ]

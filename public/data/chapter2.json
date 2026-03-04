@@ -10,14 +10,19 @@
           "id": "scene1",
           "dialogs": [
             {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "A new day begins — and that email invitation still waits in your inbox. But this time, instead of nervousness, there’s a flicker of curiosity."
-            },
-            {
               "character": "You",
               "pose": "neutral",
               "text": "Alright, Aira said we’d talk about teams today… wonder what she’s got planned."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "A new day begins — and this time, you don’t just stare at the invitation. You click Join Discord Server."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your Laptop screen glows and Aira appears in a soft flash.."
             },
             {
               "character": "Aira",
@@ -100,6 +105,31 @@
               "character": "Aira",
               "pose": "smile",
               "text": "Ah, the second most common fear — right after ‘what if I break something?’ Trust me, every hackathon is full of people looking for someone just like you."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The screen transforms into a glowing interface resembling Discord channels: #announcements, #team-formation, #sdg-resources, #general-chat, #mentor-help"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The #team-formation channel lights up."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Messages float by: Looking “for a designer!” , “Need 1 frontend dev + 1 presenter!” , “Beginner-friendly team here!”"
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Whoa… it’s already active."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "That’s because hackathons don’t wait. Ready to build your team?"
             }
           ]
         },
@@ -124,7 +154,7 @@
             {
               "character": "Luna",
               "pose": "smile",
-              "text": "Hey there! I’m Luna — I make things look beautiful and usable. You know, colors, buttons, layouts. Without design, even great ideas feel dull."
+              "text": "Hey there! I’m Luna!  I’m into UI/UX and social impact projects. I make things look beautiful and usable. You know, colors, buttons, layouts. Without design, even great ideas feel dull."
             },
             {
               "character": "You",
@@ -149,7 +179,7 @@
             {
               "character": "Kenji",
               "pose": "neutral",
-              "text": "Sup. I’m Kenji — I code stuff. I’m not great at talking, but give me a bug, and I’ll squash it faster than you can say ‘runtime error’."
+              "text": "Sup. I’m Kenji! I code stuff. I can handle backend or frontend. Prefer projects with real technical challenges. I’m not great at talking, but give me a bug, and I’ll squash it faster than you can say ‘runtime error’."
             },
             {
               "character": "You",
@@ -179,7 +209,7 @@
             {
               "character": "Maya",
               "pose": "smile",
-              "text": "Hiya! I’m Maya — the storyteller. My job? Convince the judges that our idea changes the world."
+              "text": "Hiya! I’m Maya the storyteller! My job? Convince the judges that our idea changes the world. I love pitching and researching. Also super into SDGs!"
             },
             {
               "character": "You",
@@ -201,6 +231,11 @@
         {
           "id": "scene4",
           "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Looks like you found your party."
+            },
             {
               "character": "Aira",
               "pose": "smile",
@@ -428,18 +463,275 @@
           "dialogs": [
             {
               "character": "Aira",
+              "pose": "neutral",
+              "text": "Hackathon encourages alignment with the UN Sustainable Development Goals."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira snaps her fingers. The screen shifts to a virtual video call layout. Four screens. Slightly awkward silence."
+            },
+            {
+              "character": "Luna",
               "pose": "smile",
-              "text": "You’ve completed your second quest!"
+              "text": "Hello, guys!"
+            },
+            {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "So… what problem are we solving?"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "Yeah. We should start with the SDG theme."
+            },
+            {
+              "character": "Luna",
+              "pose": "smile",
+              "text": "I agree!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira summons a floating SDG wheel. The colorful icons rotate in mid-air."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The SDG icons glow one by one: No Poverty, Zero Hunger, Good Health and Well-being, Quality Education, Gender Equality, Clean Water and Sanitation, Affordable and Clean Energy, Decent Work and Economic Growth"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Industry, Innovation, and Infrastructure, Reduced Inequalities, Sustainable Cities and Communities, Responsible Consumption and Production, Climate Action, Life Below Water, Life on Land"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Peace, Justice, and Strong Institutions and lastly Partnerships for the Goals"
             },
             {
               "character": "You",
-              "pose": "smile",
-              "text": "Nice! I’m starting to feel like I actually belong here."
+              "pose": "thinking",
+              "text": "There are so many… how do we choose?"
             },
             {
               "character": "Aira",
               "pose": "smile",
+              "text": "Start with a problem that feels personal."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Great teams don’t start with features. They start with problems."
+            },
+            {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "Okay — let’s vote. Which problem excites us most?"
+            }
+          ]
+        },
+        {
+          "id": "scene8",
+          "type": "choice",
+          "prompt": "Which problem do you feel most right now?",
+          "choices": [
+            {
+              "text": "Mental health support for students",
+              "nextScene": "scene8a"
+            },
+            {
+              "text": "Digital platform for small businesses",
+              "nextScene": "scene8a"
+            },
+            {
+              "text": "Recycling awareness system.",
+              "nextScene": "scene6a"
+            }
+          ]
+        },
+        {
+          "id": "scene8a",
+          "dialogs": [
+            {
+              "character": "Luna",
+              "pose": "smile",
+              "text": "What if we build an anonymous peer-support app?"
+            },
+            {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "We could add a chatbot for resource guidance."
+            },
+            {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "And data visualization to show stress trends!"
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Wait… this is actually becoming real."
+            }
+          ]
+        },
+        {
+          "id": "scene9",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira claps her hands. A Kanban board appears."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Time to assign tasks."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The team discusses: Kenji → Build backend + login system, Luna → Design UI wireframes, Maya → Research SDG alignment + prepare pitch"
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "Clear roles prevent chaos."
+            }
+          ],
+              "minigame": {
+              "minigame_type":"MultipleChoice",
+              "minigame_title": "Task Distribution",
+              "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
+               "tasks": [
+                {
+                  "id": 1,
+                  "task": "Who ensures the app looks intuitive?",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Designer"]
+                },
+                {
+                  "id": 2,
+                  "task": "Who ensures the app doesn’t crash?",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Developer"]
+                },
+                {
+                  "id": 3,
+                  "task": "Who connects the solution to SDG impact?",
+                  "options": ["Developer", "Designer", "Presenter"],
+                  "correct_answer": ["Presenter"]
+                },
+                {
+                  "id": 4,
+                  "task": "Who tests and gives feedback?",
+                  "options": ["Developer", "Designer", "Presenter","Everyone"],
+                  "correct_answer": ["Everyone"]
+                }
+              ],
+            "dialogue": [
+              {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Balanced workload = stronger submission."
+              },
+              {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The Discord #announcements channel pings: The Hackathon starts tomorrow! Mentors available in #mentor-help, Midpoint Check-in tonight"
+              },
+              {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your team looks at the countdown timer."
+              },
+              {
+              "character": "Kenji",
+              "pose": "smile",
+              "text": "We should create a prototype."
+              },
+              {
+              "character": "Luna",
+              "pose": "smile",
+              "text": "I can finish wireframes in 3 hours."
+              },
+              {
+              "character": "Maya",
+              "pose": "smile",
+              "text": "I’ll draft the problem statement and SDG alignment."
+              },
+              {
+              "character": "You",
+              "pose": "thinking",
+              "text": "Okay… this feels serious now."
+              }
+              ]
+            }
+          },
+        {
+          "id": "scene10",
+          "dialogs": [
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "So… what have you learned?"
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "That hackathons aren’t random chaos. They're an organized collaboration."
+            },
+            {
+              "character": "Aira",
+              "pose": "grin",
+              "text": "And?"
+            },
+            {
+              "character": "You",
+              "pose": "smile",
+              "text": "That starting with a real-world problem makes everything clearer."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Exactly. Innovation begins with empathy."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "You’ve completed your second quest! Here’s your Teamwork Makes the Dream Work Achievement!"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Here it is again. Another “Achievement Unlocked” and this time it is “Teamwork Makes the Dream Work”. The description reads “Learning about how teamwork makes everyone work better.”"
+            },
+            {
+              "character": "You",
+              "pose": "smile",
+              "text": "Nice! Two achievements already. I’m starting to feel like I actually belong here."
+            },
+            {
+              "character": "Aira",
+              "pose": "grin",
               "text": "And that’s the point. The best teams aren’t made of perfect people — just curious ones who show up."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The video call ends. Your Discord notifications quiet down."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your notebook now contains: Team Members, Chosen SDG, Defined Problem, Task Assignments"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "For the first time, this isn’t just an invitation. It’s a project in motion."
             },
             {
               "character": "Narrator",
@@ -457,12 +749,12 @@
               "text": "Music swells as the screen fades to black."
             }
           ],
-          "completion_message": "Complete Chapter 2",
-          "achievement": {
-          "title": "Teamwork Makes the Dream Work",
-          "description": "Complete Chapter 2 of How to Hackathon",
-          "reward_points": 10,
-          "icon": "chapter2complete.png"
+            "completion_message": "Complete Chapter 2",
+            "achievement": {
+            "title": "Teamwork Makes the Dream Work",
+            "description": "Complete Chapter 2 of How to Hackathon",
+            "reward_points": 10,
+            "icon": "chapter2complete.png"
           }
         }
       ]
