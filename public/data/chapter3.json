@@ -792,89 +792,19 @@
               "text": "I’ll clean up the code for demo stability."
             },
             {
-              "character": "Maya",
-              "pose": "smiling",
-              "text": "I’ll update the pitch to emphasize SDG impact."
-            },
-            {
               "character": "You",
               "pose": "determined",
               "text": "We’re actually doing this…"
-            }
-          ]
-        },
-        {
-          "id": "scene14",
-          "dialogs": [
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Timer: 02:14:32 remaining"
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Final bug fixed. Demo recorded. GitHub repo made public. Devpost submission form filled"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Checklist appears: Project Description, SDG Alignment, Demo Video, Source Code Link, Team Members Listed."
-            },
-            {
-              "character": "Aira",
-              "pose": "gentle",
-              "text": "Double-check everything."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "You hover over the Submit Project button."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "..."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Click. Loading wheel spins. Then—"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Submission Received."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Your team explodes in cheers! The timer stops mattering. You lean back in your chair. Exhausted. Proud."
-            },
-            {
-              "character": "You",
-              "pose": "proud",
-              "text": "We actually built something!"
-            },
-            {
-              "character": "Aira",
-              "pose": "clapping",
-              "text": "Not bad at all!"
-            },
-            {
-              "character": "Aira",
-              "pose": "happy",
-              "text": "You didn’t just build an app. You built resilience."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Discord shifts from chaos to celebration. Now only one thing remains."
+              "text": "Timer: 03:14:32 remaining"
             },
             {
               "character": "Aira",
               "pose": "smiling",
-              "text": "Now it’s time to prepare for the big stage — Pitch Day!"
+              "text": "Now it’s time to prepare for the big stage — The Pitch!"
             },
             {
               "character": "Narrator",
@@ -889,12 +819,12 @@
             {
               "character": "Aira",
               "pose": "smiling",
-              "text": "Exactly! Tomorrow, we’ll craft your voice, your story, and your confidence. Because every great idea deserves to be heard!"
+              "text": "Exactly! we’ll craft your voice, your story, and your confidence. Because every great idea deserves to be heard!"
             },
             {
               "character": "Aira",
               "pose": "smiling",
-              "text": "Rest tonight. Tomorrow… you face the judges."
+              "text": "Rest for a bit then we will record a video for the pitch."
             }
           ]
         }
