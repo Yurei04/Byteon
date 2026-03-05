@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useRef } from "react"
 import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
@@ -46,29 +46,71 @@ export default function UserDashboardPage() {
   const [userBigintId, setUserBigintId] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [achievementsMetadata, setAchievementsMetadata] = useState({})
-  const [stats, setStats] = useState({
-    totalBlogs: 0,
-    totalViews: 0,
-  })
+  const [stats, setStats] = useState({ totalBlogs: 0, totalViews: 0 })
+
+  // Holds the realtime channel so we can clean it up on unmount / sign-out
+  const realtimeChannelRef = useRef(null)
+
+  // ── Realtime: watch the user's row for achievements_metadata changes.
+  //    Whenever grantAchievement writes during gameplay this fires and
+  //    updates the stat cards instantly — no tab switch or refresh needed. ──
+  const subscribeToAchievements = (authUserId) => {
+    if (realtimeChannelRef.current) {
+      supabase.removeChannel(realtimeChannelRef.current)
+    }
+
+    const channel = supabase
+      .channel(`dashboard-achievements-${authUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "users",
+          filter: `user_id=eq.${authUserId}`,
+        },
+        (payload) => {
+          if (payload.new?.achievements_metadata !== undefined) {
+            setAchievementsMetadata(payload.new.achievements_metadata ?? {})
+          }
+        }
+      )
+      .subscribe()
+
+    realtimeChannelRef.current = channel
+  }
 
   useEffect(() => {
     getAuthUser()
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUserId(session.user.id)
-        await fetchUserAndData(session.user.id)
+        // Only re-fetch on actual sign-in — getAuthUser already handles the initial load.
+        // Without this guard, fetchUserAndData fires twice on every mount.
+        if (event === "SIGNED_IN") {
+          await fetchUserAndData(session.user.id)
+          subscribeToAchievements(session.user.id)
+        }
       } else {
         setUserId(null)
         setUserBigintId(null)
         setBlogs([])
+        setAchievementsMetadata({})
+        if (realtimeChannelRef.current) {
+          supabase.removeChannel(realtimeChannelRef.current)
+          realtimeChannelRef.current = null
+        }
         router.push("/log-in")
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      if (realtimeChannelRef.current) {
+        supabase.removeChannel(realtimeChannelRef.current)
+      }
+    }
   }, [])
 
   const getAuthUser = async () => {
@@ -88,6 +130,7 @@ export default function UserDashboardPage() {
       if (session?.user) {
         setUserId(session.user.id)
         await fetchUserAndData(session.user.id)
+        subscribeToAchievements(session.user.id)
       } else {
         setIsLoading(false)
         router.push("/log-in")
@@ -143,8 +186,7 @@ export default function UserDashboardPage() {
       }
 
       setBlogs(data || [])
-      const totalViews =
-        data?.reduce((sum, blog) => sum + (blog.views || 0), 0) || 0
+      const totalViews = data?.reduce((sum, blog) => sum + (blog.views || 0), 0) || 0
       setStats({ totalBlogs: data?.length || 0, totalViews })
     } catch (error) {
       console.error("Unexpected error in fetchBlogs:", error)
@@ -179,7 +221,6 @@ export default function UserDashboardPage() {
     if (page >= 1 && page <= totalPages) setCurrentPage(page)
   }
 
-  // Derived achievement count for the stat card
   const totalAchievements = Object.keys(achievementsMetadata).length
   const totalAchievementPoints = Object.values(achievementsMetadata).reduce(
     (sum, a) => sum + (a.reward_points ?? 0),
@@ -283,7 +324,7 @@ export default function UserDashboardPage() {
                 </CardContent>
               </Card>
 
-              {/* Achievements — replaces the redundant "Published" card */}
+              {/* Achievements */}
               <Card
                 className="group relative bg-gradient-to-br from-amber-900/40 via-yellow-900/40 to-slate-950/40 backdrop-blur-xl border border-amber-500/30 hover:border-amber-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-amber-500/20 cursor-pointer"
                 onClick={() => setActiveTab("achievements")}
@@ -339,7 +380,7 @@ export default function UserDashboardPage() {
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 shadow-2xl">
               <CardContent className="p-4 sm:p-6 lg:p-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-6 sm:mb-8 bg-black/30 border border-fuchsia-500/20 p-1 h-auto rounded-xl">
+                  <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 bg-black/30 border border-fuchsia-500/20 p-1 h-auto rounded-xl">
                     <TabsTrigger
                       value="profile"
                       className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm"
@@ -353,18 +394,6 @@ export default function UserDashboardPage() {
                     >
                       <BookOpen className="w-4 h-4" />
                       <span className="hidden sm:inline">My Blogs</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="achievements"
-                      className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-yellow-500 data-[state=active]:text-black transition-all rounded-lg py-3 text-xs sm:text-sm"
-                    >
-                      <Trophy className="w-4 h-4" />
-                      <span className="hidden sm:inline">Achievements</span>
-                      {totalAchievements > 0 && (
-                        <span className="ml-1 rounded-full bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 hidden sm:inline">
-                          {totalAchievements}
-                        </span>
-                      )}
                     </TabsTrigger>
                     <TabsTrigger
                       value="create"
@@ -452,17 +481,6 @@ export default function UserDashboardPage() {
                               )}
                             </div>
                           )}
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  </TabsContent>
-
-                  {/* Achievements */}
-                  <TabsContent value="achievements" className="mt-0">
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                      <Card className="bg-black/20 backdrop-blur-lg border border-amber-500/10">
-                        <CardContent className="p-4 sm:p-6">
-                          <AchievementsTab achievementsMetadata={achievementsMetadata} />
                         </CardContent>
                       </Card>
                     </motion.div>

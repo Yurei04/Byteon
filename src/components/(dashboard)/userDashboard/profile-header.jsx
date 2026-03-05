@@ -41,8 +41,6 @@ export default function ProfileHeader({
         alert('Failed to sign out. Please try again.')
         return
       }
-      
-      // Redirect to home page after successful sign out
       router.push('/')
       router.refresh()
     } catch (err) {
@@ -137,9 +135,10 @@ export default function ProfileHeader({
                   {formData.country}
                 </Badge>
               )}
+              {/* ── FIXED: was formData.achievements.length which throws when undefined ── */}
               <Badge className="bg-amber-500/20 text-amber-200 border border-amber-500/30">
                 <Award className="w-3 h-3 mr-1" />
-                {formData.achievements.length} Achievements
+                {formData.achievements?.length ?? 0} Achievements
               </Badge>
             </div>
           </div>

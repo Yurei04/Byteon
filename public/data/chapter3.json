@@ -429,16 +429,6 @@
           "icon": "chapter3complete.png"
           }
         },
-                {
-          "id": "scene8_curious",
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "smiling",
-              "text": "Curiosity is your compass. Keep exploring — even rough edges lead to brilliance. Every twist gives you something new."
-            }
-          ]
-        },
         {
           "id": "scene10",
           "dialogs": [

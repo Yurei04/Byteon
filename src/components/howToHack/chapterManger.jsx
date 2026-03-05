@@ -8,13 +8,34 @@ import { unlockNextChapter } from "./chapterUtils";
 // ── ADDED ──
 import { useAchievement } from "../achievements/achievementContext";
 
-// ── ADDED: one entry per chapter — edit titles/descriptions freely ──
+// ── ADDED: chapter completion achievements (fires when dialogs run out) ──
 const CHAPTER_ACHIEVEMENTS = {
-  1: { achievementId: "first_steps",        title: "First Steps",        description: "Completed Chapter 1 of How to Hackathon.", rewardPoints: 10 },
-  2: { achievementId: "chapter_2_complete", title: "Deeper In",          description: "Completed Chapter 2 of How to Hackathon.", rewardPoints: 10 },
-  3: { achievementId: "chapter_3_complete", title: "Halfway There",      description: "Completed Chapter 3 of How to Hackathon.", rewardPoints: 10 },
-  4: { achievementId: "chapter_4_complete", title: "Almost There",       description: "Completed Chapter 4 of How to Hackathon.", rewardPoints: 10 },
-  5: { achievementId: "chapter_5_complete", title: "How to Hackathon",   description: "Completed all chapters. You're ready to hack!", rewardPoints: 20 },
+  1: { achievementId: "first_steps",                   title: "First Steps",                    description: "Completed Chapter 1: The Invitation.",           rewardPoints: 10 },
+  2: { achievementId: "teamwork_makes_the_dream_work", title: "Teamwork Makes the Dream Work",  description: "Completed Chapter 2: Building the Team.",         rewardPoints: 10 },
+  3: { achievementId: "innovation_spark",              title: "Innovation Spark",               description: "Completed Chapter 3: The Idea Sprint.",           rewardPoints: 10 },
+  4: { achievementId: "first_hacker_medal",            title: "First Hacker Medal",             description: "Completed Chapter 4: Pitch Day.",                 rewardPoints: 10 },
+  5: { achievementId: "from_rookie_to_hacker",         title: "From Rookie to Hacker",          description: "Completed the Epilogue: The First Hackathon.",    rewardPoints: 10 },
+};
+
+// ── ADDED: full visual novel completion (granted alongside the epilogue chapter achievement) ──
+const NOVEL_COMPLETE_ACHIEVEMENT = {
+  achievementId: "how_to_hack_complete",
+  title: "How to Hack: Complete",
+  description: "Finished the entire How to Hackathon visual novel. You're ready to hack!",
+  rewardPoints: 50,
+};
+
+// ── ADDED: minigame achievements keyed by minigame_title.
+//    Covers games that have no achievement block in their JSON.
+//    Games that DO have a JSON block will use payload.achievement first (takes priority). ──
+const MINIGAME_ACHIEVEMENTS = {
+  "Hackathon Myth Buster": { achievementId: "hackathon_myth_buster", title: "Hackathon Myth Buster", description: "Busted every common hackathon myth. Confidence boosted!",              rewardPoints: 10 },
+  "Team Builder":          { achievementId: "team_player",           title: "Team Player",           description: "Matched all roles correctly in the Team Builder challenge.",           rewardPoints: 15 },
+  "Task Distribution":     { achievementId: "task_distributor",      title: "Task Distributor",      description: "Assigned every task to the right role. Clear roles, clean execution.", rewardPoints: 10 },
+  "SDG Impact Builder — Scenario Solver": { achievementId: "sdg_scenario_master", title: "SDG Scenario Master", description: "Perfectly matched all problem-solution-SDG scenarios.",   rewardPoints: 15 },
+  "Bug Response":          { achievementId: "bug_buster",            title: "Bug Buster",            description: "Debugged every scenario correctly. No bug survives your watch!",      rewardPoints: 10 },
+  "Recording Ready":       { achievementId: "recording_ready",       title: "Recording Ready",       description: "Answered every pitch recording question perfectly.",                  rewardPoints: 10 },
+  "Pitch Perfect":         { achievementId: "pitch_perfect",         title: "Pitch Perfect",         description: "Crafted the ideal pitch from intro to closing. Judges impressed!",    rewardPoints: 15 },
 };
 
 export default function ChapterManager({ 
@@ -23,11 +44,9 @@ export default function ChapterManager({
   onBackToMenu, 
   chapterGameIndex,
   onStateChange,
-  userId, // ── ADDED ──
+  userId,           // ── ADDED ──
+  grantAchievement, // ── ADDED ──
 }) {
-  // ── ADDED ──
-  const { grantAchievement } = useAchievement();
-
   const [eventIndex, setEventIndex] = useState(0);
   const [dialogIndex, setDialogIndex] = useState(0);
   const [showChapterIntro, setShowChapterIntro] = useState(false);
@@ -148,8 +167,8 @@ export default function ChapterManager({
       console.error("[ChapterManager]  Error updating chapter progress:", error);
     }
 
-    // ── ADDED: grant chapter achievement when dialogs run out ──
-    if (userId) {
+    // ── ADDED: grant chapter completion achievement ──
+    if (userId && grantAchievement) {
       const ach = CHAPTER_ACHIEVEMENTS[chapterGameIndex];
       if (ach) {
         await grantAchievement({
@@ -158,6 +177,17 @@ export default function ChapterManager({
           title: ach.title,
           description: ach.description,
           rewardPoints: ach.rewardPoints,
+        });
+      }
+
+      // ── ADDED: grant full novel achievement when epilogue finishes ──
+      if (chapterGameIndex === 5) {
+        await grantAchievement({
+          userId,
+          achievementId: NOVEL_COMPLETE_ACHIEVEMENT.achievementId,
+          title: NOVEL_COMPLETE_ACHIEVEMENT.title,
+          description: NOVEL_COMPLETE_ACHIEVEMENT.description,
+          rewardPoints: NOVEL_COMPLETE_ACHIEVEMENT.rewardPoints,
         });
       }
     }
@@ -231,7 +261,7 @@ export default function ChapterManager({
   };
 
   // Handler for minigame completion
-  const handleMinigameComplete = (payload) => {
+  const handleMinigameComplete = async (payload) => {
     // Special "start" signal - ignore this, we handle it via tutorial now
     if (payload === "start") {
       console.log("[ChapterManager] Ignoring auto-start signal (using tutorial flow)");
@@ -243,6 +273,31 @@ export default function ChapterManager({
     if (payload && typeof payload === "object") {
       if (payload.passed) {
         console.log("✅ Player PASSED the minigame!");
+
+        // ── ADDED: grant minigame achievement ──
+        // Priority: payload.achievement (from JSON) → MINIGAME_ACHIEVEMENTS map (hardcoded fallback)
+        if (userId && grantAchievement) {
+          const achFromPayload = payload.achievement;
+          const achFromMap = MINIGAME_ACHIEVEMENTS[currentMinigame?.minigame_title];
+          const ach = achFromPayload ?? achFromMap;
+
+          if (ach) {
+            console.log(`🏆 Granting minigame achievement: ${ach.title}`);
+            // Derive a stable ID: prefer achievementId field, else slugify title
+            const achievementId = ach.achievementId ?? (
+              ach.title.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().replace(/\s+/g, "_")
+            );
+            await grantAchievement({
+              userId,
+              achievementId,
+              title: ach.title,
+              description: ach.description,
+              rewardPoints: ach.reward_points ?? ach.rewardPoints ?? 0,
+            });
+          }
+        }
+        // ── END ADDED ──
+
         if (payload.achievement) {
           console.log(`🏆 Achievement unlocked: ${payload.achievement.title}`);
           console.log(`💰 Points awarded: ${payload.achievement.reward_points}`);
