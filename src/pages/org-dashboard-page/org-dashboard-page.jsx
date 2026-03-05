@@ -759,21 +759,9 @@ const fetchAnnouncements = async (authUserId) => {
                                     </div>
                                   </CardContent>
                                 </Card>
-
-                                <OrgAchievementsSection
-                                  achievements={formData.achievements}
-                                  availableAchievements={availableOrgAchievements}
-                                />
                               </div>
 
                               <div className="space-y-6">
-                                <OrgBrandIdentity
-                                  formData={formData}
-                                  isEditing={isEditing}
-                                  onChange={handleProfileChange}
-                                  onColorChange={handleColorChange}
-                                />
-
                                 <OrgQuickStats
                                   formData={formData}
                                   totalAchievements={availableOrgAchievements.length}

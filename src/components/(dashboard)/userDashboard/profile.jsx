@@ -59,6 +59,7 @@ export default function UserProfile({ onSuccess }) {
 
     realtimeChannelRef.current = channel
   }
+  
 
   useEffect(() => {
     const getAuthUser = async () => {

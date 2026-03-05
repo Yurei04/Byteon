@@ -81,6 +81,24 @@ export default function UserDashboardPage() {
   }
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && userId) {
+        if (userBigintId) {
+          fetchBlogs(userBigintId)
+        } else {
+          fetchUserAndData(userId)
+        }
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+    }
+  }, [userId, userBigintId])
+
+  useEffect(() => {
     getAuthUser()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -144,6 +162,7 @@ export default function UserDashboardPage() {
 
   const fetchUserAndData = async (authUserId) => {
     setIsLoading(true)
+
     try {
       const { data: userData, error: userError } = await supabase
         .from("users")
@@ -151,11 +170,7 @@ export default function UserDashboardPage() {
         .eq("user_id", authUserId)
         .single()
 
-      if (userError) {
-        console.error("Error fetching user:", userError)
-        setIsLoading(false)
-        return
-      }
+      if (userError) throw userError
 
       if (!userData?.id) {
         setIsLoading(false)
@@ -164,9 +179,11 @@ export default function UserDashboardPage() {
 
       setUserBigintId(userData.id)
       setAchievementsMetadata(userData.achievements_metadata ?? {})
+
       await fetchBlogs(userData.id)
+
     } catch (error) {
-      console.error("Unexpected error in fetchUserAndData:", error)
+      console.error("fetchUserAndData error:", error)
       setIsLoading(false)
     }
   }
