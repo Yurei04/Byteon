@@ -290,7 +290,6 @@ export default function UserProfile({ onSuccess }) {
             achievementsCount={earnedCount}
             totalPoints={totalPoints}
           />
-          <ProfileCompletion formData={formData} />
         </div>
       </div>
 
