@@ -6,50 +6,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { 
-  Plus, 
-  FileText, 
-  Megaphone, 
-  BookOpen,
-  Calendar,
-  Users,
-  TrendingUp,
-  Loader2,
-  Trash2,
-  Edit,
-  ExternalLink,
-  AlertCircle,
-  CheckCircle,
-  Award,
-  User2,
-  Building2,
-  Palette,
-  Save,
-  X,
-  LogOut,
-  Mail,
-  AtSign
+  Plus, FileText, Megaphone, BookOpen, TrendingUp,
+  Loader2, Trash2, AlertCircle, CheckCircle,
+  Building2, Save, AtSign, Mail
 } from "lucide-react"
 import { 
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
+  Pagination, PaginationContent, PaginationItem,
+  PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis,
 } from "@/components/ui/pagination"
 
 import ResourceForm from "@/components/resourceHub/resource-form"
@@ -67,7 +35,7 @@ import DeleteAccountModal from "../../components/(dashboard)/orgDashboard/delete
 import { availableOrgAchievements } from "../../components/(dashboard)/orgDashboard/org-achievements"
 import { ReturnButton } from "@/components/return"
 
-const ITEMS_PER_PAGE = 6;
+const ITEMS_PER_PAGE = 6
 
 export default function OrgDashboardPage() {
   const router = useRouter()
@@ -87,11 +55,10 @@ export default function OrgDashboardPage() {
     activeAnnouncements: 0
   })
 
-  const [currentPageAnnouncement, setCurrentPageAnnouncement] = useState(1);
-  const [currentPageBlogs, setCurrentPageBlogs] = useState(1);
-  const [currentPageResources, setCurrentPageResources] = useState(1);
+  const [currentPageAnnouncement, setCurrentPageAnnouncement] = useState(1)
+  const [currentPageBlogs, setCurrentPageBlogs] = useState(1)
+  const [currentPageResources, setCurrentPageResources] = useState(1)
 
-  // Organization Profile State
   const [profile, setProfile] = useState(null)
   const [isProfileLoading, setIsProfileLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -99,6 +66,8 @@ export default function OrgDashboardPage() {
   const [userId, setUserId] = useState(null)
   const [userEmail, setUserEmail] = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  // Track whether initial load has completed so tab switches don't re-trigger fetches
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -112,7 +81,8 @@ export default function OrgDashboardPage() {
   })
 
   useEffect(() => {
-    const getAuthOrg = async () => {
+    // Run once on mount — get the current session and load everything
+    const init = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         setUserId(session.user.id)
@@ -120,37 +90,38 @@ export default function OrgDashboardPage() {
         await fetchOrgProfile(session.user.id)
         await fetchAllData(session.user.id)
       } else {
-        setAlert({ type: 'error', message: 'You must be logged in to view this page.' })
         setIsLoading(false)
         router.push('/log-in')
       }
+      setInitialLoadDone(true)
     }
 
-    getAuthOrg()
+    init()
 
+    // ✅ Only react to SIGNED_IN / SIGNED_OUT — NOT TOKEN_REFRESHED or INITIAL_SESSION
+    // TOKEN_REFRESHED fires on every browser tab-switch and was causing the loading freeze
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Org Auth state changed:', event, session?.user?.id)
-      if (session?.user) {
-        setUserId(session.user.id)
-        setUserEmail(session.user.email)
-        await fetchOrgProfile(session.user.id)
-        await fetchAllData(session.user.id)
-      } else {
+      if (event === 'SIGNED_OUT') {
         setProfile(null)
         setUserId(null)
         setUserEmail(null)
         router.push('/log-in')
       }
+      // SIGNED_IN only matters if the user wasn't already loaded (e.g. they log in from another tab)
+      if (event === 'SIGNED_IN' && session?.user && !initialLoadDone) {
+        setUserId(session.user.id)
+        setUserEmail(session.user.email)
+        await fetchOrgProfile(session.user.id)
+        await fetchAllData(session.user.id)
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchOrgProfile = async (authUserId) => {
     setIsProfileLoading(true)
     try {
-      console.log('Fetching org profile for user_id:', authUserId)
-      
       const { data, error } = await supabase
         .from('organizations')
         .select('*')
@@ -161,14 +132,12 @@ export default function OrgDashboardPage() {
 
       if (data) {
         setProfile(data)
-        
         let orgAchievements = []
         if (data.achievements) {
-          orgAchievements = typeof data.achievements === 'string' 
-            ? JSON.parse(data.achievements) 
+          orgAchievements = typeof data.achievements === 'string'
+            ? JSON.parse(data.achievements)
             : data.achievements
         }
-        
         setFormData({
           name: data.name || "",
           description: data.description || "",
@@ -183,7 +152,6 @@ export default function OrgDashboardPage() {
         setAlert({ type: 'error', message: 'Organization profile not found. Please contact support.' })
       }
     } catch (error) {
-      console.error('Error fetching org profile:', error.message)
       setAlert({ type: 'error', message: 'Failed to load organization profile.' })
     } finally {
       setIsProfileLoading(false)
@@ -192,10 +160,7 @@ export default function OrgDashboardPage() {
 
   const handleProfileChange = (e) => {
     const { name, value, type, checked } = e.target
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
-    }))
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
   }
 
   const handleColorChange = (colorType, value) => {
@@ -207,15 +172,13 @@ export default function OrgDashboardPage() {
       setAlert({ type: 'error', message: 'Organization Name and Description are required fields.' })
       return
     }
-
     if (!formData.author_name) {
       setAlert({ type: 'error', message: 'Username (Author Name) is required.' })
       return
     }
-
     if (!profile?.user_id) {
-        setAlert({ type: 'error', message: 'Cannot update: Organization profile not found.' })
-        return
+      setAlert({ type: 'error', message: 'Cannot update: Organization profile not found.' })
+      return
     }
 
     setIsProfileLoading(true)
@@ -240,19 +203,14 @@ export default function OrgDashboardPage() {
         .eq('user_id', profile.user_id)
         .select()
         .single()
-      
+
       if (error) throw error
 
       setAlert({ type: 'success', message: 'Organization profile updated successfully!' })
       setIsEditing(false)
       setProfile(data)
-
-      setTimeout(() => {
-        setAlert(null)
-      }, 2000)
-
+      setTimeout(() => setAlert(null), 2000)
     } catch (error) {
-      console.error('Error updating profile:', error.message)
       setAlert({ type: 'error', message: `Failed to update profile: ${error.message}` })
     } finally {
       setIsProfileLoading(false)
@@ -261,257 +219,164 @@ export default function OrgDashboardPage() {
 
   const handleProfileCancel = () => {
     setIsEditing(false)
-    if (profile) {
-      fetchOrgProfile(userId)
-    }
+    if (profile) fetchOrgProfile(userId)
   }
 
   const fetchAllData = async (authUserId) => {
     setIsLoading(true)
     try {
+      // Get org ID once, share it across all three fetches — avoids 3 separate org lookups
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .eq('user_id', authUserId)
+        .single()
+
+      if (orgError || !orgData) return
+
       await Promise.all([
-        fetchAnnouncements(authUserId),
-        fetchBlogs(authUserId),
-        fetchResources(authUserId)
+        fetchAnnouncements(orgData.id),
+        fetchBlogs(orgData.id),
+        fetchResources(orgData.id),
       ])
-      setCurrentPageAnnouncement(1);
-      setCurrentPageBlogs(1);
-      setCurrentPageResources(1);
+
+      setCurrentPageAnnouncement(1)
+      setCurrentPageBlogs(1)
+      setCurrentPageResources(1)
     } catch (error) {
-      console.error('Error:', error)
+      console.error('fetchAllData error:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
-const fetchAnnouncements = async (authUserId) => {
-    try {
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('id, name')
-        .eq('user_id', authUserId)
-        .single()
+  // Each fetch now takes orgId directly — no redundant org lookup per fetch
+  const fetchAnnouncements = async (orgId) => {
+    const { data, error } = await supabase
+      .from('announcements')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: false })
 
-      if (orgError) {
-        console.error('Error fetching org for announcements:', orgError)
-        return
-      }
+    if (error) { console.error('fetchAnnouncements error:', error); return }
 
-      if (!orgData || !orgData.id) {
-        console.log('No organization found for user')
-        return
-      }
-
-      console.log('Fetching announcements for organization ID:', orgData.id, 'Name:', orgData.name)
-
-      const { data, error } = await supabase
-        .from('announcements')
-        .select('*')
-        .eq('organization_id', orgData.id)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching announcements:', error)
-        return
-      }
-
-      console.log('Announcements fetched:', data?.length || 0)
-      setAnnouncements(data || [])
-      const now = new Date()
-      const active = data?.filter(a => new Date(a.date_end) >= now).length || 0
-      setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: active }))
-    } catch (error) {
-      console.error('Unexpected error in fetchAnnouncements:', error)
-    }
+    setAnnouncements(data || [])
+    const now = new Date()
+    const active = data?.filter(a => new Date(a.date_end) >= now).length || 0
+    setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: active }))
   }
 
-  const fetchBlogs = async (authUserId) => {
-    try {
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('id, name')
-        .eq('user_id', authUserId)
-        .single()
+  const fetchBlogs = async (orgId) => {
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: false })
 
-      if (orgError) {
-        console.error('Error fetching org for blogs:', orgError)
-        return
-      }
+    if (error) { console.error('fetchBlogs error:', error); return }
 
-      if (!orgData || !orgData.id) {
-        console.log('No organization found for user')
-        return
-      }
-
-      console.log('Fetching blogs for organization ID:', orgData.id, 'Name:', orgData.name)
-
-      const { data, error } = await supabase
-        .from('blogs')
-        .select('*')
-        .eq('organization_id', orgData.id)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching blogs:', error)
-        return
-      }
-
-      console.log('Blogs fetched:', data?.length || 0)
-      setBlogs(data || [])
-      setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
-    } catch (error) {
-      console.error('Unexpected error in fetchBlogs:', error)
-    }
+    setBlogs(data || [])
+    setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
   }
 
-  const fetchResources = async (authUserId) => {
-    try {
-      const { data: orgData, error: orgError } = await supabase
-        .from('organizations')
-        .select('id, name')
-        .eq('user_id', authUserId)
-        .single()
+  const fetchResources = async (orgId) => {
+    const { data, error } = await supabase
+      .from('resource_hub')
+      .select('*')
+      .eq('organization_id', orgId)
+      .order('created_at', { ascending: false })
 
-      if (orgError) {
-        console.error('Error fetching org for resources:', orgError)
-        return
-      }
+    if (error) { console.error('fetchResources error:', error); return }
 
-      if (!orgData || !orgData.id) {
-        console.log('No organization found for user')
-        return
-      }
-
-      console.log('Fetching resources for organization ID:', orgData.id, 'Name:', orgData.name)
-
-      const { data, error } = await supabase
-        .from('resource_hub')
-        .select('*')
-        .eq('organization_id', orgData.id)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Error fetching resources:', error)
-        return
-      }
-
-      console.log('Resources fetched:', data?.length || 0)
-      setResources(data || [])
-      setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
-    } catch (error) {
-      console.error('Unexpected error in fetchResources:', error)
-    }
+    setResources(data || [])
+    setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
   }
+
+  // Refresh helpers for child components — re-uses already-loaded profile.id
+  const refreshAnnouncements = () => profile?.id && fetchAnnouncements(profile.id)
+  const refreshBlogs = () => profile?.id && fetchBlogs(profile.id)
+  const refreshResources = () => profile?.id && fetchResources(profile.id)
+  const refreshAll = () => profile?.id && Promise.all([
+    fetchAnnouncements(profile.id),
+    fetchBlogs(profile.id),
+    fetchResources(profile.id),
+  ])
 
   const handleDelete = async (type, id) => {
     if (!confirm(`Are you sure you want to delete this ${type}?`)) return
-    
+    const table = type === 'announcement' ? 'announcements' : type === 'blog' ? 'blogs' : 'resource_hub'
     try {
-      await supabase.from(type === 'announcement' ? 'announcements' : type === 'blog' ? 'blogs' : 'resource_hub').delete().eq('id', id)
-      
-      if (type === 'announcement') fetchAnnouncements(userId)
-      else if (type === 'blog') fetchBlogs(userId)
-      else fetchResources(userId)
+      await supabase.from(table).delete().eq('id', id)
+      if (type === 'announcement') refreshAnnouncements()
+      else if (type === 'blog') refreshBlogs()
+      else refreshResources()
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Delete error:', error)
     }
   }
 
-  const paginateData = (data, currentPage, itemsPerPage) => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return data.slice(startIndex, endIndex);
-  };
+  const paginateData = (data, currentPage) =>
+    data.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
-  const getTotalPages = (data) => {
-    return Math.ceil(data.length / ITEMS_PER_PAGE);
-  };
+  const getTotalPages = (data) => Math.ceil(data.length / ITEMS_PER_PAGE)
 
   const generatePaginationItems = (totalPages, currentPage, onPageChange) => {
-    const items = [];
-    const maxVisiblePages = 5; 
+    const items = []
+    const maxVisible = 5
 
     items.push(
       <PaginationItem key="prev">
         <PaginationPrevious
-          onClick={() => onPageChange(currentPage - 1)}
-          isActive={currentPage > 1}
+          onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
           className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
         />
       </PaginationItem>
-    );
+    )
 
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+    let end = Math.min(totalPages, start + maxVisible - 1)
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1)
 
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    if (start > 1) {
+      items.push(<PaginationItem key={1}><PaginationLink onClick={() => onPageChange(1)} className="cursor-pointer">1</PaginationLink></PaginationItem>)
+      if (start > 2) items.push(<PaginationItem key="e1"><PaginationEllipsis /></PaginationItem>)
     }
 
-    if (startPage > 1) {
+    for (let p = start; p <= end; p++) {
       items.push(
-        <PaginationItem key={1}>
-          <PaginationLink onClick={() => onPageChange(1)} className="cursor-pointer hover:bg-fuchsia-800/20">1</PaginationLink>
-        </PaginationItem>
-      );
-      if (startPage > 2) {
-        items.push(<PaginationItem key="ellipsis-start"><PaginationEllipsis /></PaginationItem>);
-      }
-    }
-
-    for (let page = startPage; page <= endPage; page++) {
-      items.push(
-        <PaginationItem key={page}>
-          <PaginationLink 
-            onClick={() => onPageChange(page)} 
-            isActive={page === currentPage} 
-            className={`cursor-pointer ${page === currentPage ? 'bg-fuchsia-600/50 text-white' : 'hover:bg-fuchsia-800/20'}`}
-          >
-            {page}
+        <PaginationItem key={p}>
+          <PaginationLink onClick={() => onPageChange(p)} isActive={p === currentPage}
+            className={`cursor-pointer ${p === currentPage ? 'bg-fuchsia-600/50 text-white' : 'hover:bg-fuchsia-800/20'}`}>
+            {p}
           </PaginationLink>
         </PaginationItem>
-      );
+      )
     }
 
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        items.push(<PaginationItem key="ellipsis-end"><PaginationEllipsis /></PaginationItem>);
-      }
-      items.push(
-        <PaginationItem key={totalPages}>
-          <PaginationLink onClick={() => onPageChange(totalPages)} className="cursor-pointer hover:bg-fuchsia-800/20">{totalPages}</PaginationLink>
-        </PaginationItem>
-      );
+    if (end < totalPages) {
+      if (end < totalPages - 1) items.push(<PaginationItem key="e2"><PaginationEllipsis /></PaginationItem>)
+      items.push(<PaginationItem key={totalPages}><PaginationLink onClick={() => onPageChange(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink></PaginationItem>)
     }
 
     items.push(
       <PaginationItem key="next">
         <PaginationNext
-          onClick={() => onPageChange(currentPage + 1)}
-          isActive={currentPage < totalPages}
+          onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
           className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
         />
       </PaginationItem>
-    );
+    )
 
-    return items;
-  };
-  
-  const paginatedAnnouncements = useMemo(() => {
-    return paginateData(announcements, currentPageAnnouncement, ITEMS_PER_PAGE);
-  }, [announcements, currentPageAnnouncement]);
+    return items
+  }
 
-  const paginatedBlogs = useMemo(() => {
-    return paginateData(blogs, currentPageBlogs, ITEMS_PER_PAGE);
-  }, [blogs, currentPageBlogs]);
+  const paginatedAnnouncements = useMemo(() => paginateData(announcements, currentPageAnnouncement), [announcements, currentPageAnnouncement])
+  const paginatedBlogs = useMemo(() => paginateData(blogs, currentPageBlogs), [blogs, currentPageBlogs])
+  const paginatedResources = useMemo(() => paginateData(resources, currentPageResources), [resources, currentPageResources])
 
-  const paginatedResources = useMemo(() => {
-    return paginateData(resources, currentPageResources, ITEMS_PER_PAGE);
-  }, [resources, currentPageResources]);
-
-  const totalPagesAnnouncement = getTotalPages(announcements);
-  const totalPagesBlogs = getTotalPages(blogs);
-  const totalPagesResources = getTotalPages(resources);
+  const totalPagesAnnouncement = getTotalPages(announcements)
+  const totalPagesBlogs = getTotalPages(blogs)
+  const totalPagesResources = getTotalPages(resources)
 
   if (!userId) {
     return (
@@ -527,48 +392,31 @@ const fetchAnnouncements = async (authUserId) => {
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6">
       <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full flex justify-between max-w-7xl mx-auto mb-6 p-2"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full flex justify-between max-w-7xl mx-auto mb-6 p-2"
       >
-        <div className="p-2">
-          <ReturnButton />
-        </div>
-
+        <div className="p-2"><ReturnButton /></div>
         <div className="w-full bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-3 px-3 rounded-lg shadow-lg shadow-fuchsia-500/10">
           <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            ⚠️ This Page is currently in Beta Testing 
+            <AlertCircle className="w-4 h-4" />⚠️ This Page is currently in Beta Testing
           </p>
         </div>
       </motion.div>
+
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
-                Dashboard Center
-              </span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">Dashboard Center</span>
             </h1>
-            <p className="text-fuchsia-200/80 max-w-2xl mx-auto text-lg">
-              Manage your organization, announcements, blogs, and resources
-            </p>
+            <p className="text-fuchsia-200/80 max-w-2xl mx-auto text-lg">Manage your organization, announcements, blogs, and resources</p>
           </div>
 
           {!isLoading && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
-            >
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <CardContent className="relative p-4 sm:p-6">
                   <div className="flex flex-col items-center justify-center text-center space-y-2">
                     <div className="p-3 bg-purple-500/20 rounded-full border border-purple-400/30">
@@ -582,114 +430,52 @@ const fetchAnnouncements = async (authUserId) => {
                 </CardContent>
               </Card>
 
-              <Card className="group relative bg-gradient-to-br from-fuchsia-900/40 via-purple-900/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-fuchsia-500/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-purple-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <CardContent className="relative p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-fuchsia-200/70 text-sm mb-1">Announcements</p>
-                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
-                        {stats.totalAnnouncements}
-                      </p>
+              {[
+                { label: "Announcements", count: stats.totalAnnouncements, Icon: Megaphone, color: "fuchsia" },
+                { label: "Resources", count: stats.totalResources, Icon: BookOpen, color: "emerald" },
+                { label: "Blogs", count: stats.totalBlogs, Icon: FileText, color: "purple" },
+                { label: "Active Events", count: stats.activeAnnouncements, Icon: TrendingUp, color: "orange" },
+              ].map(({ label, count, Icon, color }) => (
+                <Card key={label} className={`group relative bg-gradient-to-br from-${color}-900/40 via-${color}-900/40 to-slate-950/40 backdrop-blur-xl border border-${color}-500/30 hover:border-${color}-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-${color}-500/20`}>
+                  <CardContent className="relative p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className={`text-${color}-200/70 text-sm mb-1`}>{label}</p>
+                        <p className={`text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-${color}-300 to-${color}-300`}>{count}</p>
+                      </div>
+                      <div className={`p-3 bg-${color}-500/20 rounded-lg border border-${color}-400/30`}>
+                        <Icon className={`w-8 h-8 text-${color}-300`} />
+                      </div>
                     </div>
-                    <div className="p-3 bg-fuchsia-500/20 rounded-lg border border-fuchsia-400/30">
-                      <Megaphone className="w-8 h-8 text-fuchsia-300" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="group relative bg-gradient-to-br from-emerald-900/40 via-green-900/40 to-slate-950/40 backdrop-blur-xl border border-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-emerald-500/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/0 via-green-600/5 to-emerald-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <CardContent className="relative p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-emerald-200/70 text-sm mb-1">Resources</p>
-                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-green-300">
-                        {stats.totalResources}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-emerald-500/20 rounded-lg border border-emerald-400/30">
-                      <BookOpen className="w-8 h-8 text-emerald-300" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <CardContent className="relative p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-purple-200/70 text-sm mb-1">Blogs</p>
-                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-300 to-violet-300">
-                        {stats.totalBlogs}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-purple-500/20 rounded-lg border border-purple-400/30">
-                      <FileText className="w-8 h-8 text-purple-300" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="group relative bg-gradient-to-br from-orange-900/40 via-amber-900/40 to-slate-950/40 backdrop-blur-xl border border-orange-500/30 hover:border-orange-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-orange-500/20">
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-600/0 via-amber-600/5 to-orange-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <CardContent className="relative p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-orange-200/70 text-sm mb-1">Active Events</p>
-                      <p className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-300 to-amber-300">
-                        {stats.activeAnnouncements}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-orange-500/20 rounded-lg border border-orange-400/30">
-                      <TrendingUp className="w-8 h-8 text-orange-300" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              ))}
             </motion.div>
           )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
-                    <TabsTrigger 
-                      value="profile" 
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
-                    >
-                      <Building2 className="w-4 h-4" />Profile
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="view" 
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
-                    >
-                      <FileText className="w-4 h-4" />View All
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="create" 
-                      className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all"
-                    >
-                      <Plus className="w-4 h-4" />Create New
-                    </TabsTrigger>
+                    {[
+                      { value: "profile", icon: <Building2 className="w-4 h-4" />, label: "Profile" },
+                      { value: "view", icon: <FileText className="w-4 h-4" />, label: "View All" },
+                      { value: "create", icon: <Plus className="w-4 h-4" />, label: "Create New" },
+                    ].map(({ value, icon, label }) => (
+                      <TabsTrigger key={value} value={value}
+                        className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all">
+                        {icon}{label}
+                      </TabsTrigger>
+                    ))}
                   </TabsList>
 
+                  {/* ── Profile Tab ── */}
                   <TabsContent value="profile" className="mt-0">
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                       <div className="space-y-6">
                         {alert && (
-                          <Alert variant={alert.type === 'error' ? "destructive" : "default"} className={`${alert.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-100' : 'bg-green-500/20 border-green-500 text-green-100'}`}>
+                          <Alert className={`${alert.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-100' : 'bg-green-500/20 border-green-500 text-green-100'}`}>
                             {alert.type === 'error' ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                             <AlertDescription>{alert.message}</AlertDescription>
                           </Alert>
@@ -702,84 +488,45 @@ const fetchAnnouncements = async (authUserId) => {
                         ) : (
                           <>
                             <OrgProfileHeader
-                              formData={formData}
-                              profile={profile}
-                              isEditing={isEditing}
-                              isLoading={isProfileLoading}
-                              onEdit={() => setIsEditing(true)}
-                              onSave={handleProfileSubmit}
-                              onCancel={handleProfileCancel}
+                              formData={formData} profile={profile} isEditing={isEditing}
+                              isLoading={isProfileLoading} onEdit={() => setIsEditing(true)}
+                              onSave={handleProfileSubmit} onCancel={handleProfileCancel}
                             />
-
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                               <div className="lg:col-span-2 space-y-6">
-                                <OrgAboutSection
-                                  formData={formData}
-                                  isEditing={isEditing}
-                                  onChange={handleProfileChange}
-                                />
-
+                                <OrgAboutSection formData={formData} isEditing={isEditing} onChange={handleProfileChange} />
                                 <Card className="bg-black/20 backdrop-blur-lg border border-purple-500/20">
                                   <CardContent className="p-6">
                                     <h3 className="text-xl font-bold text-purple-200 mb-4 flex items-center gap-2">
-                                      <AtSign className="w-5 h-5" />
-                                      Account Information
+                                      <AtSign className="w-5 h-5" />Account Information
                                     </h3>
-                                    <div className="space-y-4">
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                          <Label className="text-purple-300 mb-2 block flex items-center gap-2">
-                                            <AtSign className="w-4 h-4" />
-                                            Username (Author Name)
-                                          </Label>
-                                          {isEditing ? (
-                                            <Input
-                                              name="author_name"
-                                              value={formData.author_name}
-                                              onChange={handleProfileChange}
-                                              className="bg-black/30 border-purple-500/30 text-white"
-                                              placeholder="johndoe"
-                                            />
-                                          ) : (
-                                            <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">
-                                              {formData.author_name || "Not set"}
-                                            </p>
-                                          )}
-                                        </div>
-                                        <div>
-                                          <Label className="text-purple-300 mb-2 block flex items-center gap-2">
-                                            <Mail className="w-4 h-4" />
-                                            Email (Login)
-                                          </Label>
-                                          <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">
-                                            {userEmail}
-                                          </p>
-                                        </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                        <Label className="text-purple-300 mb-2 block flex items-center gap-2"><AtSign className="w-4 h-4" />Username (Author Name)</Label>
+                                        {isEditing ? (
+                                          <Input name="author_name" value={formData.author_name} onChange={handleProfileChange}
+                                            className="bg-black/30 border-purple-500/30 text-white" placeholder="johndoe" />
+                                        ) : (
+                                          <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">{formData.author_name || "Not set"}</p>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <Label className="text-purple-300 mb-2 block flex items-center gap-2"><Mail className="w-4 h-4" />Email (Login)</Label>
+                                        <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">{userEmail}</p>
                                       </div>
                                     </div>
                                   </CardContent>
                                 </Card>
                               </div>
-
                               <div className="space-y-6">
-                                <OrgQuickStats
-                                  formData={formData}
-                                  totalAchievements={availableOrgAchievements.length}
-                                />
-
+                                <OrgQuickStats formData={formData} totalAchievements={availableOrgAchievements.length} />
                                 <Card className="bg-gradient-to-br from-red-900/40 to-slate-950/40 backdrop-blur-lg border border-red-500/30">
                                   <CardContent className="p-6">
                                     <h3 className="text-xl font-bold text-red-300 mb-4 flex items-center gap-2">
-                                      <AlertCircle className="w-5 h-5" />
-                                      Danger Zone
+                                      <AlertCircle className="w-5 h-5" />Danger Zone
                                     </h3>
-                                    <Button
-                                      onClick={() => setShowDeleteModal(true)}
-                                      variant="destructive"
-                                      className="w-full bg-red-600 hover:bg-red-700"
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" />
-                                      Delete Account
+                                    <Button onClick={() => setShowDeleteModal(true)} variant="destructive" className="w-full bg-red-600 hover:bg-red-700">
+                                      <Trash2 className="w-4 h-4 mr-2" />Delete Account
                                     </Button>
                                   </CardContent>
                                 </Card>
@@ -791,192 +538,89 @@ const fetchAnnouncements = async (authUserId) => {
                     </motion.div>
                   </TabsContent>
 
+                  {/* ── View All Tab ── */}
                   <TabsContent value="view">
                     <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                       <CardContent className="p-6">
                         <Tabs value={activeViewTab} onValueChange={setActiveViewTab}>
                           <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-purple-500/20 p-1">
-                            <TabsTrigger 
-                              value="viewAnnouncement"
-                              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="viewAnnouncement" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
                               <Megaphone className="w-4 h-4 mr-2" />Announcements
                             </TabsTrigger>
-                            <TabsTrigger 
-                              value="viewBlogs"
-                              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="viewBlogs" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
                               <FileText className="w-4 h-4 mr-2" />Blogs
                             </TabsTrigger>
-                            <TabsTrigger 
-                              value="viewResources"
-                              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="viewResources" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white">
                               <BookOpen className="w-4 h-4 mr-2" />Resources
                             </TabsTrigger>
                           </TabsList>
 
-                          <TabsContent value="viewAnnouncement">
-                            <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent mb-6">
-                              Your Announcements
-                            </h3>
-                            {isLoading ? (
-                              <div className="flex justify-center py-12">
-                                <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
-                              </div>
-                            ) : announcements.length === 0 ? (
-                              <Alert className="bg-fuchsia-900/20 border-fuchsia-500/30">
-                                <AlertCircle className="w-4 h-4 text-fuchsia-300" />
-                                <AlertDescription className="text-center py-8 text-fuchsia-200">
-                                  No announcements yet. Create your first one!
-                                </AlertDescription>
-                              </Alert>
-                            ) : (
-                              <>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {paginatedAnnouncements.map((item) => (
-                                    <AnnouncementCard 
-                                    key={item.id} 
-                                    item={item} 
-                                    onUpdate={() => fetchAnnouncements(userId)} 
-                                    onDelete={(id) => handleDelete('announcement', id)} />
-                                  ))}
+                          {[
+                            { tab: "viewAnnouncement", label: "Your Announcements", gradient: "from-fuchsia-300 to-purple-300", data: paginatedAnnouncements, totalPages: totalPagesAnnouncement, currentPage: currentPageAnnouncement, setPage: setCurrentPageAnnouncement, spinner: "fuchsia",
+                              renderCard: (item) => <AnnouncementCard key={item.id} item={item} onUpdate={refreshAnnouncements} onDelete={(id) => handleDelete('announcement', id)} /> },
+                            { tab: "viewBlogs", label: "Your Blogs", gradient: "from-purple-300 to-pink-300", data: paginatedBlogs, totalPages: totalPagesBlogs, currentPage: currentPageBlogs, setPage: setCurrentPageBlogs, spinner: "purple",
+                              renderCard: (item) => <BlogCard key={item.id} item={item} onUpdate={refreshBlogs} onDelete={(id) => handleDelete('blog', id)} /> },
+                            { tab: "viewResources", label: "Your Resources", gradient: "from-emerald-300 to-green-300", data: paginatedResources, totalPages: totalPagesResources, currentPage: currentPageResources, setPage: setCurrentPageResources, spinner: "emerald",
+                              renderCard: (item) => <ResourceCard key={item.id} item={item} onDelete={(id) => handleDelete('resource', id)} /> },
+                          ].map(({ tab, label, gradient, data, totalPages, currentPage, setPage, spinner, renderCard }) => (
+                            <TabsContent key={tab} value={tab}>
+                              <h3 className={`text-2xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent mb-6`}>{label}</h3>
+                              {isLoading ? (
+                                <div className="flex justify-center py-12">
+                                  <Loader2 className={`w-8 h-8 animate-spin text-${spinner}-300`} />
                                 </div>
-                                
-                                {totalPagesAnnouncement > 1 && (
-                                  <Pagination className="mt-8">
-                                    <PaginationContent>
-                                      {generatePaginationItems(
-                                        totalPagesAnnouncement, 
-                                        currentPageAnnouncement, 
-                                        setCurrentPageAnnouncement
-                                      )}
-                                    </PaginationContent>
-                                  </Pagination>
-                                )}
-                              </>
-                            )}
-                          </TabsContent>
-
-                          <TabsContent value="viewBlogs">
-                            <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent mb-6">
-                              Your Blogs
-                            </h3>
-                            {isLoading ? (
-                              <div className="flex justify-center py-12">
-                                <Loader2 className="w-8 h-8 animate-spin text-purple-300" />
-                              </div>
-                            ) : blogs.length === 0 ? (
-                              <Alert className="bg-purple-900/20 border-purple-500/30">
-                                <AlertCircle className="w-4 h-4 text-purple-300" />
-                                <AlertDescription className="text-center py-8 text-purple-200">
-                                  No blogs yet. Create your first one!
-                                </AlertDescription>
-                              </Alert>
-                            ) : (
-                              <>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {paginatedBlogs.map((item) => (
-                                    <BlogCard 
-                                    key={item.id} 
-                                    item={item} 
-                                    onUpdate={() => fetchBlogs(userId)} 
-                                    onDelete={(id) => handleDelete('blog', id)} />
-                                  ))}
-                                </div>
-
-                                {totalPagesBlogs > 1 && (
-                                  <Pagination className="mt-8">
-                                    <PaginationContent>
-                                      {generatePaginationItems(
-                                        totalPagesBlogs, 
-                                        currentPageBlogs, 
-                                        setCurrentPageBlogs
-                                      )}
-                                    </PaginationContent>
-                                  </Pagination>
-                                )}
-                              </>
-                            )}
-                          </TabsContent>
-
-                          <TabsContent value="viewResources">
-                            <h3 className="text-2xl font-bold bg-gradient-to-r from-emerald-300 to-green-300 bg-clip-text text-transparent mb-6">
-                              Your Resources
-                            </h3>
-                            {isLoading ? (
-                              <div className="flex justify-center py-12">
-                                <Loader2 className="w-8 h-8 animate-spin text-emerald-300" />
-                              </div>
-                            ) : resources.length === 0 ? (
-                              <Alert className="bg-emerald-900/20 border-emerald-500/30">
-                                <AlertCircle className="w-4 h-4 text-emerald-300" />
-                                <AlertDescription className="text-center py-8 text-emerald-200">
-                                  No resources yet. Create your first one!
-                                </AlertDescription>
-                              </Alert>
-                            ) : (
-                              <>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                  {paginatedResources.map((item) => (
-                                    <ResourceCard key={item.id} item={item} onDelete={(id) => handleDelete('resource', id)} />
-                                  ))}
-                                </div>
-
-                                {totalPagesResources > 1 && (
-                                  <Pagination className="mt-8">
-                                    <PaginationContent>
-                                      {generatePaginationItems(
-                                        totalPagesResources, 
-                                        currentPageResources, 
-                                        setCurrentPageResources
-                                      )}
-                                    </PaginationContent>
-                                  </Pagination>
-                                )}
-                              </>
-                            )}
-                          </TabsContent>
+                              ) : data.length === 0 ? (
+                                <Alert className={`bg-${spinner}-900/20 border-${spinner}-500/30`}>
+                                  <AlertCircle className={`w-4 h-4 text-${spinner}-300`} />
+                                  <AlertDescription className="text-center py-8">No {label.split(" ")[1].toLowerCase()} yet. Create your first one!</AlertDescription>
+                                </Alert>
+                              ) : (
+                                <>
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">{data.map(renderCard)}</div>
+                                  {totalPages > 1 && (
+                                    <Pagination className="mt-8">
+                                      <PaginationContent>{generatePaginationItems(totalPages, currentPage, setPage)}</PaginationContent>
+                                    </Pagination>
+                                  )}
+                                </>
+                              )}
+                            </TabsContent>
+                          ))}
                         </Tabs>
                       </CardContent>
                     </Card>
                   </TabsContent>
 
+                  {/* ── Create Tab ── */}
                   <TabsContent value="create">
                     <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                       <CardContent className="p-6">
                         <Tabs value={activeCreateTab} onValueChange={setActiveCreateTab}>
                           <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-purple-500/20 p-1">
-                            <TabsTrigger 
-                              value="createAnnouncement"
-                              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="createAnnouncement" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
                               <Megaphone className="w-4 h-4 mr-2" />Announcement
                             </TabsTrigger>
-                            <TabsTrigger 
-                              value="createBlogs"
-                              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="createBlogs" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
                               <FileText className="w-4 h-4 mr-2" />Blog
                             </TabsTrigger>
-                            <TabsTrigger 
-                              value="createResources"
-                              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white"
-                            >
+                            <TabsTrigger value="createResources" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white">
                               <BookOpen className="w-4 h-4 mr-2" />Resource
                             </TabsTrigger>
                           </TabsList>
 
                           <TabsContent value="createAnnouncement">
-                            <AnnounceForm onSuccess={() => fetchAllData(userId)} organizationName={profile?.name} />
+                            {/* ✅ Pass profile down so AnnounceForm doesn't need its own auth listener */}
+                            <AnnounceForm
+                              onSuccess={refreshAll}
+                              currentOrg={profile}
+                              authUserId={userId}
+                            />
                           </TabsContent>
-
                           <TabsContent value="createBlogs">
-                            <BlogForm onSuccess={() => fetchAllData(userId)} organizationName={profile?.name} />
+                            <BlogForm onSuccess={refreshAll} organizationName={profile?.name} />
                           </TabsContent>
-
                           <TabsContent value="createResources">
-                            <ResourceForm onSuccess={() => fetchAllData(userId)} organizationName={profile?.name} />
+                            <ResourceForm onSuccess={refreshAll} organizationName={profile?.name} />
                           </TabsContent>
                         </Tabs>
                       </CardContent>
@@ -990,11 +634,7 @@ const fetchAnnouncements = async (authUserId) => {
       </div>
 
       {showDeleteModal && (
-        <DeleteAccountModal
-          organizationName={profile?.name}
-          userId={userId}
-          onClose={() => setShowDeleteModal(false)}
-        />
+        <DeleteAccountModal organizationName={profile?.name} userId={userId} onClose={() => setShowDeleteModal(false)} />
       )}
     </div>
   )
