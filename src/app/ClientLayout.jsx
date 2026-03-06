@@ -6,62 +6,47 @@ import { ServerErrorBlocker } from "@/components/errorHandling/server-error-bloc
 import { DbErrorBoundary } from "@/components/errorHandling/error-boundary-db-blocker";
 import { ThemeProvider } from "@/components/theme-provider";
 import { supabase } from "@/lib/supabase";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export default function ClientLayout({ children }) {
   const [dbError, setDbError] = useState(false);
+  const hasChecked = useRef(false);
 
-  const checkDbConnection = async () => {
-    if (!supabase) {
-      setDbError(true);
-      return false;
-    }
+  const checkDbConnection = useCallback(async () => {
+    if (!supabase) { setDbError(true); return; }
     try {
-      const [{ error: orgError }, { error: userError }] = await Promise.all([
-        supabase.from('organizations').select('count').limit(1),
-        supabase.from('users').select('count').limit(1),
-      ]);
-
-      if (orgError || userError) {
-        console.error('Supabase error:', orgError || userError);
-        setDbError(true);
-        return false;
-      }
-
-      setDbError(false);
-      return true;
-    } catch (err) {
-      console.error('Connection error:', err);
+      const { error } = await supabase.from('organizations').select('count').limit(1);
+      setDbError(!!error);
+    } catch {
       setDbError(true);
-      return false;
     }
-  };
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    checkDbConnection();
   }, []);
 
-  const handleRetry = async () => {
-    await checkDbConnection();
-  };
+  useEffect(() => {
+    if (hasChecked.current) return;
+    hasChecked.current = true;
+    checkDbConnection();
+  }, [checkDbConnection]);
+
+  // ✅ Re-check DB when returning to the tab — catches cases where the
+  // connection dropped while the tab was in the background.
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkDbConnection();
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [checkDbConnection]);
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
       <DbErrorBoundary>
         {children}
       </DbErrorBoundary>
-      
       <OfflineBlocker />
-      <DatabaseErrorBlocker 
-        isError={dbError}
-        onRetry={handleRetry}
-      />
+      <DatabaseErrorBlocker isError={dbError} onRetry={checkDbConnection} />
       <ServerErrorBlocker isError={false} />
       <MaintenanceBlocker isActive={false} />
     </ThemeProvider>

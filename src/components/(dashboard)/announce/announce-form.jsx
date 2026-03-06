@@ -30,11 +30,12 @@ const PRIZE_RANK_COLORS = [
   { border: "border-amber-700/40", bg: "bg-amber-700/5", badge: "bg-amber-700/20 text-amber-400 border-amber-700/30", label: "🥉" },
 ]
 
-// ✅ currentOrg and authUserId are now received as props from the parent dashboard.
-// This component no longer needs its own auth listener or org fetch —
-// so switching browser tabs or dashboard tabs will NEVER reset the form.
+const MAX_RETRIES = 5
+const RETRY_DELAY_MS = 800
+
 export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
   const [isLoading, setIsLoading] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
   const [alert, setAlert] = useState(null)
   const [formData, setFormData] = useState({
     title: "",
@@ -49,7 +50,6 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
     color_scheme: "purple",
     google_sheet_csv_url: ""
   })
-
   const [prizes, setPrizes] = useState([
     { id: Date.now(), name: "", value: "", description: "" }
   ])
@@ -85,52 +85,71 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
     setIsLoading(true)
     setAlert(null)
 
-    try {
-      const prizesData = validPrizes.map(({ id, ...prize }) => ({
-        name: prize.name.trim(),
-        value: prize.value.trim(),
-        description: (prize.description || "").trim()
-      }))
-
-      const announcementData = {
-        title: formData.title.trim(),
-        des: formData.des.trim(),
-        author: formData.author.trim(),
-        date_begin: formData.date_begin,
-        date_end: formData.date_end,
-        open_to: formData.open_to.trim() || null,
-        countries: formData.countries.trim() || null,
-        prizes: prizesData,
-        website_link: formData.website_link.trim() || null,
-        dev_link: formData.dev_link.trim() || null,
-        color_scheme: formData.color_scheme,
-        organization: currentOrg.name,
-        organization_id: currentOrg.id,
-        registrants_count: 0,
-        tracking_method: "automatic",
-        google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
-      }
-
-      const { error } = await supabase.from("announcements").insert([announcementData])
-      if (error) throw error
-
-      setAlert({ type: "success", message: "Announcement created successfully!" })
-      setFormData({
-        title: "", des: "", author: "", date_begin: "", date_end: "",
-        open_to: "", countries: "", website_link: "", dev_link: "",
-        color_scheme: "purple", google_sheet_csv_url: ""
-      })
-      setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
-      setTimeout(() => { if (onSuccess) onSuccess() }, 1000)
-
-    } catch (error) {
-      setAlert({ type: "error", message: `Failed to create announcement: ${error.message}` })
-    } finally {
-      setIsLoading(false)
+    const announcementData = {
+      title: formData.title.trim(),
+      des: formData.des.trim(),
+      author: formData.author.trim(),
+      date_begin: formData.date_begin,
+      date_end: formData.date_end,
+      open_to: formData.open_to.trim() || null,
+      countries: formData.countries.trim() || null,
+      prizes: validPrizes.map(({ id, ...p }) => ({
+        name: p.name.trim(),
+        value: p.value.trim(),
+        description: (p.description || "").trim()
+      })),
+      website_link: formData.website_link.trim() || null,
+      dev_link: formData.dev_link.trim() || null,
+      color_scheme: formData.color_scheme,
+      organization: currentOrg.name,
+      organization_id: currentOrg.id,
+      registrants_count: 0,
+      tracking_method: "automatic",
+      google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
     }
+
+    let lastError = null
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      setRetryCount(attempt)
+      try {
+        // Force a fresh session before every attempt — tab switches cause token staleness
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError || !session) {
+          const { error: refreshError } = await supabase.auth.refreshSession()
+          if (refreshError) throw new Error("Session expired. Please log in again.")
+        }
+
+        const { error } = await supabase.from("announcements").insert([announcementData])
+        if (error) throw error
+
+        // DB confirmed — reset and done
+        setAlert({ type: "success", message: "Announcement published!" })
+        setFormData({
+          title: "", des: "", author: "", date_begin: "", date_end: "",
+          open_to: "", countries: "", website_link: "", dev_link: "",
+          color_scheme: "purple", google_sheet_csv_url: ""
+        })
+        setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
+        setIsLoading(false)
+        setRetryCount(0)
+        if (onSuccess) onSuccess()
+        return
+
+      } catch (err) {
+        lastError = err
+        if (attempt < MAX_RETRIES) {
+          await new Promise(res => setTimeout(res, RETRY_DELAY_MS))
+        }
+      }
+    }
+
+    // All retries exhausted
+    setAlert({ type: "error", message: `Failed after ${MAX_RETRIES} attempts: ${lastError?.message}` })
+    setIsLoading(false)
+    setRetryCount(0)
   }
 
-  // If parent hasn't loaded the org yet, show a subtle placeholder instead of blocking the whole form
   if (!currentOrg) {
     return (
       <Card className="bg-white/10 backdrop-blur-lg border-white/20">
@@ -153,14 +172,12 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
         )}
 
         <div className="space-y-6">
-          {/* Publishing As */}
           <div className="flex items-center gap-3 p-3 border border-blue-400/30 rounded-xl bg-blue-950/20">
             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
             <span className="text-white/50 text-sm">Publishing as</span>
             <span className="text-white font-semibold text-sm">{currentOrg.name}</span>
           </div>
 
-          {/* Core Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2 md:col-span-2">
               <Label className="text-white">Title *</Label>
@@ -179,7 +196,6 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
             </div>
           </div>
 
-          {/* Prize Pool */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -193,7 +209,6 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
               </Button>
             </div>
 
-            {/* Templates */}
             <div className="flex flex-wrap gap-1.5 p-3 rounded-xl bg-white/5 border border-white/10">
               <span className="text-xs text-white/30 w-full mb-1 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" /> Quick-fill templates
@@ -206,7 +221,6 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
               ))}
             </div>
 
-            {/* Prize Cards */}
             <div className="space-y-2">
               {prizes.map((prize, index) => {
                 const rank = PRIZE_RANK_COLORS[index] || { border: "border-white/10", bg: "bg-white/5", badge: "bg-white/10 text-white/50 border-white/10", label: `#${index + 1}` }
@@ -238,7 +252,6 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
             </div>
           </div>
 
-          {/* Dates & Optional Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-white">Start Date *</Label>
@@ -272,7 +285,6 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
             </div>
           </div>
 
-          {/* Google Forms Tracking */}
           <div className="space-y-3 p-4 border border-blue-400/20 rounded-xl bg-blue-950/10">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-400 shrink-0" />
@@ -285,7 +297,12 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
           </div>
 
           <Button onClick={handleSubmit} className="w-full" disabled={isLoading}>
-            {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</> : "Create Announcement"}
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {retryCount > 1 ? `Retrying... (${retryCount}/${MAX_RETRIES})` : "Publishing..."}
+              </span>
+            ) : "Publish Announcement"}
           </Button>
         </div>
       </CardContent>
