@@ -11,47 +11,39 @@ import { useState, useEffect } from "react";
 export default function ClientLayout({ children }) {
   const [dbError, setDbError] = useState(false);
 
-  useEffect(() => {
-    const checkSupabase = async () => {
-      if (!supabase) {
-        setDbError(true);
-        return;
-      }
-      try {
-        const { error } = await supabase
-          .from('organizations')
-          .select('count')
-          .limit(1);
-        
-        if (error) {
-          console.error('Supabase error:', error);
-          setDbError(true);
-        } else {
-          setDbError(false);
-        }
-      } catch (err) {
-        console.error('Connection error:', err);
-        setDbError(true);
-      }
-    };
+  const checkDbConnection = async () => {
+    if (!supabase) {
+      setDbError(true);
+      return false;
+    }
+    try {
+      const [{ error: orgError }, { error: userError }] = await Promise.all([
+        supabase.from('organizations').select('count').limit(1),
+        supabase.from('users').select('count').limit(1),
+      ]);
 
-    checkSupabase();
+      if (orgError || userError) {
+        console.error('Supabase error:', orgError || userError);
+        setDbError(true);
+        return false;
+      }
+
+      setDbError(false);
+      return true;
+    } catch (err) {
+      console.error('Connection error:', err);
+      setDbError(true);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkDbConnection();
   }, []);
 
   const handleRetry = async () => {
-    if (!supabase) return; // 👈 guard added
-    try {
-      const { error } = await supabase
-        .from('organizations')
-        .select('count')
-        .limit(1);
-      
-      if (!error) {
-        setDbError(false);
-      }
-    } catch (err) {
-      console.error('Retry failed:', err);
-    }
+    await checkDbConnection();
   };
 
   return (
@@ -61,7 +53,7 @@ export default function ClientLayout({ children }) {
       enableSystem
       disableTransitionOnChange
     >
-      <DbErrorBoundary> {/* 👈 wraps children so crashes show your blocker */}
+      <DbErrorBoundary>
         {children}
       </DbErrorBoundary>
       
