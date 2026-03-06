@@ -1,14 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { AlertCircle, CheckCircle, Loader2, Info, Trophy, Plus, X, Sparkles } from "lucide-react"
+import { AlertCircle, CheckCircle, Loader2, Info, Trophy, Plus, X, Sparkles, RotateCcw } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+
+const STORAGE_KEY = "announce_form_draft"
+const PRIZES_KEY  = "announce_form_prizes"
+
+const EMPTY_FORM = {
+  title: "", des: "", author: "", date_begin: "", date_end: "",
+  open_to: "", countries: "", website_link: "", dev_link: "",
+  color_scheme: "purple", google_sheet_csv_url: ""
+}
+const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
+
+const loadDraft = () => {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY)
+    return s ? { ...EMPTY_FORM, ...JSON.parse(s) } : { ...EMPTY_FORM }
+  } catch { return { ...EMPTY_FORM } }
+}
+const loadPrizes = () => {
+  try {
+    const s = localStorage.getItem(PRIZES_KEY)
+    return s ? JSON.parse(s) : [...EMPTY_PRIZES]
+  } catch { return [...EMPTY_PRIZES] }
+}
+const saveDraft  = (data)   => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)) } catch {} }
+const savePrizes = (prizes) => { try { localStorage.setItem(PRIZES_KEY,  JSON.stringify(prizes)) } catch {} }
+const clearDraft = ()       => { try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(PRIZES_KEY) } catch {} }
 
 const PRIZE_TEMPLATES = [
   { name: "1st Place", value: "$5,000" },
@@ -37,22 +63,30 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
   const [isLoading, setIsLoading] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
   const [alert, setAlert] = useState(null)
-  const [formData, setFormData] = useState({
-    title: "",
-    des: "",
-    author: "",
-    date_begin: "",
-    date_end: "",
-    open_to: "",
-    countries: "",
-    website_link: "",
-    dev_link: "",
-    color_scheme: "purple",
-    google_sheet_csv_url: ""
-  })
-  const [prizes, setPrizes] = useState([
-    { id: Date.now(), name: "", value: "", description: "" }
-  ])
+  const [hasDraft, setHasDraft] = useState(false)
+
+  // Load from localStorage on first render (survives refresh + tab switches)
+  const [formData, setFormData] = useState(() => loadDraft())
+  const [prizes, setPrizes] = useState(() => loadPrizes())
+
+  // Persist every change to localStorage automatically
+  useEffect(() => {
+    saveDraft(formData)
+    const isDirty = Object.entries(formData).some(([k, v]) => v && v !== EMPTY_FORM[k])
+    setHasDraft(isDirty)
+  }, [formData])
+
+  useEffect(() => {
+    savePrizes(prizes)
+  }, [prizes])
+
+  const resetForm = () => {
+    clearDraft()
+    setFormData({ ...EMPTY_FORM })
+    setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
+    setHasDraft(false)
+    setAlert(null)
+  }
 
   const addPrize = () => setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "", description: "" }])
   const removePrize = (id) => prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id))
@@ -123,14 +157,12 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
         const { error } = await supabase.from("announcements").insert([announcementData])
         if (error) throw error
 
-        // DB confirmed — reset and done
+        // DB confirmed — clear draft and reset
+        clearDraft()
         setAlert({ type: "success", message: "Announcement published!" })
-        setFormData({
-          title: "", des: "", author: "", date_begin: "", date_end: "",
-          open_to: "", countries: "", website_link: "", dev_link: "",
-          color_scheme: "purple", google_sheet_csv_url: ""
-        })
+        setFormData({ ...EMPTY_FORM })
         setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
+        setHasDraft(false)
         setIsLoading(false)
         setRetryCount(0)
         if (onSuccess) onSuccess()
@@ -172,6 +204,19 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
         )}
 
         <div className="space-y-6">
+          {/* Draft restored indicator */}
+          {hasDraft && (
+            <div className="flex items-center justify-between gap-3 p-3 border border-amber-400/30 rounded-xl bg-amber-950/20">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-amber-200/80 text-xs">Draft auto-saved — your progress is safe</span>
+              </div>
+              <button onClick={resetForm} className="flex items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
+                <RotateCcw className="w-3 h-3" /> Clear
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center gap-3 p-3 border border-blue-400/30 rounded-xl bg-blue-950/20">
             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
             <span className="text-white/50 text-sm">Publishing as</span>
