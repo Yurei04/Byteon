@@ -13,171 +13,267 @@
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "The hackathon ended a week ago. You didn’t win first place. But that didn’t matter anymore. You created it. You pitched. You finished. And somehow… that felt like victory."
+              "text": "The glow of your laptop lights up your room. A countdown timer flashes on screen: “Byteon Hackathon Closing Ceremony – Live on Devpost.” Soft anticipation fills the air."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Aira’s hologram flickers to life beside you — this time, smaller, calmer. She’s sitting cross-legged, watching the night sky."
+              "text": "The hackathon officially ended three days ago. But tonight… was the final chapter. The announcement of winners."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "The livestream begins. Applause echoes through your speakers. A slideshow shows submitted projects, team names, screenshots, demo clips."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira’s hologram flickers beside you — brighter than usual."
             },
             {
               "character": "Aira",
-              "pose": "neutral",
-              "text": "Beautiful view tonight, huh? I’ve analyzed 14,520 city skylines, but this one feels… special."
+              "pose": "happy",
+              "text": "Heart rate slightly elevated. Nervous?"
             },
             {
               "character": "You",
               "pose": "neutral",
-              "text": "It’s peaceful. Like the calm after a storm."
+              "text": "Maybe a little."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "(The host appears on screen.)"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Host (through laptop speakers): “Thank you to everyone who joined the Byteon Hackathon hosted on Devpost! Over 300 participants, 75 completed submissions, and countless lines of code later… we celebrate all of you.”"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "(Your project flashes briefly on screen — your team name visible. You freeze.)"
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "That’s us…"
             },
             {
               "character": "Aira",
+              "pose": "smile",
+              "text": "You built something real. Regardless of outcome — that matters."
+            },
+            {
+              "character": "Narrator",
               "pose": "neutral",
-              "text": "Storms mean growth. You’ve weathered one — and look how much stronger you are now."
+              "text": "Host: “And now… our top three teams!”"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "(Drumroll sound effect plays.)"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Third place - CodeBreach"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Second place - CultureQuest"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Second place - CultureQuest"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You hold your breath."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "And for the First place..."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "VeriLokal! (Not your team.)"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "There’s a small silence in your room. But it doesn’t hurt the way you expected it to. Strangely… you weren’t disappointed. You felt proud."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Host: “To every participant — certificates of completion and digital badges are now available on Devpost. Prize money and special awards will be distributed via email within the week. Check your dashboards!”"
             },
             {
               "character": "Aira",
-              "pose": "neutral",
-              "text": "Byteon was your first hackathon — hosted on Devpost, a platform that tracks submissions, participants, and achievements. You followed all rules, contributed meaningfully, and learned the spirit of hackathons."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "And next time, maybe you’ll guide someone else."
+              "pose": "smile",
+              "text": "You may not have won a trophy… but you earned something better."
             },
             {
               "character": "You",
               "pose": "smile",
               "text": "I still can’t believe I actually joined a hackathon. I thought I’d back out halfway."
-            },
-            {
-              "character": "Aira",
-              "pose": "grin",
-              "text": "Oh, I remember. You almost uninstalled me the first night."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "You shuddered at the thought of that… if you knew what you know now, you would’ve cried yourself to sleep every night."
-            },
-            {
-              "character": "You",
-              "pose": "grin",
-              "text": "Yeah… I didn’t think a virtual guide could make me feel this human."
             }
           ]
         },
         {
           "id": "scene2",
+          "music": "memory_theme",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Your laptop chimes."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Certificate of Participation – Byteon Hackathon"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "You click. A polished digital certificate fills your screen. Your name. Your team. Your project title."
+            },
+            {
+              "character": "You",
+              "pose": "neutral",
+              "text": "I actually did it."
+            },
+            {
+              "character": "Aira",
+              "pose": "happy",
+              "text": "Documented proof that you faced fear… and chose courage."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "It wasn’t about prize money. It wasn’t about rankings. It was about finishing. And you did."
+            }
+          ]
+        },
+        {
+          "id": "scene3",
+          "background": "rooftop_night_cityscape",
+          "music": "gentle_wind",
+          "dialogs": [
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "(Later that night. Rooftop. City lights shimmer below. The ceremony replay still echoes faintly in your memory.)"
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "Aira appears again — calmer now, sitting cross-legged beside you."
+            },
+            {
+              "character": "Aira",
+              "pose": "neutral",
+              "text": "I’ve analyzed thousands of competitions. Winning feels good. But growth? That lasts longer."
+            },
+            {
+              "character": "You",
+              "pose": "happy",
+              "text": "It’s peaceful. Like the calm after a storm."
+            },
+            {
+              "character": "Aira",
+              "pose": "clapping",
+              "text": "Storms mean growth. You’ve weathered one — and look how much stronger you are now."
+            }
+          ]
+        },
+        {
+          "id": "scene4",
           "background": "digital_realm_timeline",
           "music": "memory_theme",
           "dialogs": [
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Aira giggled as your vision flashed and you found yourself back in the digital world. Your second home. A timeline of memories unfolds before you — highlights from previous chapters flicker: your first decision to join, forming a team, brainstorming ideas, the pitch stage."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Look at that. Every chapter, every challenge — you kept moving forward."
-            },
-            {
-              "character": "You",
-              "pose": "neutral",
-              "text": "It wasn’t just the hacks or the code. It was the people. The teamwork. The late-night chaos. It was fun."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "That’s what hackathons are all about — not perfection, but creation."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "She paused for a moment before speaking in a softer voice."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Tell me… what did you learn from it all?"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "You paused for a moment… thinking of what to say. The words to express the things you learned throughout this journey."
-            },
-            {
-              "character": "You",
-              "pose": "neutral",
-              "text": "That it’s okay not to know everything. That trying, failing, and learning together… is what innovation really means."
+              "text": "(Your vision transitions into the digital world. A glowing timeline forms — memories flicker: joining the hackathon, forming your team, brainstorming, debugging at 2AM, pitching live.)"
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Beautiful answer."
+              "text": "Every chapter. Every challenge. You kept going."
             },
             {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Aira smiled proudly. This smile isn’t like the other times where she was trying to guide you through. It was to congratulate you."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "You’ve learned the true spirit of hacking — not just the coding kind, but the life kind."
-            }
-          ]
-        },
-        {
-          "id": "scene3",
-          "background": "digital_sky_starry",
-          "music": "gentle_wind",
-          "dialogs": [
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The wind blows gently. Aira looks up at the digital sky — constellations form into glowing circuit lines."
+              "character": "You",
+              "pose": "proud",
+              "text": "It wasn’t just the code. It was the teamwork. The chaos. The late nights. It was fun."
             },
             {
               "character": "Aira",
-              "pose": "neutral",
+              "pose": "gentle",
+              "text": "That’s the spirit of hackathons. Not perfection — but creation."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "Tell me… what did you learn?"
+            },
+            {
+              "character": "You",
+              "pose": "thinking",
+              "text": "That it’s okay not to know everything. That trying, failing, and building together… is what innovation really means."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
+              "text": "You’ve learned the true spirit of hacking — not just code, but courage."
+            },
+            {
+              "character": "Aira",
+              "pose": "smile",
               "text": "So… what’s next for you, Hacker?"
             },
             {
               "character": "You",
-              "pose": "neutral",
-              "text": "Another hackathon, maybe. This time, with my own team. Maybe I’ll mentor someone who’s scared — like I was."
-            },
+              "pose": "proud",
+              "text": "Another hackathon. This time… maybe I’ll mentor someone who’s scared — like I was."
+            },           
             {
               "character": "Aira",
-              "pose": "neutral",
+              "pose": "happy",
               "text": "Then the cycle continues. You’re no longer just a learner. You’re a guide."
             },
             {
               "character": "You",
-              "pose": "neutral",
+              "pose": "happy",
               "text": "Like you?"
-            },
+            }, 
+            {
+              "character": "Aira",
+              "pose": "clapping",
+              "text": "Exactly. Byte by byte. Story by story."
+            }
+          ]
+        },
+        {
+          "id": "scene5",
+          "dialogs": [
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Exactly. Byte by Byte, story by story — that’s how we grow."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Before you realize it… Aira’s glow begins to dim, softer and softer."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "You know, I might not always be there on your screen… but every time you face a challenge — that spark inside you? That’s me."
+              "text": "I might not always appear on your screen… But every time you face a challenge — that spark inside you? That’s me."
             },
             {
               "character": "You",
               "pose": "neutral",
-              "text": "I’ll remember that, Aira."
+              "text": "I’ll remember that."
             },
             {
               "character": "Aira",
@@ -185,59 +281,59 @@
               "text": "Then my job here is done. For now."
             },
             {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Her form slowly turns into floating orbs of light — like lanterns lifted into the sky, carried away by the wind."
-            },
-            {
               "character": "Aira",
-              "pose": "neutral",
-              "text": "Keep hacking your story, hero."
+              "pose": "smile",
+              "text": "(voice fading): Keep hacking your story, hero."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "No words need to be said. As you watch the glowing lights drift into the digital night, you know these memories will stay with you. Always."
+              "text": "No words were needed. You simply watched the lights drift away. And you knew — this wasn’t an ending. It was an upgrade."
             }
           ]
         },
         {
-          "id": "scene4",
-          "background": "sunrise_city",
-          "music": "hopeful_morning_theme",
+          "id": "scene5",
+          "background": "rooftop_night_cityscape",
+          "music": "gentle_wind",
           "dialogs": [
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "The first light of dawn creeps across the horizon. Your laptop chimes — a new notification pops up."
+              "text": "(The first light of dawn stretches across the horizon.)"
             },
             {
-              "character": "System",
+              "character": "Narrator",
               "pose": "neutral",
-              "text": "📬 [New Message: 'Invitation to the Byteon Global Hackfest']"
+              "text": "Your laptop chimes again."
+            },
+            {
+              "character": "Narrator",
+              "pose": "neutral",
+              "text": "New Message: “Invitation to Byteon Global Hackfest” You laugh softly."
             },
             {
               "character": "You",
-              "pose": "neutral",
-              "text": "(reading) Byteon Global…? Heh. Guess the adventure never really ends."
+              "pose": "happy",
+              "text": "Guess the adventure never really ends."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "You look up at the sunrise, a faint digital sparkle glimmering in the clouds — as if Aira’s still watching."
+              "text": "You close your laptop gently — certificate saved, badge earned, memories secured"
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Every ending is just another beginning. You joined your first hackathon. Next time… you’ll help someone join theirs."
+              "text": "Every ending is just another beginning. You joined your first hackathon."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Soft music swells — hopeful and bright."
+              "text": "Next time… you’ll help someone join theirs."
             },
             {
-              "character": "System",
+              "character": "Narrator",
               "pose": "neutral",
               "text": "THE END"
             }
@@ -253,5 +349,62 @@
         }
       ]
     }
+  ],
+  "characters": [
+    {
+      "id": "You",
+      "name": "You",
+      "poses": {
+        "neutral": "you_neutral.png",
+        "thinking": "you_thinking.png",
+        "tired": "you_tired.png",
+        "determined": "you_determined.png",
+        "happy": "you_happy.png",
+        "proud": "you_proud.png"
+      }
+    },
+    {
+      "id": "Aira",
+      "name": "Aira",
+      "poses": {
+        "smiling": "aira_smiling.png",
+        "grinning": "aira_grinning.png",
+        "gentle": "aira_gentle.png",
+        "happy": "aira_happy.png",
+        "clapping": "aira_clapping.png",
+        "teaching": "aira_teaching.png"
+      }
+    },
+    {
+      "id": "Narrator",
+      "name": "Narrator",
+      "poses": {
+        "neutral": "bg_fade.png"
+      }
+    },
+    {
+      "id": "Luna",
+      "name": "Luna",
+      "poses": {
+        "smile": "luna_smile.png"
+      }
+    },
+    {
+      "id": "Kenji",
+      "name": "Kenji",
+      "poses": {
+        "neutral": "kenji_neutral.png",
+        "smile": "kenji_smile.png"
+      }
+    },
+    {
+      "id": "Maya",
+      "name": "Maya",
+      "poses": {
+        "smile": "maya_smile.png"
+      }
+    }
   ]
 }
+
+    
