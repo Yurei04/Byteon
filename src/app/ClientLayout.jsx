@@ -1,55 +1,51 @@
+// app/ClientLayout.jsx
 "use client"
-import { DatabaseErrorBlocker } from "@/components/errorHandling/database-error-blocker";
-import { MaintenanceBlocker } from "@/components/errorHandling/maintenance-blocker";
-import { OfflineBlocker } from "@/components/errorHandling/offline-blocker";
-import { ServerErrorBlocker } from "@/components/errorHandling/server-error-blocker";
-import { DbErrorBoundary } from "@/components/errorHandling/error-boundary-db-blocker";
-import { ThemeProvider } from "@/components/theme-provider";
-import { supabase } from "@/lib/supabase";
-import { useState, useEffect, useRef, useCallback } from "react";
+
+import { AuthProvider } from "@/components/(auth)/authContext"   // ← must match your actual path
+import { DatabaseErrorBlocker } from "@/components/errorHandling/database-error-blocker"
+import { MaintenanceBlocker } from "@/components/errorHandling/maintenance-blocker"
+import { OfflineBlocker } from "@/components/errorHandling/offline-blocker"
+import { ServerErrorBlocker } from "@/components/errorHandling/server-error-blocker"
+import { DbErrorBoundary } from "@/components/errorHandling/error-boundary-db-blocker"
+import { ThemeProvider } from "@/components/theme-provider"
+import { supabase } from "@/lib/supabase"
+import { useState, useEffect, useRef, useCallback } from "react"
 
 export default function ClientLayout({ children }) {
-  const [dbError, setDbError] = useState(false);
-  const hasChecked = useRef(false);
+  const [dbError, setDbError] = useState(false)
+  const hasChecked = useRef(false)
 
   const checkDbConnection = useCallback(async () => {
-    if (!supabase) { setDbError(true); return; }
+    if (!supabase) { setDbError(true); return }
     try {
-      const { error } = await supabase.from('organizations').select('count').limit(1);
-      setDbError(!!error);
-    } catch {
-      setDbError(true);
-    }
-  }, []);
+      const { error } = await supabase.from("organizations").select("count").limit(1)
+      setDbError(!!error)
+    } catch { setDbError(true) }
+  }, [])
 
   useEffect(() => {
-    if (hasChecked.current) return;
-    hasChecked.current = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    checkDbConnection();
-  }, [checkDbConnection]);
+    if (hasChecked.current) return
+    hasChecked.current = true
+    checkDbConnection()
+  }, [checkDbConnection])
 
-  // ✅ Re-check DB when returning to the tab — catches cases where the
-  // connection dropped while the tab was in the background.
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        checkDbConnection();
-      }
-    }
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [checkDbConnection]);
+    const handle = () => { if (document.visibilityState === "visible") checkDbConnection() }
+    document.addEventListener("visibilitychange", handle)
+    return () => document.removeEventListener("visibilitychange", handle)
+  }, [checkDbConnection])
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-      <DbErrorBoundary>
-        {children}
-      </DbErrorBoundary>
+      <AuthProvider>                        {/* ✅ AuthProvider must be HERE */}
+        <DbErrorBoundary>
+          {children}
+        </DbErrorBoundary>
+      </AuthProvider>
       <OfflineBlocker />
       <DatabaseErrorBlocker isError={dbError} onRetry={checkDbConnection} />
       <ServerErrorBlocker isError={false} />
       <MaintenanceBlocker isActive={false} />
     </ThemeProvider>
-  );
+  )
 }

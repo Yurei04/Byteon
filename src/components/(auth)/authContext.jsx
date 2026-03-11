@@ -1,56 +1,133 @@
-// context/AuthContext.jsx
+// components/(auth)/authContext.jsx
 "use client"
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
 
 const AuthContext = createContext(null)
-const SESSION_KEY = "auth_role_cache"
+const CACHE_KEY = "auth_cache"
 
 export function AuthProvider({ children }) {
   const [session, setSession]   = useState(null)
-  const [role, setRole]         = useState(null)
-  const [profile, setProfile]   = useState(null)   // any extra user data you need globally
+  const [profile, setProfile]   = useState(null)
+  const [role, setRole]         = useState(null)      // "user" | "org_admin"
   const [loading, setLoading]   = useState(true)
   const currentUserIdRef        = useRef(null)
 
-  // ─── Fetch role + profile from DB, or use sessionStorage cache ───────────
   const hydrateUser = useCallback(async (supabaseSession) => {
     if (!supabaseSession?.user) {
-      setRole(null)
+      setSession(null)
       setProfile(null)
+      setRole(null)
       setLoading(false)
       return
     }
 
     const userId = supabaseSession.user.id
 
-    // ✅ Check tab-specific cache first — no DB call on tab switch
-    const cached = sessionStorage.getItem(SESSION_KEY)
-    if (cached) {
-      const parsed = JSON.parse(cached)
-      if (parsed.id === userId) {
-        setRole(parsed.role)
-        setProfile(parsed.profile)
-        setSession(supabaseSession)
-        currentUserIdRef.current = userId
-        setLoading(false)
-        return
+    // ✅ Tab-specific cache — instant on tab switch, no DB call
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEY)
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed.id === userId) {
+          setSession(supabaseSession)
+          setProfile(parsed.profile)
+          setRole(parsed.role)
+          currentUserIdRef.current = userId
+          setLoading(false)
+          return
+        }
       }
-    }
+    } catch {}
 
-    // ── Not cached → fetch from DB ──────────────────────────────────────────
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("role, full_name, avatar_url, organization_id") // add whatever columns you need
-      .eq("id", userId)
+    // ── Cache miss → check organizations table first ───────────────────────
+    const { data: orgData, error: orgError } = await supabase
+      .from("organizations")
+      .select(`
+        id,
+        user_id,
+        name,
+        author_name,
+        description,
+        profile_photo_url,
+        color_scheme,
+        primary_color,
+        secondary_color,
+        active,
+        total_announcements,
+        total_blogs,
+        total_resources,
+        profile_completed,
+        created_at,
+        updated_at
+      `)
+      .eq("user_id", userId)
       .single()
 
-    if (!error && data) {
-      const cachePayload = { id: userId, role: data.role, profile: data }
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(cachePayload))
-      setRole(data.role)
-      setProfile(data)
+    if (!orgError && orgData) {
+      // ── Found in organizations → org_admin ────────────────────────────────
+      const resolvedProfile = { ...orgData, role: "org_admin", table: "organizations" }
+
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          id:      userId,
+          role:    "org_admin",
+          profile: resolvedProfile
+        }))
+      } catch {}
+
+      setProfile(resolvedProfile)
+      setRole("org_admin")
+      setSession(supabaseSession)
+      currentUserIdRef.current = userId
+      setLoading(false)
+      return
+    }
+
+    // ── Not in organizations → check users table ───────────────────────────
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select(`
+        id,
+        user_id,
+        name,
+        age,
+        affiliation,
+        country,
+        profile_photo_url,
+        achievements,
+        achievements_metadata,
+        total_projects,
+        total_hackathons_joined,
+        total_blogs_read,
+        chapters_completed,
+        chapters_unlocked,
+        profile_completed,
+        created_at,
+        updated_at
+      `)
+      .eq("user_id", userId)
+      .single()
+
+    if (!userError && userData) {
+      // ── Found in users → user ──────────────────────────────────────────────
+      const resolvedProfile = { ...userData, role: "user", table: "users" }
+
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          id:      userId,
+          role:    "user",
+          profile: resolvedProfile
+        }))
+      } catch {}
+
+      setProfile(resolvedProfile)
+      setRole("user")
+    } else {
+      // ── Not found in either table — new user, no profile yet ──────────────
+      setProfile(null)
+      setRole(null)
     }
 
     setSession(supabaseSession)
@@ -58,53 +135,49 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  // ─── Clear everything on logout ──────────────────────────────────────────
   const clearAuth = useCallback(() => {
-    sessionStorage.removeItem(SESSION_KEY)
+    try { sessionStorage.removeItem(CACHE_KEY) } catch {}
     currentUserIdRef.current = null
     setSession(null)
-    setRole(null)
     setProfile(null)
+    setRole(null)
     setLoading(false)
   }, [])
 
-  // ─── Force refresh cache (call this after profile updates) ───────────────
   const refreshProfile = useCallback(async () => {
-    sessionStorage.removeItem(SESSION_KEY)
+    try { sessionStorage.removeItem(CACHE_KEY) } catch {}
     const { data: { session: s } } = await supabase.auth.getSession()
     await hydrateUser(s)
   }, [hydrateUser])
 
-  useEffect(() => {
-    // Initial session load
-    supabase.auth.getSession().then(({ data }) => {
-      hydrateUser(data.session)
-    })
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
+    clearAuth()
+  }, [clearAuth])
 
-    // Auth state changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => hydrateUser(data.session))
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (event === "SIGNED_IN") {
-        const newId = newSession?.user?.id ?? null
-        if (newId !== currentUserIdRef.current) {
+        if (newSession?.user?.id !== currentUserIdRef.current) {
           hydrateUser(newSession)
         }
       }
-      if (event === "SIGNED_OUT")    clearAuth()
-      if (event === "TOKEN_REFRESHED") setSession(newSession)   // keep token fresh, no re-fetch
+      if (event === "SIGNED_OUT")      clearAuth()
+      if (event === "TOKEN_REFRESHED") setSession(newSession)
     })
 
-    // Re-check session when tab becomes visible
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        supabase.auth.getSession().then(({ data }) => {
-          const newId = data.session?.user?.id ?? null
-          if (newId !== currentUserIdRef.current) {
-            hydrateUser(data.session)
-          } else if (data.session?.access_token !== session?.access_token) {
-            setSession(data.session)  // just update the token, no profile re-fetch
-          }
-        })
-      }
+      if (document.visibilityState !== "visible") return
+      supabase.auth.getSession().then(({ data }) => {
+        const newId = data.session?.user?.id ?? null
+        if (newId !== currentUserIdRef.current) {
+          hydrateUser(data.session)
+        } else if (data.session?.access_token !== session?.access_token) {
+          setSession(data.session)
+        }
+      })
     }
 
     document.addEventListener("visibilitychange", handleVisibility)
@@ -112,10 +185,20 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [hydrateUser, clearAuth])
+  }, [hydrateUser, clearAuth, session?.access_token])
 
-  return ( 
-    <AuthContext.Provider value={{ session, role, profile, loading, refreshProfile, clearAuth }}>
+  return (
+    <AuthContext.Provider value={{
+      session,
+      profile,
+      role,
+      loading,
+      logout,
+      refreshProfile,
+      isLoggedIn:  !!session,
+      isUser:      role === "user",
+      isOrgAdmin:  role === "org_admin",
+    }}>
       {children}
     </AuthContext.Provider>
   )
