@@ -426,7 +426,10 @@ export default function UserDashboardPage() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
-                          <UserProfile userId={userId} />
+                          <UserProfile 
+                            currentUser={userId} 
+                            authUserId={userBigintId}
+                          />
                         </CardContent>
                       </Card>
                     </motion.div>

@@ -9,18 +9,13 @@ import ProfileStats from "./profile-stats"
 import ProfileCompletion from "./profile-completion"
 import AchievementsTab from "@/components/achievements/achievementStab"
 
-export default function UserProfile({ onSuccess }) {
+export default function UserProfile({ onSuccess, currentUser, authUserId }) {
   const [profile, setProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [alert, setAlert] = useState(null)
   const [userId, setUserId] = useState(null)
   const [achievementsMetadata, setAchievementsMetadata] = useState({})
-
-  // Prevent double-fetch on mount (getAuthUser + INITIAL_SESSION both fire)
-  const fetchedRef = useRef(false)
-  // Hold realtime channel so we can clean it up on unmount / sign-out
-  const realtimeChannelRef = useRef(null)
 
   const [formData, setFormData] = useState({
     name: "",
@@ -29,143 +24,6 @@ export default function UserProfile({ onSuccess }) {
     country: "",
     achievements: [], // kept so ProfileHeader's .length read never throws
   })
-
-  // ── Realtime: watch the user's DB row for achievements_metadata changes.
-  //    grantAchievement writes to this column during gameplay; this listener
-  //    propagates the update to the UI instantly without any tab switch or refresh. ──
-  const subscribeToProfile = (authUserId) => {
-    if (realtimeChannelRef.current) {
-      supabase.removeChannel(realtimeChannelRef.current)
-    }
-
-    const channel = supabase
-      .channel(`profile-${authUserId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "users",
-          filter: `user_id=eq.${authUserId}`,
-        },
-        (payload) => {
-          // Only sync achievements_metadata — never stomp formData the user may be mid-edit
-          if (payload.new?.achievements_metadata !== undefined) {
-            setAchievementsMetadata(payload.new.achievements_metadata ?? {})
-          }
-        }
-      )
-      .subscribe()
-
-    realtimeChannelRef.current = channel
-  }
-  
-
-  useEffect(() => {
-    const getAuthUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        setUserId(session.user.id)
-        fetchedRef.current = true
-        await fetchUserProfile(session.user.id)
-        subscribeToProfile(session.user.id)
-      } else {
-        setAlert({ type: "error", message: "You must be logged in to view this page." })
-        setIsLoading(false)
-      }
-    }
-
-    getAuthUser()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id)
-        // Only re-fetch on actual sign-in, not the passive INITIAL_SESSION ping
-        if (event === "SIGNED_IN") {
-          fetchedRef.current = true
-          fetchUserProfile(session.user.id)
-          subscribeToProfile(session.user.id)
-        }
-      } else {
-        setProfile(null)
-        setUserId(null)
-        setAchievementsMetadata({})
-        fetchedRef.current = false
-        if (realtimeChannelRef.current) {
-          supabase.removeChannel(realtimeChannelRef.current)
-          realtimeChannelRef.current = null
-        }
-      }
-    })
-
-    return () => {
-      subscription.unsubscribe()
-      if (realtimeChannelRef.current) {
-        supabase.removeChannel(realtimeChannelRef.current)
-      }
-    }
-  }, [])
-
-  const fetchUserProfile = async (authUserId) => {
-    setIsLoading(true)
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, user_id, name, age, affiliation, country, achievements_metadata, created_at, updated_at")
-        .eq("user_id", authUserId)
-        .maybeSingle()
-
-      if (error) throw error
-
-      if (data) {
-        setProfile(data)
-        setAchievementsMetadata(data.achievements_metadata ?? {})
-        setFormData({
-          name: data.name || "",
-          age: data.age || "",
-          affiliation: data.affiliation || "",
-          country: data.country || "",
-          achievements: [],
-        })
-      } else {
-        await createUserProfile(authUserId)
-      }
-    } catch (error) {
-      console.error("Error fetching user profile:", error.message)
-      setAlert({ type: "error", message: "Failed to load user profile." })
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const createUserProfile = async (authUserId) => {
-    try {
-      const { data: authUser } = await supabase.auth.getUser()
-
-      const newProfile = {
-        user_id: authUserId,
-        name: authUser.user?.user_metadata?.name || authUser.user?.email?.split("@")[0] || "User",
-        created_at: new Date().toISOString(),
-      }
-
-      const { data, error } = await supabase
-        .from("users")
-        .insert([newProfile])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setProfile(data)
-      setAchievementsMetadata(data.achievements_metadata ?? {})
-      setFormData({ name: data.name, age: "", affiliation: "", country: "", achievements: [] })
-      setAlert({ type: "success", message: "Profile created! Please complete your information." })
-      setIsEditing(true)
-    } catch (error) {
-      console.error("Error creating profile:", error.message)
-      setAlert({ type: "error", message: "Failed to create profile." })
-    }
-  }
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -229,21 +87,10 @@ export default function UserProfile({ onSuccess }) {
     (sum, a) => sum + (a.reward_points ?? 0), 0
   )
 
-  if (isLoading && !profile) {
+  if (!currentUser) {
     return (
       <div className="flex justify-center items-center p-12 text-white">
         <Loader2 className="mr-2 h-8 w-8 animate-spin" /> Loading User Profile...
-      </div>
-    )
-  }
-
-  if (!userId) {
-    return (
-      <div className="flex justify-center items-center p-12">
-        <Alert variant="destructive" className="max-w-md">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>Please log in to view your profile.</AlertDescription>
-        </Alert>
       </div>
     )
   }
