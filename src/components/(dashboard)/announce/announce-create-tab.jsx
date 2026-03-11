@@ -107,43 +107,6 @@ export default function AnnounceCreateTab (
         }
     }
 
-    const handleCheckClick = async (announcementId, isExpired) => {
-        try {
-            const field = isExpired ? 'record_after' : 'record'
-            const announcement = announcements.find(a => a.id === announcementId)
-            
-            const { error } = await supabase
-            .from('announcements')
-            .update({ [field]: (announcement[field] || 0) + 1 })
-            .eq('id', announcementId)
-
-            if (error) throw error
-            
-            await fetchAnnouncements()
-            await fetchStats()
-        } catch (error) {
-            console.error('Error updating check count:', error)
-        }
-    }
-
-    const handleDeleteAnnouncement = async (announcementId) => {
-        if (!confirm('Are you sure you want to delete this announcement?')) return
-
-        try {
-            const { error } = await supabase
-            .from('announcements')
-            .delete()
-            .eq('id', announcementId)
-
-            if (error) throw error
-            
-            await fetchAnnouncements()
-            await fetchStats()
-        } catch (error) {
-            console.error('Error deleting announcement:', error)
-        }
-    }
-
     const handleAnnouncementCreated = () => {
         fetchData()
     }

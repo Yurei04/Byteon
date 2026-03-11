@@ -31,10 +31,8 @@ const THEME_OPTIONS = [
   "Other"
 ]
 
-export default function BlogOrgForm({ onSuccess }) {
+export default function BlogOrgForm({ onSuccess, currentOrg, authUserId }) {
   const router = useRouter()
-  const [currentOrg, setCurrentOrg] = useState(null)
-  const [authUserId, setAuthUserId] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isFetchingOrg, setIsFetchingOrg] = useState(true)
   const [alert, setAlert] = useState(null)
@@ -49,70 +47,6 @@ export default function BlogOrgForm({ onSuccess }) {
     place: "",
     theme: ""
   })
-
-  useEffect(() => {
-    fetchCurrentOrg()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setAuthUserId(session.user.id)
-        await fetchOrgProfile(session.user.id)
-      } else {
-        setCurrentOrg(null)
-        setAuthUserId(null)
-        router.push('/log-in')
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  const fetchCurrentOrg = async () => {
-    setIsFetchingOrg(true)
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.user) {
-        setAlert({ type: 'error', message: 'You must be logged in to create a blog post.' })
-        router.push('/log-in')
-        return
-      }
-
-      setAuthUserId(session.user.id)
-      await fetchOrgProfile(session.user.id)
-      
-    } catch (error) {
-      console.error('Error fetching organization:', error)
-      setAlert({ type: 'error', message: 'Failed to load organization information' })
-    } finally {
-      setIsFetchingOrg(false)
-    }
-  }
-
-  const fetchOrgProfile = async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('organizations')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
-
-      if (data) {
-        setCurrentOrg(data)
-        console.log('Organization loaded:', data)
-      } else {
-        setAlert({ type: 'error', message: 'Organization profile not found. Please complete your profile.' })
-      }
-    } catch (error) {
-      console.error('Error fetching organization profile:', error)
-      setAlert({ type: 'error', message: 'Failed to load organization profile' })
-    }
-  }
 
   const handleImageChange = (e) => {
     setFormData({...formData, image: e.target.value})
@@ -187,32 +121,13 @@ export default function BlogOrgForm({ onSuccess }) {
     }
   }
 
-  if (isFetchingOrg) {
+  if (!currentOrg) {
     return (
       <div className="w-full max-w-4xl mx-auto">
         <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
           <CardContent className="p-12 text-center">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-fuchsia-300" />
             <p className="text-fuchsia-200/70">Loading organization information...</p>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (!currentOrg) {
-    return (
-      <div className="w-full max-w-4xl mx-auto">
-        <Card className="bg-gradient-to-br from-red-900/20 via-slate-900/20 to-slate-950/20 backdrop-blur-xl border border-red-500/30">
-          <CardContent className="p-12 text-center">
-            <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-400" />
-            <p className="text-red-200 text-lg mb-4">You must be logged in as an organization to create a blog post.</p>
-            <Button 
-              onClick={() => router.push('/log-in')}
-              className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500"
-            >
-              Go to Login
-            </Button>
           </CardContent>
         </Card>
       </div>

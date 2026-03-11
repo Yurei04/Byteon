@@ -510,8 +510,8 @@ export default function UserDashboardPage() {
                         <CardContent className="p-4 sm:p-6">
                           <BlogUserForm
                             onSuccess={handleBlogUpdate}
-                            userId={userId}
-                            userBigintId={userBigintId}
+                            currentUser={userId}
+                            authUserId={userBigintId}
                           />
                         </CardContent>
                       </Card>

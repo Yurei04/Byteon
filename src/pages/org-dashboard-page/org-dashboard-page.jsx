@@ -617,10 +617,18 @@ export default function OrgDashboardPage() {
                             />
                           </TabsContent>
                           <TabsContent value="createBlogs">
-                            <BlogForm onSuccess={refreshAll} organizationName={profile?.name} />
+                            <BlogForm 
+                              onSuccess={refreshAll}
+                              currentOrg={profile}
+                              authUserId={userId} 
+                            />
                           </TabsContent>
                           <TabsContent value="createResources">
-                            <ResourceForm onSuccess={refreshAll} organizationName={profile?.name} />
+                            <ResourceForm 
+                              onSuccess={refreshAll}
+                              currentOrg={profile}
+                              authUserId={userId}
+                            />
                           </TabsContent>
                         </Tabs>
                       </CardContent>
