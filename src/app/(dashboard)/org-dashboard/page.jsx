@@ -1,12 +1,14 @@
-import RequireAuth from "@/components/(auth)/requireAuth";
-import OrgDashboardPage from "@/pages/org-dashboard-page/org-dashboard-page";
+"use client"
 
-export default function AdminDashboardMain () {
+import { withAuth } from "@/components/(auth)/withAuth" 
+import OrgDashboardPage from "@/pages/org-dashboard/org-dashboard-page";
+
+function AdminDashboardMain () {
     return (
         <div className="w-full min-h-screen">
-            <RequireAuth>
-                <OrgDashboardPage />
-            </RequireAuth>
+            <OrgDashboardPage />
         </div>
     )
 }
+
+export default withAuth(AdminDashboardMain, ["org"])

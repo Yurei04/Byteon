@@ -15,7 +15,7 @@ export default function RequireRole({ children, roles = [], redirectTo = "/unaut
     if (loading) return
     if (!isLoggedIn) { router.push("/login"); return }
     if (!allowed)    router.push(redirectTo)
-  }, [loading, isLoggedIn, allowed])
+  }, [loading, isLoggedIn, allowed, router, redirectTo])
 
   if (loading || !allowed) return null
 
