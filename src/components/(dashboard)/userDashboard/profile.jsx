@@ -31,6 +31,11 @@ export default function UserProfile({ onSuccess, currentUser, authUserId }) {
   }
 
   const handleSubmit = async () => {
+    if (!currentUser || !authUserId) {
+      setAlert({ type: "error", message: "Organization not found. Please refresh the page." })
+      return
+    }
+
     if (!formData.name || !formData.age) {
       setAlert({ type: "error", message: "Name and Age are required fields." })
       return

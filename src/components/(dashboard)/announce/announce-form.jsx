@@ -106,10 +106,12 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
       setAlert({ type: "error", message: "Organization not found. Please refresh the page." })
       return
     }
+
     if (!formData.title || !formData.des || !formData.author || !formData.date_begin || !formData.date_end) {
       setAlert({ type: "error", message: "Please fill in all required fields (Title, Description, Author, Start Date, End Date)" })
       return
     }
+    
     const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
     if (validPrizes.length === 0) {
       setAlert({ type: "error", message: "Please add at least one prize with a name and value" })
