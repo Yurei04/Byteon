@@ -20,18 +20,18 @@ import {
   PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis,
 } from "@/components/ui/pagination"
 
-import { useAuth } from "@/components/(auth)/authContext"
+import { useAuth } from "@/components/(auth)/authContext" 
 import ResourceForm from "@/components/resourceHub/resource-form"
 import BlogForm from "@/components/blog/blog-form"
 import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
 import ResourceCard from "@/components/resourceHub/resourceHub-card"
 import BlogCard from "@/components/blog/blogCard"
 import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
-import OrgProfileHeader from "../../components/(dashboard)/orgDashboard/org-profile-header"
-import OrgAboutSection from "../../components/(dashboard)/orgDashboard/org-about-section"
-import OrgQuickStats from "../../components/(dashboard)/orgDashboard/org-quick-stats"
-import DeleteAccountModal from "../../components/(dashboard)/orgDashboard/delete-account"
-import { availableOrgAchievements } from "../../components/(dashboard)/orgDashboard/org-achievements"
+import OrgProfileHeader from "./org-profile-header"
+import OrgAboutSection from "./org-about-section"
+import OrgQuickStats from "./org-quick-stats"
+import DeleteAccountModal from "./delete-account"
+import { availableOrgAchievements } from "./org-achievements"
 import { ReturnButton } from "@/components/return"
 
 const ITEMS_PER_PAGE = 6

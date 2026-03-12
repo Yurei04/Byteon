@@ -1,7 +1,7 @@
 "use client"
 
 import { withAuth } from "@/components/(auth)/withAuth" 
-import UserDashboardPage from "@/pages/user-dashboard/user-dashboard-page"
+import UserDashboardPage from "@/components/(dashboard)/userDashboard/user-dashboard-page"
 
 function Dashboard() {
   return (

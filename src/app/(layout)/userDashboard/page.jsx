@@ -1,5 +1,5 @@
 import Footer from "@/components/footer";
-import UserDashboardPage from "@/pages/user-dashboard/user-dashboard-page";
+import UserDashboardPage from "@/components/(dashboard)/userDashboard/user-dashboard-page";
 import ClientFooterLoader from "@/components/client-footer-loader";
 
 export default function userDashboard () {

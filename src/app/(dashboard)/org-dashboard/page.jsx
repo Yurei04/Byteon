@@ -1,7 +1,7 @@
 "use client"
 
 import { withAuth } from "@/components/(auth)/withAuth" 
-import OrgDashboardPage from "@/pages/org-dashboard/org-dashboard-page";
+import OrgDashboardPage from "@/components/(dashboard)/orgDashboard/org-dashboard-page"
 
 function AdminDashboardMain () {
     return (
