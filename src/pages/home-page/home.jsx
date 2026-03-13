@@ -32,7 +32,7 @@ export default function Home () {
                     </div>
 
                     <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
-                        <Link href="/">
+                        <Link href="/super-admin-dashboard">
                             <Button
                                 size="lg"
                                 className="cursor-pointer bg-fuchsia-700 hover:bg-fuchsia-600 text-white border border-fuchsia-600 transition-colors"

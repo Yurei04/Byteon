@@ -76,7 +76,7 @@ export default function OrgDashboardPage() {
     if (authLoading) return
     if (!isLoggedIn) { router.push("/log-in"); return }
     if (role !== "org_admin") { router.push("/unauthorized"); return }
-  }, [authLoading, isLoggedIn, role])
+  }, [authLoading, isLoggedIn, role, router])
 
   // Seed form from context profile
   useEffect(() => {
