@@ -75,6 +75,7 @@ export function LoginForm() {
 
       if (superData) {
         console.log("Super admin found, redirecting to super admin dashboard")
+        try { sessionStorage.clear() } catch {}  // force fresh DB query on next load
         router.push("/super-admin-dashboard")
         setLoading(false)
         return

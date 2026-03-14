@@ -10,7 +10,7 @@ const CACHE_KEY = "auth_cache"
 export function AuthProvider({ children }) {
   const [session, setSession]   = useState(null)
   const [profile, setProfile]   = useState(null)
-  const [role, setRole]         = useState(null)      // "user" | "org_admin"
+  const [role, setRole]         = useState(null)      // "user" | "org_admin" | "super_admin"
   const [loading, setLoading]   = useState(true)
   const currentUserIdRef        = useRef(null)
 
@@ -41,7 +41,54 @@ export function AuthProvider({ children }) {
       }
     } catch {}
 
-    // ── Cache miss → check organizations table first ───────────────────────
+    // ── 1. Check super_admins FIRST ────────────────────────────────────────
+    const { data: superData, error: superError } = await supabase
+      .from("super_admins")
+      .select("id, user_id, name, organization_id, created_at")
+      .eq("user_id", userId)
+      .single()
+
+    if (!superError && superData) {
+      // Fetch linked platform org so Create tab works
+      let linkedOrg = null
+      if (superData.organization_id) {
+        const { data: orgData } = await supabase
+          .from("organizations")
+          .select(`
+            id, user_id, name, author_name, description,
+            profile_photo_url, color_scheme, primary_color, secondary_color,
+            active, total_announcements, total_blogs, total_resources,
+            profile_completed, created_at, updated_at
+          `)
+          .eq("id", superData.organization_id)
+          .single()
+        linkedOrg = orgData || null
+      }
+
+      const resolvedProfile = {
+        ...superData,
+        role: "super_admin",
+        table: "super_admins",
+        linkedOrg,
+      }
+
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          id:      userId,
+          role:    "super_admin",
+          profile: resolvedProfile,
+        }))
+      } catch {}
+
+      setProfile(resolvedProfile)
+      setRole("super_admin")
+      setSession(supabaseSession)
+      currentUserIdRef.current = userId
+      setLoading(false)
+      return
+    }
+
+    // ── 2. Check organizations ─────────────────────────────────────────────
     const { data: orgData, error: orgError } = await supabase
       .from("organizations")
       .select(`
@@ -66,14 +113,13 @@ export function AuthProvider({ children }) {
       .single()
 
     if (!orgError && orgData) {
-      // ── Found in organizations → org_admin ────────────────────────────────
       const resolvedProfile = { ...orgData, role: "org_admin", table: "organizations" }
 
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
           id:      userId,
           role:    "org_admin",
-          profile: resolvedProfile
+          profile: resolvedProfile,
         }))
       } catch {}
 
@@ -85,7 +131,7 @@ export function AuthProvider({ children }) {
       return
     }
 
-    // ── Not in organizations → check users table ───────────────────────────
+    // ── 3. Check users ─────────────────────────────────────────────────────
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select(`
@@ -111,21 +157,19 @@ export function AuthProvider({ children }) {
       .single()
 
     if (!userError && userData) {
-      // ── Found in users → user ──────────────────────────────────────────────
       const resolvedProfile = { ...userData, role: "user", table: "users" }
 
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
           id:      userId,
           role:    "user",
-          profile: resolvedProfile
+          profile: resolvedProfile,
         }))
       } catch {}
 
       setProfile(resolvedProfile)
       setRole("user")
     } else {
-      // ── Not found in either table — new user, no profile yet ──────────────
       setProfile(null)
       setRole(null)
     }
@@ -195,9 +239,10 @@ export function AuthProvider({ children }) {
       loading,
       logout,
       refreshProfile,
-      isLoggedIn:  !!session,
-      isUser:      role === "user",
-      isOrgAdmin:  role === "org_admin",
+      isLoggedIn:   !!session,
+      isUser:       role === "user",
+      isOrgAdmin:   role === "org_admin",
+      isSuperAdmin: role === "super_admin",
     }}>
       {children}
     </AuthContext.Provider>
