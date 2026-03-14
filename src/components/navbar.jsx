@@ -24,7 +24,10 @@ export default function NavBar() {
     const [isOpen, setIsOpen] = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
 
-    const dashboardUrl = role === "org_admin" ? "/org-dashboard" : "/user-dashboard"
+    const dashboardUrl =
+        role === "super_admin" ? "/super-admin-dashboard"
+        : role === "org_admin"  ? "/org-dashboard"
+        : "/user-dashboard"
 
     const handleProfileClick = () => router.push(dashboardUrl)
 

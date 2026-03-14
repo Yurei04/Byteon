@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/components/(auth)/authContext"
-// import { withAuth } from "@/components/(auth)/withAuth"   // ⛔ AUTH DISABLED FOR UI TESTING
+// import { withAuth } from "@/components/(auth)/withAuth"  // ⛔ temporarily removed
 import { ReturnButton } from "@/components/return"
 import {
   ShieldCheck, Users, Building2, FileText, Megaphone,
@@ -27,101 +27,73 @@ import AnnounceForm from "../announce/announce-form"
 import BlogOrgForm  from "@/components/blog/blog-edit-user"
 import ResourceForm from "@/components/resourceHub/resource-form"
 
-// ── MOCK DATA FOR UI TESTING ─────────────────────────────────────────────────
-// Remove this block and restore useAuth() when auth is re-enabled
-const MOCK_PROFILE = {
-  id: 1,
-  user_id: "mock-super-admin-uuid",
-  name: "Super Admin",
-  organization_id: 1,
-  created_at: new Date().toISOString(),
-  role: "super_admin",
-  table: "super_admins",
-  linkedOrg: {
-    id: 1,
-    name: "Byteon Team",
-    author_name: "byteon",
-    active: true,
-    profile_completed: true,
-    total_announcements: 0,
-    total_blogs: 0,
-    total_resources: 0,
-  },
-}
-const MOCK_SESSION = {
-  user: { email: "superadmin@byteon.com", id: "mock-super-admin-uuid" },
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
 function SuperAdminDashboardPage() {
-  // ⛔ AUTH DISABLED — using mock data for UI testing
-  // const { profile, session } = useAuth()
-  const profile    = MOCK_PROFILE
-  const session    = MOCK_SESSION
-  const platformOrg = profile?.linkedOrg
+  const { profile, session } = useAuth()
 
   const [activeTab, setActiveTab]             = useState("profile")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
-  const [pendingCount, setPendingCount]       = useState(3)   // mock value
+  const [pendingCount, setPendingCount]       = useState(0)
   const [stats, setStats]                     = useState({
-    totalUsers:          24,
-    totalOrgs:           8,
-    totalAnnouncements:  12,
-    totalBlogs:          31,
-    totalResources:      17,
-    activeAnnouncements: 4,
+    totalUsers:          0,
+    totalOrgs:           0,
+    totalAnnouncements:  0,
+    totalBlogs:          0,
+    totalResources:      0,
+    activeAnnouncements: 0,
   })
-  const [statsLoading, setStatsLoading] = useState(false)
+  const [statsLoading, setStatsLoading] = useState(true)
 
-  // ── Restore this when re-enabling auth ──────────────────────────────────────
-  // const fetchStats = useCallback(async () => {
-  //   setStatsLoading(true)
-  //   try {
-  //     const now = new Date().toISOString()
-  //     const [
-  //       { count: uCount },
-  //       { count: oCount },
-  //       { count: annCount },
-  //       { count: blogCount },
-  //       { count: resCount },
-  //       { count: activeAnn },
-  //       { count: pAnn },
-  //       { count: pBlog },
-  //       { count: pRes },
-  //     ] = await Promise.all([
-  //       supabase.from("users").select("id", { count: "exact", head: true }),
-  //       supabase.from("organizations").select("id", { count: "exact", head: true }),
-  //       supabase.from("announcements").select("id", { count: "exact", head: true }),
-  //       supabase.from("blogs").select("id", { count: "exact", head: true }),
-  //       supabase.from("resource_hub").select("id", { count: "exact", head: true }),
-  //       supabase.from("announcements").select("id", { count: "exact", head: true }).gte("date_end", now),
-  //       supabase.from("pending_announcements").select("id", { count: "exact", head: true }).eq("status", "pending"),
-  //       supabase.from("pending_blogs").select("id", { count: "exact", head: true }).eq("status", "pending"),
-  //       supabase.from("pending_resources").select("id", { count: "exact", head: true }).eq("status", "pending"),
-  //     ])
-  //     setStats({
-  //       totalUsers:          uCount    || 0,
-  //       totalOrgs:           oCount    || 0,
-  //       totalAnnouncements:  annCount  || 0,
-  //       totalBlogs:          blogCount || 0,
-  //       totalResources:      resCount  || 0,
-  //       activeAnnouncements: activeAnn || 0,
-  //     })
-  //     setPendingCount((pAnn || 0) + (pBlog || 0) + (pRes || 0))
-  //   } catch {}
-  //   finally { setStatsLoading(false) }
-  // }, [])
-  // useEffect(() => { fetchStats() }, [fetchStats])
-  // ────────────────────────────────────────────────────────────────────────────
+  // The platform org linked to this super admin — used by create forms
+  const platformOrg = profile?.linkedOrg
+
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true)
+    try {
+      const now = new Date().toISOString()
+      const [
+        { count: uCount },
+        { count: oCount },
+        { count: annCount },
+        { count: blogCount },
+        { count: resCount },
+        { count: activeAnn },
+        { count: pAnn },
+        { count: pBlog },
+        { count: pRes },
+      ] = await Promise.all([
+        supabase.from("users").select("id", { count: "exact", head: true }),
+        supabase.from("organizations").select("id", { count: "exact", head: true }),
+        supabase.from("announcements").select("id", { count: "exact", head: true }),
+        supabase.from("blogs").select("id", { count: "exact", head: true }),
+        supabase.from("resource_hub").select("id", { count: "exact", head: true }),
+        supabase.from("announcements").select("id", { count: "exact", head: true }).gte("date_end", now),
+        supabase.from("pending_announcements").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("pending_blogs").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("pending_resources").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      ])
+      setStats({
+        totalUsers:          uCount    || 0,
+        totalOrgs:           oCount    || 0,
+        totalAnnouncements:  annCount  || 0,
+        totalBlogs:          blogCount || 0,
+        totalResources:      resCount  || 0,
+        activeAnnouncements: activeAnn || 0,
+      })
+      setPendingCount((pAnn || 0) + (pBlog || 0) + (pRes || 0))
+    } catch {}
+    finally { setStatsLoading(false) }
+  }, [])
+
+  useEffect(() => { fetchStats() }, [fetchStats])
 
   const statCards = [
-    { label: "Users",         value: stats.totalUsers,          Icon: Users,      color: "blue"    },
-    { label: "Organizations", value: stats.totalOrgs,           Icon: Building2,  color: "fuchsia" },
-    { label: "Pending",       value: pendingCount,              Icon: Clock,      color: "amber"   },
-    { label: "Announcements", value: stats.totalAnnouncements,  Icon: Megaphone,  color: "purple"  },
-    { label: "Blogs",         value: stats.totalBlogs,          Icon: FileText,   color: "pink"    },
-    { label: "Resources",     value: stats.totalResources,      Icon: BookOpen,   color: "emerald" },
-    { label: "Active Events", value: stats.activeAnnouncements, Icon: TrendingUp, color: "orange"  },
+    { label: "Users",           value: stats.totalUsers,          Icon: Users,       color: "blue"    },
+    { label: "Organizations",   value: stats.totalOrgs,           Icon: Building2,   color: "fuchsia" },
+    { label: "Pending",         value: pendingCount,              Icon: Clock,       color: "amber"   },
+    { label: "Announcements",   value: stats.totalAnnouncements,  Icon: Megaphone,   color: "purple"  },
+    { label: "Blogs",           value: stats.totalBlogs,          Icon: FileText,    color: "pink"    },
+    { label: "Resources",       value: stats.totalResources,      Icon: BookOpen,    color: "emerald" },
+    { label: "Active Events",   value: stats.activeAnnouncements, Icon: TrendingUp,  color: "orange"  },
   ]
 
   const colorBorder = {
@@ -154,7 +126,6 @@ function SuperAdminDashboardPage() {
           <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
             <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
             Super Admin Control Panel
-            <span className="text-amber-400 text-xs ml-2">[UI TEST MODE]</span>
           </p>
         </div>
       </motion.div>
@@ -193,19 +164,20 @@ function SuperAdminDashboardPage() {
           ))}
         </motion.div>
 
-        {/* Main Tabs */}
+        {/* Main Content */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
           <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20">
             <CardContent className="p-4 sm:p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
 
+                {/* Tab Bar */}
                 <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mb-6 bg-black/20 border border-fuchsia-500/20 p-1 gap-1 h-auto">
                   {[
                     { value: "profile",  icon: <ShieldCheck  className="w-4 h-4" />, label: "Profile"  },
                     { value: "accounts", icon: <Users        className="w-4 h-4" />, label: "Accounts" },
                     {
                       value: "approval",
-                      icon: <CheckSquare className="w-4 h-4" />,
+                      icon:  <CheckSquare className="w-4 h-4" />,
                       label: (
                         <span className="flex items-center gap-1">
                           Approval
@@ -227,7 +199,7 @@ function SuperAdminDashboardPage() {
                   ))}
                 </TabsList>
 
-                {/* ── Profile ── */}
+                {/* ── Profile Tab ── */}
                 <TabsContent value="profile">
                   <SuperProfile
                     profile={profile}
@@ -236,7 +208,7 @@ function SuperAdminDashboardPage() {
                   />
                 </TabsContent>
 
-                {/* ── Accounts ── */}
+                {/* ── Accounts Tab ── */}
                 <TabsContent value="accounts">
                   <div className="mb-4">
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
@@ -247,7 +219,7 @@ function SuperAdminDashboardPage() {
                   <AccountManageSection />
                 </TabsContent>
 
-                {/* ── Approval ── */}
+                {/* ── Approval Tab ── */}
                 <TabsContent value="approval">
                   <div className="mb-4">
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-300">
@@ -260,7 +232,7 @@ function SuperAdminDashboardPage() {
                   <ApprovalSection onApprovalChange={(count) => setPendingCount(count)} />
                 </TabsContent>
 
-                {/* ── View All ── */}
+                {/* ── View All Tab ── */}
                 <TabsContent value="view">
                   <div className="mb-4">
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
@@ -271,7 +243,7 @@ function SuperAdminDashboardPage() {
                   <ViewableSection />
                 </TabsContent>
 
-                {/* ── Create ── */}
+                {/* ── Create Tab ── */}
                 <TabsContent value="create">
                   <div className="mb-4">
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
@@ -286,9 +258,8 @@ function SuperAdminDashboardPage() {
                     <Alert className="bg-amber-900/20 border-amber-500/30">
                       <AlertCircle className="w-4 h-4 text-amber-400" />
                       <AlertDescription className="text-amber-200">
-                        No platform organization linked. Add an{" "}
-                        <code className="bg-black/30 px-1 rounded">organization_id</code> to your{" "}
-                        <code className="bg-black/30 px-1 rounded">super_admins</code> row to enable posting.
+                        No platform organization linked. Add an <code className="bg-black/30 px-1 rounded">organization_id</code> to
+                        your <code className="bg-black/30 px-1 rounded">super_admins</code> row to enable posting.
                       </AlertDescription>
                     </Alert>
                   ) : (
@@ -312,21 +283,21 @@ function SuperAdminDashboardPage() {
 
                           <TabsContent value="createAnnouncement">
                             <AnnounceForm
-                              onSuccess={() => {}}
+                              onSuccess={fetchStats}
                               currentOrg={platformOrg}
                               authUserId={profile?.user_id}
                             />
                           </TabsContent>
                           <TabsContent value="createBlogs">
                             <BlogOrgForm
-                              onSuccess={() => {}}
+                              onSuccess={fetchStats}
                               currentOrg={platformOrg}
                               authUserId={profile?.user_id}
                             />
                           </TabsContent>
                           <TabsContent value="createResources">
                             <ResourceForm
-                              onSuccess={() => {}}
+                              onSuccess={fetchStats}
                               currentOrg={platformOrg}
                               authUserId={profile?.user_id}
                             />
@@ -346,6 +317,5 @@ function SuperAdminDashboardPage() {
   )
 }
 
-// ⛔ AUTH DISABLED FOR UI TESTING — restore when done:
-// export default withAuth(SuperAdminDashboardPage, ["super_admin"])
+// export default withAuth(SuperAdminDashboardPage, ["super_admin"])  // ⛔ temporarily removed
 export default SuperAdminDashboardPage

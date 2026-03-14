@@ -62,45 +62,61 @@ export function LoginForm() {
         return
       }
 
-      // 2️⃣ Check if user exists in users table
+      // 2️⃣ Check super_admins table first
+      const { data: superData, error: superError } = await supabase
+        .from("super_admins")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (superError && superError.code !== "PGRST116") {
+        console.error("Error checking super_admins table:", superError)
+      }
+
+      if (superData) {
+        console.log("Super admin found, redirecting to super admin dashboard")
+        router.push("/super-admin-dashboard")
+        setLoading(false)
+        return
+      }
+
+      // 3️⃣ Check if user exists in users table
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("user_id")
         .eq("user_id", user.id)
         .maybeSingle()
 
-      if (userError && userError.code !== 'PGRST116') {
+      if (userError && userError.code !== "PGRST116") {
         console.error("Error checking users table:", userError)
       }
 
       if (userData) {
-        // User found - redirect to user dashboard
         console.log("User account found, redirecting to user dashboard")
         router.push("/user-dashboard")
         setLoading(false)
         return
       }
 
-      // 3️⃣ Check if user exists in organizations table
+      // 4️⃣ Check if user exists in organizations table
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("user_id")
         .eq("user_id", user.id)
         .maybeSingle()
 
-      if (orgError && orgError.code !== 'PGRST116') {
+      if (orgError && orgError.code !== "PGRST116") {
         console.error("Error checking organizations table:", orgError)
       }
 
       if (orgData) {
-        // Organization found - redirect to org dashboard
         console.log("Organization account found, redirecting to org dashboard")
         router.push("/org-dashboard")
         setLoading(false)
         return
       }
 
-      // 4️⃣ No profile found in either table
+      // 5️⃣ No profile found in any table
       setError("Profile not found. Please complete your signup.")
       await supabase.auth.signOut()
       setLoading(false)
@@ -113,7 +129,7 @@ export function LoginForm() {
   }
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault()
       handleLogin()
     }
