@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/components/(auth)/authContext"
 // import { withAuth } from "@/components/(auth)/withAuth"  // ⛔ temporarily removed
@@ -13,8 +14,14 @@ import { ReturnButton } from "@/components/return"
 import {
   ShieldCheck, Users, Building2, FileText, Megaphone,
   BookOpen, TrendingUp, Clock, Plus, Eye, CheckSquare,
-  AlertCircle, Loader2,
+  AlertCircle, Loader2, LogOut,
 } from "lucide-react"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useRouter } from "next/navigation"
 
 // Section Components
 import SuperProfile from "./super-profile,"
@@ -28,11 +35,14 @@ import BlogOrgForm  from "@/components/blog/blog-edit-user"
 import ResourceForm from "@/components/resourceHub/resource-form"
 
 function SuperAdminDashboardPage() {
-  const { profile, session } = useAuth()
+  const { profile, session, logout } = useAuth()
+  const router = useRouter()
 
   const [activeTab, setActiveTab]             = useState("profile")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
   const [pendingCount, setPendingCount]       = useState(0)
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false)
+  const [signingOut, setSigningOut]           = useState(false)
   const [stats, setStats]                     = useState({
     totalUsers:          0,
     totalOrgs:           0,
@@ -43,8 +53,19 @@ function SuperAdminDashboardPage() {
   })
   const [statsLoading, setStatsLoading] = useState(true)
 
-  // The platform org linked to this super admin — used by create forms
   const platformOrg = profile?.linkedOrg
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try {
+      await logout()
+      router.push("/")
+    } catch (err) {
+      console.error("Sign out error:", err)
+      setSigningOut(false)
+      setShowSignOutDialog(false)
+    }
+  }
 
   const fetchStats = useCallback(async () => {
     setStatsLoading(true)
@@ -128,6 +149,16 @@ function SuperAdminDashboardPage() {
             Super Admin Control Panel
           </p>
         </div>
+        {/* Sign Out Button */}
+        <Button
+          onClick={() => setShowSignOutDialog(true)}
+          variant="outline"
+          size="sm"
+          className="shrink-0 border-red-500/40 text-red-300 hover:bg-red-500/20 hover:border-red-400 hover:text-red-200 transition-all gap-2"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="hidden sm:inline">Sign Out</span>
+        </Button>
       </motion.div>
 
       <div className="max-w-7xl mx-auto space-y-8">
@@ -170,8 +201,7 @@ function SuperAdminDashboardPage() {
             <CardContent className="p-4 sm:p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
 
-                {/* Tab Bar */}
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-6 bg-black/20 border border-fuchsia-500/20 p-1 gap-1 h-auto">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mb-6 bg-black/20 border border-fuchsia-500/20 p-1 gap-1 h-auto">
                   {[
                     { value: "profile",  icon: <ShieldCheck  className="w-4 h-4" />, label: "Profile"  },
                     { value: "accounts", icon: <Users        className="w-4 h-4" />, label: "Accounts" },
@@ -190,6 +220,7 @@ function SuperAdminDashboardPage() {
                       ),
                     },
                     { value: "view",   icon: <Eye  className="w-4 h-4" />, label: "View All" },
+                    { value: "create", icon: <Plus className="w-4 h-4" />, label: "Create"   },
                   ].map(({ value, icon, label }) => (
                     <TabsTrigger key={value} value={value}
                       className="flex items-center gap-1.5 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all py-2">
@@ -241,11 +272,108 @@ function SuperAdminDashboardPage() {
                   </div>
                   <ViewableSection />
                 </TabsContent>
+
+                {/* ── Create Tab ── */}
+                <TabsContent value="create">
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
+                      Publish Content
+                    </h2>
+                    <p className="text-white/40 text-sm mt-1">
+                      Super admin posts go directly to the platform — no approval needed.
+                    </p>
+                  </div>
+
+                  {!platformOrg ? (
+                    <Alert className="bg-amber-900/20 border-amber-500/30">
+                      <AlertCircle className="w-4 h-4 text-amber-400" />
+                      <AlertDescription className="text-amber-200">
+                        No platform organization linked. Add an{" "}
+                        <code className="bg-black/30 px-1 rounded">organization_id</code> to your{" "}
+                        <code className="bg-black/30 px-1 rounded">super_admins</code> row to enable posting.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
+                      <CardContent className="p-6">
+                        <Tabs value={activeCreateTab} onValueChange={setActiveCreateTab}>
+                          <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-purple-500/20 p-1">
+                            <TabsTrigger value="createAnnouncement"
+                              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+                              <Megaphone className="w-4 h-4" />Announcement
+                            </TabsTrigger>
+                            <TabsTrigger value="createBlogs"
+                              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
+                              <FileText className="w-4 h-4" />Blog
+                            </TabsTrigger>
+                            <TabsTrigger value="createResources"
+                              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white">
+                              <BookOpen className="w-4 h-4" />Resource
+                            </TabsTrigger>
+                          </TabsList>
+
+                          <TabsContent value="createAnnouncement">
+                            <AnnounceForm
+                              onSuccess={fetchStats}
+                              currentOrg={platformOrg}
+                              authUserId={profile?.user_id}
+                            />
+                          </TabsContent>
+                          <TabsContent value="createBlogs">
+                            <BlogOrgForm
+                              onSuccess={fetchStats}
+                              currentOrg={platformOrg}
+                              authUserId={profile?.user_id}
+                            />
+                          </TabsContent>
+                          <TabsContent value="createResources">
+                            <ResourceForm
+                              onSuccess={fetchStats}
+                              currentOrg={platformOrg}
+                              authUserId={profile?.user_id}
+                            />
+                          </TabsContent>
+                        </Tabs>
+                      </CardContent>
+                    </Card>
+                  )}
+                </TabsContent>
+
               </Tabs>
             </CardContent>
           </Card>
         </motion.div>
       </div>
+
+      {/* Sign Out Confirmation Dialog */}
+      <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <AlertDialogContent className="bg-gradient-to-br from-slate-900 via-red-900/30 to-slate-900 border-red-500/30">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-200 flex items-center gap-2">
+              <LogOut className="w-5 h-5" />Sign Out
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              Are you sure you want to sign out of the Super Admin panel?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={signingOut}
+              className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white">
+              {signingOut
+                ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Signing out...</>
+                : <><LogOut className="w-4 h-4 mr-2" />Sign Out</>}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   )
 }

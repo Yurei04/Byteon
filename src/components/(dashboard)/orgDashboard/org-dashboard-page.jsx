@@ -21,18 +21,21 @@ import {
 } from "@/components/ui/pagination"
 
 import { useAuth } from "@/components/(auth)/authContext" 
-import ResourceForm from "@/components/resourceHub/resource-form"
-import BlogForm from "@/components/blog/blog-form"
-import AnnounceForm from "@/components/(dashboard)/announce/announce-form"
-import ResourceCard from "@/components/resourceHub/resourceHub-card"
-import BlogCard from "@/components/blog/blogCard"
-import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
-import OrgProfileHeader from "./org-profile-header"
-import OrgAboutSection from "./org-about-section"
-import OrgQuickStats from "./org-quick-stats"
+
+// ── Pending forms (go to approval queue, not live DB) ─────────────────────────
+import PendingAnnounceForm from "../announce/announce-pending"
+import PendingBlogOrgForm from "@/components/blog/blog-pending"
+import PendingResourceForm from "@/components/resourceHub/resource-pending"
+
+import ResourceCard      from "@/components/resourceHub/resourceHub-card"
+import BlogCard          from "@/components/blog/blogCard"
+import AnnouncementCard  from "@/components/(dashboard)/announce/announce-card"
+import OrgProfileHeader  from "./org-profile-header"
+import OrgAboutSection   from "./org-about-section"
+import OrgQuickStats     from "./org-quick-stats"
 import DeleteAccountModal from "./delete-account"
 import { availableOrgAchievements } from "./org-achievements"
-import { ReturnButton } from "@/components/return"
+import { ReturnButton }  from "@/components/return"
 
 const ITEMS_PER_PAGE = 6
 
@@ -40,35 +43,33 @@ export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
 
-  const [activeTab, setActiveTab] = useState("view")
-  const [activeViewTab, setActiveViewTab] = useState("viewAnnouncement")
+  const [activeTab, setActiveTab]           = useState("view")
+  const [activeViewTab, setActiveViewTab]   = useState("viewAnnouncement")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
 
   const [announcements, setAnnouncements] = useState([])
-  const [blogs, setBlogs] = useState([])
-  const [resources, setResources] = useState([])
+  const [blogs, setBlogs]                 = useState([])
+  const [resources, setResources]         = useState([])
 
   const [contentLoading, setContentLoading] = useState(false)
-  const [stats, setStats] = useState({ totalAnnouncements: 0, totalBlogs: 0, totalResources: 0, activeAnnouncements: 0 })
+  const [stats, setStats] = useState({
+    totalAnnouncements: 0, totalBlogs: 0,
+    totalResources: 0, activeAnnouncements: 0,
+  })
 
   const [currentPageAnnouncement, setCurrentPageAnnouncement] = useState(1)
-  const [currentPageBlogs, setCurrentPageBlogs] = useState(1)
-  const [currentPageResources, setCurrentPageResources] = useState(1)
+  const [currentPageBlogs, setCurrentPageBlogs]               = useState(1)
+  const [currentPageResources, setCurrentPageResources]       = useState(1)
 
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditing, setIsEditing]           = useState(false)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
-  const [alert, setAlert] = useState(null)
+  const [alert, setAlert]                   = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    author_name: "",
-    primary_color: "#000000",
-    secondary_color: "#1F2937",
-    color_scheme: "black",
-    active: true,
-    achievements: [],
+    name: "", description: "", author_name: "",
+    primary_color: "#000000", secondary_color: "#1F2937",
+    color_scheme: "black", active: true, achievements: [],
   })
 
   // Redirect if not org_admin
@@ -81,35 +82,26 @@ export default function OrgDashboardPage() {
   // Seed form from context profile
   useEffect(() => {
     if (!profile) return
-
     const orgAchievements = profile.achievements
       ? (typeof profile.achievements === "string" ? JSON.parse(profile.achievements) : profile.achievements)
       : []
-
     setFormData({
-      name: profile.name || "",
-      description: profile.description || "",
-      author_name: profile.author_name || "",
-      primary_color: profile.primary_color || "#000000",
+      name:            profile.name || "",
+      description:     profile.description || "",
+      author_name:     profile.author_name || "",
+      primary_color:   profile.primary_color || "#000000",
       secondary_color: profile.secondary_color || "#1F2937",
-      color_scheme: profile.color_scheme || "black",
-      active: profile.active !== false,
-      achievements: orgAchievements,
+      color_scheme:    profile.color_scheme || "black",
+      active:          profile.active !== false,
+      achievements:    orgAchievements,
     })
   }, [profile])
 
-  // Fetch content once profile.id is available
-  useEffect(() => {
-    if (!profile?.id) return
-    fetchAllData(profile.id)
-  }, [profile?.id])
+  useEffect(() => { if (!profile?.id) return; fetchAllData(profile.id) }, [profile?.id])
 
-  // Re-fetch on tab visibility
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "visible" && profile?.id) {
-        fetchAllData(profile.id)
-      }
+      if (document.visibilityState === "visible" && profile?.id) fetchAllData(profile.id)
     }
     document.addEventListener("visibilitychange", handleVisibility)
     return () => document.removeEventListener("visibilitychange", handleVisibility)
@@ -119,11 +111,7 @@ export default function OrgDashboardPage() {
 
   const fetchAllData = async (orgId) => {
     setContentLoading(true)
-    await Promise.all([
-      fetchAnnouncements(orgId),
-      fetchBlogs(orgId),
-      fetchResources(orgId),
-    ])
+    await Promise.all([fetchAnnouncements(orgId), fetchBlogs(orgId), fetchResources(orgId)])
     setCurrentPageAnnouncement(1)
     setCurrentPageBlogs(1)
     setCurrentPageResources(1)
@@ -132,10 +120,7 @@ export default function OrgDashboardPage() {
 
   const fetchAnnouncements = async (orgId) => {
     const { data, error } = await supabase
-      .from("announcements")
-      .select("*")
-      .eq("organization_id", orgId)
-      .order("created_at", { ascending: false })
+      .from("announcements").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
     if (error) { console.error("fetchAnnouncements:", error); return }
     setAnnouncements(data || [])
     const active = data?.filter(a => new Date(a.date_end) >= new Date()).length || 0
@@ -144,10 +129,7 @@ export default function OrgDashboardPage() {
 
   const fetchBlogs = async (orgId) => {
     const { data, error } = await supabase
-      .from("blogs")
-      .select("*")
-      .eq("organization_id", orgId)
-      .order("created_at", { ascending: false })
+      .from("blogs").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
     if (error) { console.error("fetchBlogs:", error); return }
     setBlogs(data || [])
     setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
@@ -155,10 +137,7 @@ export default function OrgDashboardPage() {
 
   const fetchResources = async (orgId) => {
     const { data, error } = await supabase
-      .from("resource_hub")
-      .select("*")
-      .eq("organization_id", orgId)
-      .order("created_at", { ascending: false })
+      .from("resource_hub").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
     if (error) { console.error("fetchResources:", error); return }
     setResources(data || [])
     setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
@@ -183,28 +162,24 @@ export default function OrgDashboardPage() {
     if (!formData.author_name) {
       setAlert({ type: "error", message: "Username (Author Name) is required." }); return
     }
-
     setIsProfileSaving(true)
     setAlert(null)
     try {
       const { error } = await supabase
         .from("organizations")
         .update({
-          name: formData.name,
-          description: formData.description,
-          author_name: formData.author_name,
-          primary_color: formData.primary_color,
+          name:            formData.name,
+          description:     formData.description,
+          author_name:     formData.author_name,
+          primary_color:   formData.primary_color,
           secondary_color: formData.secondary_color,
-          color_scheme: formData.color_scheme,
-          active: formData.active,
-          achievements: JSON.stringify(formData.achievements),
-          updated_at: new Date().toISOString(),
+          color_scheme:    formData.color_scheme,
+          active:          formData.active,
+          achievements:    JSON.stringify(formData.achievements),
+          updated_at:      new Date().toISOString(),
         })
         .eq("user_id", profile.user_id)
-
       if (error) throw error
-
-      // Refresh the context cache so navbar + other components stay in sync
       await refreshProfile()
       setAlert({ type: "success", message: "Organization profile updated successfully!" })
       setIsEditing(false)
@@ -218,20 +193,19 @@ export default function OrgDashboardPage() {
 
   const handleProfileCancel = () => {
     setIsEditing(false)
-    // Reset form back to context values
     if (profile) {
       const orgAchievements = profile.achievements
         ? (typeof profile.achievements === "string" ? JSON.parse(profile.achievements) : profile.achievements)
         : []
       setFormData({
-        name: profile.name || "",
-        description: profile.description || "",
-        author_name: profile.author_name || "",
-        primary_color: profile.primary_color || "#000000",
+        name:            profile.name || "",
+        description:     profile.description || "",
+        author_name:     profile.author_name || "",
+        primary_color:   profile.primary_color || "#000000",
         secondary_color: profile.secondary_color || "#1F2937",
-        color_scheme: profile.color_scheme || "black",
-        active: profile.active !== false,
-        achievements: orgAchievements,
+        color_scheme:    profile.color_scheme || "black",
+        active:          profile.active !== false,
+        achievements:    orgAchievements,
       })
     }
   }
@@ -252,13 +226,12 @@ export default function OrgDashboardPage() {
 
   // ── Pagination helpers ─────────────────────────────────────────────────────
 
-  const paginateData = (data, page) => data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+  const paginateData  = (data, page) => data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
   const getTotalPages = (data) => Math.ceil(data.length / ITEMS_PER_PAGE)
 
   const generatePaginationItems = (totalPages, currentPage, onPageChange) => {
     const items = []
     const maxVisible = 5
-
     items.push(
       <PaginationItem key="prev">
         <PaginationPrevious
@@ -267,16 +240,13 @@ export default function OrgDashboardPage() {
         />
       </PaginationItem>
     )
-
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
-    let end = Math.min(totalPages, start + maxVisible - 1)
+    let end   = Math.min(totalPages, start + maxVisible - 1)
     if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1)
-
     if (start > 1) {
       items.push(<PaginationItem key={1}><PaginationLink onClick={() => onPageChange(1)} className="cursor-pointer">1</PaginationLink></PaginationItem>)
       if (start > 2) items.push(<PaginationItem key="e1"><PaginationEllipsis /></PaginationItem>)
     }
-
     for (let p = start; p <= end; p++) {
       items.push(
         <PaginationItem key={p}>
@@ -287,12 +257,10 @@ export default function OrgDashboardPage() {
         </PaginationItem>
       )
     }
-
     if (end < totalPages) {
       if (end < totalPages - 1) items.push(<PaginationItem key="e2"><PaginationEllipsis /></PaginationItem>)
       items.push(<PaginationItem key={totalPages}><PaginationLink onClick={() => onPageChange(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink></PaginationItem>)
     }
-
     items.push(
       <PaginationItem key="next">
         <PaginationNext
@@ -301,13 +269,12 @@ export default function OrgDashboardPage() {
         />
       </PaginationItem>
     )
-
     return items
   }
 
   const paginatedAnnouncements = useMemo(() => paginateData(announcements, currentPageAnnouncement), [announcements, currentPageAnnouncement])
-  const paginatedBlogs         = useMemo(() => paginateData(blogs, currentPageBlogs), [blogs, currentPageBlogs])
-  const paginatedResources     = useMemo(() => paginateData(resources, currentPageResources), [resources, currentPageResources])
+  const paginatedBlogs         = useMemo(() => paginateData(blogs, currentPageBlogs),               [blogs, currentPageBlogs])
+  const paginatedResources     = useMemo(() => paginateData(resources, currentPageResources),       [resources, currentPageResources])
 
   // ── Guards ─────────────────────────────────────────────────────────────────
 
@@ -362,10 +329,10 @@ export default function OrgDashboardPage() {
             </Card>
 
             {[
-              { label: "Announcements", count: stats.totalAnnouncements, Icon: Megaphone,   color: "fuchsia" },
-              { label: "Resources",     count: stats.totalResources,     Icon: BookOpen,    color: "emerald" },
-              { label: "Blogs",         count: stats.totalBlogs,         Icon: FileText,    color: "purple"  },
-              { label: "Active Events", count: stats.activeAnnouncements,Icon: TrendingUp,  color: "orange"  },
+              { label: "Announcements", count: stats.totalAnnouncements, Icon: Megaphone,  color: "fuchsia" },
+              { label: "Resources",     count: stats.totalResources,     Icon: BookOpen,   color: "emerald" },
+              { label: "Blogs",         count: stats.totalBlogs,         Icon: FileText,   color: "purple"  },
+              { label: "Active Events", count: stats.activeAnnouncements,Icon: TrendingUp, color: "orange"  },
             ].map(({ label, count, Icon, color }) => (
               <Card key={label} className={`group relative bg-gradient-to-br from-${color}-900/40 to-slate-950/40 backdrop-blur-xl border border-${color}-500/30 hover:border-${color}-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-${color}-500/20`}>
                 <CardContent className="relative p-6">
@@ -390,8 +357,8 @@ export default function OrgDashboardPage() {
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
                     {[
-                      { value: "profile", icon: <Building2 className="w-4 h-4" />, label: "Profile" },
-                      { value: "view",    icon: <FileText   className="w-4 h-4" />, label: "View All" },
+                      { value: "profile", icon: <Building2 className="w-4 h-4" />, label: "Profile"    },
+                      { value: "view",    icon: <FileText   className="w-4 h-4" />, label: "View All"   },
                       { value: "create",  icon: <Plus       className="w-4 h-4" />, label: "Create New" },
                     ].map(({ value, icon, label }) => (
                       <TabsTrigger key={value} value={value}
@@ -549,18 +516,31 @@ export default function OrgDashboardPage() {
                           </TabsList>
 
                           <TabsContent value="createAnnouncement">
-                            <AnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
+                            <PendingAnnounceForm
+                              onSuccess={refreshAll}
+                              currentOrg={profile}
+                              authUserId={profile?.user_id}
+                            />
                           </TabsContent>
                           <TabsContent value="createBlogs">
-                            <BlogForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
+                            <PendingBlogOrgForm
+                              onSuccess={refreshAll}
+                              currentOrg={profile}
+                              authUserId={profile?.user_id}
+                            />
                           </TabsContent>
                           <TabsContent value="createResources">
-                            <ResourceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
+                            <PendingResourceForm
+                              onSuccess={refreshAll}
+                              currentOrg={profile}
+                              authUserId={profile?.user_id}
+                            />
                           </TabsContent>
                         </Tabs>
                       </CardContent>
                     </Card>
                   </TabsContent>
+
                 </Tabs>
               </CardContent>
             </Card>
@@ -569,7 +549,11 @@ export default function OrgDashboardPage() {
       </div>
 
       {showDeleteModal && (
-        <DeleteAccountModal organizationName={profile?.name} userId={profile?.user_id} onClose={() => setShowDeleteModal(false)} />
+        <DeleteAccountModal
+          organizationName={profile?.name}
+          userId={profile?.user_id}
+          onClose={() => setShowDeleteModal(false)}
+        />
       )}
     </div>
   )

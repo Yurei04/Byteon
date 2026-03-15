@@ -13,10 +13,13 @@ import {
 } from "lucide-react"
 
 import { useAuth } from "@/components/(auth)/authContext"
-import UserProfile from "@/components/(dashboard)/userDashboard/profile"
-import BlogEmpty from "@/components/blog/blog-empty"
-import BlogCard from "@/components/blog/blogCard"
-import BlogUserForm from "@/components/blog/blog-user-form"
+import UserProfile    from "@/components/(dashboard)/userDashboard/profile"
+import BlogEmpty      from "@/components/blog/blog-empty"
+import BlogCard       from "@/components/blog/blogCard"
+
+// ── Pending form (goes to approval queue, not live DB) ────────────────────────
+import PendingBlogUserForm from "@/components/blog/blog-pending-user"
+
 import AchievementsTab from "@/components/achievements/achievementStab"
 import { ReturnButton } from "@/components/return"
 import {
@@ -30,12 +33,12 @@ export default function UserDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn } = useAuth()
 
-  const [activeTab, setActiveTab] = useState("profile")
-  const [blogs, setBlogs] = useState([])
-  const [blogsLoading, setBlogsLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [activeTab, setActiveTab]           = useState("profile")
+  const [blogs, setBlogs]                   = useState([])
+  const [blogsLoading, setBlogsLoading]     = useState(false)
+  const [currentPage, setCurrentPage]       = useState(1)
   const [achievementsMetadata, setAchievementsMetadata] = useState({})
-  const [stats, setStats] = useState({ totalBlogs: 0, totalViews: 0 })
+  const [stats, setStats]                   = useState({ totalBlogs: 0, totalViews: 0 })
 
   const realtimeChannelRef = useRef(null)
 
@@ -49,40 +52,29 @@ export default function UserDashboardPage() {
   // Load blogs + achievements once profile is ready
   useEffect(() => {
     if (!profile?.id || !profile?.user_id) return
-
     setAchievementsMetadata(profile.achievements_metadata ?? {})
     fetchBlogs(profile.id)
     subscribeToAchievements(profile.user_id)
-
     return () => {
-      if (realtimeChannelRef.current) {
-        supabase.removeChannel(realtimeChannelRef.current)
-      }
+      if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current)
     }
   }, [profile?.id])
 
   // Re-fetch blogs when tab becomes visible again
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === "visible" && profile?.id) {
-        fetchBlogs(profile.id)
-      }
+      if (document.visibilityState === "visible" && profile?.id) fetchBlogs(profile.id)
     }
     document.addEventListener("visibilitychange", handleVisibility)
     return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [profile?.id])
 
   const subscribeToAchievements = (authUserId) => {
-    if (realtimeChannelRef.current) {
-      supabase.removeChannel(realtimeChannelRef.current)
-    }
-
+    if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current)
     realtimeChannelRef.current = supabase
       .channel(`dashboard-achievements-${authUserId}`)
       .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "users",
+        event: "UPDATE", schema: "public", table: "users",
         filter: `user_id=eq.${authUserId}`,
       }, (payload) => {
         if (payload.new?.achievements_metadata !== undefined) {
@@ -96,13 +88,8 @@ export default function UserDashboardPage() {
     setBlogsLoading(true)
     try {
       const { data, error } = await supabase
-        .from("blogs")
-        .select("*")
-        .eq("user_id", bigintUserId)
-        .order("created_at", { ascending: false })
-
+        .from("blogs").select("*").eq("user_id", bigintUserId).order("created_at", { ascending: false })
       if (error) throw error
-
       setBlogs(data || [])
       setStats({
         totalBlogs: data?.length || 0,
@@ -132,16 +119,12 @@ export default function UserDashboardPage() {
     return blogs.slice(start, start + ITEMS_PER_PAGE)
   }, [blogs, currentPage])
 
-  const totalPages = Math.ceil(blogs.length / ITEMS_PER_PAGE)
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page)
-  }
+  const totalPages       = Math.ceil(blogs.length / ITEMS_PER_PAGE)
+  const handlePageChange = (page) => { if (page >= 1 && page <= totalPages) setCurrentPage(page) }
 
-  const totalAchievements = Object.keys(achievementsMetadata).length
-  const totalAchievementPoints = Object.values(achievementsMetadata)
-    .reduce((sum, a) => sum + (a.reward_points ?? 0), 0)
+  const totalAchievements      = Object.keys(achievementsMetadata).length
+  const totalAchievementPoints = Object.values(achievementsMetadata).reduce((sum, a) => sum + (a.reward_points ?? 0), 0)
 
-  // Show loader while auth resolves
   if (authLoading) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
@@ -155,15 +138,10 @@ export default function UserDashboardPage() {
   return (
     <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-7xl mx-auto mb-6"
-      >
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-7xl mx-auto mb-6">
         <div className="fixed inset-0 p-6 pointer-events-none z-50">
-          <div className="pointer-events-auto w-fit">
-            <ReturnButton />
-          </div>
+          <div className="pointer-events-auto w-fit"><ReturnButton /></div>
         </div>
         <div className="bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-3 px-4 rounded-xl shadow-lg shadow-fuchsia-500/10">
           <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
@@ -174,12 +152,8 @@ export default function UserDashboardPage() {
       </motion.div>
 
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="space-y-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-8">
+
           {/* Title */}
           <div className="text-center space-y-3">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
@@ -193,13 +167,9 @@ export default function UserDashboardPage() {
           </div>
 
           {/* Stat Cards */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
-          >
-            {/* Profile */}
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
+            className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
             <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20">
               <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <CardContent className="relative p-4 sm:p-6">
@@ -215,7 +185,6 @@ export default function UserDashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Total Blogs */}
             <Card className="group relative bg-gradient-to-br from-fuchsia-900/40 via-pink-900/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-fuchsia-500/20">
               <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-pink-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <CardContent className="relative p-4 sm:p-6">
@@ -233,11 +202,8 @@ export default function UserDashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Achievements */}
-            <Card
-              className="group relative bg-gradient-to-br from-amber-900/40 via-yellow-900/40 to-slate-950/40 backdrop-blur-xl border border-amber-500/30 hover:border-amber-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-amber-500/20 cursor-pointer"
-              onClick={() => setActiveTab("achievements")}
-            >
+            <Card className="group relative bg-gradient-to-br from-amber-900/40 via-yellow-900/40 to-slate-950/40 backdrop-blur-xl border border-amber-500/30 hover:border-amber-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-amber-500/20 cursor-pointer"
+              onClick={() => setActiveTab("achievements")}>
               <div className="absolute inset-0 bg-gradient-to-r from-amber-600/0 via-yellow-600/5 to-amber-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <CardContent className="relative p-4 sm:p-6">
                 <div className="flex items-center justify-between">
@@ -248,8 +214,7 @@ export default function UserDashboardPage() {
                     </p>
                     {totalAchievementPoints > 0 && (
                       <p className="text-xs text-amber-300/60 mt-0.5 flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        {totalAchievementPoints} pts
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />{totalAchievementPoints} pts
                       </p>
                     )}
                   </div>
@@ -260,7 +225,6 @@ export default function UserDashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Total Views */}
             <Card className="group relative bg-gradient-to-br from-emerald-900/40 via-green-900/40 to-slate-950/40 backdrop-blur-xl border border-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-emerald-500/20">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/0 via-green-600/5 to-emerald-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <CardContent className="relative p-4 sm:p-6">
@@ -280,26 +244,22 @@ export default function UserDashboardPage() {
           </motion.div>
 
           {/* Tabs */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 shadow-2xl">
               <CardContent className="p-4 sm:p-6 lg:p-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 bg-black/30 border border-fuchsia-500/20 p-1 h-auto rounded-xl">
-                    <TabsTrigger value="profile" className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                      <User2 className="w-4 h-4" />
-                      <span className="hidden sm:inline">Profile</span>
+                    <TabsTrigger value="profile"
+                      className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
+                      <User2 className="w-4 h-4" /><span className="hidden sm:inline">Profile</span>
                     </TabsTrigger>
-                    <TabsTrigger value="myBlog" className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                      <BookOpen className="w-4 h-4" />
-                      <span className="hidden sm:inline">My Blogs</span>
+                    <TabsTrigger value="myBlog"
+                      className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
+                      <BookOpen className="w-4 h-4" /><span className="hidden sm:inline">My Blogs</span>
                     </TabsTrigger>
-                    <TabsTrigger value="create" className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                      <Plus className="w-4 h-4" />
-                      <span className="hidden sm:inline">Create</span>
+                    <TabsTrigger value="create"
+                      className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
+                      <Plus className="w-4 h-4" /><span className="hidden sm:inline">Create</span>
                     </TabsTrigger>
                   </TabsList>
 
@@ -308,10 +268,7 @@ export default function UserDashboardPage() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
-                          <UserProfile
-                            currentUser={profile?.user_id}
-                            authUserId={profile?.id}
-                          />
+                          <UserProfile currentUser={profile?.user_id} authUserId={profile?.id} />
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -332,12 +289,9 @@ export default function UserDashboardPage() {
                             <div className="space-y-6">
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {paginatedBlogs.map((item) => (
-                                  <BlogCard
-                                    key={item.id}
-                                    item={item}
+                                  <BlogCard key={item.id} item={item}
                                     onUpdate={handleBlogUpdate}
-                                    onDelete={(id) => handleDelete("blog", id)}
-                                  />
+                                    onDelete={(id) => handleDelete("blog", id)} />
                                 ))}
                               </div>
                               {totalPages > 1 && (
@@ -346,16 +300,12 @@ export default function UserDashboardPage() {
                                     <PaginationItem>
                                       <PaginationPrevious
                                         onClick={() => handlePageChange(currentPage - 1)}
-                                        className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
-                                      />
+                                        className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} />
                                     </PaginationItem>
                                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                       <PaginationItem key={page}>
-                                        <PaginationLink
-                                          onClick={() => handlePageChange(page)}
-                                          isActive={page === currentPage}
-                                          className={`cursor-pointer ${page === currentPage ? "bg-fuchsia-600/50 text-white" : "hover:bg-fuchsia-800/20"}`}
-                                        >
+                                        <PaginationLink onClick={() => handlePageChange(page)} isActive={page === currentPage}
+                                          className={`cursor-pointer ${page === currentPage ? "bg-fuchsia-600/50 text-white" : "hover:bg-fuchsia-800/20"}`}>
                                           {page}
                                         </PaginationLink>
                                       </PaginationItem>
@@ -363,8 +313,7 @@ export default function UserDashboardPage() {
                                     <PaginationItem>
                                       <PaginationNext
                                         onClick={() => handlePageChange(currentPage + 1)}
-                                        className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
-                                      />
+                                        className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} />
                                     </PaginationItem>
                                   </PaginationContent>
                                 </Pagination>
@@ -381,19 +330,22 @@ export default function UserDashboardPage() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
-                          <BlogUserForm
+                          {/* PendingBlogUserForm — goes to pending_blogs for approval */}
+                          <PendingBlogUserForm
                             onSuccess={handleBlogUpdate}
-                            currentUser={profile?.user_id}
+                            currentUser={profile}
                             authUserId={profile?.id}
                           />
                         </CardContent>
                       </Card>
                     </motion.div>
                   </TabsContent>
+
                 </Tabs>
               </CardContent>
             </Card>
           </motion.div>
+
         </motion.div>
       </div>
     </div>
