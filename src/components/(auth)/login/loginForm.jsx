@@ -21,103 +21,75 @@ import { useRouter } from "next/navigation"
 
 export function LoginForm() {
   const router = useRouter()
-  const [email, setEmail] = useState("")
+  const [email, setEmail]       = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState(null)
 
   const handleLogin = async () => {
     setError(null)
 
-    if (!email.trim()) {
-      setError("Email is required")
-      return
-    }
-
-    if (!password) {
-      setError("Password is required")
-      return
-    }
+    if (!email.trim()) { setError("Email is required"); return }
+    if (!password)     { setError("Password is required"); return }
 
     setLoading(true)
 
     try {
-      // 1️⃣ Sign in with Supabase Auth
-      const { data, error: signInError } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        })
+      // 1️⃣ Sign in
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      })
 
-      if (signInError) {
-        setError(signInError.message)
-        setLoading(false)
-        return
-      }
+      if (signInError) { setError(signInError.message); setLoading(false); return }
 
       const user = data?.user
-      if (!user) {
-        setError("Login failed. Please try again.")
-        setLoading(false)
-        return
-      }
+      if (!user) { setError("Login failed. Please try again."); setLoading(false); return }
 
-      // 2️⃣ Check super_admins table first
-      const { data: superData, error: superError } = await supabase
+      // 2️⃣ Check super_admins FIRST
+      const { data: superData } = await supabase
         .from("super_admins")
         .select("user_id")
         .eq("user_id", user.id)
         .maybeSingle()
 
-      if (superError && superError.code !== "PGRST116") {
-        console.error("Error checking super_admins table:", superError)
-      }
-
       if (superData) {
-        console.log("Super admin found, redirecting to super admin dashboard")
-        try { sessionStorage.clear() } catch {}  // force fresh DB query on next load
+        try { sessionStorage.clear() } catch {}
         router.push("/super-admin-dashboard")
         setLoading(false)
         return
       }
 
-      // 3️⃣ Check if user exists in users table
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("user_id")
-        .eq("user_id", user.id)
-        .maybeSingle()
-
-      if (userError && userError.code !== "PGRST116") {
-        console.error("Error checking users table:", userError)
-      }
-
-      if (userData) {
-        console.log("User account found, redirecting to user dashboard")
-        router.push("/user-dashboard")
-        setLoading(false)
-        return
-      }
-
-      // 4️⃣ Check if user exists in organizations table
-      const { data: orgData, error: orgError } = await supabase
+      // 3️⃣ Check organizations SECOND
+      // Must come before users — org accounts may also have a users row
+      const { data: orgData } = await supabase
         .from("organizations")
         .select("user_id")
         .eq("user_id", user.id)
         .maybeSingle()
 
-      if (orgError && orgError.code !== "PGRST116") {
-        console.error("Error checking organizations table:", orgError)
-      }
-
       if (orgData) {
-        console.log("Organization account found, redirecting to org dashboard")
+        try { sessionStorage.clear() } catch {}
         router.push("/org-dashboard")
         setLoading(false)
         return
       }
 
-      // 5️⃣ No profile found in any table
+      // 4️⃣ Check users table LAST
+      const { data: userData } = await supabase
+        .from("users")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (userData) {
+        try { sessionStorage.clear() } catch {}
+        router.push("/user-dashboard")
+        setLoading(false)
+        return
+      }
+
+      // 5️⃣ No profile found
       setError("Profile not found. Please complete your signup.")
       await supabase.auth.signOut()
       setLoading(false)
@@ -130,10 +102,7 @@ export function LoginForm() {
   }
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      handleLogin()
-    }
+    if (e.key === "Enter") { e.preventDefault(); handleLogin() }
   }
 
   return (
@@ -191,15 +160,11 @@ export function LoginForm() {
 
                 <FieldDescription className="text-center text-purple-300">
                   Don&apos;t have an account?{" "}
-                  <a href="/sign-up" className="underline">
-                    Sign up
-                  </a>
+                  <a href="/sign-up" className="underline">Sign up</a>
                 </FieldDescription>
 
                 <FieldDescription className="text-center text-purple-300">
-                  <a href="/forgot-password" className="underline">
-                    Forgot password?
-                  </a>
+                  <a href="/forgot-password" className="underline">Forgot password?</a>
                 </FieldDescription>
               </FieldGroup>
             </div>
@@ -209,14 +174,9 @@ export function LoginForm() {
 
       <FieldDescription className="text-center text-purple-300 px-6">
         By continuing, you agree to our{" "}
-        <a className="underline" href="#">
-          Terms of Service
-        </a>{" "}
+        <a className="underline" href="#">Terms of Service</a>{" "}
         and{" "}
-        <a className="underline" href="#">
-          Privacy Policy
-        </a>
-        .
+        <a className="underline" href="#">Privacy Policy</a>.
       </FieldDescription>
     </div>
   )

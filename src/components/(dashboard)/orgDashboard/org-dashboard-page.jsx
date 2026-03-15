@@ -24,18 +24,18 @@ import { useAuth } from "@/components/(auth)/authContext"
 
 // ── Pending forms (go to approval queue, not live DB) ─────────────────────────
 import PendingAnnounceForm from "../announce/announce-pending"
-import PendingBlogOrgForm from "@/components/blog/blog-pending"
+import PendingBlogOrgForm  from "@/components/blog/blog-pending"
 import PendingResourceForm from "@/components/resourceHub/resource-pending"
 
-import ResourceCard      from "@/components/resourceHub/resourceHub-card"
-import BlogCard          from "@/components/blog/blogCard"
-import AnnouncementCard  from "@/components/(dashboard)/announce/announce-card"
-import OrgProfileHeader  from "./org-profile-header"
-import OrgAboutSection   from "./org-about-section"
-import OrgQuickStats     from "./org-quick-stats"
+import ResourceCard       from "@/components/resourceHub/resourceHub-card"
+import BlogCard           from "@/components/blog/blogCard"
+import AnnouncementCard   from "@/components/(dashboard)/announce/announce-card"
+import OrgProfileHeader   from "./org-profile-header"
+import OrgAboutSection    from "./org-about-section"
+import OrgQuickStats      from "./org-quick-stats"
 import DeleteAccountModal from "./delete-account"
 import { availableOrgAchievements } from "./org-achievements"
-import { ReturnButton }  from "@/components/return"
+import { ReturnButton }   from "@/components/return"
 
 const ITEMS_PER_PAGE = 6
 
@@ -43,8 +43,8 @@ export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
 
-  const [activeTab, setActiveTab]           = useState("view")
-  const [activeViewTab, setActiveViewTab]   = useState("viewAnnouncement")
+  const [activeTab, setActiveTab]             = useState("view")
+  const [activeViewTab, setActiveViewTab]     = useState("viewAnnouncement")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
 
   const [announcements, setAnnouncements] = useState([])
@@ -61,9 +61,9 @@ export default function OrgDashboardPage() {
   const [currentPageBlogs, setCurrentPageBlogs]               = useState(1)
   const [currentPageResources, setCurrentPageResources]       = useState(1)
 
-  const [isEditing, setIsEditing]           = useState(false)
+  const [isEditing, setIsEditing]             = useState(false)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
-  const [alert, setAlert]                   = useState(null)
+  const [alert, setAlert]                     = useState(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -72,9 +72,11 @@ export default function OrgDashboardPage() {
     color_scheme: "black", active: true, achievements: [],
   })
 
-  // Redirect if not org_admin
+  // ── Auth guard ─────────────────────────────────────────────────────────────
+  // IMPORTANT: wait for role to resolve (null = still querying DB)
   useEffect(() => {
     if (authLoading) return
+    if (isLoggedIn && role === null) return   // DB query still in flight — wait
     if (!isLoggedIn) { router.push("/log-in"); return }
     if (role !== "org_admin") { router.push("/unauthorized"); return }
   }, [authLoading, isLoggedIn, role, router])
@@ -277,8 +279,8 @@ export default function OrgDashboardPage() {
   const paginatedResources     = useMemo(() => paginateData(resources, currentPageResources),       [resources, currentPageResources])
 
   // ── Guards ─────────────────────────────────────────────────────────────────
-
-  if (authLoading) {
+  // Show spinner while auth is loading OR while role is still resolving from DB
+  if (authLoading || (isLoggedIn && role === null)) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
@@ -516,25 +518,13 @@ export default function OrgDashboardPage() {
                           </TabsList>
 
                           <TabsContent value="createAnnouncement">
-                            <PendingAnnounceForm
-                              onSuccess={refreshAll}
-                              currentOrg={profile}
-                              authUserId={profile?.user_id}
-                            />
+                            <PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
                           </TabsContent>
                           <TabsContent value="createBlogs">
-                            <PendingBlogOrgForm
-                              onSuccess={refreshAll}
-                              currentOrg={profile}
-                              authUserId={profile?.user_id}
-                            />
+                            <PendingBlogOrgForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
                           </TabsContent>
                           <TabsContent value="createResources">
-                            <PendingResourceForm
-                              onSuccess={refreshAll}
-                              currentOrg={profile}
-                              authUserId={profile?.user_id}
-                            />
+                            <PendingResourceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
                           </TabsContent>
                         </Tabs>
                       </CardContent>

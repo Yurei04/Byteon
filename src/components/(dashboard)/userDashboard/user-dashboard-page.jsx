@@ -33,23 +33,24 @@ export default function UserDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn } = useAuth()
 
-  const [activeTab, setActiveTab]           = useState("profile")
-  const [blogs, setBlogs]                   = useState([])
-  const [blogsLoading, setBlogsLoading]     = useState(false)
-  const [currentPage, setCurrentPage]       = useState(1)
+  const [activeTab, setActiveTab]       = useState("profile")
+  const [blogs, setBlogs]               = useState([])
+  const [blogsLoading, setBlogsLoading] = useState(false)
+  const [currentPage, setCurrentPage]   = useState(1)
   const [achievementsMetadata, setAchievementsMetadata] = useState({})
-  const [stats, setStats]                   = useState({ totalBlogs: 0, totalViews: 0 })
+  const [stats, setStats]               = useState({ totalBlogs: 0, totalViews: 0 })
 
   const realtimeChannelRef = useRef(null)
 
-  // Redirect if not a user
+  // ── Auth guard ─────────────────────────────────────────────────────────────
+  // IMPORTANT: wait for role to resolve (null = still querying DB)
   useEffect(() => {
     if (authLoading) return
+    if (isLoggedIn && role === null) return   // DB query still in flight — wait
     if (!isLoggedIn) { router.push("/log-in"); return }
     if (role !== "user") { router.push("/unauthorized"); return }
   }, [authLoading, isLoggedIn, role])
 
-  // Load blogs + achievements once profile is ready
   useEffect(() => {
     if (!profile?.id || !profile?.user_id) return
     setAchievementsMetadata(profile.achievements_metadata ?? {})
@@ -60,7 +61,6 @@ export default function UserDashboardPage() {
     }
   }, [profile?.id])
 
-  // Re-fetch blogs when tab becomes visible again
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && profile?.id) fetchBlogs(profile.id)
@@ -125,7 +125,9 @@ export default function UserDashboardPage() {
   const totalAchievements      = Object.keys(achievementsMetadata).length
   const totalAchievementPoints = Object.values(achievementsMetadata).reduce((sum, a) => sum + (a.reward_points ?? 0), 0)
 
-  if (authLoading) {
+  // ── Guards ─────────────────────────────────────────────────────────────────
+  // Show spinner while auth loads OR while role is still resolving from DB
+  if (authLoading || (isLoggedIn && role === null)) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
@@ -137,7 +139,6 @@ export default function UserDashboardPage() {
 
   return (
     <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
-      {/* Header */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-7xl mx-auto mb-6">
         <div className="fixed inset-0 p-6 pointer-events-none z-50">
@@ -154,7 +155,6 @@ export default function UserDashboardPage() {
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-8">
 
-          {/* Title */}
           <div className="text-center space-y-3">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
@@ -263,7 +263,6 @@ export default function UserDashboardPage() {
                     </TabsTrigger>
                   </TabsList>
 
-                  {/* Profile Tab */}
                   <TabsContent value="profile" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
@@ -274,7 +273,6 @@ export default function UserDashboardPage() {
                     </motion.div>
                   </TabsContent>
 
-                  {/* My Blogs Tab */}
                   <TabsContent value="myBlog" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
@@ -325,12 +323,10 @@ export default function UserDashboardPage() {
                     </motion.div>
                   </TabsContent>
 
-                  {/* Create Tab */}
                   <TabsContent value="create" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
-                          {/* PendingBlogUserForm — goes to pending_blogs for approval */}
                           <PendingBlogUserForm
                             onSuccess={handleBlogUpdate}
                             currentUser={profile}

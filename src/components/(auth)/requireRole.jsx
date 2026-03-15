@@ -13,24 +13,29 @@ export default function RequireRole({ children, roles = [], redirectTo = "/unaut
   const allowed = roles.length === 0 || roles.includes(role)
 
   useEffect(() => {
-    // Cancel any pending redirect when role changes
     if (timerRef.current) clearTimeout(timerRef.current)
 
+    // Still loading auth — wait
     if (loading) return
+
+    // role is null means DB query still in flight — wait
+    if (role === null && isLoggedIn) return
+
     if (!isLoggedIn) { router.push("/login"); return }
 
     if (!allowed) {
-      // 500ms grace period — lets authContext finish the fresh DB query
-      // before treating a stale cached role as the final answer
+      // 1500ms grace period — gives authContext enough time to finish
+      // a fresh DB query before treating a null/stale role as final
       timerRef.current = setTimeout(() => {
         router.push(redirectTo)
-      }, 500)
+      }, 1500)
     }
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-  }, [loading, isLoggedIn, allowed, router, redirectTo])
+  }, [loading, isLoggedIn, allowed, role, router, redirectTo])
 
-  if (loading || !allowed) return null
+  // Don't render children while loading or role hasn't resolved yet
+  if (loading || (isLoggedIn && role === null) || !allowed) return null
 
   return <>{children}</>
 }
