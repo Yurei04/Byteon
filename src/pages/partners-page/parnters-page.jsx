@@ -39,6 +39,15 @@ const data = [
         tags: ["Health", "Tech"],
         colorTheme: "pink"
     },
+    {
+        name: "KairoSync",
+        image: "/images/KAIROSYNC.png",
+        location: "Online",
+        des: "Student Innovation & Enrichment Community.",
+        websiteLink: null,
+        tags: ["Innovation", "Tech"],
+        colorTheme: "cyan"
+    },
 ]
 
 export default function PartnersPage() {

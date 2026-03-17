@@ -11,4 +11,4 @@ function AdminDashboardMain () {
     )
 }
 
-export default withAuth(AdminDashboardMain, ["org"])
+export default withAuth(AdminDashboardMain, ["org_admin"])

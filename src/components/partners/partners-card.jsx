@@ -51,6 +51,17 @@ const colorThemes = {
         text: "text-pink-50",
         accent: "text-pink-300",
         glow: "shadow-pink-500/30"
+    },
+    cyan: {
+        card: "bg-cyan-950/40 border-cyan-400/40",
+        cardHover: "hover:border-cyan-400/70 hover:shadow-cyan-500/20",
+        header: "bg-gradient-to-br from-cyan-500/50 to-cyan-600/50 border-cyan-300/50",
+        badge: "bg-cyan-950/60 border-cyan-400/50 text-cyan-50",
+        button: "bg-cyan-600/80 hover:bg-cyan-500 border-cyan-400/50 text-white",
+        separator: "bg-gradient-to-r from-transparent via-cyan-500/70 to-transparent",
+        text: "text-cyan-50",
+        accent: "text-cyan-300",
+        glow: "shadow-cyan-500/30"
     }
 };
 
@@ -169,14 +180,15 @@ export function PartnersCard({
                     </motion.div>
                 </CardContent>
 
-                <CardFooter className="w-full sm:w-auto flex flex-col items-end justify-center mt-4 sm:mt-0 relative z-10">
-                    <motion.div
+                {websiteLink && (
+                    <CardFooter className="w-full sm:w-auto flex flex-col items-end justify-center mt-4 sm:mt-0 relative z-10">
+                        <motion.div
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.8 }}
-                    >
+                        >
                         <Link 
                             href={websiteLink} 
                             target="_blank" 
@@ -184,16 +196,16 @@ export function PartnersCard({
                             className="flex items-center gap-2"
                         >
                             <Button 
-                                size="lg" 
-                                className={`w-32 py-5 ${theme.button} shadow-xl backdrop-blur-lg border-2 cursor-pointer transition-all duration-300 font-semibold text-base hover:shadow-2xl ${theme.glow} flex items-center gap-2`}
+                            size="lg" 
+                            className={`w-32 py-5 ${theme.button} shadow-xl backdrop-blur-lg border-2 cursor-pointer transition-all duration-300 font-semibold text-base hover:shadow-2xl ${theme.glow} flex items-center gap-2`}
                             >
-                            
-                                Website
-                                <ExternalLink className="w-4 h-4" />
+                            Website
+                            <ExternalLink className="w-4 h-4" />
                             </Button>
                         </Link>
-                    </motion.div>
-                </CardFooter>
+                        </motion.div>
+                    </CardFooter>
+                )}
             </Card>
         </motion.div>
     );

@@ -2,27 +2,34 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X } from "lucide-react"
+import { Menu, X, LogOut } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/components/(auth)/authContext"
 import SignLogInDialog from "@/app/(auth)/loginSigninDialog"
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const navLinks = [
-    { title: "Home", href: "/" },
-    { title: "Partners", href: "/partners" },
-    { title: "Blog", href: "/blog" },
-    { title: "Resource", href: "/resource-hub" },
-    { title: "Hacks", href: "/announce" },
+    { title: "Home",     href: "/"            },
+    { title: "Partners", href: "/partners"    },
+    { title: "Blog",     href: "/blog"        },
+    { title: "Resource", href: "/resource-hub"},
+    { title: "Hacks",    href: "/announce"    },
 ]
 
 export default function NavBar() {
     const router = useRouter()
-    const { profile, role, loading, isLoggedIn } = useAuth()
-    const [isOpen, setIsOpen] = useState(false)
+    const { profile, role, loading, isLoggedIn, logout } = useAuth()
+    const [isOpen, setIsOpen]           = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [showSignOut, setShowSignOut] = useState(false)
+    const [signingOut, setSigningOut]   = useState(false)
 
     const dashboardUrl =
         role === "super_admin" ? "/super-admin-dashboard"
@@ -30,6 +37,19 @@ export default function NavBar() {
         : "/user-dashboard"
 
     const handleProfileClick = () => router.push(dashboardUrl)
+
+    const handleSignOut = async () => {
+        setSigningOut(true)
+        try {
+            await logout()
+            router.push("/")
+        } catch (err) {
+            console.error("Sign out error:", err)
+        } finally {
+            setSigningOut(false)
+            setShowSignOut(false)
+        }
+    }
 
     const renderAvatar = (size = 40) => {
         const sizeCls = size === 40 ? "w-10 h-10" : "w-8 h-8"
@@ -82,6 +102,7 @@ export default function NavBar() {
     }
 
     return (
+        <>
         <div className="fixed z-50 w-full flex justify-center mt-4 px-4 sm:px-6">
             <nav className="w-full max-w-6xl bg-fuchsia-900/20 shadow-lg backdrop-blur-lg border border-fuchsia-400/30 text-fuchsia-100 rounded-2xl px-5 sm:px-8 py-5 transition-all duration-300">
                 <div className="flex items-center justify-between">
@@ -102,6 +123,18 @@ export default function NavBar() {
                             <Link href="/how-to-hackathon">HowToHack</Link>
                         </Button>
                         {renderAvatar(40)}
+                        {/* Sign Out — only shown when logged in */}
+                        {isLoggedIn && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowSignOut(true)}
+                                className="text-xs border border-red-500/40 text-red-300 hover:bg-red-500/20 hover:border-red-400 hover:text-red-200 transition-colors gap-1.5"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                                Sign Out
+                            </Button>
+                        )}
                     </div>
 
                     {/* Mobile */}
@@ -115,6 +148,7 @@ export default function NavBar() {
                     </div>
                 </div>
 
+                {/* Mobile menu */}
                 {isOpen && (
                     <div className="md:hidden mt-4 flex flex-col items-start gap-2">
                         {navLinks.map((link) => (
@@ -129,9 +163,51 @@ export default function NavBar() {
                             asChild onClick={() => setIsOpen(false)}>
                             <Link href="/how-to-hackathon">HowToHack</Link>
                         </Button>
+                        {/* Mobile sign out */}
+                        {isLoggedIn && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => { setIsOpen(false); setShowSignOut(true) }}
+                                className="w-full justify-start text-sm border border-red-500/40 text-red-300 hover:bg-red-500/20 hover:border-red-400 transition-colors gap-2"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Sign Out
+                            </Button>
+                        )}
                     </div>
                 )}
             </nav>
         </div>
+
+        {/* Sign Out Dialog */}
+        <AlertDialog open={showSignOut} onOpenChange={setShowSignOut}>
+            <AlertDialogContent className="bg-gradient-to-br from-slate-900 via-red-900/30 to-slate-900 border-red-500/30">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="text-red-200 flex items-center gap-2">
+                        <LogOut className="w-5 h-5" />Sign Out
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-300">
+                        Are you sure you want to sign out?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel
+                        disabled={signingOut}
+                        className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600">
+                        Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleSignOut}
+                        disabled={signingOut}
+                        className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white">
+                        {signingOut
+                            ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Signing out...</span>
+                            : <><LogOut className="w-4 h-4 mr-2" />Sign Out</>}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        </>
     )
 }

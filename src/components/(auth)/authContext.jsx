@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
       .from("super_admins")
       .select("id, user_id, name, organization_id, created_at")
       .eq("user_id", userId)
-      .single()
+      .maybeSingle()
 
     if (!superError && superData) {
       // Fetch linked platform org so Create tab works
@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
             profile_completed, created_at, updated_at
           `)
           .eq("id", superData.organization_id)
-          .single()
+          .maybeSingle()
         linkedOrg = orgData || null
       }
 
@@ -110,7 +110,7 @@ export function AuthProvider({ children }) {
         updated_at
       `)
       .eq("user_id", userId)
-      .single()
+      .maybeSingle()
 
     if (!orgError && orgData) {
       const resolvedProfile = { ...orgData, role: "org_admin", table: "organizations" }
@@ -154,7 +154,7 @@ export function AuthProvider({ children }) {
         updated_at
       `)
       .eq("user_id", userId)
-      .single()
+      .maybeSingle()
 
     if (!userError && userData) {
       const resolvedProfile = { ...userData, role: "user", table: "users" }
@@ -195,7 +195,17 @@ export function AuthProvider({ children }) {
   }, [hydrateUser])
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut()
+    // Bypass the Supabase signOut API (returns 403 with SSR client)
+    // Instead, manually clear all auth tokens from storage
+    try {
+      // Clear Supabase auth keys from localStorage (sb-*-auth-token)
+      const lsKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"))
+      lsKeys.forEach(k => localStorage.removeItem(k))
+    } catch {}
+    try {
+      // Also attempt the API call — if it works great, if 403 we already cleared locally
+      await supabase.auth.signOut({ scope: "local" })
+    } catch {}
     clearAuth()
   }, [clearAuth])
 

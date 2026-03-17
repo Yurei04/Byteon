@@ -15,18 +15,24 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
   Users, Building2, Search, Trash2, ShieldOff, ShieldCheck,
-  Loader2, AlertCircle, Calendar, Mail, Globe, User,
+  Loader2, AlertCircle, Calendar, User, RefreshCw,
 } from "lucide-react"
 
 export default function AccountManageSection() {
-  const [users, setUsers]           = useState([])
-  const [orgs, setOrgs]             = useState([])
-  const [loading, setLoading]       = useState(true)
-  const [error, setError]           = useState(null)
-  const [search, setSearch]         = useState("")
-  const [activeTab, setActiveTab]   = useState("users")
-  const [actionLoading, setActionLoading] = useState(null)  // id of item being acted on
-  const [deleteDialog, setDeleteDialog]   = useState(null)  // { id, name, table }
+  const [users, setUsers]               = useState([])
+  const [orgs, setOrgs]                 = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState(null)
+  const [search, setSearch]             = useState("")
+  const [activeTab, setActiveTab]       = useState("users")
+  const [actionLoading, setActionLoading] = useState(null)
+  const [deleteDialog, setDeleteDialog] = useState(null)
+  const [toast, setToast]               = useState(null)
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
 
   const fetchAll = async () => {
     setLoading(true)
@@ -64,19 +70,31 @@ export default function AccountManageSection() {
 
   const toggleActive = async (id, table, current) => {
     setActionLoading(id)
+    const newState = !current
     try {
       const { error } = await supabase
         .from(table)
-        .update({ active: !current })
+        .update({ active: newState })
         .eq("id", id)
+
       if (error) throw error
+
+      // ── Re-fetch from DB to confirm actual state ──────────────────────────
+      // Do NOT do optimistic update — re-fetch is the source of truth
       if (table === "users") {
-        setUsers((prev) => prev.map((u) => u.id === id ? { ...u, active: !current } : u))
+        const { data } = await supabase.from("users").select("*").order("created_at", { ascending: false })
+        setUsers(data || [])
       } else {
-        setOrgs((prev) => prev.map((o) => o.id === id ? { ...o, active: !current } : o))
+        const { data } = await supabase.from("organizations").select("*").order("created_at", { ascending: false })
+        setOrgs(data || [])
       }
+
+      showToast(
+        `Account ${newState ? "reactivated" : "suspended"} successfully. The user must log out and back in for changes to take effect.`,
+        "success"
+      )
     } catch (err) {
-      alert("Failed to update status: " + err.message)
+      showToast("Failed to update status: " + err.message, "error")
     } finally {
       setActionLoading(null)
     }
@@ -91,8 +109,9 @@ export default function AccountManageSection() {
       if (error) throw error
       if (table === "users") setUsers((prev) => prev.filter((u) => u.id !== id))
       else setOrgs((prev) => prev.filter((o) => o.id !== id))
+      showToast("Account deleted successfully.")
     } catch (err) {
-      alert("Failed to delete: " + err.message)
+      showToast("Failed to delete: " + err.message, "error")
     } finally {
       setActionLoading(null)
       setDeleteDialog(null)
@@ -102,15 +121,37 @@ export default function AccountManageSection() {
   return (
     <>
       <div className="space-y-5">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400/60" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, affiliation, country…"
-            className="pl-10 bg-black/20 border-fuchsia-500/20 text-white placeholder:text-white/30"
-          />
+
+        {/* Toast */}
+        {toast && (
+          <Alert className={`${toast.type === "error"
+            ? "bg-red-900/30 border-red-500/40 text-red-200"
+            : "bg-emerald-900/30 border-emerald-500/40 text-emerald-200"}`}>
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription>{toast.msg}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Search + Refresh */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400/60" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, affiliation, country…"
+              className="pl-10 bg-black/20 border-fuchsia-500/20 text-white placeholder:text-white/30"
+            />
+          </div>
+          <Button
+            size="sm"
+            onClick={fetchAll}
+            disabled={loading}
+            variant="outline"
+            className="border-fuchsia-500/20 text-fuchsia-300 hover:bg-fuchsia-500/10 shrink-0"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          </Button>
         </div>
 
         {error && (
@@ -212,7 +253,8 @@ export default function AccountManageSection() {
 
 function AccountCard({ item, type, actionLoading, onToggle, onDelete }) {
   const isUser   = type === "user"
-  const isActive = item.active !== false   // default true if column missing
+  // Explicitly check for false — default to active if column missing
+  const isActive = item.active !== false
 
   return (
     <Card className="bg-gradient-to-br from-slate-900/60 to-slate-950/60 backdrop-blur-lg border border-white/10 hover:border-white/20 transition-all duration-300">
@@ -220,9 +262,7 @@ function AccountCard({ item, type, actionLoading, onToggle, onDelete }) {
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg border ${
-              isUser
-                ? "bg-blue-500/20 border-blue-400/30"
-                : "bg-fuchsia-500/20 border-fuchsia-400/30"
+              isUser ? "bg-blue-500/20 border-blue-400/30" : "bg-fuchsia-500/20 border-fuchsia-400/30"
             }`}>
               {isUser
                 ? <User className="w-5 h-5 text-blue-300" />
@@ -273,7 +313,7 @@ function AccountCard({ item, type, actionLoading, onToggle, onDelete }) {
             size="sm"
             onClick={onToggle}
             disabled={actionLoading === item.id}
-            className={`flex-1 text-xs h-8 border-0 ${
+            className={`flex-1 text-xs h-8 ${
               isActive
                 ? "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30"
                 : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30"
