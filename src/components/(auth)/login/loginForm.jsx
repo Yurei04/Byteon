@@ -53,11 +53,22 @@ export function LoginForm() {
       if (!user) { setError("Login failed. Please try again."); setLoading(false); return }
 
       // 2️⃣ Check super_admins FIRST — super admins are never suspended
-      const { data: superData } = await supabase
+      // ✅ Capture error explicitly so a silent RLS/network failure
+      //    doesn't fall through and wrongly hit the "deleted" branch
+      const { data: superData, error: superError } = await supabase
         .from("super_admins")
         .select("user_id, id, name, organization_id, created_at")
         .eq("user_id", user.id)
         .maybeSingle()
+
+      if (superError) {
+        console.error("[login] super_admins query failed:", superError.message)
+        // Don't fall through — surface the error so it's visible
+        setError(`Login error: ${superError.message}`)
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
 
       if (superData) {
         await persistCurrentSession(
@@ -65,25 +76,33 @@ export function LoginForm() {
           "super_admin"
         )
         try { sessionStorage.clear() } catch {}
-        router.push("/super-admin-dashboard")
-        setLoading(false)
+        // ✅ Hard redirect instead of router.push — ensures the middleware
+        //    sees the fresh cookie on a full HTTP request, not a stale
+        //    client-side navigation that may reuse an old cookie state.
+        window.location.href = "/super-admin-dashboard"
         return
       }
 
       // 3️⃣ Check organizations SECOND
-      const { data: orgData } = await supabase
+      const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("user_id, id, name, author_name, description, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle()
 
+      if (orgError) {
+        console.error("[login] organizations query failed:", orgError.message)
+        setError(`Login error: ${orgError.message}`)
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
+
       if (orgData) {
-        // ✅ Block suspended org accounts before persisting session
         if (orgData.active === false) {
-          await supabase.auth.signOut({ scope: "local" })
+          await supabase.auth.signOut()
           const url = `/account-suspended?reason=suspended${orgData.suspension_reason ? `&detail=${encodeURIComponent(orgData.suspension_reason)}` : ""}`
-          router.push(url)
-          setLoading(false)
+          window.location.href = url
           return
         }
 
@@ -92,25 +111,30 @@ export function LoginForm() {
           "org_admin"
         )
         try { sessionStorage.clear() } catch {}
-        router.push("/org-dashboard")
-        setLoading(false)
+        window.location.href = "/org-dashboard"
         return
       }
 
       // 4️⃣ Check users table LAST
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from("users")
         .select("user_id, id, name, age, affiliation, country, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle()
 
+      if (userError) {
+        console.error("[login] users query failed:", userError.message)
+        setError(`Login error: ${userError.message}`)
+        await supabase.auth.signOut()
+        setLoading(false)
+        return
+      }
+
       if (userData) {
-        // ✅ Block suspended user accounts before persisting session
         if (userData.active === false) {
-          await supabase.auth.signOut({ scope: "local" })
+          await supabase.auth.signOut()
           const url = `/account-suspended?reason=suspended${userData.suspension_reason ? `&detail=${encodeURIComponent(userData.suspension_reason)}` : ""}`
-          router.push(url)
-          setLoading(false)
+          window.location.href = url
           return
         }
 
@@ -119,15 +143,13 @@ export function LoginForm() {
           "user"
         )
         try { sessionStorage.clear() } catch {}
-        router.push("/user-dashboard")
-        setLoading(false)
+        window.location.href = "/user-dashboard"
         return
       }
 
       // 5️⃣ Session exists but no profile row = account was deleted
-      await supabase.auth.signOut({ scope: "local" })
-      router.push("/account-suspended?reason=deleted")
-      setLoading(false)
+      await supabase.auth.signOut()
+      window.location.href = "/account-suspended?reason=deleted"
 
     } catch (err) {
       console.error("Login error:", err)
