@@ -2,10 +2,10 @@ import { NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
 export async function middleware(req) {
-  const res = NextResponse.next()
+  const res      = NextResponse.next()
   const pathname = req.nextUrl.pathname
 
-  // Never intercept the suspended page itself — infinite redirect guard
+  // ── Never intercept the suspended page — infinite redirect guard ──────────
   if (pathname.startsWith("/account-suspended")) return res
 
   const supabase = createServerClient(
@@ -13,9 +13,9 @@ export async function middleware(req) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get: (name) => req.cookies.get(name)?.value,
-        set: (name, value, options) => res.cookies.set({ name, value, ...options }),
-        remove: (name, options) => res.cookies.set({ name, value: "", ...options }),
+        get:    (name)                => req.cookies.get(name)?.value,
+        set:    (name, value, options) => res.cookies.set({ name, value, ...options }),
+        remove: (name, options)        => res.cookies.set({ name, value: "", ...options }),
       },
     }
   )
@@ -26,7 +26,7 @@ export async function middleware(req) {
   if (!session) {
     if (
       pathname.startsWith("/user-dashboard") ||
-      pathname.startsWith("/org-dashboard") ||
+      pathname.startsWith("/org-dashboard")  ||
       pathname.startsWith("/super-admin-dashboard")
     ) {
       return NextResponse.redirect(new URL("/log-in", req.url))
@@ -36,79 +36,103 @@ export async function middleware(req) {
 
   const userId = session.user.id
 
-  // ── Fetch profiles (include active + suspension_reason) ──────────────────
+  // ── Fetch role tables in parallel ─────────────────────────────────────────
   const [
-    { data: userProfile },
-    { data: orgProfile },
     { data: superProfile },
+    { data: userProfile  },
+    { data: orgProfile   },
   ] = await Promise.all([
-    supabase.from("users").select("id, active").eq("user_id", userId).maybeSingle(),
-    supabase.from("organizations").select("id, active").eq("user_id", userId).maybeSingle(),
-    supabase.from("super_admins").select("id").eq("user_id", userId).maybeSingle(),
+    supabase.from("super_admins")  .select("id").eq("user_id", userId).maybeSingle(),
+    supabase.from("users")         .select("id, active").eq("user_id", userId).maybeSingle(),
+    supabase.from("organizations") .select("id, active").eq("user_id", userId).maybeSingle(),
   ])
 
-  // ✅ Fetch suspension_reason separately — if column doesn't exist, this just returns null gracefully
-  let suspensionReason = null
-  if ((userProfile?.active === false) || (orgProfile?.active === false)) {
-    const activeProfile = userProfile ?? orgProfile
-    const table = userProfile ? "users" : "organizations"
-    const { data: reasonData } = await supabase
-      .from(table)
-      .select("suspension_reason")
-      .eq("id", activeProfile.id)
-      .maybeSingle()
-    suspensionReason = reasonData?.suspension_reason ?? null
-  }
-
+  const isSuperAdmin = !!superProfile
   const isUser       = !!userProfile
   const isOrg        = !!orgProfile
-  const isSuperAdmin = !!superProfile
 
-  // ── Bug 5a: Account DELETED — session exists but no profile row ───────────
-  // (super admins are never deleted this way, skip check for them)
-  if (!isUser && !isOrg && !isSuperAdmin) {
-    // Clear the dangling Supabase session
-    const suspendedUrl = new URL("/account-suspended", req.url)
-    suspendedUrl.searchParams.set("reason", "deleted")
-    return NextResponse.redirect(suspendedUrl)
+  // ── Super admins bypass ALL suspension / deletion checks ──────────────────
+  // Super admins are not in the users or organizations tables,
+  // so we must short-circuit here before the "no profile = deleted" check.
+  if (isSuperAdmin) {
+    // Block super admin from hitting login/signup
+    if (pathname === "/log-in" || pathname === "/sign-up") {
+      return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
+    }
+    // Block super admin from wrong dashboards
+    if (pathname.startsWith("/user-dashboard")) {
+      return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
+    }
+    if (pathname.startsWith("/org-dashboard")) {
+      return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
+    }
+    // Everything else — allow through
+    return res
   }
 
-  // ✅ Replace both suspension redirect blocks
-  if (userProfile && userProfile.active === false) {
-    const suspendedUrl = new URL("/account-suspended", req.url)
-    suspendedUrl.searchParams.set("reason", "suspended")
-    if (suspensionReason) suspendedUrl.searchParams.set("detail", suspensionReason)
-    return NextResponse.redirect(suspendedUrl)
+  // ── From here on: non-super-admin users only ──────────────────────────────
+
+  // Account deleted — session exists but no profile row in any table
+  if (!isUser && !isOrg) {
+    const url = new URL("/account-suspended", req.url)
+    url.searchParams.set("reason", "deleted")
+    return NextResponse.redirect(url)
   }
 
-  if (orgProfile && orgProfile.active === false) {
-    const suspendedUrl = new URL("/account-suspended", req.url)
-    suspendedUrl.searchParams.set("reason", "suspended")
-    if (suspensionReason) suspendedUrl.searchParams.set("detail", suspensionReason)
-    return NextResponse.redirect(suspendedUrl)
-}
+  // Account suspended — active === false
+  if (isUser && userProfile.active === false) {
+    // Fetch suspension reason separately so a missing column never breaks this
+    let detail = null
+    try {
+      const { data } = await supabase
+        .from("users")
+        .select("suspension_reason")
+        .eq("id", userProfile.id)
+        .maybeSingle()
+      detail = data?.suspension_reason ?? null
+    } catch {}
+
+    const url = new URL("/account-suspended", req.url)
+    url.searchParams.set("reason", "suspended")
+    if (detail) url.searchParams.set("detail", detail)
+    return NextResponse.redirect(url)
+  }
+
+  if (isOrg && orgProfile.active === false) {
+    let detail = null
+    try {
+      const { data } = await supabase
+        .from("organizations")
+        .select("suspension_reason")
+        .eq("id", orgProfile.id)
+        .maybeSingle()
+      detail = data?.suspension_reason ?? null
+    } catch {}
+
+    const url = new URL("/account-suspended", req.url)
+    url.searchParams.set("reason", "suspended")
+    if (detail) url.searchParams.set("detail", detail)
+    return NextResponse.redirect(url)
+  }
 
   // ── Prevent logged-in users from hitting login/signup ─────────────────────
   if (pathname === "/log-in" || pathname === "/sign-up") {
-    if (isSuperAdmin) return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
-    if (isOrg)        return NextResponse.redirect(new URL("/org-dashboard", req.url))
-    if (isUser)       return NextResponse.redirect(new URL("/user-dashboard", req.url))
+    if (isOrg)  return NextResponse.redirect(new URL("/org-dashboard",  req.url))
+    if (isUser) return NextResponse.redirect(new URL("/user-dashboard", req.url))
   }
 
   // ── Wrong dashboard access ────────────────────────────────────────────────
   if (pathname.startsWith("/user-dashboard") && !isUser) {
-    if (isOrg)        return NextResponse.redirect(new URL("/org-dashboard", req.url))
-    if (isSuperAdmin) return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
+    return NextResponse.redirect(new URL(isOrg ? "/org-dashboard" : "/", req.url))
   }
 
   if (pathname.startsWith("/org-dashboard") && !isOrg) {
-    if (isUser)       return NextResponse.redirect(new URL("/user-dashboard", req.url))
-    if (isSuperAdmin) return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
+    return NextResponse.redirect(new URL(isUser ? "/user-dashboard" : "/", req.url))
   }
 
-  if (pathname.startsWith("/super-admin-dashboard") && !isSuperAdmin) {
-    if (isOrg)  return NextResponse.redirect(new URL("/org-dashboard", req.url))
-    if (isUser) return NextResponse.redirect(new URL("/user-dashboard", req.url))
+  if (pathname.startsWith("/super-admin-dashboard")) {
+    // Non-super-admin trying to access super admin panel
+    return NextResponse.redirect(new URL(isOrg ? "/org-dashboard" : "/user-dashboard", req.url))
   }
 
   return res
