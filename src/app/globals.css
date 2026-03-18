@@ -124,3 +124,49 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+/* Nova chatbot markdown styles */
+.nova-rich-text p { margin: 0 0 8px; }
+.nova-rich-text p:last-child { margin-bottom: 0; }
+.nova-rich-text strong { font-weight: 600; color: #f0abfc; }
+.nova-rich-text em { color: #a1a1aa; font-style: italic; }
+.nova-rich-text ul { padding-left: 16px; margin: 6px 0; list-style: disc; }
+.nova-rich-text li { margin-bottom: 3px; font-size: 0.8125rem; }
+.nova-h2 { font-weight: 600; color: #e879f9; margin: 10px 0 4px; font-size: 0.875rem; }
+.nova-h3 { font-weight: 600; color: #e879f9; margin: 8px 0 4px; font-size: 0.8125rem; }
+
+.nova-inline-code {
+  font-family: 'SF Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  background: rgba(168, 85, 247, 0.12);
+  color: #d8b4fe;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+.nova-code-block {
+  background: #09090b;
+  border: 1px solid rgba(217, 70, 239, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.nova-code-lang {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c026d3;
+  padding: 5px 10px;
+  border-bottom: 1px solid rgba(217, 70, 239, 0.15);
+  background: rgba(217, 70, 239, 0.06);
+  font-family: ui-monospace, monospace;
+}
+.nova-code-block pre { margin: 0; padding: 10px; overflow-x: auto; }
+.nova-code-block code {
+  font-family: 'SF Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  color: #e9d5ff;
+  line-height: 1.55;
+  white-space: pre;
+}
