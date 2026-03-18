@@ -1,4 +1,3 @@
-// app/ClientLayout.jsx
 "use client"
 
 import { AuthProvider } from "@/components/(auth)/authContext"
@@ -8,7 +7,7 @@ import { OfflineBlocker } from "@/components/errorHandling/offline-blocker"
 import { ServerErrorBlocker } from "@/components/errorHandling/server-error-blocker"
 import { DbErrorBoundary } from "@/components/errorHandling/error-boundary-db-blocker"
 import { ThemeProvider } from "@/components/theme-provider"
-import NavBar from "@/components/navbar"
+import ChatWidget from "@/components/chatbot/chat-widget"
 import { supabase } from "@/lib/supabase"
 import { useState, useEffect, useRef, useCallback } from "react"
 
@@ -27,7 +26,6 @@ export default function ClientLayout({ children }) {
   useEffect(() => {
     if (hasChecked.current) return
     hasChecked.current = true
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkDbConnection()
   }, [checkDbConnection])
 
@@ -48,6 +46,8 @@ export default function ClientLayout({ children }) {
       <DatabaseErrorBlocker isError={dbError} onRetry={checkDbConnection} />
       <ServerErrorBlocker isError={false} />
       <MaintenanceBlocker isActive={false} />
+
+      <ChatWidget />  
     </ThemeProvider>
   )
 }
