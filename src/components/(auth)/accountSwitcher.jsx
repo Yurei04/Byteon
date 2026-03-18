@@ -81,10 +81,12 @@ export default function AccountSwitcher() {
     setOpen(false)
 
     await logoutAccount(userId, activeId, refreshProfile, logout)
-
+    
     const remaining = getAccounts()
     if (remaining.length === 0) {
-      router.push("/log-in")
+      // Hard redirect — forces a full page reload so the middleware
+      // sees the cleared cookie, not the stale one router.push would use
+      window.location.href = "/log-in"
     } else {
       router.refresh()
     }

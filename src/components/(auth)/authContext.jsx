@@ -196,16 +196,15 @@ export function AuthProvider({ children }) {
   }, [hydrateUser])
 
   const logout = useCallback(async () => {
-    // Bypass the Supabase signOut API (returns 403 with SSR client)
-    // Instead, manually clear all auth tokens from storage
     try {
-      // Clear Supabase auth keys from localStorage (sb-*-auth-token)
       const lsKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"))
       lsKeys.forEach(k => localStorage.removeItem(k))
     } catch {}
     try {
-      // Also attempt the API call — if it works great, if 403 we already cleared locally
-      await supabase.auth.signOut({ scope: "local" })
+      // ✅ Remove scope:"local" — we need the cookie cleared too.
+      // scope:"local" only wipes localStorage, the auth cookie stays alive.
+      // Middleware reads cookies, so the old code sent users back to dashboard.
+      await supabase.auth.signOut()
     } catch {}
     clearAuth()
   }, [clearAuth])
