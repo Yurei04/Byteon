@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { persistCurrentSession } from "@/lib/restoreSession"
 
 export function LoginForm() {
   const router = useRouter()
@@ -41,6 +42,7 @@ export function LoginForm() {
         password,
       })
 
+      // ✅ Check error FIRST before doing anything else
       if (signInError) { setError(signInError.message); setLoading(false); return }
 
       const user = data?.user
@@ -49,11 +51,16 @@ export function LoginForm() {
       // 2️⃣ Check super_admins FIRST
       const { data: superData } = await supabase
         .from("super_admins")
-        .select("user_id")
+        .select("user_id, id, name, organization_id, created_at")
         .eq("user_id", user.id)
         .maybeSingle()
 
       if (superData) {
+        // ✅ persistCurrentSession called here with the actual profile + role
+        await persistCurrentSession(
+          { ...superData, role: "super_admin", table: "super_admins" },
+          "super_admin"
+        )
         try { sessionStorage.clear() } catch {}
         router.push("/super-admin-dashboard")
         setLoading(false)
@@ -61,14 +68,18 @@ export function LoginForm() {
       }
 
       // 3️⃣ Check organizations SECOND
-      // Must come before users — org accounts may also have a users row
       const { data: orgData } = await supabase
         .from("organizations")
-        .select("user_id")
+        .select("user_id, id, name, author_name, description, profile_photo_url, profile_completed, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle()
 
       if (orgData) {
+        // ✅ persistCurrentSession called here with org profile + role
+        await persistCurrentSession(
+          { ...orgData, role: "org_admin", table: "organizations" },
+          "org_admin"
+        )
         try { sessionStorage.clear() } catch {}
         router.push("/org-dashboard")
         setLoading(false)
@@ -78,11 +89,16 @@ export function LoginForm() {
       // 4️⃣ Check users table LAST
       const { data: userData } = await supabase
         .from("users")
-        .select("user_id")
+        .select("user_id, id, name, age, affiliation, country, profile_photo_url, profile_completed, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle()
 
       if (userData) {
+        // ✅ persistCurrentSession called here with user profile + role
+        await persistCurrentSession(
+          { ...userData, role: "user", table: "users" },
+          "user"
+        )
         try { sessionStorage.clear() } catch {}
         router.push("/user-dashboard")
         setLoading(false)

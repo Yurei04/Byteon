@@ -1,13 +1,14 @@
 // app/ClientLayout.jsx
 "use client"
 
-import { AuthProvider } from "@/components/(auth)/authContext"   // ← must match your actual path
+import { AuthProvider } from "@/components/(auth)/authContext"
 import { DatabaseErrorBlocker } from "@/components/errorHandling/database-error-blocker"
 import { MaintenanceBlocker } from "@/components/errorHandling/maintenance-blocker"
 import { OfflineBlocker } from "@/components/errorHandling/offline-blocker"
 import { ServerErrorBlocker } from "@/components/errorHandling/server-error-blocker"
 import { DbErrorBoundary } from "@/components/errorHandling/error-boundary-db-blocker"
 import { ThemeProvider } from "@/components/theme-provider"
+import NavBar from "@/components/navbar"
 import { supabase } from "@/lib/supabase"
 import { useState, useEffect, useRef, useCallback } from "react"
 
@@ -26,6 +27,7 @@ export default function ClientLayout({ children }) {
   useEffect(() => {
     if (hasChecked.current) return
     hasChecked.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkDbConnection()
   }, [checkDbConnection])
 
@@ -37,7 +39,7 @@ export default function ClientLayout({ children }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-      <AuthProvider>                        {/* ✅ AuthProvider must be HERE */}
+      <AuthProvider>
         <DbErrorBoundary>
           {children}
         </DbErrorBoundary>

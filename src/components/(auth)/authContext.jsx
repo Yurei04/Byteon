@@ -3,6 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
+import { updateAccountTokens, getActiveAccountId } from "@/lib/accountManager" 
 
 const AuthContext = createContext(null)
 const CACHE_KEY = "auth_cache"
