@@ -111,7 +111,7 @@ export default function AccountSwitcher() {
         aria-expanded={open}
       >
         <Avatar account={activeAccount} size={32} />
-        <span className="text-sm text-purple-100 max-w-[120px] truncate">
+        <span className="text-sm text-purple-100 max-w-[120px] truncate cursor-pointer ">
           {activeAccount?.displayName ?? profile?.name ?? "Account"}
         </span>
         <ChevronIcon open={open} />
@@ -123,24 +123,38 @@ export default function AccountSwitcher() {
 
           {/* Active account */}
           {activeAccount && (
-            <div className="px-4 py-3 border-b border-purple-400/20 flex items-center gap-3">
-              <Avatar account={activeAccount} size={40} />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-purple-50 truncate">
-                  {activeAccount.displayName}
-                </p>
-                <RoleBadge role={activeAccount.role} />
-              </div>
+            <div className="border-b border-purple-400/20">
+              {/* Dashboard link — clicking the account info navigates to dashboard */}
               <button
-                onClick={(e) => handleRemove(e, activeAccount.userId)}
-                title="Sign out of this account"
-                disabled={removing === activeAccount.userId}
-                className="p-1.5 rounded-md hover:bg-red-500/20 text-purple-400 hover:text-red-400 transition-all disabled:opacity-50"
+                onClick={() => {
+                  setOpen(false)
+                  const dest = ROLE_DASHBOARDS[activeAccount.role] ?? "/"
+                  router.push(dest)
+                }}
+                className="cursor-pointer w-full px-4 py-3 flex items-center gap-3 hover:bg-purple-800/30 transition-colors text-left"
               >
-                {removing === activeAccount.userId
-                  ? <Spinner small />
-                  : <SignOutIcon />}
+                <Avatar account={activeAccount} size={40} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-purple-50 truncate">
+                    {activeAccount.displayName}
+                  </p>
+                  <RoleBadge role={activeAccount.role} />
+                  <p className="text-[10px] text-purple-400 mt-0.5">Go to dashboard →</p>
+                </div>
               </button>
+
+              {/* Sign out button — separate row so it doesn't conflict with dashboard click */}
+              <div className="px-4 pb-2 flex justify-end">
+                <button
+                  onClick={(e) => handleRemove(e, activeAccount.userId)}
+                  title="Sign out of this account"
+                  disabled={removing === activeAccount.userId}
+                  className="cursor-pointer  flex items-center gap-1.5 text-xs text-purple-400 hover:text-red-400 transition-colors disabled:opacity-50 px-2 py-1 rounded hover:bg-red-500/10"
+                >
+                  {removing === activeAccount.userId ? <Spinner small /> : <SignOutIcon />}
+                  <span>Sign out</span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -155,7 +169,7 @@ export default function AccountSwitcher() {
                   key={account.userId}
                   onClick={() => handleSwitch(account.userId)}
                   disabled={!!switching}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left group disabled:opacity-60"
+                  className="cursor-pointer  w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left group disabled:opacity-60"
                 >
                   <Avatar account={account} size={36} />
                   <div className="flex-1 min-w-0">
@@ -172,7 +186,7 @@ export default function AccountSwitcher() {
                       onClick={(e) => handleRemove(e, account.userId)}
                       title="Remove this account"
                       disabled={removing === account.userId}
-                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 text-purple-400 hover:text-red-400 transition-all disabled:opacity-50"
+                      className=" cursor-pointer opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 text-purple-400 hover:text-red-400 transition-all disabled:opacity-50"
                     >
                       {removing === account.userId ? <Spinner small /> : <SignOutIcon />}
                     </button>
@@ -186,7 +200,7 @@ export default function AccountSwitcher() {
           <div className="border-t border-purple-400/20 py-1.5">
             <button
               onClick={() => { setOpen(false); router.push("/log-in") }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left"
+              className="cursor-pointer  w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-full bg-purple-700/40 border border-purple-400/30 flex items-center justify-center text-purple-300 text-xl leading-none">
                 +

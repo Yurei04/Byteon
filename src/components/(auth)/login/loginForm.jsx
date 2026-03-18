@@ -22,6 +22,11 @@ import { persistCurrentSession } from "@/lib/restoreSession"
 
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search)
+    : null
+  const justRegistered = searchParams?.get("registered") === "true"
+
   const [email, setEmail]       = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading]   = useState(false)
@@ -42,13 +47,12 @@ export function LoginForm() {
         password,
       })
 
-      // ✅ Check error FIRST before doing anything else
       if (signInError) { setError(signInError.message); setLoading(false); return }
 
       const user = data?.user
       if (!user) { setError("Login failed. Please try again."); setLoading(false); return }
 
-      // 2️⃣ Check super_admins FIRST
+      // 2️⃣ Check super_admins FIRST — super admins are never suspended
       const { data: superData } = await supabase
         .from("super_admins")
         .select("user_id, id, name, organization_id, created_at")
@@ -56,7 +60,6 @@ export function LoginForm() {
         .maybeSingle()
 
       if (superData) {
-        // ✅ persistCurrentSession called here with the actual profile + role
         await persistCurrentSession(
           { ...superData, role: "super_admin", table: "super_admins" },
           "super_admin"
@@ -70,12 +73,20 @@ export function LoginForm() {
       // 3️⃣ Check organizations SECOND
       const { data: orgData } = await supabase
         .from("organizations")
-        .select("user_id, id, name, author_name, description, profile_photo_url, profile_completed, created_at, updated_at")
+        .select("user_id, id, name, author_name, description, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle()
 
       if (orgData) {
-        // ✅ persistCurrentSession called here with org profile + role
+        // ✅ Block suspended org accounts before persisting session
+        if (orgData.active === false) {
+          await supabase.auth.signOut({ scope: "local" })
+          const url = `/account-suspended?reason=suspended${orgData.suspension_reason ? `&detail=${encodeURIComponent(orgData.suspension_reason)}` : ""}`
+          router.push(url)
+          setLoading(false)
+          return
+        }
+
         await persistCurrentSession(
           { ...orgData, role: "org_admin", table: "organizations" },
           "org_admin"
@@ -89,12 +100,20 @@ export function LoginForm() {
       // 4️⃣ Check users table LAST
       const { data: userData } = await supabase
         .from("users")
-        .select("user_id, id, name, age, affiliation, country, profile_photo_url, profile_completed, created_at, updated_at")
+        .select("user_id, id, name, age, affiliation, country, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
         .eq("user_id", user.id)
         .maybeSingle()
 
       if (userData) {
-        // ✅ persistCurrentSession called here with user profile + role
+        // ✅ Block suspended user accounts before persisting session
+        if (userData.active === false) {
+          await supabase.auth.signOut({ scope: "local" })
+          const url = `/account-suspended?reason=suspended${userData.suspension_reason ? `&detail=${encodeURIComponent(userData.suspension_reason)}` : ""}`
+          router.push(url)
+          setLoading(false)
+          return
+        }
+
         await persistCurrentSession(
           { ...userData, role: "user", table: "users" },
           "user"
@@ -105,9 +124,9 @@ export function LoginForm() {
         return
       }
 
-      // 5️⃣ No profile found
-      setError("Profile not found. Please complete your signup.")
-      await supabase.auth.signOut()
+      // 5️⃣ Session exists but no profile row = account was deleted
+      await supabase.auth.signOut({ scope: "local" })
+      router.push("/account-suspended?reason=deleted")
       setLoading(false)
 
     } catch (err) {
@@ -141,6 +160,11 @@ export function LoginForm() {
           </CardHeader>
 
           <CardContent>
+            {justRegistered && (
+              <div className="mb-4 px-4 py-3 rounded-lg bg-emerald-900/30 border border-emerald-500/40 text-emerald-200 text-sm text-center">
+                ✅ Account created! You can now sign in.
+              </div>
+            )}
             <div onKeyPress={handleKeyPress}>
               <FieldGroup>
                 <Field>

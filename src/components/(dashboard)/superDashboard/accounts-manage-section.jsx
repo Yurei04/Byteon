@@ -72,15 +72,26 @@ export default function AccountManageSection() {
     setActionLoading(id)
     const newState = !current
     try {
-      const { error } = await supabase
+      // ✅ Try with suspension_reason first (works if SQL migration was run)
+      const { error: withReasonError } = await supabase
         .from(table)
-        .update({ active: newState })
+        .update({
+          active: newState,
+          suspension_reason: newState ? null : "Suspended by administrator",
+        })
         .eq("id", id)
 
-      if (error) throw error
+      // ✅ If suspension_reason column doesn't exist yet, fall back to just updating active.
+      // Suspension still WORKS — the user will just see the generic message.
+      if (withReasonError) {
+        const { error: fallbackError } = await supabase
+          .from(table)
+          .update({ active: newState })
+          .eq("id", id)
+        if (fallbackError) throw fallbackError
+      }
 
-      // ── Re-fetch from DB to confirm actual state ──────────────────────────
-      // Do NOT do optimistic update — re-fetch is the source of truth
+      // Re-fetch from DB to confirm actual state — never optimistic update
       if (table === "users") {
         const { data } = await supabase.from("users").select("*").order("created_at", { ascending: false })
         setUsers(data || [])
@@ -90,7 +101,7 @@ export default function AccountManageSection() {
       }
 
       showToast(
-        `Account ${newState ? "reactivated" : "suspended"} successfully. The user must log out and back in for changes to take effect.`,
+        `Account ${newState ? "reactivated" : "suspended"} successfully.`,
         "success"
       )
     } catch (err) {

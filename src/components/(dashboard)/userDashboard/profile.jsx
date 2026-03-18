@@ -1,29 +1,81 @@
 "use client"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import ProfileHeader from "./profile-header"
 import PersonalInformation from "./personal-information"
 import ProfileStats from "./profile-stats"
-import ProfileCompletion from "./profile-completion"
 import AchievementsTab from "@/components/achievements/achievementStab"
 
 export default function UserProfile({ onSuccess, currentUser, authUserId }) {
-  const [profile, setProfile] = useState(null)
+  const [profile, setProfile]   = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
-  const [alert, setAlert] = useState(null)
-  const [userId, setUserId] = useState(null)
+  const [alert, setAlert]       = useState(null)
   const [achievementsMetadata, setAchievementsMetadata] = useState({})
 
   const [formData, setFormData] = useState({
-    name: "",
-    age: "",
+    name:        "",
+    age:         "",
     affiliation: "",
-    country: "",
-    achievements: [], // kept so ProfileHeader's .length read never throws
+    country:     "",
+    achievements: [],
   })
+
+  // ── Fetch profile from DB ─────────────────────────────────────────────────
+  // currentUser = Supabase auth UUID (profile.user_id from authContext)
+  const fetchUserProfile = useCallback(async (authUUID) => {
+    if (!authUUID) return
+    setIsLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("user_id", authUUID)
+        .maybeSingle()
+
+      if (error) throw error
+      if (!data) return
+
+      setProfile(data)
+      setAchievementsMetadata(data.achievements_metadata ?? {})
+      setFormData({
+        name:         data.name        ?? "",
+        age:          data.age         ?? "",
+        affiliation:  data.affiliation ?? "",
+        country:      data.country     ?? "",
+        achievements: data.achievements ?? [],
+      })
+    } catch (err) {
+      console.error("fetchUserProfile error:", err.message)
+      setAlert({ type: "error", message: "Failed to load profile. Please refresh." })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  // ── Trigger fetch when currentUser prop arrives ───────────────────────────
+  useEffect(() => {
+    if (currentUser) fetchUserProfile(currentUser)
+  }, [currentUser, fetchUserProfile])
+
+  // ── Realtime — keep achievements_metadata live ────────────────────────────
+  useEffect(() => {
+    if (!currentUser) return
+    const channel = supabase
+      .channel(`profile-achievements-${currentUser}`)
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "users",
+        filter: `user_id=eq.${currentUser}`,
+      }, (payload) => {
+        if (payload.new?.achievements_metadata !== undefined) {
+          setAchievementsMetadata(payload.new.achievements_metadata ?? {})
+        }
+      })
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [currentUser])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -31,17 +83,12 @@ export default function UserProfile({ onSuccess, currentUser, authUserId }) {
   }
 
   const handleSubmit = async () => {
-    if (!currentUser || !authUserId) {
-      setAlert({ type: "error", message: "Organization not found. Please refresh the page." })
+    if (!currentUser) {
+      setAlert({ type: "error", message: "User not found. Please refresh." })
       return
     }
-
     if (!formData.name || !formData.age) {
       setAlert({ type: "error", message: "Name and Age are required fields." })
-      return
-    }
-    if (!profile?.user_id) {
-      setAlert({ type: "error", message: "Cannot update: User profile not found." })
       return
     }
 
@@ -52,31 +99,36 @@ export default function UserProfile({ onSuccess, currentUser, authUserId }) {
       const { data, error } = await supabase
         .from("users")
         .update({
-          name: formData.name,
-          age: formData.age,
+          name:        formData.name,
+          age:         formData.age,
           affiliation: formData.affiliation,
-          country: formData.country,
-          updated_at: new Date().toISOString(),
+          country:     formData.country,
+          updated_at:  new Date().toISOString(),
         })
-        .eq("user_id", profile.user_id)
+        .eq("user_id", currentUser)
         .select()
         .single()
 
       if (error) throw error
 
-      setAlert({ type: "success", message: "Profile updated successfully!" })
-      setIsEditing(false)
       setProfile(data)
-      // Realtime handles achievements_metadata live, but sync here too as a safety net
       setAchievementsMetadata(data.achievements_metadata ?? {})
-
+      setFormData({
+        name:         data.name        ?? "",
+        age:          data.age         ?? "",
+        affiliation:  data.affiliation ?? "",
+        country:      data.country     ?? "",
+        achievements: data.achievements ?? [],
+      })
+      setIsEditing(false)
+      setAlert({ type: "success", message: "Profile updated successfully!" })
       setTimeout(() => {
         setAlert(null)
         if (onSuccess) onSuccess()
       }, 2000)
-    } catch (error) {
-      console.error("Error updating profile:", error.message)
-      setAlert({ type: "error", message: `Failed to update profile: ${error.message}` })
+    } catch (err) {
+      console.error("Error updating profile:", err.message)
+      setAlert({ type: "error", message: `Failed to update profile: ${err.message}` })
     } finally {
       setIsLoading(false)
     }
@@ -84,7 +136,8 @@ export default function UserProfile({ onSuccess, currentUser, authUserId }) {
 
   const handleCancel = () => {
     setIsEditing(false)
-    if (userId) fetchUserProfile(userId)
+    // ✅ fetchUserProfile is now defined — this no longer crashes
+    if (currentUser) fetchUserProfile(currentUser)
   }
 
   const earnedCount = Object.keys(achievementsMetadata).length
@@ -92,10 +145,22 @@ export default function UserProfile({ onSuccess, currentUser, authUserId }) {
     (sum, a) => sum + (a.reward_points ?? 0), 0
   )
 
-  if (!currentUser) {
+  // ── Loading state ─────────────────────────────────────────────────────────
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12 text-white">
-        <Loader2 className="mr-2 h-8 w-8 animate-spin" /> Loading User Profile...
+        <Loader2 className="mr-2 h-8 w-8 animate-spin text-fuchsia-300" />
+        <span className="text-fuchsia-200">Loading profile...</span>
+      </div>
+    )
+  }
+
+  // ── No profile found ──────────────────────────────────────────────────────
+  if (!profile) {
+    return (
+      <div className="flex justify-center items-center p-12 text-white/50">
+        <AlertCircle className="mr-2 h-6 w-6" />
+        <span>Profile not found.</span>
       </div>
     )
   }

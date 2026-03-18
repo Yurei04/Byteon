@@ -224,8 +224,10 @@ export function SignupForm() {
       }
 
       setLoading(false)
-      alert("Account created successfully! You can now log in.")
-      router.push("/log-in")
+      try { await supabase.auth.signOut({ scope: "local" }) } catch {}
+
+      setLoading(false)
+      router.push("/log-in?registered=true")
       
     } catch (err) {
       console.error("Signup error:", err)
