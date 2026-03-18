@@ -46,12 +46,16 @@ export default function NavBar() {
     return (
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <button className="relative group px-4 py-1.5 rounded-full text-sm font-medium text-fuchsia-200 overflow-hidden transition-all duration-300 border border-fuchsia-400/40 hover:border-fuchsia-300/70 hover:text-white">
-            <span className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-fuchsia-500/20 to-fuchsia-600/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
-            <span className="relative flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
-              Sign In
-            </span>
+          <button className="relative group flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-semibold overflow-hidden transition-all duration-300
+            bg-gradient-to-r from-fuchsia-600 to-purple-600
+            hover:from-fuchsia-500 hover:to-purple-500
+            shadow-md shadow-fuchsia-900/40 hover:shadow-fuchsia-700/50
+            text-white hover:scale-[1.03] active:scale-95">
+            {/* inner gloss */}
+            <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            {/* sweep on hover */}
+            <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
+            <span className="relative">Login</span>
           </button>
         </DialogTrigger>
         <DialogContent className="bg-transparent border-none shadow-none">
