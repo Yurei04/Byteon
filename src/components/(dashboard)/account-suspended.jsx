@@ -1,22 +1,22 @@
 "use client"
 
 import { useSearchParams, useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 import { supabase } from "@/lib/supabase"
 import { clearAllAccounts } from "@/lib/accountManager"
 import { ShieldOff, Trash2, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export default function AccountSuspendedPage() {
+function AccountSuspendedContent() {
   const searchParams = useSearchParams()
   const router       = useRouter()
   const reason       = searchParams.get("reason") // "suspended" | "deleted"
-  const detail       = searchParams.get("detail") // optional custom reason text
+  const detail       = searchParams.get("detail") // optional reason text
 
   const isDeleted = reason === "deleted"
 
-  // ✅ Force sign-out on mount — clears the dangling Supabase session
-  // and removes this account from the multi-account localStorage store.
+  // Force sign-out on mount — clears the dangling Supabase session
+  // and wipes the multi-account localStorage store
   useEffect(() => {
     const cleanup = async () => {
       try {
@@ -25,8 +25,7 @@ export default function AccountSuspendedPage() {
         await supabase.auth.signOut({ scope: "local" })
       } catch {}
       try { sessionStorage.clear() } catch {}
-      // Clear multi-account store so AccountSwitcher doesn't show stale entry
-      clearAllAccounts()
+      try { clearAllAccounts() } catch {}
     }
     cleanup()
   }, [])
@@ -66,26 +65,26 @@ export default function AccountSuspendedPage() {
           </p>
 
           {/* Reason box */}
-          {(detail || !isDeleted) && (
-            <div className={`
-              rounded-xl p-4 mb-6 flex items-start gap-3 text-left
-              ${isDeleted
-                ? "bg-red-900/20 border border-red-500/20"
-                : "bg-amber-900/20 border border-amber-500/20"}
-            `}>
-              <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDeleted ? "text-red-400" : "text-amber-400"}`} />
-              <div>
-                <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDeleted ? "text-red-400" : "text-amber-400"}`}>
-                  Reason
-                </p>
-                <p className="text-white/70 text-sm">
-                  {detail || (isDeleted
+          <div className={`
+            rounded-xl p-4 mb-6 flex items-start gap-3 text-left
+            ${isDeleted
+              ? "bg-red-900/20 border border-red-500/20"
+              : "bg-amber-900/20 border border-amber-500/20"}
+          `}>
+            <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isDeleted ? "text-red-400" : "text-amber-400"}`} />
+            <div>
+              <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDeleted ? "text-red-400" : "text-amber-400"}`}>
+                Reason
+              </p>
+              <p className="text-white/70 text-sm">
+                {detail
+                  ? decodeURIComponent(detail)
+                  : isDeleted
                     ? "Your account and all associated data have been permanently deleted by an administrator."
-                    : "Your account has been suspended. Please contact support if you believe this is a mistake.")}
-                </p>
-              </div>
+                    : "Your account has been suspended. Please contact support if you believe this is a mistake."}
+              </p>
             </div>
-          )}
+          </div>
 
           {/* Actions */}
           <div className="flex flex-col gap-3">
@@ -103,8 +102,22 @@ export default function AccountSuspendedPage() {
               Return to Home
             </Button>
           </div>
+
         </div>
       </div>
     </div>
+  )
+}
+
+// useSearchParams() requires a Suspense boundary in Next.js app router
+export default function AccountSuspendedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-fuchsia-400/30 border-t-fuchsia-400 rounded-full animate-spin" />
+      </div>
+    }>
+      <AccountSuspendedContent />
+    </Suspense>
   )
 }
