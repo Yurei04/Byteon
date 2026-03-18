@@ -1,20 +1,11 @@
 "use client"
 
-// components/(auth)/AccountSwitcher.jsx
-// Renders a dropdown of all saved accounts in localStorage.
-// Drop it anywhere in your nav/header — it reads from accountsManager
-// and calls switchAccount() / logoutAccount() from restoreSession.
-//
-// Usage:
-//   import AccountSwitcher from "@/components/(auth)/AccountSwitcher"
-//   <AccountSwitcher />
-
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@/components/(auth)/authContext"
-import { getAccounts } from "@/lib/accountManager" 
-import { switchAccount, logoutAccount } from "@/lib/restoreSession"
+import { getAccounts } from "@/lib/accountManager"
+import { switchAccount, logoutAccount, persistCurrentSession } from "@/lib/restoreSession"
 
 const ROLE_STYLES = {
   super_admin: "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30",
@@ -42,10 +33,18 @@ export default function AccountSwitcher() {
   const [removing, setRemoving]   = useState(null)
   const dropdownRef               = useRef(null)
 
-  // getAccounts() is a synchronous localStorage read — no need to store in state.
-  // The component re-renders whenever open/switching/removing/session changes,
-  // so this always reflects the latest saved accounts without a useEffect.
   const accounts = getAccounts()
+  const activeId = session?.user?.id
+
+  // ✅ If localStorage was wiped (e.g. by a false suspension redirect),
+  // but the session + profile are still valid — rebuild the entry automatically.
+  useEffect(() => {
+    if (!session || !profile || !role) return
+    const exists = getAccounts().find(a => a.userId === session.user.id)
+    if (!exists) {
+      persistCurrentSession(profile, role)
+    }
+  }, [session, profile, role])
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -56,8 +55,6 @@ export default function AccountSwitcher() {
     if (open) document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
-
-  const activeId = session?.user?.id
 
   const handleSwitch = async (targetUserId) => {
     if (targetUserId === activeId || switching) return
@@ -97,7 +94,16 @@ export default function AccountSwitcher() {
 
   if (!session) return null
 
-  const activeAccount = accounts.find(a => a.userId === activeId)
+  // ✅ Fallback: if localStorage is empty, build a temporary activeAccount
+  // from authContext so the navbar never shows "?" or breaks
+  const activeAccountFromStorage = accounts.find(a => a.userId === activeId)
+  const activeAccount = activeAccountFromStorage ?? (profile ? {
+    userId:      activeId,
+    displayName: profile?.name ?? profile?.author_name ?? session.user.email ?? "Account",
+    avatarUrl:   profile?.profile_photo_url ?? null,
+    role:        role ?? "user",
+  } : null)
+
   const otherAccounts = accounts.filter(a => a.userId !== activeId)
 
   return (
@@ -111,8 +117,8 @@ export default function AccountSwitcher() {
         aria-expanded={open}
       >
         <Avatar account={activeAccount} size={32} />
-        <span className="text-sm text-purple-100 max-w-[120px] truncate cursor-pointer ">
-          {activeAccount?.displayName ?? profile?.name ?? "Account"}
+        <span className="text-sm text-purple-100 max-w-[120px] truncate cursor-pointer">
+          {activeAccount?.displayName ?? session.user.email ?? "Account"}
         </span>
         <ChevronIcon open={open} />
       </button>
@@ -124,11 +130,10 @@ export default function AccountSwitcher() {
           {/* Active account */}
           {activeAccount && (
             <div className="border-b border-purple-400/20">
-              {/* Dashboard link — clicking the account info navigates to dashboard */}
               <button
                 onClick={() => {
                   setOpen(false)
-                  const dest = ROLE_DASHBOARDS[activeAccount.role] ?? "/"
+                  const dest = ROLE_DASHBOARDS[activeAccount.role] ?? ROLE_DASHBOARDS[role] ?? "/"
                   router.push(dest)
                 }}
                 className="cursor-pointer w-full px-4 py-3 flex items-center gap-3 hover:bg-purple-800/30 transition-colors text-left"
@@ -143,13 +148,12 @@ export default function AccountSwitcher() {
                 </div>
               </button>
 
-              {/* Sign out button — separate row so it doesn't conflict with dashboard click */}
               <div className="px-4 pb-2 flex justify-end">
                 <button
                   onClick={(e) => handleRemove(e, activeAccount.userId)}
                   title="Sign out of this account"
                   disabled={removing === activeAccount.userId}
-                  className="cursor-pointer  flex items-center gap-1.5 text-xs text-purple-400 hover:text-red-400 transition-colors disabled:opacity-50 px-2 py-1 rounded hover:bg-red-500/10"
+                  className="cursor-pointer flex items-center gap-1.5 text-xs text-purple-400 hover:text-red-400 transition-colors disabled:opacity-50 px-2 py-1 rounded hover:bg-red-500/10"
                 >
                   {removing === activeAccount.userId ? <Spinner small /> : <SignOutIcon />}
                   <span>Sign out</span>
@@ -169,16 +173,13 @@ export default function AccountSwitcher() {
                   key={account.userId}
                   onClick={() => handleSwitch(account.userId)}
                   disabled={!!switching}
-                  className="cursor-pointer  w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left group disabled:opacity-60"
+                  className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left group disabled:opacity-60"
                 >
                   <Avatar account={account} size={36} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-purple-100 truncate">
-                      {account.displayName}
-                    </p>
+                    <p className="text-sm text-purple-100 truncate">{account.displayName}</p>
                     <RoleBadge role={account.role} />
                   </div>
-
                   {switching === account.userId ? (
                     <Spinner />
                   ) : (
@@ -186,7 +187,7 @@ export default function AccountSwitcher() {
                       onClick={(e) => handleRemove(e, account.userId)}
                       title="Remove this account"
                       disabled={removing === account.userId}
-                      className=" cursor-pointer opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 text-purple-400 hover:text-red-400 transition-all disabled:opacity-50"
+                      className="cursor-pointer opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 text-purple-400 hover:text-red-400 transition-all disabled:opacity-50"
                     >
                       {removing === account.userId ? <Spinner small /> : <SignOutIcon />}
                     </button>
@@ -200,7 +201,7 @@ export default function AccountSwitcher() {
           <div className="border-t border-purple-400/20 py-1.5">
             <button
               onClick={() => { setOpen(false); router.push("/log-in") }}
-              className="cursor-pointer  w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left"
+              className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-full bg-purple-700/40 border border-purple-400/30 flex items-center justify-center text-purple-300 text-xl leading-none">
                 +
@@ -230,7 +231,7 @@ function Avatar({ account, size = 36 }) {
       />
     )
   }
-  const letter = (account?.displayName ?? "?")[0].toUpperCase()
+  const letter = (account?.displayName ?? account?.role ?? "?")[0].toUpperCase()
   return (
     <div
       className="rounded-full bg-purple-700/60 border border-purple-400/30 flex items-center justify-center text-purple-200 font-semibold flex-shrink-0"
