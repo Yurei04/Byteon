@@ -117,8 +117,12 @@ export async function middleware(req) {
 
   // ── Prevent logged-in users from hitting login/signup ─────────────────────
   if (pathname === "/log-in" || pathname === "/sign-up") {
-    if (isOrg)  return NextResponse.redirect(new URL("/org-dashboard",  req.url))
-    if (isUser) return NextResponse.redirect(new URL("/user-dashboard", req.url))
+    const isAddingAccount = req.nextUrl.searchParams.get("add") === "true"
+    if (!isAddingAccount) {
+      if (isSuperAdmin) return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
+      if (isOrg)        return NextResponse.redirect(new URL("/org-dashboard", req.url))
+      if (isUser)       return NextResponse.redirect(new URL("/user-dashboard", req.url))
+    }
   }
 
   // ── Wrong dashboard access ────────────────────────────────────────────────
