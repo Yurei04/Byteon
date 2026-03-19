@@ -26,6 +26,7 @@ export default function ClientLayout({ children }) {
   useEffect(() => {
     if (hasChecked.current) return
     hasChecked.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     checkDbConnection()
   }, [checkDbConnection])
 

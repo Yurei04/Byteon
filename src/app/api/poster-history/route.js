@@ -1,10 +1,30 @@
 // app/api/poster-history/route.js
 import { NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
+async function getSupabase() {
+  const cookieStore = await cookies()
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
+        },
+      },
+    }
+  )
+}
+
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = await getSupabase()
 
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -30,7 +50,7 @@ export async function GET() {
 }
 
 export async function DELETE(req) {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = await getSupabase()
 
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

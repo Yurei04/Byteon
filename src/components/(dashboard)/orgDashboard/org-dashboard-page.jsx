@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation"
 import { 
   Plus, FileText, Megaphone, BookOpen, TrendingUp,
   Loader2, Trash2, AlertCircle, CheckCircle,
-  Building2, AtSign, Mail
+  Building2, AtSign, Mail, Sparkles           // ← added Sparkles
 } from "lucide-react"
 import { 
   Pagination, PaginationContent, PaginationItem,
@@ -22,7 +22,6 @@ import {
 
 import { useAuth } from "@/components/(auth)/authContext" 
 
-// ── Pending forms (go to approval queue, not live DB) ─────────────────────────
 import PendingAnnounceForm from "../announce/announce-pending"
 import PendingBlogOrgForm  from "@/components/blog/blog-pending"
 import PendingResourceForm from "@/components/resourceHub/resource-pending"
@@ -36,6 +35,7 @@ import OrgQuickStats      from "./org-quick-stats"
 import DeleteAccountModal from "./delete-account"
 import { availableOrgAchievements } from "./org-achievements"
 import { ReturnButton }   from "@/components/return"
+import PosterMaker from "@/components/poster-maker/poster-maker"
 
 const ITEMS_PER_PAGE = 6
 
@@ -73,15 +73,13 @@ export default function OrgDashboardPage() {
   })
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
-  // IMPORTANT: wait for role to resolve (null = still querying DB)
   useEffect(() => {
     if (authLoading) return
-    if (isLoggedIn && role === null) return   // DB query still in flight — wait
+    if (isLoggedIn && role === null) return
     if (!isLoggedIn) { router.push("/log-in"); return }
     if (role !== "org_admin") { router.push("/unauthorized"); return }
   }, [authLoading, isLoggedIn, role, router])
 
-  // Seed form from context profile
   useEffect(() => {
     if (!profile) return
     const orgAchievements = profile.achievements
@@ -110,7 +108,6 @@ export default function OrgDashboardPage() {
   }, [profile?.id])
 
   // ── Data fetching ──────────────────────────────────────────────────────────
-
   const fetchAllData = async (orgId) => {
     setContentLoading(true)
     await Promise.all([fetchAnnouncements(orgId), fetchBlogs(orgId), fetchResources(orgId)])
@@ -151,7 +148,6 @@ export default function OrgDashboardPage() {
   const refreshAll           = () => profile?.id && fetchAllData(profile.id)
 
   // ── Profile editing ────────────────────────────────────────────────────────
-
   const handleProfileChange = (e) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }))
@@ -227,7 +223,6 @@ export default function OrgDashboardPage() {
   }
 
   // ── Pagination helpers ─────────────────────────────────────────────────────
-
   const paginateData  = (data, page) => data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
   const getTotalPages = (data) => Math.ceil(data.length / ITEMS_PER_PAGE)
 
@@ -279,7 +274,6 @@ export default function OrgDashboardPage() {
   const paginatedResources     = useMemo(() => paginateData(resources, currentPageResources),       [resources, currentPageResources])
 
   // ── Guards ─────────────────────────────────────────────────────────────────
-  // Show spinner while auth is loading OR while role is still resolving from DB
   if (authLoading || (isLoggedIn && role === null)) {
     return (
       <div className="w-full min-h-screen flex items-center justify-center">
@@ -291,7 +285,6 @@ export default function OrgDashboardPage() {
   if (!isLoggedIn || role !== "org_admin") return null
 
   // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
@@ -357,11 +350,14 @@ export default function OrgDashboardPage() {
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20">
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
+
+                  {/* ── Tab list — now 4 tabs ── */}
+                  <TabsList className="grid w-full grid-cols-4 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
                     {[
-                      { value: "profile", icon: <Building2 className="w-4 h-4" />, label: "Profile"    },
-                      { value: "view",    icon: <FileText   className="w-4 h-4" />, label: "View All"   },
-                      { value: "create",  icon: <Plus       className="w-4 h-4" />, label: "Create New" },
+                      { value: "profile", icon: <Building2  className="w-4 h-4" />, label: "Profile"      },
+                      { value: "view",    icon: <FileText    className="w-4 h-4" />, label: "View All"     },
+                      { value: "create",  icon: <Plus        className="w-4 h-4" />, label: "Create New"   },
+                      { value: "posters", icon: <Sparkles   className="w-4 h-4" />, label: "Poster Maker" }, // ← NEW
                     ].map(({ value, icon, label }) => (
                       <TabsTrigger key={value} value={value}
                         className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all">
@@ -380,13 +376,11 @@ export default function OrgDashboardPage() {
                             <AlertDescription>{alert.message}</AlertDescription>
                           </Alert>
                         )}
-
                         <OrgProfileHeader
                           formData={formData} profile={profile} isEditing={isEditing}
                           isLoading={isProfileSaving} onEdit={() => setIsEditing(true)}
                           onSave={handleProfileSubmit} onCancel={handleProfileCancel}
                         />
-
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                           <div className="lg:col-span-2 space-y-6">
                             <OrgAboutSection formData={formData} isEditing={isEditing} onChange={handleProfileChange} />
@@ -516,7 +510,6 @@ export default function OrgDashboardPage() {
                               <BookOpen className="w-4 h-4 mr-2" />Resource
                             </TabsTrigger>
                           </TabsList>
-
                           <TabsContent value="createAnnouncement">
                             <PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
                           </TabsContent>
@@ -529,6 +522,18 @@ export default function OrgDashboardPage() {
                         </Tabs>
                       </CardContent>
                     </Card>
+                  </TabsContent>
+
+                  {/* ── Poster Maker Tab ── NEW */}
+                  <TabsContent value="posters" className="mt-0">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
+                        <CardContent className="p-0 overflow-hidden rounded-xl">
+                          {/* Strip PosterMaker's own full-page layout — render inline */}
+                          <PosterMaker embedded />
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   </TabsContent>
 
                 </Tabs>
