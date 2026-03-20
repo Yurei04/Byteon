@@ -38,6 +38,8 @@ export default function Footer() {
                     <Link href="/partners" className="hover:text-fuchsia-400 transition-colors">Partners</Link>
                     <Link href="/blog" className="hover:text-fuchsia-400 transition-colors">Blog</Link>
                     <Link href="/how-to-hackathon" className="hover:text-fuchsia-400 transition-colors">HowToHack</Link>
+                    <Link href="/terms-and-conditions" className="hover:text-fuchsia-400 transition-colors">Terms & Condition</Link>
+                    <Link href="/privacy-policy" className="hover:text-fuchsia-400 transition-colors">Privacy Policies</Link>
                 </div>
 
                 {/* Right Section */}

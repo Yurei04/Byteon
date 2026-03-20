@@ -29,6 +29,8 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { ArrowLeft, Building2, User, Upload, AlertCircle, ChevronRight, ChevronLeft } from "lucide-react"
 import Link from "next/link"
+import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
+import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
 
 export function SignupForm() {
   const router = useRouter()
@@ -326,7 +328,6 @@ export function SignupForm() {
                           </Field>
                         )}
 
-                        {/* Terms */}
                         <div className="flex items-start gap-2.5 bg-purple-900/20 border border-purple-500/20 rounded-lg px-3 py-2">
                           <Checkbox
                             id="terms"
@@ -336,9 +337,12 @@ export function SignupForm() {
                           />
                           <label htmlFor="terms" className="text-xs text-purple-300/80 leading-relaxed cursor-pointer">
                             I agree to Byteon&apos;s{" "}
-                            <a href="/terms-and-conditions" target="_blank" className="underline underline-offset-2 text-purple-200 hover:text-white transition-colors">Terms of Service</a>
-                            {" "}and{" "}
-                            <a href="/privacy-policy" target="_blank" className="underline underline-offset-2 text-purple-200 hover:text-white transition-colors">Privacy Policy</a>
+                            <TermsDialog trigger={
+                              <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">Terms of Service</button>
+                            } />{" "}and{" "}
+                            <PrivacyDialog trigger={
+                              <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">Privacy Policy</button>
+                            } />
                             , and confirm I am at least 18 years of age.
                           </label>
                         </div>

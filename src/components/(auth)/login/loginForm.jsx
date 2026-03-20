@@ -21,6 +21,8 @@ import { useRouter } from "next/navigation"
 import { persistCurrentSession } from "@/lib/restoreSession"
 import { ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
+import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
+import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
 
 export function LoginForm() {
   const router = useRouter()
@@ -227,9 +229,12 @@ export function LoginForm() {
 
                 <p className="text-center text-purple-400/50 text-xs leading-relaxed px-2">
                   By continuing, you agree to our{" "}
-                  <a href="/terms-and-conditions" className="underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Terms of Service</a>
-                  {" "}and{" "}
-                  <a href="/privacy-policy" className="underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Privacy Policy</a>.
+                  <TermsDialog trigger={
+                    <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Terms of Service</button>
+                  } />{" "}and{" "}
+                  <PrivacyDialog trigger={
+                    <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Privacy Policy</button>
+                  } />.
                 </p>
               </FieldGroup>
             </div>

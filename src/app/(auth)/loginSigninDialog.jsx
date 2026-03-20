@@ -4,6 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 
 export default function SignLogInDialog() {
   return (
@@ -24,6 +25,15 @@ export default function SignLogInDialog() {
         />
 
         <CardHeader className="text-center space-y-2 relative z-10">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-xs text-purple-400/80 hover:text-purple-200 transition-colors group cursor-pointer"
+            >
+              <ArrowLeft className="size-3 group-hover:-translate-x-0.5 transition-transform" />
+              Back to home
+            </Link>
+          </div>
           <h2 className="text-2xl font-semibold tracking-tight">
             Login required
           </h2>
