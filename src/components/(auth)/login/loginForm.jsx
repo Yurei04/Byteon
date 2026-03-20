@@ -19,6 +19,8 @@ import { supabase } from "@/lib/supabase"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { persistCurrentSession } from "@/lib/restoreSession"
+import { ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react"
+import Link from "next/link"
 
 export function LoginForm() {
   const router = useRouter()
@@ -34,27 +36,20 @@ export function LoginForm() {
 
   const handleLogin = async () => {
     setError(null)
-
     if (!email.trim()) { setError("Email is required"); return }
     if (!password)     { setError("Password is required"); return }
 
     setLoading(true)
-
     try {
-      // 1️⃣ Sign in
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       })
-
       if (signInError) { setError(signInError.message); setLoading(false); return }
 
       const user = data?.user
       if (!user) { setError("Login failed. Please try again."); setLoading(false); return }
 
-      // 2️⃣ Check super_admins FIRST — super admins are never suspended
-      // ✅ Capture error explicitly so a silent RLS/network failure
-      //    doesn't fall through and wrongly hit the "deleted" branch
       const { data: superData, error: superError } = await supabase
         .from("super_admins")
         .select("user_id, id, name, organization_id, created_at")
@@ -62,28 +57,18 @@ export function LoginForm() {
         .maybeSingle()
 
       if (superError) {
-        console.error("[login] super_admins query failed:", superError.message)
-        // Don't fall through — surface the error so it's visible
         setError(`Login error: ${superError.message}`)
         await supabase.auth.signOut()
         setLoading(false)
         return
       }
-
       if (superData) {
-        await persistCurrentSession(
-          { ...superData, role: "super_admin", table: "super_admins" },
-          "super_admin"
-        )
+        await persistCurrentSession({ ...superData, role: "super_admin", table: "super_admins" }, "super_admin")
         try { sessionStorage.clear() } catch {}
-        // ✅ Hard redirect instead of router.push — ensures the middleware
-        //    sees the fresh cookie on a full HTTP request, not a stale
-        //    client-side navigation that may reuse an old cookie state.
         window.location.href = "/super-admin-dashboard"
         return
       }
 
-      // 3️⃣ Check organizations SECOND
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("user_id, id, name, author_name, description, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
@@ -91,13 +76,11 @@ export function LoginForm() {
         .maybeSingle()
 
       if (orgError) {
-        console.error("[login] organizations query failed:", orgError.message)
         setError(`Login error: ${orgError.message}`)
         await supabase.auth.signOut()
         setLoading(false)
         return
       }
-
       if (orgData) {
         if (orgData.active === false) {
           await supabase.auth.signOut()
@@ -105,17 +88,12 @@ export function LoginForm() {
           window.location.href = url
           return
         }
-
-        await persistCurrentSession(
-          { ...orgData, role: "org_admin", table: "organizations" },
-          "org_admin"
-        )
+        await persistCurrentSession({ ...orgData, role: "org_admin", table: "organizations" }, "org_admin")
         try { sessionStorage.clear() } catch {}
         window.location.href = "/org-dashboard"
         return
       }
 
-      // 4️⃣ Check users table LAST
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("user_id, id, name, age, affiliation, country, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
@@ -123,13 +101,11 @@ export function LoginForm() {
         .maybeSingle()
 
       if (userError) {
-        console.error("[login] users query failed:", userError.message)
         setError(`Login error: ${userError.message}`)
         await supabase.auth.signOut()
         setLoading(false)
         return
       }
-
       if (userData) {
         if (userData.active === false) {
           await supabase.auth.signOut()
@@ -137,17 +113,12 @@ export function LoginForm() {
           window.location.href = url
           return
         }
-
-        await persistCurrentSession(
-          { ...userData, role: "user", table: "users" },
-          "user"
-        )
+        await persistCurrentSession({ ...userData, role: "user", table: "users" }, "user")
         try { sessionStorage.clear() } catch {}
         window.location.href = "/user-dashboard"
         return
       }
 
-      // 5️⃣ Session exists but no profile row = account was deleted
       await supabase.auth.signOut()
       window.location.href = "/account-suspended?reason=deleted"
 
@@ -158,88 +129,113 @@ export function LoginForm() {
     }
   }
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === "Enter") { e.preventDefault(); handleLogin() }
   }
 
-  return (
-    <div className="flex flex-col gap-6 items-center">
-      <div className="relative overflow-hidden rounded-lg bg-purple-950/40 border-2 border-purple-400/40 text-purple-50 backdrop-blur-xl shadow-2xl shadow-purple-500/30 transition-all duration-500 hover:border-purple-400/70 hover:shadow-purple-500/20 group w-full">
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle at var(--mouse-x,50%) var(--mouse-y,50%), rgba(168,85,247,0.15), transparent 50%)",
-          }}
-        />
+  const inputCls = "h-8 text-sm bg-purple-900/30 border-purple-500/40 focus:border-purple-400 placeholder:text-purple-500/60 text-purple-50 rounded-lg"
+  const labelCls = "text-purple-200 text-xs font-medium"
 
-        <Card className="bg-transparent border-none shadow-none">
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl">Welcome back</CardTitle>
-            <CardDescription className="text-purple-200">
-              Sign in to your account
-            </CardDescription>
+  return (
+    <div className="h-full w-full flex items-center justify-center overflow-hidden py-2">
+      <div className="w-full max-w-md">
+        <Card className="relative overflow-hidden bg-purple-950/50 border border-purple-500/30 text-purple-50 backdrop-blur-xl shadow-2xl shadow-purple-900/40 rounded-2xl">
+          {/* Top accent line */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
+
+          <CardHeader className="px-5 pt-4 pb-2 space-y-2">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1 text-xs text-purple-400/80 hover:text-purple-200 transition-colors group w-fit"
+            >
+              <ArrowLeft className="size-3 group-hover:-translate-x-0.5 transition-transform" />
+              Back to home
+            </Link>
+            <div>
+              <CardTitle className="text-base font-semibold tracking-tight">Welcome back</CardTitle>
+              <CardDescription className="text-purple-300/70 text-xs mt-0.5">
+                Sign in to your account to continue
+              </CardDescription>
+            </div>
           </CardHeader>
 
-          <CardContent>
+          <CardContent className="px-5 pb-5 pt-1">
             {justRegistered && (
-              <div className="mb-4 px-4 py-3 rounded-lg bg-emerald-900/30 border border-emerald-500/40 text-emerald-200 text-sm text-center">
-                ✅ Account created! You can now sign in.
+              <div className="flex items-center gap-2 mb-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
+                <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0" />
+                <p className="text-emerald-300 text-xs">Account created! You can now sign in.</p>
               </div>
             )}
-            <div onKeyPress={handleKeyPress}>
-              <FieldGroup>
+
+            <div onKeyDown={handleKeyDown}>
+              <FieldGroup className="space-y-2.5">
                 <Field>
-                  <FieldLabel>Email</FieldLabel>
+                  <FieldLabel className={labelCls}>Email</FieldLabel>
                   <Input
                     type="email"
-                    placeholder="m@example.com"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className={inputCls}
                     required
                   />
                 </Field>
 
                 <Field>
-                  <FieldLabel>Password</FieldLabel>
+                  <div className="flex items-center justify-between mb-1">
+                    <FieldLabel className={labelCls}>Password</FieldLabel>
+                  </div>
                   <Input
                     type="password"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className={inputCls}
                     required
                   />
                 </Field>
 
                 {error && (
-                  <FieldDescription className="text-red-400 text-center">
-                    {error}
-                  </FieldDescription>
+                  <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                    <AlertCircle className="size-3.5 text-red-400 shrink-0" />
+                    <p className="text-red-400 text-xs leading-snug">{error}</p>
+                  </div>
                 )}
 
-                <Button onClick={handleLogin} disabled={loading} className="w-full">
-                  {loading ? "Signing in..." : "Sign in"}
+                <Button
+                  onClick={handleLogin}
+                  disabled={loading}
+                  className="cursor-pointer w-full h-9 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg shadow-purple-900/50"
+                >
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="animate-spin size-3.5" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      Signing in…
+                    </span>
+                  ) : "Sign in"}
                 </Button>
 
-                <FieldDescription className="text-center text-purple-300">
+                <p className="text-center text-purple-400/70 text-xs">
                   Don&apos;t have an account?{" "}
-                  <a href="/sign-up" className="underline">Sign up</a>
-                </FieldDescription>
+                  <a href="/sign-up" className="cursor-pointer text-purple-300 hover:text-white underline underline-offset-2 transition-colors">
+                    Sign up
+                  </a>
+                </p>
 
-                <FieldDescription className="text-center text-purple-300">
-                  <a href="/forgot-password" className="underline">Forgot password?</a>
-                </FieldDescription>
+                <p className="text-center text-purple-400/50 text-xs leading-relaxed px-2">
+                  By continuing, you agree to our{" "}
+                  <a href="/terms-and-conditions" className="underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Terms of Service</a>
+                  {" "}and{" "}
+                  <a href="/privacy-policy" className="underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Privacy Policy</a>.
+                </p>
               </FieldGroup>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <FieldDescription className="text-center text-purple-300 px-6">
-        By continuing, you agree to our{" "}
-        <a className="underline" href="#">Terms of Service</a>{" "}
-        and{" "}
-        <a className="underline" href="#">Privacy Policy</a>.
-      </FieldDescription>
     </div>
   )
 }
