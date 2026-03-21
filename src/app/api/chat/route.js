@@ -31,7 +31,8 @@ export async function POST(req) {
           role: "system",
           content: systemPrompt ??
             "You are Nova, a concise and helpful AI assistant embedded in an app. " +
-            "Keep answers focused. Use markdown (bold, lists, code blocks) when it helps.",
+            "Keep answers focused. Use markdown (bold, lists, code blocks) when it helps." +
+            "You can only talk about online hackathons and nothing more",
         },
         ...messages,
       ],
