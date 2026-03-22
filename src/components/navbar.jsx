@@ -52,15 +52,13 @@ export default function NavBar() {
             hover:from-fuchsia-500 hover:to-purple-500
             shadow-md shadow-fuchsia-900/40 hover:shadow-fuchsia-700/50
             text-white hover:scale-[1.03] active:scale-95">
-            {/* inner gloss */}
             <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            {/* sweep on hover */}
             <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
             <span className="relative">Login</span>
           </button>
         </DialogTrigger>
         <DialogContent className="bg-transparent border-none shadow-none">
-          <SignLogInDialog />
+          <SignLogInDialog onClose={() => setIsDialogOpen(false)} />
         </DialogContent>
       </Dialog>
     )

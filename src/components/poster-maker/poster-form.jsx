@@ -16,7 +16,7 @@ import {
   Atom, AlignLeft, AlignRight, AlignStartVertical,
   Columns2, RectangleHorizontal, Smartphone,
   Monitor, Instagram, Trophy, CalendarDays,
-  MapPin, Users, Clock, AlertCircle, Tag
+  MapPin, Users, Clock, Info, Tag
 } from "lucide-react"
 import FieldSection from "./field-section"
 import PlacementPicker from "./placement-picker"
@@ -168,44 +168,145 @@ function StepProgress({ currentStep, totalSteps }) {
   )
 }
 
+// ── Provider info badge ────────────────────────────────────────────────────────
+function ProviderInfo() {
+  return (
+    <div className="flex items-start gap-3 p-3 bg-zinc-900/50 border border-zinc-800/60 rounded-xl">
+      <Info size={15} className="text-fuchsia-400 flex-shrink-0 mt-0.5" />
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-zinc-300">All providers are free — no credit card ever</p>
+        <div className="space-y-1.5">
+          {[
+            { name: "Pollinations.ai", note: "No key, no signup. Runs first every time.", badge: "Zero config" },
+            { name: "Stable Horde",    note: "Community GPUs, anonymous key built-in. Slower on busy days.", badge: "No key needed" },
+            { name: "HuggingFace",     note: "Free key at huggingface.co/settings/tokens — no CC required.", badge: "Free key" },
+          ].map(({ name, note, badge }) => (
+            <div key={name} className="flex items-start gap-2">
+              <span className="text-[10px] bg-fuchsia-950/60 border border-fuchsia-800/40 text-fuchsia-400 rounded px-1.5 py-0.5 flex-shrink-0 mt-0.5">{badge}</span>
+              <div>
+                <span className="text-xs font-medium text-zinc-300">{name}</span>
+                <span className="text-xs text-zinc-600"> — {note}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Confirm modal ─────────────────────────────────────────────────────────────
+function ConfirmModal({ form, onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+
+      {/* Panel */}
+      <div className="relative w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Glow accent */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500 to-transparent" />
+
+        <div className="p-6 space-y-5">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-fuchsia-950/60 border border-fuchsia-700/40 flex items-center justify-center flex-shrink-0">
+              <Wand2 size={18} className="text-fuchsia-400" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-100">Generate this poster?</h2>
+              <p className="text-xs text-zinc-500">Review your settings before generating</p>
+            </div>
+          </div>
+
+          {/* Summary grid */}
+          <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
+            {[
+              { label: "Event",  value: form.eventName || form.title || "—"  },
+              { label: "Style",  value: form.style                           },
+              { label: "Mood",   value: form.mood                            },
+              { label: "Ratio",  value: form.aspectRatio                     },
+              { label: "Colors", value: form.colorScheme                     },
+              { label: "Venue",  value: form.venue || "—"                    },
+            ].map(({ label, value }) => (
+              <div key={label} className="min-w-0">
+                <p className="text-[10px] text-zinc-600 uppercase tracking-wide">{label}</p>
+                <p className="text-xs text-zinc-300 truncate capitalize mt-0.5">{value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Provider note */}
+          <p className="text-[11px] text-zinc-600 text-center">
+            Free · Pollinations.ai → Stable Horde → HuggingFace
+          </p>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 h-10 rounded-xl border border-zinc-700/50 bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 text-sm font-medium transition-colors duration-150"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              onClick={onConfirm}
+              className="flex-1 h-10 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-sm font-semibold shadow-[0_0_20px_rgba(217,70,239,0.3)] hover:shadow-[0_0_28px_rgba(217,70,239,0.45)] transition-all duration-150 flex items-center justify-center gap-2"
+            >
+              <Wand2 size={14} />
+              Generate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function PosterForm({ onGenerate, isLoading }) {
   const [step, setStep] = useState(1)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [form, setForm] = useState({
     // Hackathon event details
-    eventName:        "",
-    eventDate:        "",
-    eventEndDate:     "",
-    eventTime:        "",
-    venue:            "",
-    prizePool:        "",
-    firstPrize:       "",
-    secondPrize:      "",
-    thirdPrize:       "",
-    teamSize:         "",
-    registrationLink: "",
+    eventName:            "",
+    eventDate:            "",
+    eventEndDate:         "",
+    eventTime:            "",
+    venue:                "",
+    prizePool:            "",
+    firstPrize:           "",
+    secondPrize:          "",
+    thirdPrize:           "",
+    teamSize:             "",
+    registrationLink:     "",
     registrationDeadline: "",
-    organizer:        "",
-    theme:            "",
-    showPrize:        true,
-    showDate:         true,
-    showVenue:        true,
-    showTeamSize:     true,
+    organizer:            "",
+    theme:                "",
+    showPrize:            true,
+    showDate:             true,
+    showVenue:            true,
+    showTeamSize:         true,
     // Poster content
-    title:            "",
-    subtitle:         "",
-    description:      "",
-    showTitle:        true,
-    showSubtitle:     true,
-    extraDetails:     "",
+    title:                "",
+    subtitle:             "",
+    description:          "",
+    showTitle:            true,
+    showSubtitle:         true,
+    extraDetails:         "",
     // Design
-    style:            "modern bold",
-    mood:             "energetic and exciting",
-    colorScheme:      "cyberpunk neon purple and pink",
-    titlePlacement:   "top-center",
-    backgroundType:   "geometric",
-    aspectRatio:      "2:3",
-    fontStyle:        "display bold",
+    style:                "modern bold",
+    mood:                 "energetic and exciting",
+    colorScheme:          "cyberpunk neon purple and pink",
+    titlePlacement:       "top-center",
+    backgroundType:       "geometric",
+    aspectRatio:          "2:3",
+    fontStyle:            "display bold",
   })
 
   const set    = (key) => (val) => setForm((f) => ({ ...f, [key]: val }))
@@ -214,23 +315,29 @@ export default function PosterForm({ onGenerate, isLoading }) {
   const next = () => setStep((s) => Math.min(s + 1, STEPS.length))
   const prev = () => setStep((s) => Math.max(s - 1, 1))
 
+  // Opens the confirm modal instead of submitting directly
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Build enriched description from hackathon fields
+    setShowConfirm(true)
+  }
+
+  // Called when user clicks Generate inside the confirm modal
+  const handleConfirm = () => {
+    setShowConfirm(false)
     const enrichedForm = {
       ...form,
       description: [
-        form.theme         ? `Theme: ${form.theme}` : "",
-        form.eventDate     ? `Date: ${form.eventDate}${form.eventEndDate ? ` to ${form.eventEndDate}` : ""}` : "",
-        form.eventTime     ? `Time: ${form.eventTime}` : "",
-        form.venue         ? `Venue: ${form.venue}` : "",
-        form.prizePool     ? `Total prize pool: ${form.prizePool}` : "",
-        form.firstPrize    ? `1st place: ${form.firstPrize}` : "",
-        form.secondPrize   ? `2nd place: ${form.secondPrize}` : "",
-        form.thirdPrize    ? `3rd place: ${form.thirdPrize}` : "",
-        form.teamSize      ? `Team size: ${form.teamSize}` : "",
-        form.organizer     ? `Organized by: ${form.organizer}` : "",
-        form.registrationDeadline ? `Registration deadline: ${form.registrationDeadline}` : "",
+        form.theme                ? `Theme: ${form.theme}`                                              : "",
+        form.eventDate            ? `Date: ${form.eventDate}${form.eventEndDate ? ` to ${form.eventEndDate}` : ""}` : "",
+        form.eventTime            ? `Time: ${form.eventTime}`                                           : "",
+        form.venue                ? `Venue: ${form.venue}`                                              : "",
+        form.prizePool            ? `Total prize pool: ${form.prizePool}`                               : "",
+        form.firstPrize           ? `1st place: ${form.firstPrize}`                                     : "",
+        form.secondPrize          ? `2nd place: ${form.secondPrize}`                                    : "",
+        form.thirdPrize           ? `3rd place: ${form.thirdPrize}`                                     : "",
+        form.teamSize             ? `Team size: ${form.teamSize}`                                       : "",
+        form.organizer            ? `Organized by: ${form.organizer}`                                   : "",
+        form.registrationDeadline ? `Registration deadline: ${form.registrationDeadline}`              : "",
         form.description,
       ].filter(Boolean).join(". "),
     }
@@ -241,6 +348,15 @@ export default function PosterForm({ onGenerate, isLoading }) {
   const halfGrid = "grid grid-cols-1 sm:grid-cols-2 gap-4"
 
   return (
+    <>
+      {showConfirm && (
+        <ConfirmModal
+          form={form}
+          onConfirm={handleConfirm}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
+
     <form onSubmit={handleSubmit}>
       <StepProgress currentStep={step} totalSteps={STEPS.length} />
 
@@ -257,7 +373,6 @@ export default function PosterForm({ onGenerate, isLoading }) {
             </div>
           </div>
 
-          {/* Event name + theme */}
           <div className={halfGrid}>
             <FieldSection label="Event Name" description="Name of the hackathon">
               <Input value={form.eventName} onChange={setVal("eventName")}
@@ -272,7 +387,6 @@ export default function PosterForm({ onGenerate, isLoading }) {
             </FieldSection>
           </div>
 
-          {/* Dates */}
           <div className="flex items-center gap-2">
             <Switch id="showDate" checked={form.showDate} onCheckedChange={set("showDate")} />
             <Label htmlFor="showDate" className="text-xs text-zinc-400 cursor-pointer">Show dates on poster</Label>
@@ -311,7 +425,6 @@ export default function PosterForm({ onGenerate, isLoading }) {
             </div>
           )}
 
-          {/* Venue */}
           <div className="flex items-center gap-2">
             <Switch id="showVenue" checked={form.showVenue} onCheckedChange={set("showVenue")} />
             <Label htmlFor="showVenue" className="text-xs text-zinc-400 cursor-pointer">Show venue on poster</Label>
@@ -327,7 +440,6 @@ export default function PosterForm({ onGenerate, isLoading }) {
             </FieldSection>
           )}
 
-          {/* Prizes */}
           <div className="flex items-center gap-2">
             <Switch id="showPrize" checked={form.showPrize} onCheckedChange={set("showPrize")} />
             <Label htmlFor="showPrize" className="text-xs text-zinc-400 cursor-pointer">Show prizes on poster</Label>
@@ -372,7 +484,6 @@ export default function PosterForm({ onGenerate, isLoading }) {
             </div>
           )}
 
-          {/* Organizer */}
           <FieldSection label="Organized By" description="Who's hosting the hackathon">
             <Input value={form.organizer} onChange={setVal("organizer")}
               placeholder="e.g. ByteOn, GDSC DLSU, ACM Chapter"
@@ -526,12 +637,12 @@ export default function PosterForm({ onGenerate, isLoading }) {
             <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide mb-3">Poster summary</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-2">
               {[
-                { label: "Event",   value: form.eventName || form.title || "—"  },
-                { label: "Date",    value: form.eventDate  || "—"               },
-                { label: "Venue",   value: form.venue      || "—"               },
-                { label: "Prize",   value: form.prizePool  || "—"               },
-                { label: "Style",   value: form.style                           },
-                { label: "Ratio",   value: form.aspectRatio                     },
+                { label: "Event",  value: form.eventName || form.title || "—" },
+                { label: "Date",   value: form.eventDate  || "—"              },
+                { label: "Venue",  value: form.venue      || "—"              },
+                { label: "Prize",  value: form.prizePool  || "—"              },
+                { label: "Style",  value: form.style                          },
+                { label: "Ratio",  value: form.aspectRatio                    },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-baseline gap-1.5 min-w-0">
                   <span className="text-[10px] text-zinc-600 uppercase tracking-wide flex-shrink-0">{label}</span>
@@ -541,16 +652,8 @@ export default function PosterForm({ onGenerate, isLoading }) {
             </div>
           </div>
 
-          {/* Disabled notice */}
-          <div className="flex items-start gap-3 p-3 bg-amber-950/30 border border-amber-800/40 rounded-xl">
-            <AlertCircle size={15} className="text-amber-400 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs font-medium text-amber-300">Image generation temporarily unavailable</p>
-              <p className="text-xs text-amber-500/80 mt-0.5">
-                The free AI image service is being fixed. Your poster settings are saved — generation will be enabled once the API is stable.
-              </p>
-            </div>
-          </div>
+          {/* Provider info — replaces the old disabled notice */}
+          <ProviderInfo />
         </div>
       )}
 
@@ -566,33 +669,28 @@ export default function PosterForm({ onGenerate, isLoading }) {
 
         {step < STEPS.length ? (
           <Button type="button" onClick={next}
-            className="flex-1 h-11 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600/50 text-zinc-100 rounded-xl gap-2 font-medium">
+            className="flex-1 h-11 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white rounded-xl gap-2 font-semibold shadow-[0_0_16px_rgba(217,70,239,0.25)] hover:shadow-[0_0_24px_rgba(217,70,239,0.4)] transition-all duration-200">
             Next
             <ChevronRight size={16} />
           </Button>
         ) : (
           <Button
             type="submit"
-            disabled={true}  // ← disabled until API is stable
-            title="Image generation is temporarily unavailable"
-            className="flex-1 h-11 rounded-xl gap-2 font-semibold
-              bg-zinc-800/60 border border-zinc-700/40 text-zinc-500
-              cursor-not-allowed opacity-60 select-none"
+            disabled={isLoading}
+            className={`
+              flex-1 h-11 rounded-xl gap-2 font-semibold transition-all duration-200
+              ${isLoading
+                ? "bg-zinc-800/60 border border-zinc-700/40 text-zinc-500 cursor-not-allowed opacity-60"
+                : "bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white shadow-[0_0_20px_rgba(217,70,239,0.3)] hover:shadow-[0_0_28px_rgba(217,70,239,0.45)]"
+              }
+            `}
           >
-            <Wand2 size={16} />
-            Generate Poster
-            <Badge variant="outline" className="ml-1 text-[9px] border-amber-700/50 text-amber-500 bg-amber-950/30 py-0">
-              Soon
-            </Badge>
+            <Wand2 size={16} className={isLoading ? "animate-spin" : ""} />
+            {isLoading ? "Generating…" : "Generate Poster"}
           </Button>
         )}
       </div>
-
-      {step === STEPS.length && (
-        <p className="text-center text-xs text-zinc-700 mt-3">
-          Will use FLUX.1-schnell · Hugging Face free tier
-        </p>
-      )}
     </form>
+    </>
   )
 }
