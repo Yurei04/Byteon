@@ -38,6 +38,7 @@ export default function AccountSwitcher() {
 
   // ✅ If localStorage was wiped (e.g. by a false suspension redirect),
   // but the session + profile are still valid — rebuild the entry automatically.
+  
   useEffect(() => {
     if (!session || !profile || !role) return
     const exists = getAccounts().find(a => a.userId === session.user.id)
@@ -72,6 +73,14 @@ export default function AccountSwitcher() {
     }
 
     setSwitching(null)
+  }
+
+  const handleAddAccount = () => {
+    // Rebuild session in storage before navigating away
+    if (session && profile && role) {
+      persistCurrentSession(profile, role)
+    }
+    window.location.href = "/log-in?add=true"
   }
 
   const handleRemove = async (e, userId) => {
@@ -202,7 +211,7 @@ export default function AccountSwitcher() {
           {/* Add account */}
           <div className="border-t border-purple-400/20 py-1.5">
             <button
-              onClick={() => { setOpen(false); window.location.href = "/log-in?add=true" }}
+              onClick={handleAddAccount} 
               className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left"
             >
               <div className="w-9 h-9 rounded-full bg-purple-700/40 border border-purple-400/30 flex items-center justify-center text-purple-300 text-xl leading-none">

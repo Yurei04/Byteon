@@ -34,7 +34,8 @@ export async function middleware(req) {
     return res
   }
 
-  const userId = session.user.id
+  const userId          = session.user.id
+  const isAddingAccount = req.nextUrl.searchParams.get("add") === "true"
 
   // ── Fetch role tables in parallel ─────────────────────────────────────────
   const [
@@ -52,9 +53,11 @@ export async function middleware(req) {
   const isOrg        = !!orgProfile
 
   // ── Super admins bypass ALL suspension / deletion checks ──────────────────
-  // Super admins are not in the users or organizations tables,
-  // so we must short-circuit here before the "no profile = deleted" check.
   if (isSuperAdmin) {
+    // Allow through if adding another account
+    if ((pathname === "/log-in" || pathname === "/sign-up") && isAddingAccount) {
+      return res
+    }
     // Block super admin from hitting login/signup
     if (pathname === "/log-in" || pathname === "/sign-up") {
       return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
@@ -66,7 +69,6 @@ export async function middleware(req) {
     if (pathname.startsWith("/org-dashboard")) {
       return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
     }
-    // Everything else — allow through
     return res
   }
 
@@ -81,7 +83,6 @@ export async function middleware(req) {
 
   // Account suspended — active === false
   if (isUser && userProfile.active === false) {
-    // Fetch suspension reason separately so a missing column never breaks this
     let detail = null
     try {
       const { data } = await supabase
@@ -117,12 +118,11 @@ export async function middleware(req) {
 
   // ── Prevent logged-in users from hitting login/signup ─────────────────────
   if (pathname === "/log-in" || pathname === "/sign-up") {
-    const isAddingAccount = req.nextUrl.searchParams.get("add") === "true"
     if (!isAddingAccount) {
-      if (isSuperAdmin) return NextResponse.redirect(new URL("/super-admin-dashboard", req.url))
-      if (isOrg)        return NextResponse.redirect(new URL("/org-dashboard", req.url))
-      if (isUser)       return NextResponse.redirect(new URL("/user-dashboard", req.url))
+      if (isOrg)  return NextResponse.redirect(new URL("/org-dashboard", req.url))
+      if (isUser) return NextResponse.redirect(new URL("/user-dashboard", req.url))
     }
+    return res
   }
 
   // ── Wrong dashboard access ────────────────────────────────────────────────
@@ -135,7 +135,6 @@ export async function middleware(req) {
   }
 
   if (pathname.startsWith("/super-admin-dashboard")) {
-    // Non-super-admin trying to access super admin panel
     return NextResponse.redirect(new URL(isOrg ? "/org-dashboard" : "/user-dashboard", req.url))
   }
 
