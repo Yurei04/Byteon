@@ -30,11 +30,11 @@ export default function OrgAboutSection({ formData, isEditing, onChange }) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="des" className="text-white">Description *</Label>
+              <Label htmlFor="description" className="text-white">Description *</Label>
               <Textarea
-                id="des"
-                name="des"
-                value={formData.des}
+                id="description"
+                name="description"
+                value={formData.description}
                 onChange={onChange}
                 className="bg-white/10 border-white/20 text-white min-h-[120px]"
                 placeholder="Describe your organization..."
@@ -71,16 +71,20 @@ export default function OrgAboutSection({ formData, isEditing, onChange }) {
         ) : (
           <>
             <div>
+              <p className="text-white/60 text-sm mb-1">Organization Name</p>
+              <p className="text-white">{formData.name || "No name provided"}</p>
+            </div>
+            <div>
               <p className="text-white/60 text-sm mb-1">Description</p>
-              <p className="text-white">{formData.des || 'No description provided'}</p>
+              <p className="text-white">{formData.description || "No description provided"}</p>
             </div>
             <div>
               <p className="text-white/60 text-sm mb-1">Contact Person</p>
-              <p className="text-white">{formData.author_name || 'Not specified'}</p>
+              <p className="text-white">{formData.author_name || "Not specified"}</p>
             </div>
             <div>
               <p className="text-white/60 text-sm mb-1">Status</p>
-              <p className="text-white">{formData.active ? '✅ Active' : '⏸️ Inactive'}</p>
+              <p className="text-white">{formData.active ? "✅ Active" : "⏸️ Inactive"}</p>
             </div>
           </>
         )}
