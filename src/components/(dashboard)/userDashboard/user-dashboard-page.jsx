@@ -158,7 +158,7 @@ export default function UserDashboardPage() {
           <div className="text-center space-y-3">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
-                User Dashboard
+                Participant&apos;s Dashboard
               </span>
             </h1>
             <p className="text-fuchsia-200/70 text-sm sm:text-base max-w-2xl mx-auto">

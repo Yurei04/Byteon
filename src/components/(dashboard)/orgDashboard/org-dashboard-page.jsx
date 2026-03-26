@@ -301,7 +301,7 @@ export default function OrgDashboardPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
           <div className="text-center mb-8">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">Dashboard Center</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">Organization Dashboard</span>
             </h1>
             <p className="text-fuchsia-200/80 max-w-2xl mx-auto text-lg">Manage your organization, announcements, blogs, and resources</p>
           </div>
