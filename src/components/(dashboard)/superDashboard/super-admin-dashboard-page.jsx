@@ -201,7 +201,7 @@ function SuperAdminDashboardPage() {
             <CardContent className="p-4 sm:p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
 
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mb-6 bg-black/20 border border-fuchsia-500/20 p-1 gap-1 h-auto">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-6 bg-black/20 border border-fuchsia-500/20 p-1 gap-1 h-auto">
                   {[
                     { value: "profile",  icon: <ShieldCheck  className="w-4 h-4" />, label: "Profile"  },
                     { value: "accounts", icon: <Users        className="w-4 h-4" />, label: "Accounts" },
@@ -220,7 +220,6 @@ function SuperAdminDashboardPage() {
                       ),
                     },
                     { value: "view",   icon: <Eye  className="w-4 h-4" />, label: "View All" },
-                    { value: "create", icon: <Plus className="w-4 h-4" />, label: "Create"   },
                   ].map(({ value, icon, label }) => (
                     <TabsTrigger key={value} value={value}
                       className="flex items-center gap-1.5 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all py-2">
@@ -272,73 +271,6 @@ function SuperAdminDashboardPage() {
                   </div>
                   <ViewableSection />
                 </TabsContent>
-
-                {/* ── Create Tab ── */}
-                <TabsContent value="create">
-                  <div className="mb-4">
-                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
-                      Publish Content
-                    </h2>
-                    <p className="text-white/40 text-sm mt-1">
-                      Super admin posts go directly to the platform — no approval needed.
-                    </p>
-                  </div>
-
-                  {!platformOrg ? (
-                    <Alert className="bg-amber-900/20 border-amber-500/30">
-                      <AlertCircle className="w-4 h-4 text-amber-400" />
-                      <AlertDescription className="text-amber-200">
-                        No platform organization linked. Add an{" "}
-                        <code className="bg-black/30 px-1 rounded">organization_id</code> to your{" "}
-                        <code className="bg-black/30 px-1 rounded">super_admins</code> row to enable posting.
-                      </AlertDescription>
-                    </Alert>
-                  ) : (
-                    <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
-                      <CardContent className="p-6">
-                        <Tabs value={activeCreateTab} onValueChange={setActiveCreateTab}>
-                          <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-purple-500/20 p-1">
-                            <TabsTrigger value="createAnnouncement"
-                              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
-                              <Megaphone className="w-4 h-4" />Announcement
-                            </TabsTrigger>
-                            <TabsTrigger value="createBlogs"
-                              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
-                              <FileText className="w-4 h-4" />Blog
-                            </TabsTrigger>
-                            <TabsTrigger value="createResources"
-                              className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white">
-                              <BookOpen className="w-4 h-4" />Resource
-                            </TabsTrigger>
-                          </TabsList>
-
-                          <TabsContent value="createAnnouncement">
-                            <AnnounceForm
-                              onSuccess={fetchStats}
-                              currentOrg={platformOrg}
-                              authUserId={profile?.user_id}
-                            />
-                          </TabsContent>
-                          <TabsContent value="createBlogs">
-                            <BlogOrgForm
-                              onSuccess={fetchStats}
-                              currentOrg={platformOrg}
-                              authUserId={profile?.user_id}
-                            />
-                          </TabsContent>
-                          <TabsContent value="createResources">
-                            <ResourceForm
-                              onSuccess={fetchStats}
-                              currentOrg={platformOrg}
-                              authUserId={profile?.user_id}
-                            />
-                          </TabsContent>
-                        </Tabs>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-
               </Tabs>
             </CardContent>
           </Card>
