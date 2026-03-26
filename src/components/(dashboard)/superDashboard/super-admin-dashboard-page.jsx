@@ -15,6 +15,7 @@ import {
   ShieldCheck, Users, Building2, FileText, Megaphone,
   BookOpen, TrendingUp, Clock, Plus, Eye, CheckSquare,
   AlertCircle, Loader2, LogOut,
+  History,
 } from "lucide-react"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -33,6 +34,7 @@ import ViewableSection      from "./viewable-section"
 import AnnounceForm from "../announce/announce-form"
 import BlogOrgForm  from "@/components/blog/blog-edit-user"
 import ResourceForm from "@/components/resourceHub/resource-form"
+import HistorySection from "./historyRecordsSection"
 
 function SuperAdminDashboardPage() {
   const { profile, session, logout } = useAuth()
@@ -201,7 +203,7 @@ function SuperAdminDashboardPage() {
             <CardContent className="p-4 sm:p-6">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
 
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 mb-6 bg-black/20 border border-fuchsia-500/20 p-1 gap-1 h-auto">
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 mb-6 bg-black/20 border border-fuchsia-500/20 p-1 gap-1 h-auto">
                   {[
                     { value: "profile",  icon: <ShieldCheck  className="w-4 h-4" />, label: "Profile"  },
                     { value: "accounts", icon: <Users        className="w-4 h-4" />, label: "Accounts" },
@@ -220,6 +222,7 @@ function SuperAdminDashboardPage() {
                       ),
                     },
                     { value: "view",   icon: <Eye  className="w-4 h-4" />, label: "View All" },
+                    { value: "history", icon: <History        className="w-4 h-4" />, label: "Records" },
                   ].map(({ value, icon, label }) => (
                     <TabsTrigger key={value} value={value}
                       className="flex items-center gap-1.5 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all py-2">
@@ -271,6 +274,34 @@ function SuperAdminDashboardPage() {
                   </div>
                   <ViewableSection />
                 </TabsContent>
+
+                {/* ── Create Tab ── */}
+                <TabsContent value="history">
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
+                      Publish Content
+                    </h2>
+                    <p className="text-white/40 text-sm mt-1">
+                      Super admin posts go directly to the platform — no approval needed.
+                    </p>
+                  </div>
+
+                  {!platformOrg ? (
+                    <Alert className="bg-amber-900/20 border-amber-500/30">
+                      <AlertCircle className="w-4 h-4 text-amber-400" />
+                      <AlertDescription className="text-amber-200">
+                        No platform organization linked. Add an{" "}
+                        <code className="bg-black/30 px-1 rounded">organization_id</code> to your{" "}
+                        <code className="bg-black/30 px-1 rounded">super_admins</code> row to enable posting.
+                      </AlertDescription>
+                    </Alert>
+                  ) : (
+                    <div>
+                      <HistorySection />
+                    </div>
+                  )}
+                </TabsContent>
+
               </Tabs>
             </CardContent>
           </Card>
