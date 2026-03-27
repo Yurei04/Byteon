@@ -2,21 +2,67 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Textarea } from "@/components/ui/textarea"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialog, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
   Users, Building2, Search, Trash2, ShieldOff, ShieldCheck,
   Loader2, AlertCircle, Calendar, User, RefreshCw,
+  ChevronRight, Inbox, ShieldAlert, XCircle, CheckCircle,
+  Hash, Clock, Globe, Mail, MapPin, BarChart2, Zap,
+  AlertTriangle, Ban, BadgeAlert, Skull, FileWarning,
+  Activity,
 } from "lucide-react"
+
+// ── accent config ─────────────────────────────────────────────────────────────
+const ACCENTS = {
+  users: {
+    dot:       "bg-sky-400",
+    tag:       "text-sky-400",
+    badge:     "bg-sky-500/15 text-sky-300 border-sky-500/30",
+    heading:   "text-sky-300",
+    border:    "border-sky-500/30",
+    icon:      "bg-sky-500/15 border-sky-500/25 text-sky-300",
+    tabActive: "data-[state=active]:from-sky-600 data-[state=active]:to-blue-600",
+  },
+  orgs: {
+    dot:       "bg-fuchsia-400",
+    tag:       "text-fuchsia-400",
+    badge:     "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30",
+    heading:   "text-fuchsia-300",
+    border:    "border-fuchsia-500/30",
+    icon:      "bg-fuchsia-500/15 border-fuchsia-500/25 text-fuchsia-300",
+    tabActive: "data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600",
+  },
+}
+
+// ── preset reasons ─────────────────────────────────────────────────────────────
+const SUSPEND_PRESETS = [
+  { label: "Scamming",         icon: <AlertTriangle className="w-3 h-3" />, value: "Account found to be involved in scamming activities." },
+  { label: "Spam / Abuse",     icon: <Ban className="w-3 h-3" />,           value: "Repeated spam or abusive behavior reported." },
+  { label: "Impersonation",    icon: <BadgeAlert className="w-3 h-3" />,    value: "Account is impersonating another user or organization." },
+  { label: "Policy Violation", icon: <FileWarning className="w-3 h-3" />,   value: "Violated platform terms of service or community guidelines." },
+]
+
+const DELETE_PRESETS = [
+  { label: "Fake Account",     icon: <Skull className="w-3 h-3" />,         value: "Account is confirmed fake or fraudulent." },
+  { label: "Scamming",         icon: <AlertTriangle className="w-3 h-3" />, value: "Account engaged in scamming and must be permanently removed." },
+  { label: "Severe Violation", icon: <XCircle className="w-3 h-3" />,       value: "Severe or repeated violation of platform policies." },
+  { label: "Spam Network",     icon: <Ban className="w-3 h-3" />,           value: "Account is part of a coordinated spam or bot network." },
+]
+
+const TAB_CONFIG = [
+  { value: "users", label: "Users",         Icon: Users     },
+  { value: "orgs",  label: "Organizations", Icon: Building2 },
+]
 
 export default function AccountManageSection() {
   const [users, setUsers]               = useState([])
@@ -25,13 +71,19 @@ export default function AccountManageSection() {
   const [error, setError]               = useState(null)
   const [search, setSearch]             = useState("")
   const [activeTab, setActiveTab]       = useState("users")
+  const [selectedItem, setSelectedItem] = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
-  const [deleteDialog, setDeleteDialog] = useState(null)
   const [toast, setToast]               = useState(null)
+
+  // dialogs
+  const [suspendDialog, setSuspendDialog]   = useState(null)  // item
+  const [deleteDialog, setDeleteDialog]     = useState(null)  // item
+  const [suspendReason, setSuspendReason]   = useState("")
+  const [deleteReason, setDeleteReason]     = useState("")
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type })
-    setTimeout(() => setToast(null), 3000)
+    setTimeout(() => setToast(null), 3500)
   }
 
   const fetchAll = async () => {
@@ -54,317 +106,719 @@ export default function AccountManageSection() {
   }
 
   useEffect(() => { fetchAll() }, [])
+  useEffect(() => { setSelectedItem(null) }, [activeTab])
 
-  const filteredUsers = useMemo(() =>
-    users.filter((u) =>
-      (u.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (u.affiliation || "").toLowerCase().includes(search.toLowerCase()) ||
-      (u.country || "").toLowerCase().includes(search.toLowerCase())
-    ), [users, search])
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return {
+      users: users.filter((u) =>
+        (u.name || "").toLowerCase().includes(q) ||
+        (u.affiliation || "").toLowerCase().includes(q) ||
+        (u.country || "").toLowerCase().includes(q)
+      ),
+      orgs: orgs.filter((o) =>
+        (o.name || "").toLowerCase().includes(q) ||
+        (o.author_name || "").toLowerCase().includes(q)
+      ),
+    }
+  }, [users, orgs, search])
 
-  const filteredOrgs = useMemo(() =>
-    orgs.filter((o) =>
-      (o.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (o.author_name || "").toLowerCase().includes(search.toLowerCase())
-    ), [orgs, search])
-
-  const toggleActive = async (id, table, current) => {
-    setActionLoading(id)
-    const newState = !current
+  // ── Suspend ──────────────────────────────────────────────────────────────────
+  const confirmSuspend = async () => {
+    if (!suspendDialog) return
+    const item  = suspendDialog
+    const table = activeTab === "users" ? "users" : "organizations"
+    const newActive = item.active !== false  // toggling: if currently active → suspend
+    setSuspendDialog(null)
+    setActionLoading(item.id)
     try {
-      // ✅ Try with suspension_reason first (works if SQL migration was run)
-      const { error: withReasonError } = await supabase
-        .from(table)
-        .update({
-          active: newState,
-          suspension_reason: newState ? null : "Suspended by administrator",
-        })
-        .eq("id", id)
+      const { error: e1 } = await supabase.from(table).update({
+        active: !newActive,
+        suspension_reason: !newActive
+          ? (suspendReason.trim() || "Suspended by administrator")
+          : null,
+      }).eq("id", item.id)
 
-      // ✅ If suspension_reason column doesn't exist yet, fall back to just updating active.
-      // Suspension still WORKS — the user will just see the generic message.
-      if (withReasonError) {
-        const { error: fallbackError } = await supabase
-          .from(table)
-          .update({ active: newState })
-          .eq("id", id)
-        if (fallbackError) throw fallbackError
+      if (e1) {
+        const { error: e2 } = await supabase.from(table).update({ active: !newActive }).eq("id", item.id)
+        if (e2) throw e2
       }
 
-      // Re-fetch from DB to confirm actual state — never optimistic update
-      if (table === "users") {
-        const { data } = await supabase.from("users").select("*").order("created_at", { ascending: false })
-        setUsers(data || [])
-      } else {
-        const { data } = await supabase.from("organizations").select("*").order("created_at", { ascending: false })
-        setOrgs(data || [])
-      }
+      // refetch
+      const { data } = await supabase.from(table).select("*").order("created_at", { ascending: false })
+      if (activeTab === "users") setUsers(data || [])
+      else setOrgs(data || [])
 
-      showToast(
-        `Account ${newState ? "reactivated" : "suspended"} successfully.`,
-        "success"
-      )
+      // update selectedItem
+      setSelectedItem((prev) => prev?.id === item.id ? { ...prev, active: !newActive } : prev)
+      showToast(`Account ${!newActive ? "suspended" : "reactivated"} successfully.`)
     } catch (err) {
       showToast("Failed to update status: " + err.message, "error")
     } finally {
       setActionLoading(null)
+      setSuspendReason("")
     }
   }
 
+  // ── Delete ───────────────────────────────────────────────────────────────────
   const confirmDelete = async () => {
     if (!deleteDialog) return
-    const { id, table } = deleteDialog
-    setActionLoading(id)
+    const item  = deleteDialog
+    const table = activeTab === "users" ? "users" : "organizations"
+    setDeleteDialog(null)
+    setActionLoading(item.id)
     try {
-      const { error } = await supabase.from(table).delete().eq("id", id)
+      const { error } = await supabase.from(table).delete().eq("id", item.id)
       if (error) throw error
-      if (table === "users") setUsers((prev) => prev.filter((u) => u.id !== id))
-      else setOrgs((prev) => prev.filter((o) => o.id !== id))
-      showToast("Account deleted successfully.")
+      if (activeTab === "users") setUsers((prev) => prev.filter((u) => u.id !== item.id))
+      else setOrgs((prev) => prev.filter((o) => o.id !== item.id))
+      if (selectedItem?.id === item.id) setSelectedItem(null)
+      showToast("Account permanently deleted.")
     } catch (err) {
       showToast("Failed to delete: " + err.message, "error")
     } finally {
       setActionLoading(null)
-      setDeleteDialog(null)
+      setDeleteReason("")
     }
   }
 
+  const ac = ACCENTS[activeTab]
+
   return (
-    <>
-      <div className="space-y-5">
+    <div className="flex flex-col h-full gap-4">
 
-        {/* Toast */}
-        {toast && (
-          <Alert className={`${toast.type === "error"
-            ? "bg-red-900/30 border-red-500/40 text-red-200"
-            : "bg-emerald-900/30 border-emerald-500/40 text-emerald-200"}`}>
-            <AlertCircle className="w-4 h-4" />
-            <AlertDescription>{toast.msg}</AlertDescription>
-          </Alert>
-        )}
+      {/* ── Toast ── */}
+      {toast && (
+        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm font-medium
+          animate-in slide-in-from-top-2 fade-in duration-300
+          ${toast.type === "error"
+            ? "bg-red-950/90 border-red-500/40 text-red-200 shadow-red-900/40"
+            : "bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-900/40"
+          }`}
+        >
+          {toast.type === "error"
+            ? <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+            : <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          }
+          {toast.msg}
+        </div>
+      )}
 
-        {/* Search + Refresh */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400/60" />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+
+        {/* ── Tab bar + Search + Refresh ── */}
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <TabsList className="bg-black/30 border border-white/8 p-1 rounded-xl h-auto">
+            {TAB_CONFIG.map(({ value, label, Icon }) => {
+              const a = ACCENTS[value]
+              return (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                    text-white/40 hover:text-white/70
+                    data-[state=active]:bg-gradient-to-r data-[state=active]:text-white data-[state=active]:shadow-lg
+                    ${a.tabActive}`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${a.badge}`}>
+                    {filtered[value].length}
+                  </span>
+                </TabsTrigger>
+              )
+            })}
+          </TabsList>
+
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, affiliation, country…"
-              className="pl-10 bg-black/20 border-fuchsia-500/20 text-white placeholder:text-white/30"
+              placeholder="Search by name, affiliation…"
+              className="pl-9 h-9 bg-black/25 border-white/8 text-white text-sm placeholder:text-white/25 rounded-lg focus:border-white/20 focus:ring-0"
             />
           </div>
+
           <Button
             size="sm"
             onClick={fetchAll}
             disabled={loading}
             variant="outline"
-            className="border-fuchsia-500/20 text-fuchsia-300 hover:bg-fuchsia-500/10 shrink-0"
+            className="h-9 px-3 border-white/10 text-white/40 hover:text-white/70 hover:bg-white/6 hover:border-white/20 bg-transparent shrink-0"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {loading
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <RefreshCw className="w-3.5 h-3.5" />
+            }
           </Button>
         </div>
 
         {error && (
-          <Alert className="bg-red-900/20 border-red-500/30">
-            <AlertCircle className="w-4 h-4 text-red-300" />
-            <AlertDescription className="text-red-200">{error}</AlertDescription>
-          </Alert>
+          <div className="mb-3 flex items-center gap-2 px-4 py-3 rounded-xl bg-red-950/60 border border-red-500/25 text-red-300 text-sm">
+            <AlertCircle className="w-4 h-4 shrink-0" />{error}
+          </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 bg-black/20 border border-fuchsia-500/20 p-1">
-            <TabsTrigger value="users"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-purple-600 data-[state=active]:text-white flex items-center gap-2">
-              <Users className="w-4 h-4" />Users
-              <Badge className="ml-1 text-xs bg-blue-500/30 text-blue-200 border-0">{users.length}</Badge>
-            </TabsTrigger>
-            <TabsTrigger value="orgs"
-              className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white flex items-center gap-2">
-              <Building2 className="w-4 h-4" />Organizations
-              <Badge className="ml-1 text-xs bg-fuchsia-500/30 text-fuchsia-200 border-0">{orgs.length}</Badge>
-            </TabsTrigger>
-          </TabsList>
+        {/* ── Tab panels ── */}
+        {TAB_CONFIG.map(({ value }) => {
+          const a    = ACCENTS[value]
+          const list = filtered[value]
 
-          {/* Users Tab */}
-          <TabsContent value="users" className="mt-4">
-            {loading ? (
-              <LoadingState color="blue" />
-            ) : filteredUsers.length === 0 ? (
-              <EmptyState label="users" search={search} />
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filteredUsers.map((user) => (
-                  <AccountCard
-                    key={user.id}
-                    item={user}
-                    type="user"
-                    actionLoading={actionLoading}
-                    onToggle={() => toggleActive(user.id, "users", user.active)}
-                    onDelete={() => setDeleteDialog({ id: user.id, name: user.name, table: "users" })}
-                  />
-                ))}
+          return (
+            <TabsContent key={value} value={value} className="flex-1 min-h-0 mt-0">
+              <div className="flex gap-3 h-[680px]">
+
+                {/* ── LEFT — scrollable list ── */}
+                <div className={`w-[300px] shrink-0 flex flex-col rounded-2xl border bg-black/20 overflow-hidden transition-colors duration-200
+                  ${selectedItem ? a.border : "border-white/8"}`}
+                >
+                  {/* header */}
+                  <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between shrink-0">
+                    <span className={`text-xs font-bold uppercase tracking-widest ${a.heading}`}>
+                      {value === "users" ? "Users" : "Organizations"}
+                    </span>
+                    <span className="text-white/25 text-xs">
+                      {list.length} account{list.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  {loading ? (
+                    <div className="flex-1 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 animate-spin text-white/30" />
+                    </div>
+                  ) : list.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center gap-3 text-white/20 p-6 text-center">
+                      <Inbox className="w-8 h-8 opacity-40" />
+                      <p className="text-xs">
+                        {search ? `No results for "${search}"` : `No ${value} found`}
+                      </p>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-screen overflow-y-hidden">
+                      <div className="divide-y divide-white/5">
+                        {list.map((item) => (
+                          <AccountListRow
+                            key={item.id}
+                            item={item}
+                            type={value}
+                            ac={a}
+                            isSelected={selectedItem?.id === item.id}
+                            onClick={() =>
+                              setSelectedItem(selectedItem?.id === item.id ? null : item)
+                            }
+                          />
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </div>
+
+                {/* ── RIGHT — detail panel ── */}
+                <div className={`flex-1 rounded-2xl border bg-black/20 overflow-hidden transition-colors duration-200
+                  ${selectedItem ? a.border : "border-white/8"}`}
+                >
+                  {selectedItem ? (
+                    <ScrollArea className="h-screen overflow-y-hidden">
+                      <AccountDetailPane
+                        key={selectedItem.id}
+                        item={selectedItem}
+                        type={value}
+                        ac={a}
+                        actionLoading={actionLoading}
+                        onSuspend={() => setSuspendDialog(selectedItem)}
+                        onDelete={() => setDeleteDialog(selectedItem)}
+                      />
+                    </ScrollArea>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center gap-4 text-white/15 select-none">
+                      <div className="w-14 h-14 rounded-2xl border border-white/8 flex items-center justify-center bg-white/3">
+                        {value === "users"
+                          ? <Users className="w-6 h-6" />
+                          : <Building2 className="w-6 h-6" />
+                        }
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-white/20">No account selected</p>
+                        <p className="text-xs text-white/10 mt-1">
+                          Pick an account from the left to manage it
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-          </TabsContent>
+            </TabsContent>
+          )
+        })}
+      </Tabs>
 
-          {/* Orgs Tab */}
-          <TabsContent value="orgs" className="mt-4">
-            {loading ? (
-              <LoadingState color="fuchsia" />
-            ) : filteredOrgs.length === 0 ? (
-              <EmptyState label="organizations" search={search} />
-            ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {filteredOrgs.map((org) => (
-                  <AccountCard
-                    key={org.id}
-                    item={org}
-                    type="org"
-                    actionLoading={actionLoading}
-                    onToggle={() => toggleActive(org.id, "organizations", org.active)}
-                    onDelete={() => setDeleteDialog({ id: org.id, name: org.name, table: "organizations" })}
-                  />
-                ))}
+      {/* ── Suspend dialog ── */}
+      <AlertDialog
+        open={!!suspendDialog}
+        onOpenChange={(open) => { if (!open) { setSuspendDialog(null); setSuspendReason("") } }}
+      >
+        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 backdrop-blur-xl border border-amber-500/20 shadow-2xl shadow-amber-900/20 max-w-md">
+          <AlertDialogHeader className="gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-amber-500/10 border border-amber-500/25 flex items-center justify-center shrink-0">
+                {suspendDialog?.active !== false
+                  ? <ShieldOff className="w-5 h-5 text-amber-400" />
+                  : <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                }
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </div>
+              <div>
+                <AlertDialogTitle className={`text-base font-semibold ${suspendDialog?.active !== false ? "text-amber-200" : "text-emerald-200"}`}>
+                  {suspendDialog?.active !== false ? "Suspend Account" : "Reactivate Account"}
+                </AlertDialogTitle>
+                <p className="text-white/30 text-xs mt-0.5">
+                  {suspendDialog?.active !== false
+                    ? "Account will be locked immediately"
+                    : "Account will regain full access"
+                  }
+                </p>
+              </div>
+            </div>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteDialog} onOpenChange={(open) => !open && setDeleteDialog(null)}>
-        <AlertDialogContent className="bg-gradient-to-br from-slate-900 via-red-900/40 to-rose-900 border-red-500/30">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-200">Delete Account</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              Permanently delete <strong className="text-red-300">&quot;{deleteDialog?.name}&quot;</strong>?
-              This cascades to all associated data and cannot be undone.
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-sm">
+                <p className="text-white/55">
+                  You are {suspendDialog?.active !== false ? "suspending" : "reactivating"}{" "}
+                  <span className="text-white font-medium">"{suspendDialog?.name}"</span>.
+                  {suspendDialog?.active !== false && " They will lose access to the platform until manually reactivated."}
+                </p>
+
+                {/* Only show reason for suspension, not reactivation */}
+                {suspendDialog?.active !== false && (
+                  <div className="space-y-3">
+                    {/* Quick presets */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                        <Zap className="w-3 h-3 shrink-0" />
+                        Quick Reason
+                      </label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {SUSPEND_PRESETS.map(({ label, icon, value }) => (
+                          <button
+                            key={label}
+                            onClick={() => setSuspendReason(value)}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left
+                              ${suspendReason === value
+                                ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                                : "bg-white/3 border-white/8 text-white/40 hover:bg-white/6 hover:border-white/15 hover:text-white/65"
+                              }`}
+                          >
+                            <span className={suspendReason === value ? "text-amber-400" : "text-white/25"}>{icon}</span>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Custom reason */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                        <ShieldAlert className="w-3 h-3 shrink-0" />
+                        Reason
+                        <span className="text-white/18 font-normal normal-case tracking-normal">(or write custom)</span>
+                      </label>
+                      <Textarea
+                        value={suspendReason}
+                        onChange={(e) => setSuspendReason(e.target.value)}
+                        placeholder="Describe why this account is being suspended…"
+                        className="bg-black/40 border border-amber-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-amber-400/30 focus:ring-0 rounded-lg"
+                        rows={3}
+                      />
+                      <p className="text-white/20 text-[11px] leading-relaxed">
+                        The account holder will see this reason. If blank, a generic message is shown.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600">
+
+          <AlertDialogFooter className="gap-2 mt-1">
+            <AlertDialogCancel
+              onClick={() => setSuspendReason("")}
+              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all duration-200"
+            >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
+            <Button
+              onClick={confirmSuspend}
               disabled={!!actionLoading}
-              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white"
+              className={`cursor-pointer active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all duration-200 shadow-lg
+                ${suspendDialog?.active !== false
+                  ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 hover:shadow-amber-500/25"
+                  : "bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 hover:shadow-emerald-500/25"
+                }`}
             >
-              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Delete"}
-            </AlertDialogAction>
+              {actionLoading
+                ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                : suspendDialog?.active !== false
+                  ? <ShieldOff className="w-4 h-4 shrink-0" />
+                  : <ShieldCheck className="w-4 h-4 shrink-0" />
+              }
+              {suspendDialog?.active !== false ? "Confirm Suspension" : "Reactivate Account"}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  )
-}
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function AccountCard({ item, type, actionLoading, onToggle, onDelete }) {
-  const isUser   = type === "user"
-  // Explicitly check for false — default to active if column missing
-  const isActive = item.active !== false
-
-  return (
-    <Card className="bg-gradient-to-br from-slate-900/60 to-slate-950/60 backdrop-blur-lg border border-white/10 hover:border-white/20 transition-all duration-300">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg border ${
-              isUser ? "bg-blue-500/20 border-blue-400/30" : "bg-fuchsia-500/20 border-fuchsia-400/30"
-            }`}>
-              {isUser
-                ? <User className="w-5 h-5 text-blue-300" />
-                : <Building2 className="w-5 h-5 text-fuchsia-300" />}
+      {/* ── Delete dialog ── */}
+      <AlertDialog
+        open={!!deleteDialog}
+        onOpenChange={(open) => { if (!open) { setDeleteDialog(null); setDeleteReason("") } }}
+      >
+        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
+          <AlertDialogHeader className="gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-red-200 text-base font-semibold">
+                  Delete Account
+                </AlertDialogTitle>
+                <p className="text-white/30 text-xs mt-0.5">
+                  Permanent — cascades to all associated data
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-white font-semibold text-sm leading-tight">
-                {item.name || <span className="italic text-white/30">Unnamed</span>}
-              </p>
-              <p className="text-white/40 text-xs">
-                {isUser ? item.affiliation || item.country || "—" : item.author_name || "—"}
-              </p>
-            </div>
-          </div>
-          <Badge className={`text-xs border ${
-            isActive
-              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-              : "bg-red-500/20 text-red-300 border-red-500/30"
-          }`}>
-            {isActive ? "Active" : "Suspended"}
-          </Badge>
-        </div>
 
-        {/* Stats row */}
-        <div className="flex flex-wrap gap-3 mb-4 text-xs text-white/40">
-          {isUser ? (
-            <>
-              <span>Projects: <strong className="text-white/70">{item.total_projects ?? 0}</strong></span>
-              <span>Hackathons: <strong className="text-white/70">{item.total_hackathons_joined ?? 0}</strong></span>
-              <span>Blogs read: <strong className="text-white/70">{item.total_blogs_read ?? 0}</strong></span>
-            </>
-          ) : (
-            <>
-              <span>Posts: <strong className="text-white/70">{item.total_announcements ?? 0}</strong></span>
-              <span>Blogs: <strong className="text-white/70">{item.total_blogs ?? 0}</strong></span>
-              <span>Resources: <strong className="text-white/70">{item.total_resources ?? 0}</strong></span>
-            </>
-          )}
-          <span className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {new Date(item.created_at).toLocaleDateString()}
-          </span>
-        </div>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-sm">
+                <p className="text-white/55">
+                  You are permanently deleting{" "}
+                  <span className="text-white font-medium">"{deleteDialog?.name}"</span>.
+                  This cannot be undone and will remove all linked content.
+                </p>
 
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={onToggle}
-            disabled={actionLoading === item.id}
-            className={`flex-1 text-xs h-8 ${
-              isActive
-                ? "bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30"
-                : "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30"
-            }`}
-          >
-            {actionLoading === item.id ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : isActive ? (
-              <><ShieldOff className="w-3 h-3 mr-1" />Suspend</>
-            ) : (
-              <><ShieldCheck className="w-3 h-3 mr-1" />Reactivate</>
-            )}
-          </Button>
-          <Button
-            size="sm"
-            onClick={onDelete}
-            disabled={actionLoading === item.id}
-            className="h-8 bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30"
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
+                {/* Quick presets */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                    <Zap className="w-3 h-3 shrink-0" />
+                    Quick Reason
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {DELETE_PRESETS.map(({ label, icon, value }) => (
+                      <button
+                        key={label}
+                        onClick={() => setDeleteReason(value)}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left
+                          ${deleteReason === value
+                            ? "bg-red-500/20 border-red-500/40 text-red-300"
+                            : "bg-white/3 border-white/8 text-white/40 hover:bg-white/6 hover:border-white/15 hover:text-white/65"
+                          }`}
+                      >
+                        <span className={deleteReason === value ? "text-red-400" : "text-white/25"}>{icon}</span>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-function LoadingState({ color }) {
-  return (
-    <div className="flex justify-center py-16">
-      <Loader2 className={`w-8 h-8 animate-spin text-${color}-300`} />
+                {/* Custom reason */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                    <XCircle className="w-3 h-3 shrink-0" />
+                    Reason for Deletion
+                    <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <Textarea
+                    value={deleteReason}
+                    onChange={(e) => setDeleteReason(e.target.value)}
+                    placeholder="Describe why this account is being permanently deleted…"
+                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
+                    rows={3}
+                  />
+                  <p className="text-white/20 text-[11px] leading-relaxed">
+                    For audit trail purposes only. Leave blank to delete without a logged reason.
+                  </p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2 mt-1">
+            <AlertDialogCancel
+              onClick={() => setDeleteReason("")}
+              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all duration-200"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              onClick={confirmDelete}
+              disabled={!!actionLoading}
+              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
+                hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
+                active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all duration-200
+                shadow-lg hover:shadow-pink-500/25"
+            >
+              {actionLoading
+                ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                : <Trash2 className="w-4 h-4 shrink-0" />
+              }
+              Delete Permanently
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
 
-function EmptyState({ label, search }) {
+// ── List row ──────────────────────────────────────────────────────────────────
+function AccountListRow({ item, type, ac, isSelected, onClick }) {
+  const isActive = item.active !== false
+
   return (
-    <div className="text-center py-16 text-white/30">
-      <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
-      <p>{search ? `No ${label} match "${search}"` : `No ${label} found`}</p>
+    <button
+      onClick={onClick}
+      className={`w-full text-left p-4 m-4 flex items-start gap-3 transition-all duration-150 group border-l-2
+        ${isSelected
+          ? "bg-white/6 border-l-current"
+          : "border-l-transparent hover:bg-green hover:border-l-white/10"
+        }`}
+    >
+      <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 ${ac.dot}
+        ${isSelected ? "opacity-100" : "opacity-40 group-hover:opacity-70"}`}
+      />
+
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex items-start justify-between gap-2">
+          <p className={`text-xs font-semibold leading-snug truncate
+            ${isSelected ? "text-white" : "text-white/60 group-hover:text-white/85"}`}
+          >
+            {item.name || <span className="italic text-white/30">Unnamed</span>}
+          </p>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 ${
+            isActive
+              ? "bg-emerald-500/10 text-emerald-400/70 border-emerald-500/15"
+              : "bg-red-500/10 text-red-400/70 border-red-500/15"
+          }`}>
+            {isActive ? "Active" : "Suspended"}
+          </span>
+        </div>
+
+        <p className={`text-[11px] truncate ${ac.tag} opacity-75`}>
+          {type === "users"
+            ? item.affiliation || item.country || "No affiliation"
+            : item.author_name || "No contact"
+          }
+        </p>
+
+        <p className="text-[10px] text-white/20">
+          Joined {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+        </p>
+      </div>
+
+      <ChevronRight className={`w-3.5 h-3.5 shrink-0 mt-0.5 transition-colors
+        ${isSelected ? ac.tag : "text-white/12 group-hover:text-white/25"}`}
+      />
+    </button>
+  )
+}
+
+// ── Detail pane ───────────────────────────────────────────────────────────────
+function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete }) {
+  const isUser   = type === "users"
+  const isActive = item.active !== false
+
+  return (
+    <div className="h-full flex flex-col">
+
+      {/* ── Header ── */}
+      <div className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            {/* avatar */}
+            <div className={`w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 ${ac.icon}`}>
+              {isUser
+                ? <User className="w-5 h-5" />
+                : <Building2 className="w-5 h-5" />
+              }
+            </div>
+            <div className="flex-1 min-w-0 space-y-1">
+              <h2 className="text-lg font-bold text-white leading-tight truncate">
+                {item.name || <span className="italic text-white/30">Unnamed</span>}
+              </h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`${ac.badge} border text-[11px]`}>
+                  {isUser ? "User Account" : "Organization"}
+                </Badge>
+                <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium ${
+                  isActive
+                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
+                    : "bg-red-500/10 text-red-300 border-red-500/20"
+                }`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-400" : "bg-red-400"}`} />
+                  {isActive ? "Active" : "Suspended"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* action buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={onSuspend}
+              disabled={actionLoading === item.id}
+              className={`h-9 px-4 border-0 gap-2 text-xs font-medium shadow-md active:scale-[0.97] transition-all duration-200
+                ${isActive
+                  ? "bg-amber-500/20 hover:bg-amber-500/35 text-amber-300 border border-amber-500/30 shadow-amber-900/20 hover:shadow-amber-500/15"
+                  : "bg-emerald-500/20 hover:bg-emerald-500/35 text-emerald-300 border border-emerald-500/30 shadow-emerald-900/20 hover:shadow-emerald-500/15"
+                }`}
+            >
+              {actionLoading === item.id
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : isActive
+                  ? <ShieldOff className="w-3.5 h-3.5" />
+                  : <ShieldCheck className="w-3.5 h-3.5" />
+              }
+              {isActive ? "Suspend" : "Reactivate"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={onDelete}
+              disabled={actionLoading === item.id}
+              className="h-9 px-4 bg-gradient-to-r from-pink-600/70 to-fuchsia-600/70
+                hover:from-pink-500 hover:to-fuchsia-500 text-white border-0 gap-2 text-xs font-medium
+                shadow-md hover:shadow-pink-500/20 active:scale-[0.97] transition-all duration-200"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Scrollable body ── */}
+      <ScrollArea className="flex-1">
+        <div className="px-6 py-5 space-y-6">
+
+          {/* Suspension notice */}
+          {!isActive && (
+            <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-500/8 border border-red-500/20">
+              <ShieldOff className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-300 text-xs font-semibold mb-0.5">Account Suspended</p>
+                <p className="text-white/40 text-xs leading-relaxed">
+                  {item.suspension_reason || "Suspended by administrator. No reason provided."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Profile info */}
+          <DetailBlock icon={<User className="w-3.5 h-3.5" />} label={isUser ? "Profile" : "Contact"}>
+            <div className="space-y-2">
+              {isUser ? (
+                <>
+                  {item.affiliation && (
+                    <InfoRow icon={<Building2 className="w-3 h-3" />} label="Affiliation" value={item.affiliation} />
+                  )}
+                  {item.country && (
+                    <InfoRow icon={<MapPin className="w-3 h-3" />} label="Country" value={item.country} />
+                  )}
+                  {item.email && (
+                    <InfoRow icon={<Mail className="w-3 h-3" />} label="Email" value={item.email} />
+                  )}
+                </>
+              ) : (
+                <>
+                  {item.author_name && (
+                    <InfoRow icon={<User className="w-3 h-3" />} label="Contact Person" value={item.author_name} />
+                  )}
+                  {item.email && (
+                    <InfoRow icon={<Mail className="w-3 h-3" />} label="Email" value={item.email} />
+                  )}
+                  {item.website && (
+                    <InfoRow icon={<Globe className="w-3 h-3" />} label="Website" value={item.website} />
+                  )}
+                </>
+              )}
+              <InfoRow
+                icon={<Calendar className="w-3 h-3" />}
+                label="Joined"
+                value={new Date(item.created_at).toLocaleDateString("en-US", {
+                  year: "numeric", month: "long", day: "numeric",
+                })}
+              />
+            </div>
+          </DetailBlock>
+
+          {/* Stats */}
+          <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Activity Stats">
+            <div className="grid grid-cols-3 gap-2">
+              {isUser ? (
+                <>
+                  <StatCard label="Projects"  value={item.total_projects         ?? 0} />
+                  <StatCard label="Hackathons" value={item.total_hackathons_joined ?? 0} />
+                  <StatCard label="Blogs Read" value={item.total_blogs_read        ?? 0} />
+                </>
+              ) : (
+                <>
+                  <StatCard label="Posts"     value={item.total_announcements ?? 0} />
+                  <StatCard label="Blogs"     value={item.total_blogs         ?? 0} />
+                  <StatCard label="Resources" value={item.total_resources     ?? 0} />
+                </>
+              )}
+            </div>
+          </DetailBlock>
+
+          {/* Description / bio */}
+          {(item.bio || item.description) && (
+            <DetailBlock icon={<Activity className="w-3.5 h-3.5" />} label={isUser ? "Bio" : "Description"}>
+              <p className="text-white/55 text-sm leading-relaxed">
+                {item.bio || item.description}
+              </p>
+            </DetailBlock>
+          )}
+
+          {/* Account ID */}
+          <div className="pt-1 pb-2">
+            <p className="flex items-center gap-1.5 text-[11px] text-white/15 font-mono">
+              <Hash className="w-3 h-3" />{item.id}
+            </p>
+          </div>
+        </div>
+      </ScrollArea>
+    </div>
+  )
+}
+
+// ── Small helpers ─────────────────────────────────────────────────────────────
+function DetailBlock({ icon, label, children }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-1.5 mb-3">
+        <span className="text-white/35">{icon}</span>
+        {label}
+      </p>
+      {children}
+    </div>
+  )
+}
+
+function InfoRow({ icon, label, value }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className="text-white/25 shrink-0">{icon}</span>
+      <span className="text-white/30 text-xs min-w-[80px]">{label}</span>
+      <span className="text-white/65 text-xs truncate">{value}</span>
+    </div>
+  )
+}
+
+function StatCard({ label, value }) {
+  return (
+    <div className="px-3 py-3 rounded-xl bg-white/4 border border-white/8 text-center">
+      <p className="text-lg font-bold text-white/80">{value}</p>
+      <p className="text-[10px] text-white/30 mt-0.5">{label}</p>
     </div>
   )
 }
