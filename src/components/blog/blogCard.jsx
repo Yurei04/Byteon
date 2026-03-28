@@ -97,7 +97,10 @@ export default function BlogCard({ item, onDelete, onUpdate}) {
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => onDelete(item.id)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(item.id)
+            }}
             className="ml-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 border-0 shadow-lg shadow-red-500/30 transition-all duration-300"
           >
             <Trash2 className="w-4 h-4" />
