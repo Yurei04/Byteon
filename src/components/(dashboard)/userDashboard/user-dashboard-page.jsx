@@ -30,7 +30,6 @@ import UserProfile        from "@/components/(dashboard)/userDashboard/profile"
 import BlogEmpty          from "@/components/blog/blog-empty"
 import BlogCard           from "@/components/blog/blogCard"
 import PendingBlogUserForm from "@/components/blog/blog-pending-user"
-import AchievementsTab    from "@/components/achievements/achievementStab"
 import { ReturnButton }   from "@/components/return"
 import {
   Pagination, PaginationContent, PaginationItem,
@@ -60,7 +59,10 @@ export default function UserDashboardPage() {
 
   // ── Notification unread count (for tab badge) ──────────────────────────────
   // profile.user_id is the auth UUID for users table
-  const { unreadCount } = useNotifications({ userId: profile?.user_id, role: "user" })
+  const { unreadCount } = useNotifications({
+    userId: profile?.user_id || null,
+    role: "user"
+  })
   const [deleteDialog, setDeleteDialog] = useState(null)
   const [deleteReason, setDeleteReason] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
@@ -78,7 +80,7 @@ export default function UserDashboardPage() {
     fetchBlogs(profile.id)
     subscribeToAchievements(profile.user_id)
     return () => { if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current) }
-  }, [profile.achievements_metadata, profile.id, profile.user_id])
+  }, [profile?.achievements_metadata, profile?.id, profile?.user_id])
 
   useEffect(() => {
     const handleVisibility = () => {
