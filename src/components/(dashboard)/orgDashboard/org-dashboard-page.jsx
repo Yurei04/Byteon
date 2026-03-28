@@ -10,32 +10,37 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
-import { 
+import {
   Plus, FileText, Megaphone, BookOpen, TrendingUp,
   Loader2, Trash2, AlertCircle, CheckCircle,
-  Building2, AtSign, Mail, Sparkles           // ← added Sparkles
+  Building2, AtSign, Mail, Sparkles, Bell,
 } from "lucide-react"
-import { 
+import {
   Pagination, PaginationContent, PaginationItem,
   PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis,
 } from "@/components/ui/pagination"
 
-import { useAuth } from "@/components/(auth)/authContext" 
+import { useAuth } from "@/components/(auth)/authContext"
 
 import PendingAnnounceForm from "../announce/announce-pending"
 import PendingBlogOrgForm  from "@/components/blog/blog-pending"
 import PendingResourceForm from "@/components/resourceHub/resource-pending"
 
-import ResourceCard       from "@/components/resourceHub/resourceHub-card"
-import BlogCard           from "@/components/blog/blogCard"
-import AnnouncementCard   from "@/components/(dashboard)/announce/announce-card"
-import OrgProfileHeader   from "./org-profile-header"
-import OrgAboutSection    from "./org-about-section"
-import OrgQuickStats      from "./org-quick-stats"
+import ResourceCard     from "@/components/resourceHub/resourceHub-card"
+import BlogCard         from "@/components/blog/blogCard"
+import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
+import OrgProfileHeader from "./org-profile-header"
+import OrgAboutSection  from "./org-about-section"
+import OrgQuickStats    from "./org-quick-stats"
 import DeleteAccountModal from "./delete-account"
 import { availableOrgAchievements } from "./org-achievements"
-import { ReturnButton }   from "@/components/return"
-import PosterMaker from "@/components/poster-maker/poster-maker"
+import { ReturnButton } from "@/components/return"
+import PosterMaker      from "@/components/poster-maker/poster-maker"
+
+// ── Notifications ──────────────────────────────────────────────────────────────
+import NotificationsTab from "@/components/notifications/notification-tab"
+import { useNotifications } from "@/components/notifications/use-notification" 
+import { notifyContentDeletedByOrg } from "@/lib/notification" 
 
 const ITEMS_PER_PAGE = 6
 
@@ -53,8 +58,7 @@ export default function OrgDashboardPage() {
 
   const [contentLoading, setContentLoading] = useState(false)
   const [stats, setStats] = useState({
-    totalAnnouncements: 0, totalBlogs: 0,
-    totalResources: 0, activeAnnouncements: 0,
+    totalAnnouncements: 0, totalBlogs: 0, totalResources: 0, activeAnnouncements: 0,
   })
 
   const [currentPageAnnouncement, setCurrentPageAnnouncement] = useState(1)
@@ -72,6 +76,9 @@ export default function OrgDashboardPage() {
     color_scheme: "black", active: true, achievements: [],
   })
 
+  // ── Notification unread count for tab badge ────────────────────────────────
+  const { unreadCount } = useNotifications({ userId: session?.user?.id, role: "org_admin" })
+
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (authLoading) return
@@ -86,23 +93,17 @@ export default function OrgDashboardPage() {
       ? (typeof profile.achievements === "string" ? JSON.parse(profile.achievements) : profile.achievements)
       : []
     setFormData({
-      name:            profile.name || "",
-      description:     profile.description || "",
-      author_name:     profile.author_name || "",
-      primary_color:   profile.primary_color || "#000000",
-      secondary_color: profile.secondary_color || "#1F2937",
-      color_scheme:    profile.color_scheme || "black",
-      active:          profile.active !== false,
-      achievements:    orgAchievements,
+      name: profile.name || "", description: profile.description || "",
+      author_name: profile.author_name || "", primary_color: profile.primary_color || "#000000",
+      secondary_color: profile.secondary_color || "#1F2937", color_scheme: profile.color_scheme || "black",
+      active: profile.active !== false, achievements: orgAchievements,
     })
   }, [profile])
 
   useEffect(() => { if (!profile?.id) return; fetchAllData(profile.id) }, [profile?.id])
 
   useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible" && profile?.id) fetchAllData(profile.id)
-    }
+    const handleVisibility = () => { if (document.visibilityState === "visible" && profile?.id) fetchAllData(profile.id) }
     document.addEventListener("visibilitychange", handleVisibility)
     return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [profile?.id])
@@ -111,32 +112,24 @@ export default function OrgDashboardPage() {
   const fetchAllData = async (orgId) => {
     setContentLoading(true)
     await Promise.all([fetchAnnouncements(orgId), fetchBlogs(orgId), fetchResources(orgId)])
-    setCurrentPageAnnouncement(1)
-    setCurrentPageBlogs(1)
-    setCurrentPageResources(1)
+    setCurrentPageAnnouncement(1); setCurrentPageBlogs(1); setCurrentPageResources(1)
     setContentLoading(false)
   }
 
   const fetchAnnouncements = async (orgId) => {
-    const { data, error } = await supabase
-      .from("announcements").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
+    const { data, error } = await supabase.from("announcements").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
     if (error) { console.error("fetchAnnouncements:", error); return }
     setAnnouncements(data || [])
-    const active = data?.filter(a => new Date(a.date_end) >= new Date()).length || 0
-    setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: active }))
+    setStats(prev => ({ ...prev, totalAnnouncements: data?.length || 0, activeAnnouncements: data?.filter(a => new Date(a.date_end) >= new Date()).length || 0 }))
   }
-
   const fetchBlogs = async (orgId) => {
-    const { data, error } = await supabase
-      .from("blogs").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
+    const { data, error } = await supabase.from("blogs").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
     if (error) { console.error("fetchBlogs:", error); return }
     setBlogs(data || [])
     setStats(prev => ({ ...prev, totalBlogs: data?.length || 0 }))
   }
-
   const fetchResources = async (orgId) => {
-    const { data, error } = await supabase
-      .from("resource_hub").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
+    const { data, error } = await supabase.from("resource_hub").select("*").eq("organization_id", orgId).order("created_at", { ascending: false })
     if (error) { console.error("fetchResources:", error); return }
     setResources(data || [])
     setStats(prev => ({ ...prev, totalResources: data?.length || 0 }))
@@ -154,72 +147,60 @@ export default function OrgDashboardPage() {
   }
 
   const handleProfileSubmit = async () => {
-    if (!formData.name || !formData.description) {
-      setAlert({ type: "error", message: "Organization Name and Description are required." }); return
-    }
-    if (!formData.author_name) {
-      setAlert({ type: "error", message: "Username (Author Name) is required." }); return
-    }
-    setIsProfileSaving(true)
-    setAlert(null)
+    if (!formData.name || !formData.description) { setAlert({ type: "error", message: "Organization Name and Description are required." }); return }
+    if (!formData.author_name) { setAlert({ type: "error", message: "Username (Author Name) is required." }); return }
+    setIsProfileSaving(true); setAlert(null)
     try {
-      const { error } = await supabase
-        .from("organizations")
-        .update({
-          name:            formData.name,
-          description:     formData.description,
-          author_name:     formData.author_name,
-          primary_color:   formData.primary_color,
-          secondary_color: formData.secondary_color,
-          color_scheme:    formData.color_scheme,
-          active:          formData.active,
-          achievements:    JSON.stringify(formData.achievements),
-          updated_at:      new Date().toISOString(),
-        })
-        .eq("user_id", profile.user_id)
+      const { error } = await supabase.from("organizations").update({
+        name: formData.name, description: formData.description, author_name: formData.author_name,
+        primary_color: formData.primary_color, secondary_color: formData.secondary_color,
+        color_scheme: formData.color_scheme, active: formData.active,
+        achievements: JSON.stringify(formData.achievements), updated_at: new Date().toISOString(),
+      }).eq("user_id", profile.user_id)
       if (error) throw error
       await refreshProfile()
       setAlert({ type: "success", message: "Organization profile updated successfully!" })
       setIsEditing(false)
       setTimeout(() => setAlert(null), 2000)
-    } catch (error) {
-      setAlert({ type: "error", message: `Failed to update profile: ${error.message}` })
-    } finally {
-      setIsProfileSaving(false)
-    }
+    } catch (error) { setAlert({ type: "error", message: `Failed to update profile: ${error.message}` }) }
+    finally { setIsProfileSaving(false) }
   }
 
   const handleProfileCancel = () => {
     setIsEditing(false)
     if (profile) {
       const orgAchievements = profile.achievements
-        ? (typeof profile.achievements === "string" ? JSON.parse(profile.achievements) : profile.achievements)
-        : []
+        ? (typeof profile.achievements === "string" ? JSON.parse(profile.achievements) : profile.achievements) : []
       setFormData({
-        name:            profile.name || "",
-        description:     profile.description || "",
-        author_name:     profile.author_name || "",
-        primary_color:   profile.primary_color || "#000000",
-        secondary_color: profile.secondary_color || "#1F2937",
-        color_scheme:    profile.color_scheme || "black",
-        active:          profile.active !== false,
-        achievements:    orgAchievements,
+        name: profile.name || "", description: profile.description || "", author_name: profile.author_name || "",
+        primary_color: profile.primary_color || "#000000", secondary_color: profile.secondary_color || "#1F2937",
+        color_scheme: profile.color_scheme || "black", active: profile.active !== false, achievements: orgAchievements,
       })
     }
   }
 
+  // ── Delete content → notify super admins ──────────────────────────────────
   const handleDelete = async (type, id) => {
     if (!confirm(`Are you sure you want to delete this ${type}?`)) return
-    const table = type === "announcement" ? "announcements" : type === "blog" ? "blogs" : "resource_hub"
+
+    const sourceArr  = type === "announcement" ? announcements : type === "blog" ? blogs : resources
+    const item       = sourceArr.find((i) => i.id === id)
+    const table      = type === "announcement" ? "announcements" : type === "blog" ? "blogs" : "resource_hub"
+
     try {
       const { error } = await supabase.from(table).delete().eq("id", id)
       if (error) throw error
       if (type === "announcement") refreshAnnouncements()
-      else if (type === "blog") refreshBlogs()
-      else refreshResources()
-    } catch (error) {
-      console.error("Delete error:", error)
-    }
+      else if (type === "blog")    refreshBlogs()
+      else                         refreshResources()
+
+      // Notify super admins
+      await notifyContentDeletedByOrg({
+        orgName:       profile?.name || "An organization",
+        contentType:   type,
+        contentTitle:  item?.title   || "Untitled",
+      })
+    } catch (error) { console.error("Delete error:", error) }
   }
 
   // ── Pagination helpers ─────────────────────────────────────────────────────
@@ -229,14 +210,7 @@ export default function OrgDashboardPage() {
   const generatePaginationItems = (totalPages, currentPage, onPageChange) => {
     const items = []
     const maxVisible = 5
-    items.push(
-      <PaginationItem key="prev">
-        <PaginationPrevious
-          onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
-          className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
-        />
-      </PaginationItem>
-    )
+    items.push(<PaginationItem key="prev"><PaginationPrevious onClick={() => currentPage > 1 && onPageChange(currentPage - 1)} className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} /></PaginationItem>)
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2))
     let end   = Math.min(totalPages, start + maxVisible - 1)
     if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1)
@@ -245,27 +219,13 @@ export default function OrgDashboardPage() {
       if (start > 2) items.push(<PaginationItem key="e1"><PaginationEllipsis /></PaginationItem>)
     }
     for (let p = start; p <= end; p++) {
-      items.push(
-        <PaginationItem key={p}>
-          <PaginationLink onClick={() => onPageChange(p)} isActive={p === currentPage}
-            className={`cursor-pointer ${p === currentPage ? "bg-fuchsia-600/50 text-white" : "hover:bg-fuchsia-800/20"}`}>
-            {p}
-          </PaginationLink>
-        </PaginationItem>
-      )
+      items.push(<PaginationItem key={p}><PaginationLink onClick={() => onPageChange(p)} isActive={p === currentPage} className={`cursor-pointer ${p === currentPage ? "bg-fuchsia-600/50 text-white" : "hover:bg-fuchsia-800/20"}`}>{p}</PaginationLink></PaginationItem>)
     }
     if (end < totalPages) {
       if (end < totalPages - 1) items.push(<PaginationItem key="e2"><PaginationEllipsis /></PaginationItem>)
       items.push(<PaginationItem key={totalPages}><PaginationLink onClick={() => onPageChange(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink></PaginationItem>)
     }
-    items.push(
-      <PaginationItem key="next">
-        <PaginationNext
-          onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
-          className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"}
-        />
-      </PaginationItem>
-    )
+    items.push(<PaginationItem key="next"><PaginationNext onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)} className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} /></PaginationItem>)
     return items
   }
 
@@ -273,18 +233,33 @@ export default function OrgDashboardPage() {
   const paginatedBlogs         = useMemo(() => paginateData(blogs, currentPageBlogs),               [blogs, currentPageBlogs])
   const paginatedResources     = useMemo(() => paginateData(resources, currentPageResources),       [resources, currentPageResources])
 
-  // ── Guards ─────────────────────────────────────────────────────────────────
   if (authLoading || (isLoggedIn && role === null)) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
-      </div>
-    )
+    return <div className="w-full min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" /></div>
   }
-
   if (!isLoggedIn || role !== "org_admin") return null
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const mainTabs = [
+    { value: "profile", icon: <Building2 className="w-4 h-4" />, label: "Profile"      },
+    { value: "view",    icon: <FileText  className="w-4 h-4" />, label: "View All"     },
+    { value: "create",  icon: <Plus      className="w-4 h-4" />, label: "Create New"   },
+    { value: "posters", icon: <Sparkles  className="w-4 h-4" />, label: "Poster Maker" },
+    {
+      value: "notifications",
+      icon: <Bell className="w-4 h-4" />,
+      label: (
+        <span className="flex items-center gap-1">
+          Alerts
+          {unreadCount > 0 && (
+            <span className="min-w-[17px] h-[17px] flex items-center justify-center rounded-full
+              bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white text-[10px] font-bold px-1 shadow-sm">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </span>
+      ),
+    },
+  ]
+
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-6">
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
@@ -322,7 +297,6 @@ export default function OrgDashboardPage() {
                 </div>
               </CardContent>
             </Card>
-
             {[
               { label: "Announcements", count: stats.totalAnnouncements, Icon: Megaphone,  color: "fuchsia" },
               { label: "Resources",     count: stats.totalResources,     Icon: BookOpen,   color: "emerald" },
@@ -351,17 +325,11 @@ export default function OrgDashboardPage() {
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
 
-                  {/* ── Tab list — now 4 tabs ── */}
-                  <TabsList className="grid w-full grid-cols-4 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
-                    {[
-                      { value: "profile", icon: <Building2  className="w-4 h-4" />, label: "Profile"      },
-                      { value: "view",    icon: <FileText    className="w-4 h-4" />, label: "View All"     },
-                      { value: "create",  icon: <Plus        className="w-4 h-4" />, label: "Create New"   },
-                      { value: "posters", icon: <Sparkles   className="w-4 h-4" />, label: "Poster Maker" }, // ← NEW
-                    ].map(({ value, icon, label }) => (
+                  <TabsList className="grid w-full grid-cols-5 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
+                    {mainTabs.map(({ value, icon, label }) => (
                       <TabsTrigger key={value} value={value}
-                        className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all">
-                        {icon}{label}
+                        className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all text-xs sm:text-sm">
+                        {icon}<span className="hidden sm:inline">{label}</span>
                       </TabsTrigger>
                     ))}
                   </TabsList>
@@ -376,40 +344,25 @@ export default function OrgDashboardPage() {
                             <AlertDescription>{alert.message}</AlertDescription>
                           </Alert>
                         )}
-                        <OrgProfileHeader
-                          formData={formData} profile={profile} isEditing={isEditing}
-                          isLoading={isProfileSaving} onEdit={() => setIsEditing(true)}
-                          onSave={handleProfileSubmit} onCancel={handleProfileCancel}
-                        />
+                        <OrgProfileHeader formData={formData} profile={profile} isEditing={isEditing} isLoading={isProfileSaving}
+                          onEdit={() => setIsEditing(true)} onSave={handleProfileSubmit} onCancel={handleProfileCancel} />
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                           <div className="lg:col-span-2 space-y-6">
                             <OrgAboutSection formData={formData} isEditing={isEditing} onChange={handleProfileChange} />
                             <Card className="bg-black/20 backdrop-blur-lg border border-purple-500/20">
                               <CardContent className="p-6">
-                                <h3 className="text-xl font-bold text-purple-200 mb-4 flex items-center gap-2">
-                                  <AtSign className="w-5 h-5" />Account Information
-                                </h3>
+                                <h3 className="text-xl font-bold text-purple-200 mb-4 flex items-center gap-2"><AtSign className="w-5 h-5" />Account Information</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
-                                    <Label className="text-purple-300 mb-2 block flex items-center gap-2">
-                                      <AtSign className="w-4 h-4" />Username (Author Name)
-                                    </Label>
-                                    {isEditing ? (
-                                      <Input name="author_name" value={formData.author_name} onChange={handleProfileChange}
-                                        className="bg-black/30 border-purple-500/30 text-white" placeholder="johndoe" />
-                                    ) : (
-                                      <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">
-                                        {formData.author_name || "Not set"}
-                                      </p>
-                                    )}
+                                    <Label className="text-purple-300 mb-2 block flex items-center gap-2"><AtSign className="w-4 h-4" />Username (Author Name)</Label>
+                                    {isEditing
+                                      ? <Input name="author_name" value={formData.author_name} onChange={handleProfileChange} className="bg-black/30 border-purple-500/30 text-white" placeholder="johndoe" />
+                                      : <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">{formData.author_name || "Not set"}</p>
+                                    }
                                   </div>
                                   <div>
-                                    <Label className="text-purple-300 mb-2 block flex items-center gap-2">
-                                      <Mail className="w-4 h-4" />Email (Login)
-                                    </Label>
-                                    <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">
-                                      {session?.user?.email}
-                                    </p>
+                                    <Label className="text-purple-300 mb-2 block flex items-center gap-2"><Mail className="w-4 h-4" />Email (Login)</Label>
+                                    <p className="text-white p-2 bg-black/20 rounded border border-purple-500/20">{session?.user?.email}</p>
                                   </div>
                                 </div>
                               </CardContent>
@@ -419,9 +372,7 @@ export default function OrgDashboardPage() {
                             <OrgQuickStats formData={formData} totalAchievements={availableOrgAchievements.length} />
                             <Card className="bg-gradient-to-br from-red-900/40 to-slate-950/40 backdrop-blur-lg border border-red-500/30">
                               <CardContent className="p-6">
-                                <h3 className="text-xl font-bold text-red-300 mb-4 flex items-center gap-2">
-                                  <AlertCircle className="w-5 h-5" />Danger Zone
-                                </h3>
+                                <h3 className="text-xl font-bold text-red-300 mb-4 flex items-center gap-2"><AlertCircle className="w-5 h-5" />Danger Zone</h3>
                                 <Button onClick={() => setShowDeleteModal(true)} variant="destructive" className="w-full bg-red-600 hover:bg-red-700">
                                   <Trash2 className="w-4 h-4 mr-2" />Delete Account
                                 </Button>
@@ -439,52 +390,34 @@ export default function OrgDashboardPage() {
                       <CardContent className="p-6">
                         <Tabs value={activeViewTab} onValueChange={setActiveViewTab}>
                           <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-purple-500/20 p-1">
-                            <TabsTrigger value="viewAnnouncement" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
-                              <Megaphone className="w-4 h-4 mr-2" />Announcements
-                            </TabsTrigger>
-                            <TabsTrigger value="viewBlogs" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
-                              <FileText className="w-4 h-4 mr-2" />Blogs
-                            </TabsTrigger>
-                            <TabsTrigger value="viewResources" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white">
-                              <BookOpen className="w-4 h-4 mr-2" />Resources
-                            </TabsTrigger>
+                            <TabsTrigger value="viewAnnouncement" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"><Megaphone className="w-4 h-4 mr-2" />Announcements</TabsTrigger>
+                            <TabsTrigger value="viewBlogs"        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white"><FileText className="w-4 h-4 mr-2" />Blogs</TabsTrigger>
+                            <TabsTrigger value="viewResources"    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white"><BookOpen className="w-4 h-4 mr-2" />Resources</TabsTrigger>
                           </TabsList>
-
                           {[
                             { tab: "viewAnnouncement", label: "Your Announcements", gradient: "from-fuchsia-300 to-purple-300", spinner: "fuchsia",
-                              data: paginatedAnnouncements, totalPages: getTotalPages(announcements),
-                              currentPage: currentPageAnnouncement, setPage: setCurrentPageAnnouncement,
+                              data: paginatedAnnouncements, totalPages: getTotalPages(announcements), currentPage: currentPageAnnouncement, setPage: setCurrentPageAnnouncement,
                               renderCard: (item) => <AnnouncementCard key={item.id} item={item} onUpdate={refreshAnnouncements} onDelete={(id) => handleDelete("announcement", id)} /> },
                             { tab: "viewBlogs", label: "Your Blogs", gradient: "from-purple-300 to-pink-300", spinner: "purple",
-                              data: paginatedBlogs, totalPages: getTotalPages(blogs),
-                              currentPage: currentPageBlogs, setPage: setCurrentPageBlogs,
+                              data: paginatedBlogs, totalPages: getTotalPages(blogs), currentPage: currentPageBlogs, setPage: setCurrentPageBlogs,
                               renderCard: (item) => <BlogCard key={item.id} item={item} onUpdate={refreshBlogs} onDelete={(id) => handleDelete("blog", id)} /> },
                             { tab: "viewResources", label: "Your Resources", gradient: "from-emerald-300 to-green-300", spinner: "emerald",
-                              data: paginatedResources, totalPages: getTotalPages(resources),
-                              currentPage: currentPageResources, setPage: setCurrentPageResources,
+                              data: paginatedResources, totalPages: getTotalPages(resources), currentPage: currentPageResources, setPage: setCurrentPageResources,
                               renderCard: (item) => <ResourceCard key={item.id} item={item} onDelete={(id) => handleDelete("resource", id)} /> },
                           ].map(({ tab, label, gradient, data, totalPages, currentPage, setPage, spinner, renderCard }) => (
                             <TabsContent key={tab} value={tab}>
                               <h3 className={`text-2xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent mb-6`}>{label}</h3>
                               {contentLoading ? (
-                                <div className="flex justify-center py-12">
-                                  <Loader2 className={`w-8 h-8 animate-spin text-${spinner}-300`} />
-                                </div>
+                                <div className="flex justify-center py-12"><Loader2 className={`w-8 h-8 animate-spin text-${spinner}-300`} /></div>
                               ) : data.length === 0 ? (
                                 <Alert className={`bg-${spinner}-900/20 border-${spinner}-500/30`}>
                                   <AlertCircle className={`w-4 h-4 text-${spinner}-300`} />
-                                  <AlertDescription className="text-center py-8">
-                                    No {label.split(" ")[1].toLowerCase()} yet. Create your first one!
-                                  </AlertDescription>
+                                  <AlertDescription className="text-center py-8">No {label.split(" ")[1].toLowerCase()} yet. Create your first one!</AlertDescription>
                                 </Alert>
                               ) : (
                                 <>
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">{data.map(renderCard)}</div>
-                                  {totalPages > 1 && (
-                                    <Pagination className="mt-8">
-                                      <PaginationContent>{generatePaginationItems(totalPages, currentPage, setPage)}</PaginationContent>
-                                    </Pagination>
-                                  )}
+                                  {totalPages > 1 && <Pagination className="mt-8"><PaginationContent>{generatePaginationItems(totalPages, currentPage, setPage)}</PaginationContent></Pagination>}
                                 </>
                               )}
                             </TabsContent>
@@ -500,37 +433,43 @@ export default function OrgDashboardPage() {
                       <CardContent className="p-6">
                         <Tabs value={activeCreateTab} onValueChange={setActiveCreateTab}>
                           <TabsList className="grid w-full grid-cols-3 mb-6 bg-black/20 border border-purple-500/20 p-1">
-                            <TabsTrigger value="createAnnouncement" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
-                              <Megaphone className="w-4 h-4 mr-2" />Announcement
-                            </TabsTrigger>
-                            <TabsTrigger value="createBlogs" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white">
-                              <FileText className="w-4 h-4 mr-2" />Blog
-                            </TabsTrigger>
-                            <TabsTrigger value="createResources" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white">
-                              <BookOpen className="w-4 h-4 mr-2" />Resource
-                            </TabsTrigger>
+                            <TabsTrigger value="createAnnouncement" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white"><Megaphone className="w-4 h-4 mr-2" />Announcement</TabsTrigger>
+                            <TabsTrigger value="createBlogs"        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white"><FileText className="w-4 h-4 mr-2" />Blog</TabsTrigger>
+                            <TabsTrigger value="createResources"    className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:to-green-600 data-[state=active]:text-white"><BookOpen className="w-4 h-4 mr-2" />Resource</TabsTrigger>
                           </TabsList>
-                          <TabsContent value="createAnnouncement">
-                            <PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
-                          </TabsContent>
-                          <TabsContent value="createBlogs">
-                            <PendingBlogOrgForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
-                          </TabsContent>
-                          <TabsContent value="createResources">
-                            <PendingResourceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} />
-                          </TabsContent>
+                          <TabsContent value="createAnnouncement"><PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} /></TabsContent>
+                          <TabsContent value="createBlogs"><PendingBlogOrgForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} /></TabsContent>
+                          <TabsContent value="createResources"><PendingResourceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} /></TabsContent>
                         </Tabs>
                       </CardContent>
                     </Card>
                   </TabsContent>
 
-                  {/* ── Poster Maker Tab ── NEW */}
+                  {/* ── Poster Maker Tab ── */}
                   <TabsContent value="posters" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-0 overflow-hidden rounded-xl">
-                          {/* Strip PosterMaker's own full-page layout — render inline */}
                           <PosterMaker embedded />
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </TabsContent>
+
+                  {/* ── Notifications Tab ── */}
+                  <TabsContent value="notifications" className="mt-0">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="mb-4">
+                            <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-pink-300">
+                              Notifications
+                            </h3>
+                            <p className="text-white/35 text-xs mt-1">
+                              Approval decisions, content alerts, and account status updates.
+                            </p>
+                          </div>
+                          <NotificationsTab userId={session?.user?.id} role="org_admin" />
                         </CardContent>
                       </Card>
                     </motion.div>
@@ -544,11 +483,7 @@ export default function OrgDashboardPage() {
       </div>
 
       {showDeleteModal && (
-        <DeleteAccountModal
-          organizationName={profile?.name}
-          userId={profile?.user_id}
-          onClose={() => setShowDeleteModal(false)}
-        />
+        <DeleteAccountModal organizationName={profile?.name} userId={profile?.user_id} onClose={() => setShowDeleteModal(false)} />
       )}
     </div>
   )

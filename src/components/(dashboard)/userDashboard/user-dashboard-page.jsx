@@ -9,23 +9,25 @@ import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import {
   Plus, FileText, AlertCircle, User2,
-  BookOpen, Eye, Loader2, Trophy, Star,
+  BookOpen, Eye, Loader2, Trophy, Star, Bell,
 } from "lucide-react"
 
 import { useAuth } from "@/components/(auth)/authContext"
-import UserProfile    from "@/components/(dashboard)/userDashboard/profile"
-import BlogEmpty      from "@/components/blog/blog-empty"
-import BlogCard       from "@/components/blog/blogCard"
-
-// ── Pending form (goes to approval queue, not live DB) ────────────────────────
+import UserProfile        from "@/components/(dashboard)/userDashboard/profile"
+import BlogEmpty          from "@/components/blog/blog-empty"
+import BlogCard           from "@/components/blog/blogCard"
 import PendingBlogUserForm from "@/components/blog/blog-pending-user"
-
-import AchievementsTab from "@/components/achievements/achievementStab"
-import { ReturnButton } from "@/components/return"
+import AchievementsTab    from "@/components/achievements/achievementStab"
+import { ReturnButton }   from "@/components/return"
 import {
   Pagination, PaginationContent, PaginationItem,
   PaginationLink, PaginationNext, PaginationPrevious,
 } from "@/components/ui/pagination"
+
+// ── Notifications ──────────────────────────────────────────────────────────────
+import NotificationsTab from "@/components/notifications/notification-tab"
+import { useNotifications } from "@/components/notifications/use-notification" 
+import { notifyBlogDeletedByUser } from "@/lib/notifications"
 
 const ITEMS_PER_PAGE = 6
 
@@ -42,11 +44,14 @@ export default function UserDashboardPage() {
 
   const realtimeChannelRef = useRef(null)
 
+  // ── Notification unread count (for tab badge) ──────────────────────────────
+  // profile.user_id is the auth UUID for users table
+  const { unreadCount } = useNotifications({ userId: profile?.user_id, role: "user" })
+
   // ── Auth guard ─────────────────────────────────────────────────────────────
-  // IMPORTANT: wait for role to resolve (null = still querying DB)
   useEffect(() => {
     if (authLoading) return
-    if (isLoggedIn && role === null) return   // DB query still in flight — wait
+    if (isLoggedIn && role === null) return
     if (!isLoggedIn) { router.push("/log-in"); return }
     if (role !== "user") { router.push("/unauthorized"); return }
   }, [authLoading, isLoggedIn, role])
@@ -56,9 +61,7 @@ export default function UserDashboardPage() {
     setAchievementsMetadata(profile.achievements_metadata ?? {})
     fetchBlogs(profile.id)
     subscribeToAchievements(profile.user_id)
-    return () => {
-      if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current)
-    }
+    return () => { if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current) }
   }, [profile?.id])
 
   useEffect(() => {
@@ -73,15 +76,9 @@ export default function UserDashboardPage() {
     if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current)
     realtimeChannelRef.current = supabase
       .channel(`dashboard-achievements-${authUserId}`)
-      .on("postgres_changes", {
-        event: "UPDATE", schema: "public", table: "users",
-        filter: `user_id=eq.${authUserId}`,
-      }, (payload) => {
-        if (payload.new?.achievements_metadata !== undefined) {
-          setAchievementsMetadata(payload.new.achievements_metadata ?? {})
-        }
-      })
-      .subscribe()
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "users", filter: `user_id=eq.${authUserId}` },
+        (payload) => { if (payload.new?.achievements_metadata !== undefined) setAchievementsMetadata(payload.new.achievements_metadata ?? {}) }
+      ).subscribe()
   }
 
   const fetchBlogs = async (bigintUserId) => {
@@ -95,46 +92,38 @@ export default function UserDashboardPage() {
         totalBlogs: data?.length || 0,
         totalViews: data?.reduce((sum, b) => sum + (b.views || 0), 0) || 0,
       })
-    } catch (error) {
-      console.error("fetchBlogs error:", error)
-    } finally {
-      setBlogsLoading(false)
-    }
+    } catch (error) { console.error("fetchBlogs error:", error) }
+    finally { setBlogsLoading(false) }
   }
 
   const handleBlogUpdate = () => profile?.id && fetchBlogs(profile.id)
 
+  // ── Delete blog → notify super admins ─────────────────────────────────────
   const handleDelete = async (_, id) => {
+    // Capture title before deletion
+    const blog = blogs.find((b) => b.id === id)
     try {
       const { error } = await supabase.from("blogs").delete().eq("id", id)
       if (error) throw error
       handleBlogUpdate()
-    } catch (error) {
-      console.error("Delete error:", error)
-    }
+      // Notify all super admins
+      await notifyBlogDeletedByUser({
+        userName:  profile?.name || "A user",
+        blogTitle: blog?.title  || "Untitled",
+      })
+    } catch (error) { console.error("Delete error:", error) }
   }
 
-  const paginatedBlogs = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE
-    return blogs.slice(start, start + ITEMS_PER_PAGE)
-  }, [blogs, currentPage])
-
+  const paginatedBlogs   = useMemo(() => blogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE), [blogs, currentPage])
   const totalPages       = Math.ceil(blogs.length / ITEMS_PER_PAGE)
   const handlePageChange = (page) => { if (page >= 1 && page <= totalPages) setCurrentPage(page) }
 
   const totalAchievements      = Object.keys(achievementsMetadata).length
   const totalAchievementPoints = Object.values(achievementsMetadata).reduce((sum, a) => sum + (a.reward_points ?? 0), 0)
 
-  // ── Guards ─────────────────────────────────────────────────────────────────
-  // Show spinner while auth loads OR while role is still resolving from DB
   if (authLoading || (isLoggedIn && role === null)) {
-    return (
-      <div className="w-full min-h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
-      </div>
-    )
+    return <div className="w-full min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" /></div>
   }
-
   if (!isLoggedIn || role !== "user") return null
 
   return (
@@ -191,9 +180,7 @@ export default function UserDashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-fuchsia-200/70 text-xs sm:text-sm mb-1">Total Blogs</p>
-                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-pink-300">
-                      {stats.totalBlogs}
-                    </p>
+                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-pink-300">{stats.totalBlogs}</p>
                   </div>
                   <div className="p-2 sm:p-3 bg-fuchsia-500/20 rounded-lg border border-fuchsia-400/30">
                     <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-fuchsia-300" />
@@ -209,9 +196,7 @@ export default function UserDashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-amber-200/70 text-xs sm:text-sm mb-1">Achievements</p>
-                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-300">
-                      {totalAchievements}
-                    </p>
+                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-300">{totalAchievements}</p>
                     {totalAchievementPoints > 0 && (
                       <p className="text-xs text-amber-300/60 mt-0.5 flex items-center gap-1">
                         <Star className="h-3 w-3 fill-amber-400 text-amber-400" />{totalAchievementPoints} pts
@@ -231,9 +216,7 @@ export default function UserDashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-emerald-200/70 text-xs sm:text-sm mb-1">Total Views</p>
-                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-green-300">
-                      {stats.totalViews}
-                    </p>
+                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-green-300">{stats.totalViews}</p>
                   </div>
                   <div className="p-2 sm:p-3 bg-emerald-500/20 rounded-lg border border-emerald-400/30">
                     <Eye className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-300" />
@@ -248,19 +231,33 @@ export default function UserDashboardPage() {
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 shadow-2xl">
               <CardContent className="p-4 sm:p-6 lg:p-8">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 mb-6 sm:mb-8 bg-black/30 border border-fuchsia-500/20 p-1 h-auto rounded-xl">
-                    <TabsTrigger value="profile"
-                      className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                      <User2 className="w-4 h-4" /><span className="hidden sm:inline">Profile</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="myBlog"
-                      className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                      <BookOpen className="w-4 h-4" /><span className="hidden sm:inline">My Blogs</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="create"
-                      className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                      <Plus className="w-4 h-4" /><span className="hidden sm:inline">Create</span>
-                    </TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-4 mb-6 sm:mb-8 bg-black/30 border border-fuchsia-500/20 p-1 h-auto rounded-xl">
+                    {[
+                      { value: "profile", icon: <User2    className="w-4 h-4" />, label: "Profile"  },
+                      { value: "myBlog",  icon: <BookOpen className="w-4 h-4" />, label: "My Blogs" },
+                      { value: "create",  icon: <Plus     className="w-4 h-4" />, label: "Create"   },
+                      {
+                        value: "notifications",
+                        icon: <Bell className="w-4 h-4" />,
+                        label: (
+                          <span className="flex items-center gap-1">
+                            Alerts
+                            {unreadCount > 0 && (
+                              <span className="min-w-[17px] h-[17px] flex items-center justify-center rounded-full
+                                bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white text-[10px] font-bold px-1">
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                              </span>
+                            )}
+                          </span>
+                        ),
+                      },
+                    ].map(({ value, icon, label }) => (
+                      <TabsTrigger key={value} value={value}
+                        className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
+                        {icon}<span className="hidden sm:inline">{label}</span>
+                        <span className="sm:hidden">{typeof label === "string" ? label : label}</span>
+                      </TabsTrigger>
+                    ))}
                   </TabsList>
 
                   <TabsContent value="profile" className="mt-0">
@@ -278,26 +275,21 @@ export default function UserDashboardPage() {
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
                           {blogsLoading ? (
-                            <div className="flex justify-center py-12">
-                              <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
-                            </div>
+                            <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" /></div>
                           ) : blogs.length === 0 ? (
                             <BlogEmpty />
                           ) : (
                             <div className="space-y-6">
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {paginatedBlogs.map((item) => (
-                                  <BlogCard key={item.id} item={item}
-                                    onUpdate={handleBlogUpdate}
-                                    onDelete={(id) => handleDelete("blog", id)} />
+                                  <BlogCard key={item.id} item={item} onUpdate={handleBlogUpdate} onDelete={(id) => handleDelete("blog", id)} />
                                 ))}
                               </div>
                               {totalPages > 1 && (
                                 <Pagination>
                                   <PaginationContent>
                                     <PaginationItem>
-                                      <PaginationPrevious
-                                        onClick={() => handlePageChange(currentPage - 1)}
+                                      <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)}
                                         className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} />
                                     </PaginationItem>
                                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
@@ -309,8 +301,7 @@ export default function UserDashboardPage() {
                                       </PaginationItem>
                                     ))}
                                     <PaginationItem>
-                                      <PaginationNext
-                                        onClick={() => handlePageChange(currentPage + 1)}
+                                      <PaginationNext onClick={() => handlePageChange(currentPage + 1)}
                                         className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} />
                                     </PaginationItem>
                                   </PaginationContent>
@@ -327,11 +318,26 @@ export default function UserDashboardPage() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
-                          <PendingBlogUserForm
-                            onSuccess={handleBlogUpdate}
-                            currentUser={profile}
-                            authUserId={profile?.id}
-                          />
+                          <PendingBlogUserForm onSuccess={handleBlogUpdate} currentUser={profile} authUserId={profile?.id} />
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  </TabsContent>
+
+                  {/* ── Notifications Tab ── */}
+                  <TabsContent value="notifications" className="mt-0">
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="mb-4">
+                            <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-pink-300">
+                              Your Notifications
+                            </h3>
+                            <p className="text-white/35 text-xs mt-1">
+                              Account status updates and platform alerts from admins.
+                            </p>
+                          </div>
+                          <NotificationsTab userId={profile?.user_id} role="user" />
                         </CardContent>
                       </Card>
                     </motion.div>
