@@ -27,7 +27,7 @@ import {
 // ── Notifications ──────────────────────────────────────────────────────────────
 import NotificationsTab from "@/components/notifications/notification-tab"
 import { useNotifications } from "@/components/notifications/use-notification" 
-import { notifyBlogDeletedByUser } from "@/lib/notifications"
+import { notifyBlogDeletedByUser } from "@/lib/notification" 
 
 const ITEMS_PER_PAGE = 6
 
