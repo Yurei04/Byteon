@@ -5,13 +5,15 @@ import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import {
   Plus, FileText, AlertCircle, User2,
   BookOpen, Eye, Loader2, Trophy, Star, Bell,
+  ShieldAlert, XCircle, Trash2,
 } from "lucide-react"
-
 import {
   AlertDialog,
   AlertDialogContent,
@@ -21,26 +23,22 @@ import {
   AlertDialogFooter,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog"
-
-import { Textarea } from "@/components/ui/textarea"
-import { ShieldAlert, XCircle, Trash2 } from "lucide-react"
-
-import { useAuth } from "@/components/(auth)/authContext"
-import UserProfile        from "@/components/(dashboard)/userDashboard/profile"
-import BlogEmpty          from "@/components/blog/blog-empty"
-import BlogCard           from "@/components/blog/blogCard"
-import PendingBlogUserForm from "@/components/blog/blog-pending-user"
-import { ReturnButton }   from "@/components/return"
 import {
   Pagination, PaginationContent, PaginationItem,
   PaginationLink, PaginationNext, PaginationPrevious,
 } from "@/components/ui/pagination"
 
-// ── Notifications ──────────────────────────────────────────────────────────────
-import NotificationsTab from "@/components/notifications/notification-tab"
-import { useNotifications } from "@/components/notifications/use-notification" 
-import { notifyBlogDeletedByUser } from "@/lib/notification" 
-import { Button } from "@/components/ui/button"
+import { useAuth }            from "@/components/(auth)/authContext"
+import UserProfile            from "@/components/(dashboard)/userDashboard/profile"
+import BlogEmpty              from "@/components/blog/blog-empty"
+import BlogCard               from "@/components/blog/blogCard"
+import PendingBlogUserForm    from "@/components/blog/blog-pending-user"
+import { ReturnButton }       from "@/components/return"
+
+// ── Notifications — CORRECT path with 's' ─────────────────────────────────────
+import NotificationsTab          from "@/components/notifications/notification-tab"
+import { useNotifications }      from "@/components/notifications/use-notification"
+import { notifyBlogDeletedByUser } from "@/lib/notifications"   // ← was "@/lib/notification" (missing 's')
 
 const ITEMS_PER_PAGE = 6
 
@@ -57,15 +55,14 @@ export default function UserDashboardPage() {
 
   const realtimeChannelRef = useRef(null)
 
-  // ── Notification unread count (for tab badge) ──────────────────────────────
-  // profile.user_id is the auth UUID for users table
-  const { unreadCount } = useNotifications({
-    userId: profile?.user_id || null,
-    role: "user"
-  })
-  const [deleteDialog, setDeleteDialog] = useState(null)
-  const [deleteReason, setDeleteReason] = useState("")
+  // ── Notification badge ─────────────────────────────────────────────────────
+  const { unreadCount } = useNotifications({ userId: profile?.user_id || null, role: "user" })
+
+  // ── Delete dialog state — lives at ROOT level so the portal always renders ─
+  const [deleteDialog, setDeleteDialog]   = useState(null)   // full blog object
+  const [deleteReason, setDeleteReason]   = useState("")
   const [actionLoading, setActionLoading] = useState(false)
+
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (authLoading) return
@@ -94,9 +91,14 @@ export default function UserDashboardPage() {
     if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current)
     realtimeChannelRef.current = supabase
       .channel(`dashboard-achievements-${authUserId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "users", filter: `user_id=eq.${authUserId}` },
-        (payload) => { if (payload.new?.achievements_metadata !== undefined) setAchievementsMetadata(payload.new.achievements_metadata ?? {}) }
-      ).subscribe()
+      .on("postgres_changes", {
+        event: "UPDATE", schema: "public", table: "users",
+        filter: `user_id=eq.${authUserId}`,
+      }, (payload) => {
+        if (payload.new?.achievements_metadata !== undefined)
+          setAchievementsMetadata(payload.new.achievements_metadata ?? {})
+      })
+      .subscribe()
   }
 
   const fetchBlogs = async (bigintUserId) => {
@@ -110,48 +112,56 @@ export default function UserDashboardPage() {
         totalBlogs: data?.length || 0,
         totalViews: data?.reduce((sum, b) => sum + (b.views || 0), 0) || 0,
       })
-    } catch (error) { console.error("fetchBlogs error:", error) }
+    } catch (err) { console.error("fetchBlogs error:", err) }
     finally { setBlogsLoading(false) }
   }
 
   const handleBlogUpdate = () => profile?.id && fetchBlogs(profile.id)
 
-  // ── Delete blog → notify super admins ─────────────────────────────────────
-  const handleDelete = async () => {
+  // ── Open the dialog (called from BlogCard's onDelete prop) ─────────────────
+  const openDeleteDialog = (id) => {
+    const blog = blogs.find((b) => b.id === id)
+    if (!blog) return
+    setDeleteReason("")
+    setDeleteDialog(blog)
+  }
+
+  // ── Confirmed delete handler ───────────────────────────────────────────────
+  const handleConfirmedDelete = async () => {
     if (!deleteDialog?.id) return
-
     setActionLoading(true)
-
-    const blog = blogs.find((b) => b.id === deleteDialog.id)
-
     try {
-      const { error } = await supabase
-        .from("blogs")
-        .delete()
-        .eq("id", deleteDialog.id)
-
+      const { error } = await supabase.from("blogs").delete().eq("id", deleteDialog.id)
       if (error) throw error
 
       handleBlogUpdate()
 
-      // Notify admins (include reason if you want later)
+      // ✅ Notify all super admins — import path is now correct
       await notifyBlogDeletedByUser({
-        userName: profile?.name || "A user",
-        blogTitle: blog?.title || "Untitled",
-        reason: deleteReason || null, // optional enhancement
+        userName:  profile?.name  || "A user",
+        blogTitle: deleteDialog.title || "Untitled",
       })
 
-      // reset dialog
       setDeleteDialog(null)
       setDeleteReason("")
-    } catch (error) {
-      console.error("Delete error:", error)
+    } catch (err) {
+      console.error("Delete error:", err)
     } finally {
       setActionLoading(false)
     }
   }
 
-  const paginatedBlogs   = useMemo(() => blogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE), [blogs, currentPage])
+  const closeDeleteDialog = () => {
+    if (actionLoading) return   // don't close mid-request
+    setDeleteDialog(null)
+    setDeleteReason("")
+  }
+
+  // ── Pagination ─────────────────────────────────────────────────────────────
+  const paginatedBlogs   = useMemo(() =>
+    blogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [blogs, currentPage]
+  )
   const totalPages       = Math.ceil(blogs.length / ITEMS_PER_PAGE)
   const handlePageChange = (page) => { if (page >= 1 && page <= totalPages) setCurrentPage(page) }
 
@@ -165,6 +175,8 @@ export default function UserDashboardPage() {
 
   return (
     <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
+
+      {/* ── TOP BAR ── */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-7xl mx-auto mb-6">
         <div className="fixed inset-0 p-6 pointer-events-none z-50">
@@ -181,6 +193,7 @@ export default function UserDashboardPage() {
       <div className="max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-8">
 
+          {/* ── HEADER ── */}
           <div className="text-center space-y-3">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
@@ -192,7 +205,7 @@ export default function UserDashboardPage() {
             </p>
           </div>
 
-          {/* Stat Cards */}
+          {/* ── STAT CARDS ── */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
             className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
 
@@ -263,7 +276,7 @@ export default function UserDashboardPage() {
             </Card>
           </motion.div>
 
-          {/* Tabs */}
+          {/* ── MAIN TABS ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 shadow-2xl">
               <CardContent className="p-4 sm:p-6 lg:p-8">
@@ -275,13 +288,14 @@ export default function UserDashboardPage() {
                       { value: "create",  icon: <Plus     className="w-4 h-4" />, label: "Create"   },
                       {
                         value: "notifications",
-                        icon: <Bell className="w-4 h-4" />,
+                        icon:  <Bell className="w-4 h-4" />,
                         label: (
                           <span className="flex items-center gap-1">
                             Alerts
                             {unreadCount > 0 && (
                               <span className="min-w-[17px] h-[17px] flex items-center justify-center rounded-full
-                                bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white text-[10px] font-bold px-1">
+                                bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white text-[10px] font-bold px-1
+                                shadow-sm shadow-fuchsia-500/40">
                                 {unreadCount > 99 ? "99+" : unreadCount}
                               </span>
                             )}
@@ -291,12 +305,15 @@ export default function UserDashboardPage() {
                     ].map(({ value, icon, label }) => (
                       <TabsTrigger key={value} value={value}
                         className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                        {icon}<span className="hidden sm:inline">{label}</span>
-                        <span className="sm:hidden">{typeof label === "string" ? label : label}</span>
+                        {icon}
+                        <span className="hidden sm:inline">{label}</span>
+                        {/* On mobile render label as-is (handles both string and JSX) */}
+                        <span className="sm:hidden">{label}</span>
                       </TabsTrigger>
                     ))}
                   </TabsList>
 
+                  {/* ── Profile ── */}
                   <TabsContent value="profile" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
@@ -307,109 +324,27 @@ export default function UserDashboardPage() {
                     </motion.div>
                   </TabsContent>
 
+                  {/* ── My Blogs ── */}
                   <TabsContent value="myBlog" className="mt-0">
-                    {/* Delete dialog */}
-                    <AlertDialog
-                      open={!!deleteDialog}
-                      onOpenChange={(open) => {
-                        if (!open) {
-                          setDeleteDialog(null)
-                          setDeleteReason("")
-                        }
-                      }}
-                    >
-                      <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
-                        <AlertDialogHeader className="gap-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
-                              <ShieldAlert className="w-5 h-5 text-red-400" />
-                            </div>
-                            <div>
-                              <AlertDialogTitle className="text-red-200 text-base font-semibold">
-                                Delete Content
-                              </AlertDialogTitle>
-                              <p className="text-white/30 text-xs mt-0.5">
-                                Admins will be notified
-                              </p>
-                            </div>
-                          </div>
-
-                          <AlertDialogDescription asChild>
-                            <div className="space-y-4 text-sm">
-                              <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
-                                Permanently deleting{" "}
-                                <span className="text-white font-medium">
-                                  "{deleteDialog?.title}"
-                                </span>.
-                                This cannot be undone.
-                              </div>
-
-                              <div className="space-y-2">
-                                <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                                  <XCircle className="w-3 h-3 shrink-0" />
-                                  Reason
-                                  <span className="text-white/18 font-normal normal-case tracking-normal">
-                                    (optional)
-                                  </span>
-                                </label>
-
-                                <Textarea
-                                  value={deleteReason}
-                                  onChange={(e) => setDeleteReason(e.target.value)}
-                                  placeholder="e.g. Outdated content, policy violation…"
-                                  className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
-                                  rows={3}
-                                />
-                              </div>
-                            </div>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-
-                        <AlertDialogFooter className="gap-2 mt-1">
-                          <AlertDialogCancel
-                            onClick={() => setDeleteReason("")}
-                            className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
-                          >
-                            Cancel
-                          </AlertDialogCancel>
-
-                          <Button
-                            onClick={handleDelete}
-                            disabled={actionLoading}
-                            className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
-                            hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
-                            active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-pink-500/25"
-                          >
-                            {actionLoading ? (
-                              <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                            ) : (
-                              <Trash2 className="w-4 h-4 shrink-0" />
-                            )}
-                            Delete Permanently
-                          </Button>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
                           {blogsLoading ? (
-                            <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" /></div>
+                            <div className="flex justify-center py-12">
+                              <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
+                            </div>
                           ) : blogs.length === 0 ? (
                             <BlogEmpty />
                           ) : (
                             <div className="space-y-6">
-                              
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {paginatedBlogs.map((item) => (
-                                  <BlogCard 
-                                    key={item.id} 
-                                    item={item} 
-                                    onUpdate={handleBlogUpdate} 
-                                    onDelete={(id) => {
-                                      const blog = blogs.find((b) => b.id === id)
-                                      setDeleteDialog(blog)
-                                    }} 
+                                  <BlogCard
+                                    key={item.id}
+                                    item={item}
+                                    onUpdate={handleBlogUpdate}
+                                    // ✅ opens the dialog — does NOT delete directly
+                                    onDelete={(id) => openDeleteDialog(id)}
                                   />
                                 ))}
                               </div>
@@ -442,6 +377,7 @@ export default function UserDashboardPage() {
                     </motion.div>
                   </TabsContent>
 
+                  {/* ── Create ── */}
                   <TabsContent value="create" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
@@ -452,7 +388,7 @@ export default function UserDashboardPage() {
                     </motion.div>
                   </TabsContent>
 
-                  {/* ── Notifications Tab ── */}
+                  {/* ── Notifications ── */}
                   <TabsContent value="notifications" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
@@ -478,6 +414,87 @@ export default function UserDashboardPage() {
 
         </motion.div>
       </div>
+
+      {/* ─────────────────────────────────────────────────────────────────────
+          DELETE DIALOG — at component ROOT, outside all tabs and cards.
+          This is the only correct place: shadcn portals work fine here and
+          the dialog is never unmounted when a tab changes.
+      ───────────────────────────────────────────────────────────────────── */}
+      <AlertDialog
+        open={!!deleteDialog}
+        onOpenChange={(open) => { if (!open) closeDeleteDialog() }}
+      >
+        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
+          <AlertDialogHeader className="gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-red-200 text-base font-semibold">
+                  Delete Blog Post
+                </AlertDialogTitle>
+                <p className="text-white/30 text-xs mt-0.5">
+                  Platform admins will be notified
+                </p>
+              </div>
+            </div>
+
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-sm">
+                <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
+                  Permanently deleting{" "}
+                  <span className="text-white font-medium">"{deleteDialog?.title}"</span>.
+                  This cannot be undone.
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                    <XCircle className="w-3 h-3 shrink-0" />
+                    Reason
+                    <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
+                  </label>
+                  <Textarea
+                    value={deleteReason}
+                    onChange={(e) => setDeleteReason(e.target.value)}
+                    placeholder="e.g. Outdated content, no longer relevant…"
+                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
+                    rows={3}
+                  />
+                  <p className="text-white/20 text-[11px] leading-relaxed">
+                    Optional note for audit purposes.
+                  </p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2 mt-1">
+            <AlertDialogCancel
+              disabled={actionLoading}
+              onClick={() => closeDeleteDialog()}
+              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
+            >
+              Cancel
+            </AlertDialogCancel>
+
+            <Button
+              onClick={handleConfirmedDelete}
+              disabled={actionLoading}
+              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
+                hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
+                active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all
+                shadow-lg hover:shadow-pink-500/25"
+            >
+              {actionLoading
+                ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                : <Trash2  className="w-4 h-4 shrink-0" />
+              }
+              Delete Permanently
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -22,8 +22,8 @@ import {
   Activity,
 } from "lucide-react"
 
-// ── Notification helpers ───────────────────────────────────────────────────────
-import { notifyAccountSuspended, notifyAccountReactivated } from "@/lib/notification"
+// ── Notification helpers — note the 's' at the end ────────────────────────────
+import { notifyAccountSuspended, notifyAccountReactivated } from "@/lib/notification" 
 
 const ACCENTS = {
   users: {
@@ -34,7 +34,8 @@ const ACCENTS = {
     avatarBg: "bg-cyan-500/12 border-cyan-500/30", avatarText: "text-cyan-300",
     avatarGlow: "shadow-[0_0_20px_rgba(6,182,212,0.15)]",
     rowSelected: "bg-cyan-500/8 border-l-cyan-400", rowHover: "hover:bg-cyan-500/5 hover:border-l-cyan-500/40",
-    tabActive: "data-[state=active]:from-cyan-600 data-[state=active]:to-sky-600", tabGlow: "data-[state=active]:shadow-cyan-500/30",
+    tabActive: "data-[state=active]:from-cyan-600 data-[state=active]:to-sky-600",
+    tabGlow: "data-[state=active]:shadow-cyan-500/30",
     heading: "text-cyan-400", statBorder: "border-cyan-500/20 hover:border-cyan-500/40",
     statGlow: "hover:shadow-[0_0_12px_rgba(6,182,212,0.1)]",
     suspendBg: "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/25 hover:border-amber-400/50 hover:shadow-[0_0_12px_rgba(245,158,11,0.2)]",
@@ -48,7 +49,8 @@ const ACCENTS = {
     avatarBg: "bg-fuchsia-500/12 border-fuchsia-500/30", avatarText: "text-fuchsia-300",
     avatarGlow: "shadow-[0_0_20px_rgba(192,38,211,0.15)]",
     rowSelected: "bg-fuchsia-500/8 border-l-fuchsia-400", rowHover: "hover:bg-fuchsia-500/5 hover:border-l-fuchsia-500/40",
-    tabActive: "data-[state=active]:from-fuchsia-600 data-[state=active]:to-pink-600", tabGlow: "data-[state=active]:shadow-fuchsia-500/30",
+    tabActive: "data-[state=active]:from-fuchsia-600 data-[state=active]:to-pink-600",
+    tabGlow: "data-[state=active]:shadow-fuchsia-500/30",
     heading: "text-fuchsia-400", statBorder: "border-fuchsia-500/20 hover:border-fuchsia-500/40",
     statGlow: "hover:shadow-[0_0_12px_rgba(192,38,211,0.1)]",
     suspendBg: "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/25 hover:border-amber-400/50 hover:shadow-[0_0_12px_rgba(245,158,11,0.2)]",
@@ -58,16 +60,16 @@ const ACCENTS = {
 
 const SUSPEND_PRESETS = [
   { label: "Scamming",         icon: <AlertTriangle className="w-3 h-3" />, value: "Account found to be involved in scamming activities." },
-  { label: "Spam / Abuse",     icon: <Ban className="w-3 h-3" />,           value: "Repeated spam or abusive behavior reported." },
-  { label: "Impersonation",    icon: <BadgeAlert className="w-3 h-3" />,    value: "Account is impersonating another user or organization." },
-  { label: "Policy Violation", icon: <FileWarning className="w-3 h-3" />,   value: "Violated platform terms of service or community guidelines." },
+  { label: "Spam / Abuse",     icon: <Ban           className="w-3 h-3" />, value: "Repeated spam or abusive behavior reported." },
+  { label: "Impersonation",    icon: <BadgeAlert    className="w-3 h-3" />, value: "Account is impersonating another user or organization." },
+  { label: "Policy Violation", icon: <FileWarning   className="w-3 h-3" />, value: "Violated platform terms of service or community guidelines." },
 ]
 
 const DELETE_PRESETS = [
-  { label: "Fake Account",     icon: <Skull className="w-3 h-3" />,         value: "Account is confirmed fake or fraudulent." },
+  { label: "Fake Account",     icon: <Skull         className="w-3 h-3" />, value: "Account is confirmed fake or fraudulent." },
   { label: "Scamming",         icon: <AlertTriangle className="w-3 h-3" />, value: "Account engaged in scamming and must be permanently removed." },
-  { label: "Severe Violation", icon: <XCircle className="w-3 h-3" />,       value: "Severe or repeated violation of platform policies." },
-  { label: "Spam Network",     icon: <Ban className="w-3 h-3" />,           value: "Account is part of a coordinated spam or bot network." },
+  { label: "Severe Violation", icon: <XCircle       className="w-3 h-3" />, value: "Severe or repeated violation of platform policies." },
+  { label: "Spam Network",     icon: <Ban           className="w-3 h-3" />, value: "Account is part of a coordinated spam or bot network." },
 ]
 
 const TAB_CONFIG = [
@@ -116,12 +118,12 @@ export default function AccountManageSection() {
     const q = search.toLowerCase()
     return {
       users: users.filter((u) =>
-        (u.name || "").toLowerCase().includes(q) ||
+        (u.name        || "").toLowerCase().includes(q) ||
         (u.affiliation || "").toLowerCase().includes(q) ||
-        (u.country || "").toLowerCase().includes(q)
+        (u.country     || "").toLowerCase().includes(q)
       ),
       orgs: orgs.filter((o) =>
-        (o.name || "").toLowerCase().includes(q) ||
+        (o.name        || "").toLowerCase().includes(q) ||
         (o.author_name || "").toLowerCase().includes(q)
       ),
     }
@@ -130,39 +132,60 @@ export default function AccountManageSection() {
   // ── Suspend / Reactivate ──────────────────────────────────────────────────
   const confirmSuspend = async () => {
     if (!suspendDialog) return
-    const item     = suspendDialog
-    const isOrg    = activeTab === "orgs"
-    const table    = isOrg ? "organizations" : "users"
+    const item      = suspendDialog
+    const isOrg     = activeTab === "orgs"
+    const table     = isOrg ? "organizations" : "users"
     const wasActive = item.active !== false
+
+    // The reason to store in DB — used by the suspended page to display
+    const finalReason = wasActive
+      ? (suspendReason.trim() || "Suspended by administrator")
+      : null   // clear on reactivation
+
     setSuspendDialog(null)
     setActionLoading(item.id)
     try {
+      // ── Write to DB (suspension_reason is what the suspended page reads) ──
       const { error: e1 } = await supabase.from(table).update({
-        active: !wasActive,
-        suspension_reason: !wasActive ? (suspendReason.trim() || "Suspended by administrator") : null,
+        active:            !wasActive,
+        suspension_reason: finalReason,
       }).eq("id", item.id)
+
       if (e1) {
+        // Fallback: try without suspension_reason column
         const { error: e2 } = await supabase.from(table).update({ active: !wasActive }).eq("id", item.id)
         if (e2) throw e2
       }
 
+      // Refetch
       const { data } = await supabase.from(table).select("*").order("created_at", { ascending: false })
       if (activeTab === "users") setUsers(data || [])
       else setOrgs(data || [])
 
       // ── Notify the account holder ──────────────────────────────────────────
-      const notifyFn = !wasActive ? notifyAccountReactivated : notifyAccountSuspended
-      await notifyFn({
-        authUserId: item.user_id,                              // auth UUID on both tables
-        role:       isOrg ? "org_admin" : "user",
-        name:       item.name,
-        reason:     suspendReason.trim() || "Suspended by administrator",
-      })
+      if (wasActive) {
+        await notifyAccountSuspended({
+          authUserId: item.user_id,
+          role:       isOrg ? "org_admin" : "user",
+          name:       item.name,
+          reason:     finalReason,
+        })
+      } else {
+        await notifyAccountReactivated({
+          authUserId: item.user_id,
+          role:       isOrg ? "org_admin" : "user",
+          name:       item.name,
+        })
+      }
 
-      setSelectedItem((prev) => prev?.id === item.id ? { ...prev, active: !wasActive } : prev)
-      showToast(`Account ${!wasActive ? "suspended" : "reactivated"} successfully.`)
-    } catch (err) { showToast("Failed to update status: " + err.message, "error") }
-    finally { setActionLoading(null); setSuspendReason("") }
+      setSelectedItem((prev) => prev?.id === item.id ? { ...prev, active: !wasActive, suspension_reason: finalReason } : prev)
+      showToast(`Account ${wasActive ? "suspended" : "reactivated"} successfully.`)
+    } catch (err) {
+      showToast("Failed to update status: " + err.message, "error")
+    } finally {
+      setActionLoading(null)
+      setSuspendReason("")
+    }
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
@@ -179,12 +202,17 @@ export default function AccountManageSection() {
       else setOrgs((p) => p.filter((o) => o.id !== item.id))
       if (selectedItem?.id === item.id) setSelectedItem(null)
       showToast("Account permanently deleted.")
-    } catch (err) { showToast("Failed to delete: " + err.message, "error") }
-    finally { setActionLoading(null); setDeleteReason("") }
+    } catch (err) {
+      showToast("Failed to delete: " + err.message, "error")
+    } finally {
+      setActionLoading(null)
+      setDeleteReason("")
+    }
   }
 
   return (
     <div className="flex flex-col h-full gap-4">
+      {/* Toast */}
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm font-medium
           animate-in slide-in-from-top-2 fade-in duration-300
@@ -200,6 +228,7 @@ export default function AccountManageSection() {
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+        {/* Top bar */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <TabsList className="bg-black/40 border border-white/8 p-1 rounded-xl h-auto backdrop-blur-sm">
             {TAB_CONFIG.map(({ value, label, Icon }) => {
@@ -290,7 +319,9 @@ export default function AccountManageSection() {
                   ) : (
                     <div className="h-full flex flex-col items-center justify-center gap-4 select-none">
                       <div className={`w-16 h-16 rounded-2xl border flex items-center justify-center ${a.avatarBg}`}>
-                        {value === "users" ? <Users className={`w-6 h-6 ${a.avatarText} opacity-40`} /> : <Building2 className={`w-6 h-6 ${a.avatarText} opacity-40`} />}
+                        {value === "users"
+                          ? <Users    className={`w-6 h-6 ${a.avatarText} opacity-40`} />
+                          : <Building2 className={`w-6 h-6 ${a.avatarText} opacity-40`} />}
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium text-white/15">No account selected</p>
@@ -306,7 +337,10 @@ export default function AccountManageSection() {
       </Tabs>
 
       {/* ── Suspend dialog ── */}
-      <AlertDialog open={!!suspendDialog} onOpenChange={(open) => { if (!open) { setSuspendDialog(null); setSuspendReason("") } }}>
+      <AlertDialog
+        open={!!suspendDialog}
+        onOpenChange={(open) => { if (!open) { setSuspendDialog(null); setSuspendReason("") } }}
+      >
         <AlertDialogContent className={`backdrop-blur-xl border shadow-2xl max-w-md
           ${suspendDialog?.active !== false
             ? "bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 border-amber-500/20 shadow-amber-900/20"
@@ -329,15 +363,18 @@ export default function AccountManageSection() {
                 </AlertDialogTitle>
                 <p className="text-white/28 text-xs mt-0.5">
                   {suspendDialog?.active !== false
-                    ? "Account locked immediately — user will be notified"
-                    : "Account restored — user will be notified"}
+                    ? "Account locked immediately — reason will be shown to user"
+                    : "Account restored — user will regain full access"}
                 </p>
               </div>
             </div>
+
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
                 <div className={`px-3 py-2.5 rounded-lg border text-xs leading-relaxed
-                  ${suspendDialog?.active !== false ? "bg-amber-500/5 border-amber-500/15 text-white/45" : "bg-emerald-500/5 border-emerald-500/15 text-white/45"}`}
+                  ${suspendDialog?.active !== false
+                    ? "bg-amber-500/5 border-amber-500/15 text-white/45"
+                    : "bg-emerald-500/5 border-emerald-500/15 text-white/45"}`}
                 >
                   You are {suspendDialog?.active !== false ? "suspending" : "reactivating"}{" "}
                   <span className="text-white font-medium">"{suspendDialog?.name}"</span>.{" "}
@@ -345,8 +382,11 @@ export default function AccountManageSection() {
                     ? "They will immediately lose all platform access."
                     : "They will regain full access to the platform."}
                 </div>
+
+                {/* Only show reason fields when suspending */}
                 {suspendDialog?.active !== false && (
                   <div className="space-y-3">
+                    {/* Quick preset buttons */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
                         <Zap className="w-3 h-3 text-amber-400/60 shrink-0" />Quick Reason
@@ -365,23 +405,30 @@ export default function AccountManageSection() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Custom reason textarea */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
                         <ShieldAlert className="w-3 h-3 shrink-0 text-white/25" />Custom Reason
                         <span className="text-white/16 font-normal normal-case tracking-normal">(optional)</span>
                       </label>
-                      <Textarea value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)}
+                      <Textarea
+                        value={suspendReason}
+                        onChange={(e) => setSuspendReason(e.target.value)}
                         placeholder="Describe why this account is being suspended…"
                         className="bg-black/40 border border-amber-500/15 hover:border-amber-500/25 text-white/70 placeholder:text-white/16 text-xs resize-none focus:border-amber-400/35 focus:ring-0 rounded-lg"
                         rows={3}
                       />
-                      <p className="text-white/18 text-[11px]">The account holder will receive this as a notification.</p>
+                      <p className="text-white/18 text-[11px] leading-relaxed">
+                        This reason will be saved to the database and displayed on the user's suspension page.
+                      </p>
                     </div>
                   </div>
                 )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter className="gap-2 mt-1">
             <AlertDialogCancel onClick={() => setSuspendReason("")}
               className="cursor-pointer bg-white/4 hover:bg-white/8 text-white/45 hover:text-white/80 border border-white/8 hover:border-white/18 text-sm transition-all">
@@ -393,8 +440,11 @@ export default function AccountManageSection() {
                   ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 hover:shadow-amber-500/30"
                   : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 hover:shadow-emerald-500/30"}`}
             >
-              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                : suspendDialog?.active !== false ? <ShieldOff className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
+              {actionLoading
+                ? <Loader2   className="w-4 h-4 animate-spin shrink-0" />
+                : suspendDialog?.active !== false
+                  ? <ShieldOff  className="w-4 h-4 shrink-0" />
+                  : <ShieldCheck className="w-4 h-4 shrink-0" />}
               {suspendDialog?.active !== false ? "Confirm Suspension" : "Reactivate Account"}
             </Button>
           </AlertDialogFooter>
@@ -402,7 +452,10 @@ export default function AccountManageSection() {
       </AlertDialog>
 
       {/* ── Delete dialog ── */}
-      <AlertDialog open={!!deleteDialog} onOpenChange={(open) => { if (!open) { setDeleteDialog(null); setDeleteReason("") } }}>
+      <AlertDialog
+        open={!!deleteDialog}
+        onOpenChange={(open) => { if (!open) { setDeleteDialog(null); setDeleteReason("") } }}
+      >
         <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
           <AlertDialogHeader className="gap-4">
             <div className="flex items-center gap-3">
@@ -417,7 +470,9 @@ export default function AccountManageSection() {
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
                 <div className="px-3 py-2.5 rounded-lg bg-red-500/6 border border-red-500/18 text-white/45 text-xs leading-relaxed">
-                  Permanently deleting <span className="text-white font-medium">"{deleteDialog?.name}"</span>. Cannot be undone.
+                  Permanently deleting{" "}
+                  <span className="text-white font-medium">"{deleteDialog?.name}"</span>.{" "}
+                  Cannot be undone.
                 </div>
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
@@ -459,8 +514,11 @@ export default function AccountManageSection() {
             <Button onClick={confirmDelete} disabled={!!actionLoading}
               className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
                 hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
-                active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-[0_4px_20px_rgba(236,72,153,0.3)]">
-              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Trash2 className="w-4 h-4 shrink-0" />}
+                active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg
+                hover:shadow-[0_4px_20px_rgba(236,72,153,0.3)]">
+              {actionLoading
+                ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                : <Trash2  className="w-4 h-4 shrink-0" />}
               Delete Permanently
             </Button>
           </AlertDialogFooter>
@@ -470,6 +528,7 @@ export default function AccountManageSection() {
   )
 }
 
+// ── Sub-components ─────────────────────────────────────────────────────────────
 function AccountListRow({ item, type, ac, isSelected, onClick }) {
   const isActive = item.active !== false
   return (
@@ -481,12 +540,14 @@ function AccountListRow({ item, type, ac, isSelected, onClick }) {
         ${isSelected ? `opacity-100 ${ac.dotGlow}` : "opacity-30 group-hover:opacity-80"}`} />
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-start justify-between gap-2">
-          <p className={`text-xs font-semibold leading-snug truncate transition-colors ${isSelected ? "text-white" : "text-white/50 group-hover:text-white/85"}`}>
+          <p className={`text-xs font-semibold leading-snug truncate transition-colors
+            ${isSelected ? "text-white" : "text-white/50 group-hover:text-white/85"}`}>
             {item.name || <span className="italic text-white/25">Unnamed</span>}
           </p>
           <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0 transition-colors
-            ${isActive ? "bg-emerald-500/10 text-emerald-400/65 border-emerald-500/18 group-hover:border-emerald-500/35 group-hover:text-emerald-300"
-                       : "bg-red-500/10 text-red-400/65 border-red-500/18 group-hover:border-red-500/35 group-hover:text-red-300"}`}>
+            ${isActive
+              ? "bg-emerald-500/10 text-emerald-400/65 border-emerald-500/18 group-hover:border-emerald-500/35 group-hover:text-emerald-300"
+              : "bg-red-500/10 text-red-400/65 border-red-500/18 group-hover:border-red-500/35 group-hover:text-red-300"}`}>
             {isActive ? "Active" : "Suspended"}
           </span>
         </div>
@@ -497,7 +558,8 @@ function AccountListRow({ item, type, ac, isSelected, onClick }) {
           Joined {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
         </p>
       </div>
-      <ChevronRight className={`w-3.5 h-3.5 shrink-0 mt-0.5 transition-all ${isSelected ? ac.tag : "text-white/10 group-hover:text-white/30 group-hover:translate-x-0.5"}`} />
+      <ChevronRight className={`w-3.5 h-3.5 shrink-0 mt-0.5 transition-all
+        ${isSelected ? ac.tag : "text-white/10 group-hover:text-white/30 group-hover:translate-x-0.5"}`} />
     </button>
   )
 }
@@ -505,13 +567,16 @@ function AccountListRow({ item, type, ac, isSelected, onClick }) {
 function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete }) {
   const isUser   = type === "users"
   const isActive = item.active !== false
+
   return (
     <div className="h-full flex flex-col">
       <div className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className={`w-[52px] h-[52px] rounded-xl border flex items-center justify-center shrink-0 transition-all duration-300 ${ac.avatarBg} ${ac.avatarGlow}`}>
-              {isUser ? <User className={`w-5 h-5 ${ac.avatarText}`} /> : <Building2 className={`w-5 h-5 ${ac.avatarText}`} />}
+              {isUser
+                ? <User     className={`w-5 h-5 ${ac.avatarText}`} />
+                : <Building2 className={`w-5 h-5 ${ac.avatarText}`} />}
             </div>
             <div className="flex-1 min-w-0 space-y-1.5">
               <h2 className="text-lg font-bold text-white leading-tight truncate">
@@ -522,24 +587,34 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
                   {isUser ? "User Account" : "Organization"}
                 </Badge>
                 <span className={`flex items-center gap-1.5 text-[11px] px-2.5 py-0.5 rounded-full border font-medium transition-all
-                  ${isActive ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/22 hover:bg-emerald-500/18 hover:border-emerald-500/40"
-                             : "bg-red-500/10 text-red-300 border-red-500/22 hover:bg-red-500/18 hover:border-red-500/40"}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" : "bg-red-400 shadow-[0_0_4px_rgba(248,113,113,0.8)]"}`} />
+                  ${isActive
+                    ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/22 hover:bg-emerald-500/18 hover:border-emerald-500/40"
+                    : "bg-red-500/10 text-red-300 border-red-500/22 hover:bg-red-500/18 hover:border-red-500/40"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full
+                    ${isActive ? "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" : "bg-red-400 shadow-[0_0_4px_rgba(248,113,113,0.8)]"}`} />
                   {isActive ? "Active" : "Suspended"}
                 </span>
               </div>
             </div>
           </div>
+
           <div className="flex items-center gap-2 shrink-0">
             <Button size="sm" onClick={onSuspend} disabled={actionLoading === item.id}
               className={`h-9 px-4 border gap-2 text-xs font-medium active:scale-[0.97] transition-all duration-200
-                ${isActive ? ac.suspendBg : "bg-emerald-500/15 hover:bg-emerald-500/28 text-emerald-300 border border-emerald-500/25 hover:border-emerald-400/50 hover:shadow-[0_0_12px_rgba(16,185,129,0.2)]"}`}>
-              {actionLoading === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                : isActive ? <ShieldOff className="w-3.5 h-3.5" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                ${isActive
+                  ? ac.suspendBg
+                  : "bg-emerald-500/15 hover:bg-emerald-500/28 text-emerald-300 border border-emerald-500/25 hover:border-emerald-400/50 hover:shadow-[0_0_12px_rgba(16,185,129,0.2)]"}`}>
+              {actionLoading === item.id
+                ? <Loader2    className="w-3.5 h-3.5 animate-spin" />
+                : isActive
+                  ? <ShieldOff   className="w-3.5 h-3.5" />
+                  : <ShieldCheck className="w-3.5 h-3.5" />}
               {isActive ? "Suspend" : "Reactivate"}
             </Button>
             <Button size="sm" onClick={onDelete} disabled={actionLoading === item.id}
-              className="h-9 px-4 bg-gradient-to-r from-pink-600/65 to-fuchsia-600/65 hover:from-pink-500 hover:to-fuchsia-500 text-white border-0 gap-2 text-xs font-medium hover:shadow-[0_4px_16px_rgba(236,72,153,0.28)] active:scale-[0.97] transition-all">
+              className="h-9 px-4 bg-gradient-to-r from-pink-600/65 to-fuchsia-600/65
+                hover:from-pink-500 hover:to-fuchsia-500 text-white border-0 gap-2 text-xs font-medium
+                hover:shadow-[0_4px_16px_rgba(236,72,153,0.28)] active:scale-[0.97] transition-all">
               <Trash2 className="w-3.5 h-3.5" />Delete
             </Button>
           </div>
@@ -548,15 +623,21 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
 
       <ScrollArea className="flex-1">
         <div className="px-6 py-5 space-y-6">
+
+          {/* ── Suspension banner with stored reason ── */}
           {!isActive && (
             <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-500/6 border border-red-500/22">
               <ShieldOff className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-red-300 text-xs font-semibold mb-0.5">Account Suspended</p>
-                <p className="text-white/38 text-xs leading-relaxed">{item.suspension_reason || "Suspended by administrator. No reason provided."}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-red-300 text-xs font-semibold mb-1">Account Suspended</p>
+                <p className="text-white/50 text-xs leading-relaxed">
+                  {item.suspension_reason || "Suspended by administrator. No reason provided."}
+                </p>
               </div>
             </div>
           )}
+
+          {/* Profile */}
           <DetailBlock icon={<User className="w-3.5 h-3.5" />} label={isUser ? "Profile" : "Contact"} ac={ac}>
             <div className="space-y-2.5">
               {isUser ? (
@@ -577,6 +658,8 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
               />
             </div>
           </DetailBlock>
+
+          {/* Stats */}
           <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Activity Stats" ac={ac}>
             <div className="grid grid-cols-3 gap-2">
               {isUser ? (
@@ -594,11 +677,13 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
               )}
             </div>
           </DetailBlock>
+
           {(item.bio || item.description) && (
             <DetailBlock icon={<Activity className="w-3.5 h-3.5" />} label={isUser ? "Bio" : "Description"} ac={ac}>
               <p className="text-white/50 text-sm leading-relaxed">{item.bio || item.description}</p>
             </DetailBlock>
           )}
+
           <div className="pb-2">
             <p className="flex items-center gap-1.5 text-[11px] text-white/12 font-mono hover:text-white/25 transition-colors cursor-text select-all">
               <Hash className="w-3 h-3" />{item.id}
@@ -620,6 +705,7 @@ function DetailBlock({ icon, label, ac, children }) {
     </div>
   )
 }
+
 function InfoRow({ icon, label, value }) {
   return (
     <div className="flex items-center gap-2.5 group/row">
@@ -629,6 +715,7 @@ function InfoRow({ icon, label, value }) {
     </div>
   )
 }
+
 function StatCard({ label, value, ac }) {
   return (
     <div className={`px-3 py-3 rounded-xl bg-white/3 border text-center transition-all duration-200 cursor-default ${ac.statBorder} ${ac.statGlow}`}>
