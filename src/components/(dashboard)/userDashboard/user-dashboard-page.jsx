@@ -38,7 +38,7 @@ import { ReturnButton }       from "@/components/return"
 // ── Notifications — CORRECT path with 's' ─────────────────────────────────────
 import NotificationsTab          from "@/components/notifications/notification-tab"
 import { useNotifications }      from "@/components/notifications/use-notification"
-import { notifyBlogDeletedByUser } from "@/lib/notifications"   // ← was "@/lib/notification" (missing 's')
+import { notifyBlogDeletedByUser } from "@/lib/notification" 
 
 const ITEMS_PER_PAGE = 6
 
