@@ -15,7 +15,8 @@ import {
   Atom, AlignLeft, AlignRight, AlignStartVertical,
   Columns2, RectangleHorizontal, Smartphone,
   Monitor, Instagram, Trophy, CalendarDays,
-  MapPin, Users, Clock, Tag, FileText
+  MapPin, Users, Clock, Tag, FileText, Eye, EyeOff,
+  AlertCircle, Info
 } from "lucide-react"
 import FieldSection from "./field-section"
 import ColorSwatch from "./color-swatch"
@@ -23,7 +24,7 @@ import ColorSwatch from "./color-swatch"
 // ── Steps ─────────────────────────────────────────────────────────────────────
 const STEPS = [
   { id: 1, label: "Event",   icon: CalendarDays  },
-  { id: 2, label: "Details", icon: FileText       },
+  { id: 2, label: "Text",    icon: FileText       },
   { id: 3, label: "Layout",  icon: LayoutTemplate },
   { id: 4, label: "Style",   icon: Layers         },
   { id: 5, label: "Colors",  icon: Palette        },
@@ -93,7 +94,37 @@ const PLACEMENTS = [
   { value: "bottom-right",  label: "Bottom Right"  },
 ]
 
+// ── Character limits — keep poster text lean ──────────────────────────────────
+const LIMITS = {
+  eventName:   40,   // Main title — short and punchy
+  tagline:     80,   // One-liner shown under the title
+  prizePool:   20,   // e.g. "₱50,000"
+  venue:       40,   // e.g. "DLSU Manila"
+  organizer:   30,   // e.g. "ByteOn / GDSC"
+  eventDate:   25,   // e.g. "July 25–26, 2025"
+}
+
 // ── Shared sub-components ─────────────────────────────────────────────────────
+
+/** Badge shown next to fields that will appear on the poster */
+function OnPosterBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-fuchsia-950/60 border border-fuchsia-700/40 text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest">
+      <Eye size={8} /> on poster
+    </span>
+  )
+}
+
+/** Character counter — turns pink when over limit */
+function CharCount({ value, limit }) {
+  const over = value.length > limit
+  return (
+    <span className={`text-[10px] tabular-nums font-semibold ${over ? "text-pink-400" : "text-zinc-600"}`}>
+      {value.length}/{limit}
+    </span>
+  )
+}
+
 function IconOptionGrid({ options, value, onChange, cols = 3 }) {
   const gridCols = { 2: "grid-cols-2", 3: "grid-cols-3", 4: "grid-cols-4" }
   return (
@@ -208,7 +239,6 @@ function PlacementGrid({ value, onChange }) {
   return (
     <FieldSection label="Title Placement" description="Where the main title sits on the poster">
       <div className="flex gap-4 items-stretch">
-        {/* Poster mockup — clickable 3x3 zones */}
         <div className="flex-shrink-0 w-32 h-44 rounded-xl border-2 border-zinc-700/60 bg-zinc-900/60 relative overflow-hidden">
           <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 p-2 gap-1.5">
             {PLACEMENTS.map((p) => {
@@ -236,7 +266,6 @@ function PlacementGrid({ value, onChange }) {
           </div>
         </div>
 
-        {/* Label buttons — mirrored 3x3 grid */}
         <div className="flex-1 grid grid-cols-3 grid-rows-3 gap-1.5">
           {PLACEMENTS.map((p) => {
             const isActive = value === p.value
@@ -264,6 +293,67 @@ function PlacementGrid({ value, onChange }) {
   )
 }
 
+// ── Live poster text preview (Step 2) ─────────────────────────────────────────
+function PosterTextPreview({ form }) {
+  const hasContent = form.eventName || form.tagline || form.eventDate || form.venue || form.prizePool
+
+  if (!hasContent) return null
+
+  return (
+    <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-zinc-800/60 flex items-center gap-2">
+        <Eye size={11} className="text-fuchsia-400" />
+        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Poster Text Preview</span>
+      </div>
+
+      {/* Simulated poster text layout */}
+      <div className="p-4 space-y-2">
+        {form.eventName && (
+          <p className="text-lg font-black text-zinc-100 leading-tight tracking-tight truncate">
+            {form.eventName}
+          </p>
+        )}
+        {form.tagline && (
+          <p className="text-xs text-zinc-400 leading-relaxed line-clamp-2">
+            {form.tagline}
+          </p>
+        )}
+        {(form.eventDate || form.venue || form.prizePool) && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
+            {form.showDate && form.eventDate && (
+              <span className="text-[11px] text-fuchsia-400 font-semibold flex items-center gap-1">
+                <CalendarDays size={10} />
+                {form.eventDate}
+              </span>
+            )}
+            {form.showVenue && form.venue && (
+              <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+                <MapPin size={10} />
+                {form.venue}
+              </span>
+            )}
+            {form.showPrize && form.prizePool && (
+              <span className="text-[11px] text-amber-400 font-bold flex items-center gap-1">
+                <Trophy size={10} />
+                {form.prizePool}
+              </span>
+            )}
+          </div>
+        )}
+        {form.organizer && (
+          <p className="text-[10px] text-zinc-600 pt-0.5">by {form.organizer}</p>
+        )}
+      </div>
+
+      <div className="px-4 py-2 bg-zinc-900/60 border-t border-zinc-800/40">
+        <p className="text-[10px] text-zinc-600">
+          This text will be overlaid on the generated background image.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ── Confirm modal ─────────────────────────────────────────────────────────────
 function ConfirmModal({ form, onConfirm, onCancel }) {
   return (
@@ -284,18 +374,26 @@ function ConfirmModal({ form, onConfirm, onCancel }) {
 
           <div className="bg-zinc-900/60 border border-zinc-800/60 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3">
             {[
-              { label: "Event",  value: form.eventName     || "—" },
+              { label: "Event",  value: form.eventName    || "—" },
               { label: "Style",  value: form.style              },
               { label: "Mood",   value: form.mood               },
               { label: "Ratio",  value: form.aspectRatio        },
               { label: "Colors", value: form.colorScheme        },
-              { label: "Venue",  value: form.venue         || "—" },
+              { label: "Venue",  value: form.venue        || "—" },
             ].map(({ label, value }) => (
               <div key={label} className="min-w-0">
                 <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">{label}</p>
                 <p className="text-xs text-zinc-300 truncate capitalize mt-0.5">{value}</p>
               </div>
             ))}
+          </div>
+
+          {/* Reminder about what the AI generates */}
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/50">
+            <Info size={13} className="text-fuchsia-400 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              The AI generates a <strong className="text-zinc-300">background image only</strong> — no text is rendered by the AI. Your event text will be overlaid cleanly on top.
+            </p>
           </div>
 
           <div className="flex gap-3">
@@ -321,30 +419,32 @@ const halfGrid  = "grid grid-cols-1 sm:grid-cols-2 gap-4"
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function PosterForm({ onGenerate, isLoading }) {
-  const [step, setStep]             = useState(1)
+  const [step, setStep]               = useState(1)
   const [showConfirm, setShowConfirm] = useState(false)
+
   const [form, setForm] = useState({
-    eventName:            "",
-    eventDateRange:       "",
-    eventTime:            "",
-    venue:                "",
-    prizePool:            "",
-    teamSize:             "",
-    registrationDeadline: "",
-    organizer:            "",
-    theme:                "",
-    showPrize:            true,
-    showDate:             true,
-    showVenue:            true,
-    shortDescription:     "",
-    style:                "modern bold",
-    mood:                 "energetic and exciting",
-    colorScheme:          "cyberpunk neon purple and pink",
-    titlePlacement:       "top-center",
-    backgroundType:       "geometric",
-    aspectRatio:          "2:3",
-    fontStyle:            "display bold",
-    extraDetails:         "",
+    // ── Text fields (overlaid on poster) ──
+    eventName:      "",   // Main title  (≤ 40 chars)
+    tagline:        "",   // One-liner   (≤ 80 chars)
+    eventDate:      "",   // e.g. "July 25–26, 2025"
+    venue:          "",   // e.g. "DLSU Manila"
+    prizePool:      "",   // e.g. "₱50,000"
+    organizer:      "",   // e.g. "ByteOn"
+
+    // ── Toggle visibility on poster ──
+    showDate:       true,
+    showVenue:      true,
+    showPrize:      true,
+
+    // ── Style / generation settings (NOT rendered as text) ──
+    style:          "modern bold",
+    mood:           "energetic and exciting",
+    colorScheme:    "cyberpunk neon purple and pink",
+    backgroundType: "geometric",
+    fontStyle:      "display bold",
+    aspectRatio:    "2:3",
+    titlePlacement: "top-center",
+    extraDetails:   "",
   })
 
   const set    = (key) => (val) => setForm((f) => ({ ...f, [key]: val }))
@@ -361,25 +461,22 @@ export default function PosterForm({ onGenerate, isLoading }) {
   const handleConfirm = () => {
     setShowConfirm(false)
 
-    // Only pass fields the user actually filled in — nothing is injected if the field is empty
-    const descParts = [
-      form.eventName                                     ? `Event: ${form.eventName}`                              : null,
-      form.theme                                         ? `Theme: ${form.theme}`                                  : null,
-      form.showDate && form.eventDateRange               ? `Date: ${form.eventDateRange}`                          : null,
-      form.showDate && form.eventTime                    ? `Time: ${form.eventTime}`                               : null,
-      form.showVenue && form.venue                       ? `Venue: ${form.venue}`                                  : null,
-      form.showPrize && form.prizePool                   ? `Total prize pool: ${form.prizePool}`                   : null,
-      form.teamSize                                      ? `Team size: ${form.teamSize}`                           : null,
-      form.organizer                                     ? `Organized by: ${form.organizer}`                       : null,
-      form.showDate && form.registrationDeadline         ? `Registration deadline: ${form.registrationDeadline}`  : null,
-      form.shortDescription                              ? form.shortDescription                                   : null,
+    // ── Build a clean, minimal description for text overlay ──
+    // Rule: only include a field if the user filled it in AND toggled it on.
+    // Keep the total short — this text gets rendered on the poster, so less is more.
+    const overlayLines = [
+      form.showDate  && form.eventDate  ? form.eventDate              : null,
+      form.showVenue && form.venue      ? form.venue                  : null,
+      form.showPrize && form.prizePool  ? `Prize: ${form.prizePool}`  : null,
+      form.organizer                    ? `by ${form.organizer}`      : null,
     ].filter(Boolean)
 
     const enrichedForm = {
       ...form,
-      title:       form.eventName        || "",
-      subtitle:    form.shortDescription || "",
-      description: descParts.join(". "),
+      // title / subtitle / description are used by the text overlay renderer, NOT the image AI
+      title:       form.eventName || "",
+      subtitle:    form.tagline   || "",
+      description: overlayLines.join(" · "),   // compact single line — avoids crowding
     }
 
     onGenerate(enrichedForm)
@@ -394,144 +491,216 @@ export default function PosterForm({ onGenerate, isLoading }) {
       <form onSubmit={handleSubmit}>
         <StepProgress currentStep={step} totalSteps={STEPS.length} />
 
-        {/* ── Step 1: Event Details ── */}
+        {/* ══════════════════════════════════════════════════════════
+            STEP 1 — Event (core info)
+        ══════════════════════════════════════════════════════════ */}
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-200">
-            <StepHeader icon={CalendarDays} title="Event Details" subtitle="Core info that appears on your poster" />
+            <StepHeader
+              icon={CalendarDays}
+              title="Event Details"
+              subtitle="Keep each field short — they'll be overlaid on the poster"
+            />
 
-            <div className={halfGrid}>
-              <FieldSection label="Event Name" description="Name of the hackathon">
-                <Input value={form.eventName} onChange={setVal("eventName")}
-                  placeholder="e.g. Kaede Hackathon 2025" className={inputCls} />
-              </FieldSection>
-              <FieldSection label="Theme" description="Hackathon theme or track">
-                <div className="relative">
-                  <Tag size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                  <Input value={form.theme} onChange={setVal("theme")}
-                    placeholder="e.g. AI for Social Good" className={`${inputCls} pl-9`} />
-                </div>
-              </FieldSection>
+            {/* Info banner */}
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/50">
+              <AlertCircle size={13} className="text-fuchsia-400 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Fields marked <OnPosterBadge /> appear as text on the poster. Keep them brief to avoid crowding.
+              </p>
             </div>
 
-            {/* Dates */}
+            {/* Event name */}
+            <FieldSection
+              label={<span className="flex items-center gap-2">Event Name <OnPosterBadge /></span>}
+              description="The main title — short and memorable"
+            >
+              <div className="relative">
+                <Input
+                  value={form.eventName}
+                  onChange={setVal("eventName")}
+                  maxLength={LIMITS.eventName}
+                  placeholder="e.g. Kaede Hack 2025"
+                  className={inputCls}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <CharCount value={form.eventName} limit={LIMITS.eventName} />
+                </div>
+              </div>
+            </FieldSection>
+
+            {/* Date block */}
             <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 space-y-3">
-              <ToggleRow id="showDate" label="Show dates on poster" checked={form.showDate} onCheckedChange={set("showDate")} />
+              <ToggleRow
+                id="showDate"
+                label="Show date on poster"
+                checked={form.showDate}
+                onCheckedChange={set("showDate")}
+              />
               {form.showDate && (
-                <div className={halfGrid}>
-                  <FieldSection label="Event Date(s)" description="Type freely, e.g. July 25-26, 2025">
-                    <div className="relative">
-                      <CalendarDays size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                      <Input value={form.eventDateRange} onChange={setVal("eventDateRange")}
-                        placeholder="e.g. July 25-26, 2025" className={`${inputCls} pl-9`} />
-                    </div>
-                  </FieldSection>
-                  <FieldSection label="Time">
-                    <div className="relative">
-                      <Clock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                      <Input value={form.eventTime} onChange={setVal("eventTime")}
-                        placeholder="e.g. 8:00 AM - 8:00 PM" className={`${inputCls} pl-9`} />
-                    </div>
-                  </FieldSection>
-                  <FieldSection label="Registration Deadline" description="Last day to sign up">
-                    <div className="relative">
-                      <Clock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                      <Input value={form.registrationDeadline} onChange={setVal("registrationDeadline")}
-                        placeholder="e.g. July 20, 2025" className={`${inputCls} pl-9`} />
-                    </div>
-                  </FieldSection>
-                </div>
-              )}
-            </div>
-
-            {/* Venue */}
-            <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 space-y-3">
-              <ToggleRow id="showVenue" label="Show venue on poster" checked={form.showVenue} onCheckedChange={set("showVenue")} />
-              {form.showVenue && (
-                <FieldSection label="Venue / Location">
+                <FieldSection
+                  label={<span className="flex items-center gap-2">Event Date <OnPosterBadge /></span>}
+                  description="Type freely — e.g. July 25–26, 2025"
+                >
                   <div className="relative">
-                    <MapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                    <Input value={form.venue} onChange={setVal("venue")}
-                      placeholder="e.g. DLSU Manila, TechHub, Online" className={`${inputCls} pl-9`} />
+                    <CalendarDays size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+                    <Input
+                      value={form.eventDate}
+                      onChange={setVal("eventDate")}
+                      maxLength={LIMITS.eventDate}
+                      placeholder="e.g. July 25–26, 2025"
+                      className={`${inputCls} pl-9`}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <CharCount value={form.eventDate} limit={LIMITS.eventDate} />
+                    </div>
                   </div>
                 </FieldSection>
               )}
             </div>
 
-            {/* Prize */}
+            {/* Venue block */}
             <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 space-y-3">
-              <ToggleRow id="showPrize" label="Show prize on poster" checked={form.showPrize} onCheckedChange={set("showPrize")} />
-              {form.showPrize && (
-                <div className={halfGrid}>
-                  <FieldSection label="Total Prize Pool">
-                    <div className="relative">
-                      <Trophy size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" />
-                      <Input value={form.prizePool} onChange={setVal("prizePool")}
-                        placeholder="e.g. P50,000 or $10,000" className={`${inputCls} pl-9`} />
+              <ToggleRow
+                id="showVenue"
+                label="Show venue on poster"
+                checked={form.showVenue}
+                onCheckedChange={set("showVenue")}
+              />
+              {form.showVenue && (
+                <FieldSection
+                  label={<span className="flex items-center gap-2">Venue / Location <OnPosterBadge /></span>}
+                >
+                  <div className="relative">
+                    <MapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+                    <Input
+                      value={form.venue}
+                      onChange={setVal("venue")}
+                      maxLength={LIMITS.venue}
+                      placeholder="e.g. DLSU Manila"
+                      className={`${inputCls} pl-9`}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <CharCount value={form.venue} limit={LIMITS.venue} />
                     </div>
-                  </FieldSection>
-                  <FieldSection label="Team Size">
-                    <div className="relative">
-                      <Users size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
-                      <Input value={form.teamSize} onChange={setVal("teamSize")}
-                        placeholder="e.g. 2-4 members" className={`${inputCls} pl-9`} />
-                    </div>
-                  </FieldSection>
-                </div>
+                  </div>
+                </FieldSection>
               )}
             </div>
 
-            <FieldSection label="Organized By" description="Who is hosting the hackathon">
-              <Input value={form.organizer} onChange={setVal("organizer")}
-                placeholder="e.g. ByteOn, GDSC DLSU, ACM Chapter" className={inputCls} />
+            {/* Prize block */}
+            <div className="bg-zinc-900/30 border border-zinc-800/50 rounded-xl p-4 space-y-3">
+              <ToggleRow
+                id="showPrize"
+                label="Show prize on poster"
+                checked={form.showPrize}
+                onCheckedChange={set("showPrize")}
+              />
+              {form.showPrize && (
+                <FieldSection
+                  label={<span className="flex items-center gap-2">Total Prize Pool <OnPosterBadge /></span>}
+                >
+                  <div className="relative">
+                    <Trophy size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" />
+                    <Input
+                      value={form.prizePool}
+                      onChange={setVal("prizePool")}
+                      maxLength={LIMITS.prizePool}
+                      placeholder="e.g. ₱50,000"
+                      className={`${inputCls} pl-9`}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <CharCount value={form.prizePool} limit={LIMITS.prizePool} />
+                    </div>
+                  </div>
+                </FieldSection>
+              )}
+            </div>
+
+            {/* Organizer */}
+            <FieldSection
+              label={<span className="flex items-center gap-2">Organized By <OnPosterBadge /></span>}
+              description="Shown in small print — keep it brief"
+            >
+              <div className="relative">
+                <Users size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" />
+                <Input
+                  value={form.organizer}
+                  onChange={setVal("organizer")}
+                  maxLength={LIMITS.organizer}
+                  placeholder="e.g. ByteOn / GDSC DLSU"
+                  className={`${inputCls} pl-9`}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <CharCount value={form.organizer} limit={LIMITS.organizer} />
+                </div>
+              </div>
             </FieldSection>
           </div>
         )}
 
-        {/* ── Step 2: Short Description ── */}
+        {/* ══════════════════════════════════════════════════════════
+            STEP 2 — Tagline / poster text
+        ══════════════════════════════════════════════════════════ */}
         {step === 2 && (
           <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-200">
-            <StepHeader icon={FileText} title="Poster Description" subtitle="A short line displayed on the poster" />
+            <StepHeader
+              icon={FileText}
+              title="Poster Tagline"
+              subtitle="One short line displayed under the event name"
+            />
 
             <FieldSection
-              label="Short Description"
-              description="Keep it brief — 1 to 2 sentences max to avoid crowding the poster"
+              label={<span className="flex items-center gap-2">Tagline / Hook <OnPosterBadge /></span>}
+              description="1 sentence max — shorter is always better"
             >
               <Textarea
-                value={form.shortDescription}
-                onChange={setVal("shortDescription")}
-                placeholder="e.g. Build. Innovate. Win. Join us for 24 hours of hacking and compete for amazing prizes."
-                rows={4}
+                value={form.tagline}
+                onChange={setVal("tagline")}
+                maxLength={LIMITS.tagline}
+                placeholder="e.g. Build. Innovate. Win. 24 hours to change the game."
+                rows={3}
                 className="bg-zinc-900/80 border-zinc-700/50 text-zinc-100 placeholder-zinc-600 focus:border-fuchsia-600/50 focus:ring-1 focus:ring-fuchsia-600/20 rounded-xl resize-none text-sm leading-relaxed"
               />
             </FieldSection>
 
+            {/* Character feedback */}
             <div className="flex items-center justify-between px-0.5">
-              <p className="text-[11px] text-zinc-600">Short text makes for a cleaner, more impactful poster.</p>
-              <span className={`text-[11px] tabular-nums font-semibold ${
-                form.shortDescription.length > 120 ? "text-pink-400" : "text-zinc-600"
-              }`}>
-                {form.shortDescription.length} / 120
-              </span>
+              <p className="text-[11px] text-zinc-600">
+                {form.tagline.length === 0
+                  ? "Optional — leave blank for a clean, text-light poster"
+                  : form.tagline.length > 60
+                    ? "⚠ Getting long — consider trimming for impact"
+                    : "✓ Good length"
+                }
+              </p>
+              <CharCount value={form.tagline} limit={LIMITS.tagline} />
             </div>
 
-            {(form.eventName || form.shortDescription) && (
-              <div className="p-4 bg-zinc-900/40 border border-zinc-800/50 rounded-xl space-y-1.5">
-                <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">Preview</p>
-                {form.eventName && (
-                  <p className="text-base font-bold text-zinc-100 leading-tight">{form.eventName}</p>
-                )}
-                {form.shortDescription && (
-                  <p className="text-xs text-zinc-400 leading-relaxed">{form.shortDescription}</p>
-                )}
-              </div>
-            )}
+            {/* Live preview */}
+            <PosterTextPreview form={form} />
+
+            {/* Design tip */}
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/50">
+              <Info size={13} className="text-zinc-500 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] text-zinc-600 leading-relaxed">
+                <strong className="text-zinc-400">Design tip:</strong> Fewer words = more impact.
+                The background image does the heavy lifting — your tagline just needs to land the punch.
+              </p>
+            </div>
           </div>
         )}
 
-        {/* ── Step 3: Layout ── */}
+        {/* ══════════════════════════════════════════════════════════
+            STEP 3 — Layout
+        ══════════════════════════════════════════════════════════ */}
         {step === 3 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-200">
-            <StepHeader icon={LayoutTemplate} title="Layout & Placement" subtitle="Where text sits and what dimensions to use" />
+            <StepHeader
+              icon={LayoutTemplate}
+              title="Layout & Placement"
+              subtitle="Where text sits and what dimensions to use"
+            />
 
             <PlacementGrid value={form.titlePlacement} onChange={set("titlePlacement")} />
 
@@ -561,16 +730,22 @@ export default function PosterForm({ onGenerate, isLoading }) {
           </div>
         )}
 
-        {/* ── Step 4: Style ── */}
+        {/* ══════════════════════════════════════════════════════════
+            STEP 4 — Style
+        ══════════════════════════════════════════════════════════ */}
         {step === 4 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-200">
-            <StepHeader icon={Layers} title="Visual Style" subtitle="Aesthetic, mood, and background type" />
+            <StepHeader
+              icon={Layers}
+              title="Visual Style"
+              subtitle="Aesthetic, mood, and background type — affects the AI image generation"
+            />
 
             <FieldSection label="Poster Style" description="Overall design aesthetic">
               <IconOptionGrid options={STYLES} value={form.style} onChange={set("style")} cols={3} />
             </FieldSection>
 
-            <FieldSection label="Mood" description="Emotional tone">
+            <FieldSection label="Mood" description="Emotional tone of the background">
               <IconOptionGrid options={MOODS} value={form.mood} onChange={set("mood")} cols={3} />
             </FieldSection>
 
@@ -580,37 +755,53 @@ export default function PosterForm({ onGenerate, isLoading }) {
           </div>
         )}
 
-        {/* ── Step 5: Colors + Generate ── */}
+        {/* ══════════════════════════════════════════════════════════
+            STEP 5 — Colors + Generate
+        ══════════════════════════════════════════════════════════ */}
         {step === 5 && (
           <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-200">
-            <StepHeader icon={Palette} title="Colors & Typography" subtitle="Color scheme and font style" />
+            <StepHeader
+              icon={Palette}
+              title="Colors & Typography"
+              subtitle="Color palette and font style for the overall look"
+            />
 
             <ColorSwatch value={form.colorScheme} onChange={set("colorScheme")} />
 
-            <FieldSection label="Font Style">
+            <FieldSection label="Font Style" description="Influences the atmosphere of the generated background">
               <IconOptionGrid options={FONTS} value={form.fontStyle} onChange={set("fontStyle")} cols={3} />
             </FieldSection>
 
-            <FieldSection label="Extra AI Instructions" description="Any other details for the AI">
-              <Textarea value={form.extraDetails} onChange={setVal("extraDetails")}
-                placeholder="e.g. Add circuit board patterns in the background, use glowing neon outlines..."
+            <FieldSection
+              label="Extra AI Instructions"
+              description="Describe additional visual elements — NOT text or words"
+            >
+              <Textarea
+                value={form.extraDetails}
+                onChange={setVal("extraDetails")}
+                placeholder="e.g. Add glowing circuit board patterns in the background, neon grid lines, electric blue accents..."
                 rows={3}
-                className="bg-zinc-900/80 border-zinc-700/50 text-zinc-100 placeholder-zinc-600 focus:border-fuchsia-600/50 focus:ring-1 focus:ring-fuchsia-600/20 rounded-xl resize-none" />
+                className="bg-zinc-900/80 border-zinc-700/50 text-zinc-100 placeholder-zinc-600 focus:border-fuchsia-600/50 focus:ring-1 focus:ring-fuchsia-600/20 rounded-xl resize-none"
+              />
+              <p className="text-[10px] text-zinc-600 mt-1.5 flex items-center gap-1">
+                <EyeOff size={10} />
+                This affects the image background only — not the text overlay.
+              </p>
             </FieldSection>
 
-            {/* Summary */}
+            {/* Final summary */}
             <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-zinc-800/60">
                 <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Poster Summary</p>
               </div>
               <div className="p-4 grid grid-cols-2 gap-x-6 gap-y-2.5">
                 {[
-                  { label: "Event",  value: form.eventName      || "—" },
-                  { label: "Date",   value: form.eventDateRange  || "—" },
-                  { label: "Venue",  value: form.venue           || "—" },
-                  { label: "Prize",  value: form.prizePool       || "—" },
-                  { label: "Style",  value: form.style               },
-                  { label: "Ratio",  value: form.aspectRatio         },
+                  { label: "Event",  value: form.eventName   || "—" },
+                  { label: "Date",   value: form.eventDate   || "—" },
+                  { label: "Venue",  value: form.venue       || "—" },
+                  { label: "Prize",  value: form.prizePool   || "—" },
+                  { label: "Style",  value: form.style           },
+                  { label: "Ratio",  value: form.aspectRatio     },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex items-baseline gap-1.5 min-w-0">
                     <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold flex-shrink-0">{label}</span>

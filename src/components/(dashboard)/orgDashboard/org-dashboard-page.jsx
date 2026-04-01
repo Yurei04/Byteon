@@ -48,7 +48,7 @@ export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
 
-  const [activeTab, setActiveTab]             = useState("view")
+  const [activeTab, setActiveTab]             = useState("posters")
   const [activeViewTab, setActiveViewTab]     = useState("viewAnnouncement")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
 
