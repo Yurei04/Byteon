@@ -104,82 +104,58 @@ function buildPrompt({
     "bottom-right":  "text elements anchored to the lower-right",
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // SECTION 1 — TEXT
-  // The single most important section. Every field must appear on
-  // the poster exactly as the user typed it — no paraphrasing,
-  // no omissions, no spelling changes, no invented text.
-  // ═══════════════════════════════════════════════════════════════
-
+  // ── Section 1: TEXT ──────────────────────────────────────────────
+  // Kept intentionally terse — every char here eats into the 1,400 limit.
   const textLines = []
-  if (title)                  textLines.push(`- Main Title (largest, most prominent text): "${title}"`)
-  if (subtitle)               textLines.push(`- Tagline / Subtitle (second line, visually smaller): "${subtitle}"`)
-  if (showDate  && eventDate) textLines.push(`- Date: "${eventDate}"`)
-  if (showVenue && venue)     textLines.push(`- Venue / Location: "${venue}"`)
-  if (showPrize && prizePool) textLines.push(`- Prize Pool: "${prizePool}"`)
-  if (organizer)              textLines.push(`- Organizer (small print at bottom): "${organizer}"`)
-
-  const fallbackText = description ? `- Event details: "${description}"` : ""
+  if (title)                  textLines.push(`Title: "${title}"`)
+  if (subtitle)               textLines.push(`Tagline: "${subtitle}"`)
+  if (showDate  && eventDate) textLines.push(`Date: "${eventDate}"`)
+  if (showVenue && venue)     textLines.push(`Venue: "${venue}"`)
+  if (showPrize && prizePool) textLines.push(`Prize: "${prizePool}"`)
+  if (organizer)              textLines.push(`By: "${organizer}"`)
 
   const textSection = textLines.length > 0
-    ? [
-        "=== SECTION 1: TEXT (TOP PRIORITY — the design exists to serve these words) ===",
-        "This is an EVENT POSTER. The text below MUST appear on the poster, copied character-for-character.",
-        "Do NOT invent, rephrase, omit, reorder, or alter any word, number, or punctuation.",
-        "If the design feels crowded, simplify the visuals — never sacrifice text accuracy or legibility.",
-        "",
-        ...textLines,
-        "",
-        `Text placement zone: ${placementMap[titlePlacement] ?? titlePlacement}.`,
-        "Reserve a clean, unobstructed area in the placement zone above so all text is fully readable.",
-      ].join("\n")
-    : fallbackText
-      ? [
-          "=== SECTION 1: TEXT (TOP PRIORITY) ===",
-          "This is an EVENT POSTER. Render the following text exactly as written:",
-          "",
-          fallbackText,
-        ].join("\n")
+    ? `[TEXT — TOP PRIORITY]\nEvent poster. Render verbatim, no changes:\n${textLines.join("\n")}\nZone: ${placementMap[titlePlacement] ?? titlePlacement}.`
+    : description
+      ? `[TEXT — TOP PRIORITY]\nEvent poster. Render verbatim:\n"${description}"\nZone: ${placementMap[titlePlacement] ?? titlePlacement}.`
       : ""
 
-  // ═══════════════════════════════════════════════════════════════
-  // SECTION 2 — DESIGN
-  // Visual aesthetic, mood, color, background, typography feel.
-  // These guide how the poster looks — always subordinate to text.
-  // ═══════════════════════════════════════════════════════════════
-
-  const designSection = [
-    "=== SECTION 2: DESIGN ===",
-    `Poster style: ${styleMap[style] ?? style}.`,
+  // ── Section 2: DESIGN ────────────────────────────────────────────
+  const designLines = [
+    `Style: ${styleMap[style] ?? style}.`,
     `Mood: ${moodMap[mood] ?? mood}.`,
-    `Color palette: ${colorScheme}.`,
-    `Background: ${bgMap[backgroundType] ?? backgroundType}.`,
-    fontStyle    ? `Typography atmosphere: ${fontAtmosphereMap[fontStyle] ?? fontStyle}.`         : "",
-    aspectRatio  ? `Aspect ratio: ${aspectRatio} — compose the layout accordingly.`               : "",
-    extraDetails ? `Additional visual elements (user-requested): ${extraDetails}.`                : "",
-  ].filter(Boolean).join("\n")
+    `Colors: ${colorScheme}.`,
+    `BG: ${bgMap[backgroundType] ?? backgroundType}.`,
+    fontStyle    ? `Font feel: ${fontAtmosphereMap[fontStyle] ?? fontStyle}.` : "",
+    aspectRatio  ? `Ratio: ${aspectRatio}.`                                   : "",
+    extraDetails ? `Extra: ${extraDetails}.`                                   : "",
+  ].filter(Boolean)
 
-  // ═══════════════════════════════════════════════════════════════
-  // SECTION 3 — CONSTRAINTS
-  // Hard rules that cannot be broken regardless of design choices.
-  // ═══════════════════════════════════════════════════════════════
+  const designSection = `[DESIGN]\n${designLines.join(" ")}`
 
+  // ── Section 3: CONSTRAINTS ───────────────────────────────────────
   const constraintSection = [
-    "=== SECTION 3: CONSTRAINTS (non-negotiable) ===",
-    "1. TEXT FIRST: The text in Section 1 is more important than any design choice. When in conflict, text wins.",
-    "2. VERBATIM ACCURACY: Reproduce every word, date, name, and number exactly as written. Any deviation is a failure.",
-    "3. NO HALLUCINATED TEXT: Do not add any text not listed in Section 1 — no invented taglines, URLs, filler copy, extra dates, or decorative lettering.",
-    "4. LEGIBILITY: All text must be clearly readable — strong contrast against the background, no overlap with busy visual areas.",
-    "5. CLEAR PLACEMENT ZONE: Keep the designated text area visually clean and uncluttered so the overlay text is not fighting the background.",
-    "6. NO PEOPLE: No faces, figures, crowds, or human forms.",
-    "7. POSTER FORMAT: Designed layout with clear typographic hierarchy — not a photo, not a wallpaper.",
-    "8. QUALITY: Sharp, clean render. No blur, noise, grain, or compression artifacts.",
+    "[RULES]",
+    "1. Text verbatim — no invented, rephrased, or missing words.",
+    "2. No extra text beyond what is listed above.",
+    "3. All text legible — high contrast, unobstructed.",
+    "4. Clear space in the text zone — no busy visuals behind text.",
+    "5. No people or faces.",
+    "6. Sharp, clean render — no blur or noise.",
   ].join("\n")
 
-  // ─── Final assembled prompt ────────────────────────────────────
-  return [textSection, designSection, constraintSection]
+  // ── Assemble & enforce the 1,400-char hard cap ───────────────────
+  const full = [textSection, designSection, constraintSection]
     .filter(Boolean)
     .join("\n\n")
+
+  // Truncate from the DESIGN section tail if over limit — never cut TEXT or RULES
+  if (full.length <= 1400) return full
+
+  const textAndRules = [textSection, constraintSection].filter(Boolean).join("\n\n")
+  const designBudget = 1400 - textAndRules.length - 2 // -2 for the joining "\n\n"
+  const trimmedDesign = designSection.slice(0, Math.max(0, designBudget))
+  return [textSection, trimmedDesign, constraintSection].filter(Boolean).join("\n\n")
 }
 
 // ─────────────────────────────────────────────────────────────
