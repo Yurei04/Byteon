@@ -20,9 +20,16 @@ const DIMENSIONS = {
 
 // ── Negative prompt (applied to ALL generations) ──────────────
 const NEGATIVE_PROMPT = [
+  // quality
   "blurry", "low quality", "noise", "grain", "artifact", "jpeg compression",
   "overexposed", "underexposed", "distorted",
+  // people
   "face", "person", "human", "crowd", "portrait",
+  // text killers — backgrounds that compete with or obscure text
+  "busy background", "cluttered background", "complex pattern behind text",
+  "text obscured", "illegible text", "missing text", "wrong text",
+  "extra text", "invented text", "placeholder text", "lorem ipsum",
+  "text cut off", "text overlapping", "low contrast text",
 ].join(", ")
 
 // ── Prompt builder ─────────────────────────────────────────────
@@ -50,110 +57,132 @@ function buildPrompt({
   showPrize,
 }) {
   // ─── Style → description ──────────────────────────────────────
+  // NOTE: All style descriptions now explicitly frame the design as a BACKGROUND
+  // that supports and frames the text — never as the main subject.
   const styleMap = {
-    "minimalist":      "clean minimalist poster background with generous whitespace and subtle composition",
-    "vintage retro":   "vintage retro poster background with aged paper textures and warm distressed tones",
-    "modern bold":     "modern bold graphic design background with strong geometric shapes and high contrast",
-    "illustrated":     "hand-illustrated editorial art background with detailed linework",
-    "photorealistic":  "photorealistic high-detail environmental background",
-    "abstract":        "abstract graphic background with flowing organic shapes and color fields",
-    "art nouveau":     "art nouveau decorative background with organic flowing botanical lines and ornate borders",
-    "brutalist":       "brutalist raw graphic background with stark geometric slabs and raw concrete tones",
-    "cinematic":       "cinematic wide-angle environmental background with dramatic volumetric lighting",
+    "minimalist":      "clean minimalist background with generous whitespace, subtle composition, and a dedicated open zone for text to breathe",
+    "vintage retro":   "vintage retro background with aged paper textures and warm distressed tones — pushed to the edges so center text is clear",
+    "modern bold":     "modern bold graphic background with strong geometric shapes at the margins, keeping the text zone uncluttered",
+    "illustrated":     "hand-illustrated editorial art background with detailed linework along the borders, leaving the text area clean",
+    "photorealistic":  "photorealistic environmental background blurred and darkened behind the text zone for maximum legibility",
+    "abstract":        "abstract graphic background with flowing shapes and color fields fading behind where the text sits",
+    "art nouveau":     "art nouveau decorative border-frame background with botanical lines and ornate edges framing clear inner text space",
+    "brutalist":       "brutalist raw graphic background with geometric slabs at periphery, open zone reserved for the text block",
+    "cinematic":       "cinematic wide-angle environmental background with dramatic lighting, vignette darkening the text zone for contrast",
   }
 
   const moodMap = {
-    "energetic and exciting": "high-energy, vibrant, dynamic atmosphere with bold contrast",
-    "calm and peaceful":      "calm, serene, soft light atmosphere with gentle transitions",
-    "dramatic and intense":   "dramatic, intense, high-contrast atmosphere with deep shadows",
-    "playful and fun":        "playful, fun, lighthearted atmosphere with bright cheerful tones",
-    "elegant and luxurious":  "elegant, luxurious, refined atmosphere with rich textures",
-    "mysterious and dark":    "mysterious, moody, atmospheric darkness with subtle depth",
+    "energetic and exciting": "high-energy, vibrant, dynamic atmosphere with bold contrast — background only",
+    "calm and peaceful":      "calm, serene, soft-light atmosphere with gentle transitions — background only",
+    "dramatic and intense":   "dramatic, high-contrast atmosphere with deep shadows framing text — background only",
+    "playful and fun":        "playful, lighthearted atmosphere with bright tones around the text zone — background only",
+    "elegant and luxurious":  "elegant, luxurious atmosphere with rich textures receding behind text — background only",
+    "mysterious and dark":    "mysterious, moody darkness with subtle depth pushed to the edges — background only",
   }
 
   const bgMap = {
-    "gradient":     "smooth multi-stop color gradient background",
-    "solid color":  "flat solid color background with subtle vignette",
-    "textured":     "subtle tactile textured surface — linen, paper, or concrete",
-    "bokeh":        "soft out-of-focus bokeh light orbs on dark background",
-    "geometric":    "repeating geometric shapes and angular pattern background",
-    "nature photo": "natural landscape environmental photo background",
-    "urban":        "urban architecture and cityscape background",
-    "abstract art": "abstract painted art background with brushstroke texture",
-    "space galaxy": "deep space galaxy with nebula, stars, and cosmic dust",
+    "gradient":     "smooth multi-stop color gradient, lighter or more neutral where text sits",
+    "solid color":  "flat solid color background with subtle vignette at edges",
+    "textured":     "subtle tactile texture — linen, paper, or concrete — fading behind the text area",
+    "bokeh":        "soft out-of-focus bokeh light orbs, darkened or subdued behind text for contrast",
+    "geometric":    "repeating geometric pattern pushed to borders, clear zone where text lives",
+    "nature photo": "natural landscape photo, blurred and exposure-adjusted behind text for legibility",
+    "urban":        "urban cityscape background, treated so text reads cleanly over it",
+    "abstract art": "abstract painted brushstroke background, muted behind the text zone",
+    "space galaxy": "deep space nebula background, darkened in the text area so text stands out",
   }
 
   const fontAtmosphereMap = {
-    "serif elegant":      "refined and classical atmosphere",
-    "sans-serif modern":  "clean contemporary atmosphere",
-    "display bold":       "bold impactful atmosphere",
-    "handwritten script": "organic hand-crafted atmosphere",
-    "monospace":          "technical digital atmosphere",
-    "condensed tall":     "tall structured atmospheric composition",
+    "serif elegant":      "classical typography feel",
+    "sans-serif modern":  "clean contemporary type feel",
+    "display bold":       "bold impactful type feel",
+    "handwritten script": "organic hand-crafted type feel",
+    "monospace":          "technical digital type feel",
+    "condensed tall":     "tall structured type feel",
   }
 
   const placementMap = {
-    "top-left":      "text elements anchored to the upper-left",
-    "top-center":    "text elements centered at the top",
-    "top-right":     "text elements anchored to the upper-right",
-    "middle-left":   "text elements aligned to the left middle",
-    "center":        "text elements centered on the poster",
-    "middle-right":  "text elements aligned to the right middle",
-    "bottom-left":   "text elements anchored to the lower-left",
-    "bottom-center": "text elements centered at the bottom",
-    "bottom-right":  "text elements anchored to the lower-right",
+    "top-left":      "upper-left quadrant — keep that area uncluttered with high contrast",
+    "top-center":    "upper-center — keep that horizontal band clear with strong contrast",
+    "top-right":     "upper-right quadrant — keep that area uncluttered with high contrast",
+    "middle-left":   "left-center — keep that vertical band clear with strong contrast",
+    "center":        "dead center — keep the central area open, uncluttered, and high-contrast",
+    "middle-right":  "right-center — keep that vertical band clear with strong contrast",
+    "bottom-left":   "lower-left quadrant — keep that area uncluttered with high contrast",
+    "bottom-center": "lower-center — keep that horizontal band clear with strong contrast",
+    "bottom-right":  "lower-right quadrant — keep that area uncluttered with high contrast",
   }
 
-  // ── Section 1: TEXT ──────────────────────────────────────────────
-  // Kept intentionally terse — every char here eats into the 1,400 limit.
+  // ── Collect text lines ────────────────────────────────────────
   const textLines = []
-  if (title)                  textLines.push(`Title: "${title}"`)
-  if (subtitle)               textLines.push(`Tagline: "${subtitle}"`)
-  if (showDate  && eventDate) textLines.push(`Date: "${eventDate}"`)
-  if (showVenue && venue)     textLines.push(`Venue: "${venue}"`)
-  if (showPrize && prizePool) textLines.push(`Prize: "${prizePool}"`)
-  if (organizer)              textLines.push(`By: "${organizer}"`)
+  if (title)                  textLines.push(`TITLE: "${title}"`)
+  if (subtitle)               textLines.push(`TAGLINE: "${subtitle}"`)
+  if (showDate  && eventDate) textLines.push(`DATE: "${eventDate}"`)
+  if (showVenue && venue)     textLines.push(`VENUE: "${venue}"`)
+  if (showPrize && prizePool) textLines.push(`PRIZE: "${prizePool}"`)
+  if (organizer)              textLines.push(`ORGANIZER: "${organizer}"`)
 
+  const textZone = placementMap[titlePlacement] ?? titlePlacement
+
+  // ── Section 1: ROLE + TEXT (primary, always first, emphatic) ─────
+  // Leonardo reads left-to-right, top-to-bottom — the opening lines
+  // carry the most weight. We declare the role of the image immediately
+  // so the model understands the text IS the poster, not decoration.
   const textSection = textLines.length > 0
-    ? `[TEXT — TOP PRIORITY]\nEvent poster. Render verbatim, no changes:\n${textLines.join("\n")}\nZone: ${placementMap[titlePlacement] ?? titlePlacement}.`
+    ? [
+        "TYPOGRAPHY-FIRST EVENT POSTER. The sole purpose of this image is to prominently display the following text. The text is the hero — the most important visual element. Everything else exists only to support and frame these words.",
+        "",
+        "TEXT TO DISPLAY (render every word exactly as written, verbatim, no changes, no additions, no omissions):",
+        textLines.join("\n"),
+        "",
+        `Text placement zone: ${textZone}.`,
+        "The text must be large, bold, and fully legible against the background. Prioritize text visibility above all design choices.",
+      ].join("\n")
     : description
-      ? `[TEXT — TOP PRIORITY]\nEvent poster. Render verbatim:\n"${description}"\nZone: ${placementMap[titlePlacement] ?? titlePlacement}.`
+      ? [
+          "TYPOGRAPHY-FIRST EVENT POSTER. The sole purpose of this image is to prominently display the following text. The text is the hero — the most important visual element.",
+          "",
+          `TEXT TO DISPLAY (verbatim): "${description}"`,
+          "",
+          `Text placement zone: ${textZone}.`,
+        ].join("\n")
       : ""
 
-  // ── Section 2: DESIGN ────────────────────────────────────────────
+  // ── Section 2: BACKGROUND DESIGN (secondary, explicitly subservient) ─
   const designLines = [
+    `BACKGROUND THEME (secondary — exists only to set the atmosphere behind the text):`,
     `Style: ${styleMap[style] ?? style}.`,
     `Mood: ${moodMap[mood] ?? mood}.`,
-    `Colors: ${colorScheme}.`,
-    `BG: ${bgMap[backgroundType] ?? backgroundType}.`,
-    fontStyle    ? `Font feel: ${fontAtmosphereMap[fontStyle] ?? fontStyle}.` : "",
-    aspectRatio  ? `Ratio: ${aspectRatio}.`                                   : "",
-    extraDetails ? `Extra: ${extraDetails}.`                                   : "",
+    `Color palette: ${colorScheme}.`,
+    `Background type: ${bgMap[backgroundType] ?? backgroundType}.`,
+    fontStyle    ? `Type atmosphere: ${fontAtmosphereMap[fontStyle] ?? fontStyle}.` : "",
+    extraDetails ? `Additional background detail: ${extraDetails}.` : "",
   ].filter(Boolean)
 
-  const designSection = `[DESIGN]\n${designLines.join(" ")}`
+  const designSection = designLines.join(" ")
 
   // ── Section 3: CONSTRAINTS ───────────────────────────────────────
   const constraintSection = [
-    "[RULES]",
-    "1. Text verbatim — no invented, rephrased, or missing words.",
-    "2. No extra text beyond what is listed above.",
-    "3. All text legible — high contrast, unobstructed.",
-    "4. Clear space in the text zone — no busy visuals behind text.",
-    "5. No people or faces.",
-    "6. Sharp, clean render — no blur or noise.",
+    "ABSOLUTE RULES:",
+    "1. Text is the foreground subject. Background design must not compete with, overlap, or obscure any text.",
+    "2. Render every text element exactly as written — no rephrasing, no inventing, no skipping.",
+    "3. No text beyond what is listed above.",
+    "4. The text zone must have sufficient contrast (light text on dark bg, or dark text on light bg) to be fully legible.",
+    "5. Keep the text zone visually clean — no busy patterns, textures, or imagery directly behind the text.",
+    "6. No people, faces, or human figures.",
+    "7. Sharp, clean final render.",
   ].join("\n")
 
   // ── Assemble & enforce the 1,400-char hard cap ───────────────────
+  // Priority order if truncation needed: TEXT > CONSTRAINTS > DESIGN (trim from tail of design)
   const full = [textSection, designSection, constraintSection]
     .filter(Boolean)
     .join("\n\n")
 
-  // Truncate from the DESIGN section tail if over limit — never cut TEXT or RULES
   if (full.length <= 1400) return full
 
   const textAndRules = [textSection, constraintSection].filter(Boolean).join("\n\n")
-  const designBudget = 1400 - textAndRules.length - 2 // -2 for the joining "\n\n"
+  const designBudget = 1400 - textAndRules.length - 2
   const trimmedDesign = designSection.slice(0, Math.max(0, designBudget))
   return [textSection, trimmedDesign, constraintSection].filter(Boolean).join("\n\n")
 }
