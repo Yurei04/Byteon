@@ -1,74 +1,137 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Trash2, Calendar, MapPin, Tag, Link2 } from "lucide-react"
+import { Calendar, MapPin, Tag, Link2 } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { useState } from "react"
 
-export default function BlogPublicCard({ item, }) {
+export default function BlogPublicCard({
+  item,
+  primaryColor,
+  secondaryColor,
+}) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const resolvedPrimary =
+    primaryColor || item?.primary_color || item?.accent_color || "#8b5cf6"
+
+  const resolvedSecondary =
+    secondaryColor || item?.secondary_color || "#6366f1"
+
   return (
     <Dialog>
-      <DialogTrigger className="flex justify-start items-start text-start">
-        <Card className="group relative bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 hover:border-fuchsia-400/60 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-fuchsia-500/20">
-          {/* Animated gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-purple-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          {/* Decorative corner accent */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-fuchsia-500/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
+      <DialogTrigger className="flex justify-start items-start text-start w-full">
+        <Card
+          className="group relative w-full backdrop-blur-xl border transition-all duration-300 overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg,
+              ${resolvedPrimary}20,
+              ${resolvedSecondary}10,
+              rgba(2,6,23,0.6))`,
+            borderColor: `${resolvedPrimary}40`,
+          }}
+        >
+          {/* Top bar */}
+          <div
+            className="h-1 w-full"
+            style={{
+              background: `linear-gradient(to right, ${resolvedPrimary}, ${resolvedSecondary})`,
+            }}
+          />
+
+          {/* Hover glow */}
+          <div
+            className="absolute top-0 right-0 w-32 h-32 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            style={{
+              background: `radial-gradient(circle at top right, ${resolvedPrimary}20, transparent 70%)`,
+            }}
+          />
+
           <CardContent className="relative p-6">
             <div className="flex justify-between items-start mb-4">
               <div className="flex-1">
-                {/* Organization Name */}
-                {item.organization || item.user_name && (
-                  <div className="mb-2">
-                    <span className="text-xs font-semibold text-fuchsia-400 uppercase tracking-wider">
-                      {item.organization || item.user_name}
-                    </span>
-                  </div>
+
+                {(item.organization || item.user_name) && (
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: resolvedPrimary }}
+                  >
+                    {item.organization || item.user_name}
+                  </span>
                 )}
-                
-                {/* Title */}
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-3 group-hover:from-fuchsia-200 group-hover:via-purple-200 group-hover:to-pink-200 transition-all duration-300 line-clamp-2">
+
+                <h3
+                  className="text-2xl font-bold mb-3 line-clamp-2"
+                  style={{
+                    background: `linear-gradient(to right, ${resolvedPrimary}, ${resolvedSecondary})`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
                   {item.title}
                 </h3>
-                
-                {/* Description */}
+
                 {item.des && (
-                  <p className="text-gray-300 text-sm leading-relaxed line-clamp-3 mb-4">
+                  <p className="text-gray-300 text-sm line-clamp-3 mb-4">
                     {item.des}
                   </p>
                 )}
-                
-                {/* Badges Section */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {item.theme && (
-                    <span className="px-3 py-1.5 bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 border border-fuchsia-400/30 text-fuchsia-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-fuchsia-500/10">
-                      <Tag className="w-3 h-3" />
-                      {item.theme}
+
+                {/* Badge */}
+                {item.theme && (
+                  <span
+                    className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-md mb-4"
+                    style={{
+                      background: `${resolvedPrimary}20`,
+                      color: resolvedPrimary,
+                      border: `1px solid ${resolvedPrimary}40`,
+                    }}
+                  >
+                    <Tag className="w-3 h-3" />
+                    {item.theme}
+                  </span>
+                )}
+
+                {/* Info */}
+                <div
+                  className="rounded-lg p-3 space-y-2"
+                  style={{
+                    background: "rgba(0,0,0,0.25)",
+                    border: `1px solid ${resolvedPrimary}30`,
+                  }}
+                >
+                  <div className="flex justify-between text-sm text-gray-400">
+                    <span>
+                      <span style={{ color: resolvedPrimary }}>By:</span>{" "}
+                      {item.author}
                     </span>
-                  )}
-                </div>
-                
-                {/* Info Section */}
-                <div className="bg-black/20 rounded-lg p-3 border border-purple-500/10 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">
-                      <span className="text-fuchsia-400 font-medium">By:</span> {item.author}
-                    </span>
-                    <span className="text-gray-400 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-purple-400" />
+
+                    <span className="flex items-center gap-1.5">
+                      <Calendar
+                        className="w-3.5 h-3.5"
+                        style={{ color: resolvedSecondary }}
+                      />
                       {new Date(item.created_at).toLocaleDateString()}
                     </span>
                   </div>
-                  
+
                   {item.hackathon?.length > 0 && (
-                    <div className="pt-2 border-t border-purple-500/10">
-                      <p className="text-xs text-gray-400 flex items-start gap-2">
-                        <Link2 className="w-3.5 h-3.5 text-pink-400 mt-0.5 flex-shrink-0" />
+                    <div
+                      className="pt-2"
+                      style={{
+                        borderTop: `1px solid ${resolvedPrimary}30`,
+                      }}
+                    >
+                      <p className="text-xs text-gray-400 flex gap-2">
+                        <Link2
+                          className="w-3.5 h-3.5"
+                          style={{ color: resolvedSecondary }}
+                        />
                         <span>
-                          <span className="text-pink-400 font-medium">Related:</span>{' '}
-                          <span className="text-gray-300">{item.hackathon.join(', ')}</span>
+                          <span style={{ color: resolvedSecondary }}>
+                            Related:
+                          </span>{" "}
+                          {item.hackathon.join(", ")}
                         </span>
                       </p>
                     </div>
@@ -76,97 +139,59 @@ export default function BlogPublicCard({ item, }) {
                 </div>
               </div>
             </div>
-            
-            {/* Hover indicator */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-fuchsia-500 via-purple-500 to-pink-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+
+            {/* Bottom bar */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-[3px] scale-x-0 group-hover:scale-x-100 transition-transform origin-left"
+              style={{
+                background: `linear-gradient(to right, ${resolvedPrimary}, ${resolvedSecondary})`,
+              }}
+            />
           </CardContent>
         </Card>
       </DialogTrigger>
-      <DialogContent className="w-screen h-screen max-w-none p-0 rounded-none! flex p-2">
-        <DialogTitle></DialogTitle>
-        <Card className="w-full h-full group relative bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 hover:border-fuchsia-400/60 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-fuchsia-500/20">
-          {/* Animated gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-purple-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          {/* Decorative corner accent */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-fuchsia-500/10 to-transparent rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          
-          <CardContent className="relative p-6 w-full h-full overflow-y-auto">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1">
-                {/* Organization Name */}
-                {item.organization || item.user_name && (
-                  <div className="mb-2">
-                    <span className="text-xs font-semibold text-fuchsia-400 uppercase tracking-wider">
-                      {item.organization || item.user_name}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Title */}
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-3 group-hover:from-fuchsia-200 group-hover:via-purple-200 group-hover:to-pink-200 transition-all duration-300 line-clamp-2">
-                  {item.title}
-                </h3>
-                                {/* Badges Section */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {item.theme && (
-                    <span className="px-3 py-1.5 bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 border border-fuchsia-400/30 text-fuchsia-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-fuchsia-500/10">
-                      <Tag className="w-3 h-3" />
-                      {item.theme}
-                    </span>
-                  )}
-                  {item.place && (
-                    <span className="px-3 py-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-purple-500/10">
-                      <MapPin className="w-3 h-3" />
-                      {item.place}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Info Section */}
-                <div className="bg-black/20 rounded-lg p-3 border border-purple-500/10 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">
-                      <span className="text-fuchsia-400 font-medium">By:</span> {item.author}
-                    </span>
-                    <span className="text-gray-400 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-purple-400" />
-                      {new Date(item.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                  
-                  {item.hackathon?.length > 0 && (
-                    <div className="pt-2 border-t border-purple-500/10">
-                      <p className="text-xs text-gray-400 flex items-start gap-2">
-                        <Link2 className="w-3.5 h-3.5 text-pink-400 mt-0.5 flex-shrink-0" />
-                        <span>
-                          <span className="text-pink-400 font-medium">Related:</span>{' '}
-                          <span className="text-gray-300">{item.hackathon.join(', ')}</span>
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-                
-                {item.content && (
-                  <div className="space-y-4 text-gray-300 text-sm leading-relaxed">
-                    {item.content
-                      .split("\n")
-                      .filter(Boolean)
-                      .map((para, i) => (
-                        <p key={i} className="whitespace-pre-line">
-                          {para}
-                        </p>
-                      ))}
-                  </div>
-                )}
 
-                
+      {/* FULL VIEW */}
+      <DialogContent className="w-screen h-screen max-w-none p-0 rounded-none flex">
+        <DialogTitle />
 
+        <Card
+          className="w-full h-full backdrop-blur-xl border"
+          style={{
+            background: `linear-gradient(135deg,
+              ${resolvedPrimary}20,
+              ${resolvedSecondary}10,
+              rgba(2,6,23,0.9))`,
+            borderColor: `${resolvedPrimary}40`,
+          }}
+        >
+          <div
+            className="h-1 w-full"
+            style={{
+              background: `linear-gradient(to right, ${resolvedPrimary}, ${resolvedSecondary})`,
+            }}
+          />
+
+          <CardContent className="p-6 overflow-y-auto max-w-3xl mx-auto">
+            <h2
+              className="text-3xl font-bold mb-4"
+              style={{
+                background: `linear-gradient(to right, ${resolvedPrimary}, ${resolvedSecondary})`,
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              {item.title}
+            </h2>
+
+            {item.content && (
+              <div className="space-y-4 text-gray-300 text-sm">
+                {item.content.split("\n").map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
               </div>
-            </div>
-            
-            </CardContent>
+            )}
+          </CardContent>
         </Card>
       </DialogContent>
     </Dialog>
