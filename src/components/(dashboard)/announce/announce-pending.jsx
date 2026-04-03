@@ -1,6 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { forwardRef } from "react"
+import { Calendar } from "lucide-react"
+import DatePicker from "react-datepicker"
+import { useState, useEffect} from "react"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -45,6 +48,27 @@ const PRIZE_RANK_COLORS = [
 const MAX_RETRIES    = 5
 const RETRY_DELAY_MS = 800
 
+function convertTo24Hour(hour, minute, period) {
+  let h = parseInt(hour)
+
+  if (period === "PM" && h !== 12) h += 12
+  if (period === "AM" && h === 12) h = 0
+
+  return `${String(h).padStart(2, "0")}:${minute}`
+}
+
+const CalendarInput = forwardRef(({ value, onClick }, ref) => (
+  <div
+    onClick={onClick}
+    ref={ref}
+    className="w-full flex items-center justify-between bg-white/10 border border-white/20 text-white px-3 py-2 rounded cursor-pointer"
+  >
+    <span>{value || "Select date"}</span>
+    <Calendar className="w-4 h-4 text-white/60" />
+  </div>
+))
+CalendarInput.displayName = "CalendarInput"
+
 export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId }) {
   const [isLoading, setIsLoading]   = useState(false)
   const [retryCount, setRetryCount] = useState(0)
@@ -52,6 +76,26 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
   const [hasDraft, setHasDraft]     = useState(false)
   const [formData, setFormData]     = useState(() => loadDraft())
   const [prizes, setPrizes]         = useState(() => loadPrizes())
+
+// ===== DATE =====
+const [startDate, setStartDate] = useState(null)
+const [endDate, setEndDate] = useState(null)
+
+// ===== START TIME  =====
+const [startHour12, setStartHour12] = useState("12")
+const [startMinute, setStartMinute] = useState("00")
+const [startPeriod, setStartPeriod] = useState("AM")
+
+// ===== END TIME  =====
+const [endHour12, setEndHour12] = useState("12")
+const [endMinute, setEndMinute] = useState("0")
+const [endPeriod, setEndPeriod] = useState("AM")
+
+// dropdown options
+const hourOptions = ["01","02","03","04","05","06","07","08","09","10","11","12"]
+const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","55"]
+
+const periodOptions = ["AM", "PM"]
 
   useEffect(() => {
     saveDraft(formData)
@@ -77,7 +121,6 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
     if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...template } : p))
     else setPrizes(prev => [...prev, { id: Date.now(), ...template, description: "" }])
   }
-
   const handleSubmit = async () => {
     if (!currentOrg || !authUserId) {
       setAlert({ type: "error", message: "Organization not found. Please refresh." }); return
@@ -92,6 +135,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
 
     setIsLoading(true)
     setAlert(null)
+
 
     const payload = {
       title:               formData.title.trim(),
@@ -257,15 +301,64 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-white">Start Date *</Label>
-              <Input type="datetime-local" value={formData.date_begin} onChange={(e) => setFormData({ ...formData, date_begin: e.target.value })} className="bg-white/10 border-white/20 text-white" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-white">End Date *</Label>
-              <Input type="datetime-local" value={formData.date_end} onChange={(e) => setFormData({ ...formData, date_end: e.target.value })} className="bg-white/10 border-white/20 text-white" />
-            </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+  {/* START */}
+<div className="relative">
+  <DatePicker
+    selected={startDate}
+    onChange={(date) => setStartDate(date)}
+    dateFormat="yyyy/MM/dd"
+  customInput={<CalendarInput />}  />
+  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
+
+    {/* START TIME */}
+    <div className="flex gap-2 mt-2">
+<select
+  value={startHour12} onChange={(e)=>setStartHour12(e.target.value)} className="bg-white/90 text-gray-900 border border-gray-300 rounded px-2 py-1 font-medium">
+  {hourOptions.map(h => <option key={h}>{h}</option>)}
+</select>
+      :
+
+      <select value={startMinute} onChange={(e)=>setStartMinute(e.target.value)} className="bg-white/90 text-gray-900 border border-gray-300 rounded px-2 py-1 font-medium">
+        {minuteOptions.map(m => <option key={m}>{m}</option>)}
+      </select>
+
+      <select value={startPeriod} onChange={(e)=>setStartPeriod(e.target.value)} className="bg-white/90 text-gray-900 border border-gray-300 rounded px-2 py-1 font-medium">
+        <option>AM</option>
+        <option>PM</option>
+      </select>
+    </div>
+  </div>
+
+ {/* END */}
+<div className="relative">
+  <DatePicker
+    selected={endDate}
+    onChange={(date) => setEndDate(date)}
+    dateFormat="yyyy/MM/dd"
+  customInput={<CalendarInput />}  />
+  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
+
+    {/* END TIME */}
+    <div className="flex gap-2 mt-2">
+      <select value={endHour12} onChange={(e)=>setEndHour12(e.target.value)} className="bg-white/90 text-gray-900 border border-gray-300 rounded px-2 py-1 font-medium">
+        {hourOptions.map(h => <option key={h}>{h}</option>)}
+      </select>
+
+      :
+
+      <select value={endMinute} onChange={(e)=>setEndMinute(e.target.value)} className="bg-white/90 text-gray-900 border border-gray-300 rounded px-2 py-1 font-medium">
+        {minuteOptions.map(m => <option key={m}>{m}</option>)}
+      </select>
+
+      <select value={endPeriod} onChange={(e)=>setEndPeriod(e.target.value)} className="bg-white/90 text-gray-900 border border-gray-300 rounded px-2 py-1 font-medium">
+        <option>AM</option>
+        <option>PM</option>
+      </select>
+    </div>
+  </div>
+
             <div className="space-y-2">
               <Label className="text-white">Open To</Label>
               <Input value={formData.open_to} onChange={(e) => setFormData({ ...formData, open_to: e.target.value })} className="bg-white/10 border-white/20 text-white" placeholder="Students, Everyone" />
