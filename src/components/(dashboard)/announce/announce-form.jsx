@@ -1,5 +1,8 @@
 "use client"
 
+import { forwardRef } from "react"
+import { Calendar } from "lucide-react"
+import DatePicker from "react-datepicker"
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -9,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle, Loader2, Info, Trophy, Plus, X, Sparkles, RotateCcw } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+
 
 const STORAGE_KEY = "announce_form_draft"
 const PRIZES_KEY  = "announce_form_prizes"
@@ -65,9 +69,26 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
   const [alert, setAlert] = useState(null)
   const [hasDraft, setHasDraft] = useState(false)
 
+
   // Load from localStorage on first render (survives refresh + tab switches)
   const [formData, setFormData] = useState(() => loadDraft())
   const [prizes, setPrizes] = useState(() => loadPrizes())
+// ===== DATE =====
+const [startDate, setStartDate] = useState(null)
+const [endDate, setEndDate] = useState(null)
+
+// ===== START TIME  =====
+const [startHour12, setStartHour12] = useState("12")
+const [startMinute, setStartMinute] = useState("00")
+const [startPeriod, setStartPeriod] = useState("AM")
+
+// ===== END TIME  =====
+const [endHour12, setEndHour12] = useState("12")
+const [endMinute, setEndMinute] = useState("0")
+const [endPeriod, setEndPeriod] = useState("AM")  
+// dropdown options
+const hourOptions = ["01","02","03","04","05","06","07","08","09","10","11","12"]
+const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","55"]
 
   // Persist every change to localStorage automatically
   useEffect(() => {
@@ -100,7 +121,18 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
       setPrizes(prev => [...prev, { id: Date.now(), name: template.name, value: template.value, description: "" }])
     }
   }
+// 12hrs → 24hrs
+const convertTo24Hour = (hour12, minute, period) => {
+  let hour = parseInt(hour12)
 
+  if (period === "PM" && hour !== 12) hour += 12
+  if (period === "AM" && hour === 12) hour = 0
+
+  const hh = String(hour).padStart(2, "0")
+  const mm = String(minute).padStart(2, "0")
+
+  return `${hh}:${mm}`
+}
   const handleSubmit = async () => {
     if (!currentOrg || !authUserId) {
       setAlert({ type: "error", message: "Organization not found. Please refresh the page." })
@@ -120,6 +152,20 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
 
     setIsLoading(true)
     setAlert(null)
+
+  const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
+  const endTime24 = convertTo24Hour(endHour12, endMinute, endPeriod)
+  const startDateTime = new Date(startDate)
+  const endDateTime = new Date(endDate)
+
+  startDateTime.setHours(startTime24.split(":")[0])
+  startDateTime.setMinutes(startTime24.split(":")[1])
+
+  endDateTime.setHours(endTime24.split(":")[0])
+  endDateTime.setMinutes(endTime24.split(":")[1])
+
+  formData.date_begin = startDateTime.toISOString()
+  formData.date_end = endDateTime.toISOString()
 
     const announcementData = {
       title: formData.title.trim(),
@@ -299,17 +345,95 @@ export default function AnnounceForm({ onSuccess, currentOrg, authUserId }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label className="text-white">Start Date *</Label>
-              <Input type="datetime-local" value={formData.date_begin} onChange={(e) => setFormData({ ...formData, date_begin: e.target.value })}
-                className="bg-white/10 border-white/20 text-white" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-white">End Date *</Label>
-              <Input type="datetime-local" value={formData.date_end} onChange={(e) => setFormData({ ...formData, date_end: e.target.value })}
-                className="bg-white/10 border-white/20 text-white" />
-            </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+  {/* START */}
+<div className="relative">
+  <DatePicker
+    selected={startDate}
+    onChange={(date) => setStartDate(date)}
+    dateFormat="yyyy/MM/dd"
+  customInput={<CalendarInput />}  />
+  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
+
+{/* START TIME */}
+<div className="flex items-center gap-3 mt-2">
+
+  <Input
+    type="number"
+    min={1}
+    max={12}
+value={startHour12}
+onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg-white/10 text-white border-white/20 focus:border-purple-400"
+  />
+
+  <span className="text-white text-xl">:</span>
+
+  <Input
+    type="number"
+    step={5}
+    min={0}
+    max={55}
+    value={startMinute}
+    onChange={(e)=>setStartMinute(e.target.value)}
+    className="w-20 text-center bg-white/10 text-white border-white/20 focus:border-purple-400"
+  />
+
+  <select
+    value={startPeriod}
+    onChange={(e)=>setStartPeriod(e.target.value)}
+    className="bg-white/10 text-white border border-white/20 rounded px-3"
+  >
+    <option value="AM" className="text-black">AM</option>
+    <option value="PM" className="text-black">PM</option>
+  </select>
+
+</div>
+  </div>
+
+ {/* END */}
+<div className="relative">
+  <DatePicker
+    selected={endDate}
+    onChange={(date) => setEndDate(date)}
+    dateFormat="yyyy/MM/dd"
+  customInput={<CalendarInput />}  />
+  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
+
+{/* END TIME */}
+<div className="flex items-center gap-3 mt-2">
+
+  <Input
+    type="number"
+    min={1}
+    max={12}
+  value={endHour12} onChange={(e)=>setEndHour12(e.target.value)} className="w-20 text-center bg-white/10 text-white border-white/20 focus:border-purple-400"
+  />
+
+  <span className="text-white text-xl">:</span>
+
+  <Input
+    type="number"
+    step={5}
+    min={0}
+    max={55}
+    value={endMinute}
+    onChange={(e)=>setEndMinute(e.target.value)}
+    className="w-20 text-center bg-white/10 text-white border-white/20 focus:border-purple-400"
+  />
+
+  <select
+    value={endPeriod}
+    onChange={(e)=>setEndPeriod(e.target.value)}
+    className="bg-white/10 text-white border border-white/20 rounded px-3"
+  >
+    <option value="AM" className="text-black">AM</option>
+    <option value="PM" className="text-black">PM</option>
+  </select>
+
+</div>
+  </div>
+
             <div className="space-y-2">
               <Label className="text-white">Open To</Label>
               <Input value={formData.open_to} onChange={(e) => setFormData({ ...formData, open_to: e.target.value })}
