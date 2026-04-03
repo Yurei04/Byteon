@@ -325,7 +325,7 @@ export default function OrgDashboardPage() {
               <CardContent className="p-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
 
-                  <TabsList className="grid w-full grid-cols-5 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
+                  <TabsList className="grid w-full grid-rows-1 grid-cols-5 mb-6 bg-black/20 border border-fuchsia-500/20 p-1">
                     {mainTabs.map(({ value, icon, label }) => (
                       <TabsTrigger key={value} value={value}
                         className="flex items-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all text-xs sm:text-sm">
