@@ -310,7 +310,6 @@ const periodOptions = ["AM", "PM"]
     onChange={(date) => setStartDate(date)}
     dateFormat="yyyy/MM/dd"
   customInput={<CalendarInput />}  />
-  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
 
     {/* START TIME */}
     <div className="flex gap-2 mt-2">
@@ -338,7 +337,6 @@ const periodOptions = ["AM", "PM"]
     onChange={(date) => setEndDate(date)}
     dateFormat="yyyy/MM/dd"
   customInput={<CalendarInput />}  />
-  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
 
     {/* END TIME */}
     <div className="flex gap-2 mt-2">
