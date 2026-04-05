@@ -19,20 +19,20 @@ const CATEGORIES = [
   "Science",
 ]
 
-// 🔥 DEFAULT USER COLORS (your design choice)
-const USER_PRIMARY = "#c026d3"
+const USER_PRIMARY   = "#c026d3"
 const USER_SECONDARY = "#db2777"
 
+// ── Module-level cache: survives re-renders, built once per page load ─────────
+const COLOR_CACHE = new Map()
+
 export default function BlogPage() {
-  const [blogs, setBlogs] = useState([])
+  const [blogs, setBlogs]           = useState([])
   const [searchTerm, setSearchTerm] = useState("")
-  const [filter, setFilter] = useState("all")
+  const [filter, setFilter]         = useState("all")
 
-    useEffect(() => {
-    const COLOR_CACHE = new Map()
-
+  useEffect(() => {
     async function fetchBlogs() {
-      // ── 1. Fetch all blogs ─────────────────────────────────────────────────
+      // ── 1. Fetch all blogs ──────────────────────────────────────────────
       const { data: blogData, error: blogError } = await supabase
         .from("blogs")
         .select("*")
@@ -41,86 +41,77 @@ export default function BlogPage() {
       if (blogError) { console.error("Error fetching blogs:", blogError); return }
       if (!blogData?.length) { setBlogs([]); return }
 
-      // ── 2. Collect unique org names from blogs ─────────────────────────────
+      // ── 2. Collect unique org names ─────────────────────────────────────
       const orgNames = [...new Set(blogData.map((b) => b.organization).filter(Boolean))]
 
-      // ── 3. Fetch orgs by name ──────────────────────────────────────────────
-      let orgColorMap = {}   // { "OrgName": { primary_color, secondary_color } }
+      // ── 3. Only fetch orgs not already in cache ─────────────────────────
+      const uncached = orgNames.filter((n) => !COLOR_CACHE.has(n))
 
-      if (orgNames.length) {
+      if (uncached.length) {
         const { data: orgData, error: orgError } = await supabase
           .from("organizations")
           .select("name, primary_color, secondary_color")
-          .in("name", orgNames)
+          .in("name", uncached)
 
         if (orgError) {
           console.error("Error fetching org colors:", orgError)
         } else {
-          // Key by name — exactly matches blog.organization
           ;(orgData || []).forEach((org) => {
-            orgColorMap[org.name] = {
-              primary_color:   org.primary_color   ?? USER_PRIMARY,
-              secondary_color: org.secondary_color ?? USER_SECONDARY,
-            }
+            COLOR_CACHE.set(
+              org.name,
+              buildTheme(
+                org.primary_color   ?? USER_PRIMARY,
+                org.secondary_color ?? USER_SECONDARY,
+              ),
+            )
           })
         }
       }
 
-      // ── 4. Enrich blogs ────────────────────────────────────────────────────
+      // ── 4. Enrich blogs ─────────────────────────────────────────────────
       const enriched = blogData.map((blog) => {
-        const orgColors = blog.organization ? orgColorMap[blog.organization] : null
-
-        const primary_color   = orgColors?.primary_color   ?? USER_PRIMARY
-        const secondary_color = orgColors?.secondary_color ?? USER_SECONDARY
-
-        // Cache theme per org name so buildTheme() only runs once per unique org
-        const cacheKey = blog.organization ?? "user-default"
-
-        if (!COLOR_CACHE.has(cacheKey)) {
-          COLOR_CACHE.set(cacheKey, buildTheme(primary_color, secondary_color))
+        // Org blog with a cached theme
+        if (blog.organization && COLOR_CACHE.has(blog.organization)) {
+          return { ...blog, _authorType: "org", _theme: COLOR_CACHE.get(blog.organization) }
         }
 
-        return {
-          ...blog,
-          _authorType: blog.organization ? "org" : "user",
-          primary_color,
-          secondary_color,
-          _theme: COLOR_CACHE.get(cacheKey),
+        // User blog or org with no color data — use default, cache it once
+        if (!COLOR_CACHE.has("user-default")) {
+          COLOR_CACHE.set("user-default", buildTheme(USER_PRIMARY, USER_SECONDARY))
         }
+        return { ...blog, _authorType: "user", _theme: COLOR_CACHE.get("user-default") }
       })
 
       setBlogs(enriched)
     }
+
     fetchBlogs()
   }, [])
 
-
-  // ── Filtering ─────────────────────────────────────────────
+  // ── Filtering ──────────────────────────────────────────────────────────────
   const filteredData = useMemo(() => {
     return blogs.filter((item) => {
       const search = searchTerm.toLowerCase()
 
-      const title = (item.title || "").toLowerCase()
-      const desc = (item.des || "").toLowerCase()
-      const content = (item.content || "").toLowerCase()
+      const title        = (item.title        || "").toLowerCase()
+      const desc         = (item.des          || "").toLowerCase()
+      const content      = (item.content      || "").toLowerCase()
       const organization = (item.organization || "").toLowerCase()
-      const hackathon = (item.hackathon || []).join(" ").toLowerCase()
+      const hackathon    = (item.hackathon    || []).join(" ").toLowerCase()
 
       let themeArray = []
       if (Array.isArray(item.theme)) {
         themeArray = item.theme.map((t) => t.toLowerCase())
       } else if (typeof item.theme === "string") {
-        themeArray = item.theme
-          .split(/[,|]/)
-          .map((t) => t.trim().toLowerCase())
+        themeArray = item.theme.split(/[,|]/).map((t) => t.trim().toLowerCase())
       }
 
       const matchesSearch =
-        title.includes(search) ||
-        desc.includes(search) ||
-        content.includes(search) ||
+        title.includes(search)        ||
+        desc.includes(search)         ||
+        content.includes(search)      ||
         organization.includes(search) ||
-        hackathon.includes(search) ||
+        hackathon.includes(search)    ||
         themeArray.some((t) => t.includes(search))
 
       const matchesFilter =
@@ -132,6 +123,7 @@ export default function BlogPage() {
 
   return (
     <div className="w-full min-h-screen p-6 flex flex-col items-center">
+
       {/* HEADER */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -157,8 +149,8 @@ export default function BlogPage() {
           value={searchTerm}
           placeholder="Search blog posts…"
           className="w-full pl-12 p-3 bg-fuchsia-950/20 border border-fuchsia-800/40
-          text-fuchsia-100 placeholder-fuchsia-300/40 rounded-xl backdrop-blur-md
-          focus:ring-2 focus:ring-fuchsia-500/40 outline-none transition"
+            text-fuchsia-100 placeholder-fuchsia-300/40 rounded-xl backdrop-blur-md
+            focus:ring-2 focus:ring-fuchsia-500/40 outline-none transition"
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
@@ -170,11 +162,10 @@ export default function BlogPage() {
             key={cat}
             onClick={() => setFilter(cat)}
             className={`px-4 py-2 rounded-full text-sm border transition
-            ${
-              filter === cat
-                ? "bg-fuchsia-600 text-white"
-                : "bg-fuchsia-950/20 text-fuchsia-200 hover:bg-fuchsia-700/40"
-            }`}
+              ${filter === cat
+                ? "bg-fuchsia-600 text-white border-fuchsia-400"
+                : "bg-fuchsia-950/20 text-fuchsia-200 border-fuchsia-800/40 hover:bg-fuchsia-700/40"
+              }`}
           >
             {cat}
           </button>
@@ -187,11 +178,7 @@ export default function BlogPage() {
           <BlogEmpty />
         ) : (
           filteredData.map((item) => (
-            <BlogPublicCard
-              key={item.id}
-              item={item}
-              theme={item._theme}
-            />
+            <BlogPublicCard key={item.id} item={item} theme={item._theme} />
           ))
         )}
       </div>
