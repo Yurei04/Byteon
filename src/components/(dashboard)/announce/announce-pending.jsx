@@ -3,7 +3,6 @@
 import DatePicker from "@/components/DatePickerClient"
 import { forwardRef } from "react"
 import { Calendar } from "lucide-react"
-import DatePicker from "react-datepicker"
 import { useState, useEffect} from "react"
 import { supabase } from "@/lib/supabase"
 import { Card, CardContent } from "@/components/ui/card"
