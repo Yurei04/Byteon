@@ -11,12 +11,6 @@ export default function OrgQuickStats({ formData, totalAchievements }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex justify-between items-center">
-          <span className="text-white/60 text-sm">Status</span>
-          <Badge className={formData.active ? "bg-green-500/20 text-green-200 border border-green-500/30" : "bg-gray-500/20 text-gray-200 border border-gray-500/30"}>
-            {formData.active ? 'Active' : 'Inactive'}
-          </Badge>
-        </div>
-        <div className="flex justify-between items-center">
           <span className="text-white/60 text-sm">Achievements</span>
           <span className="text-white font-bold">{formData.achievements.length}</span>
         </div>

@@ -15,6 +15,8 @@ import {
   Plus, FileText, Megaphone, BookOpen, TrendingUp,
   Loader2, Trash2, AlertCircle, CheckCircle,
   Building2, AtSign, Mail, Sparkles, Bell,
+  ShieldCheck,
+  LogOut,
 } from "lucide-react"
 import {
   Pagination, PaginationContent, PaginationItem,
@@ -32,7 +34,6 @@ import BlogCard         from "@/components/blog/blogCard"
 import AnnouncementCard from "@/components/(dashboard)/announce/announce-card"
 import OrgProfileHeader from "./org-profile-header"
 import OrgAboutSection  from "./org-about-section"
-import OrgQuickStats    from "./org-quick-stats"
 import DeleteAccountModal from "./delete-account"
 import { availableOrgAchievements } from "./org-achievements"
 import { ReturnButton } from "@/components/return"
@@ -48,7 +49,7 @@ export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
 
-  const [activeTab, setActiveTab]             = useState("posters")
+  const [activeTab, setActiveTab]             = useState("profile")
   const [activeViewTab, setActiveViewTab]     = useState("viewAnnouncement")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
 
@@ -389,24 +390,20 @@ export default function OrgDashboardPage() {
       {/* Inject dynamic overrides for tab active states */}
       <style>{dynamicStyles}</style>
 
-      {/* ── Top bar ── */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full flex justify-between max-w-7xl mx-auto mb-6 p-2"
-      >
-        <div className="p-2"><ReturnButton /></div>
-        <div
-          className="w-full backdrop-blur-lg py-3 px-3 rounded-lg"
-          style={{
-            background: orgTheme.headerGradient.replace("135deg", "to right").replace(/rgba\([^)]+\)/g, (m) => m.replace(/,([\d.]+)\)/, ",0.2)")),
-            border: orgTheme.borderColor,
-            boxShadow: orgTheme.glowShadow,
-          }}
-        >
-          <p className="text-sm text-center flex items-center justify-center gap-2" style={{ color: orgTheme.primaryText }}>
-            <AlertCircle className="w-4 h-4" />⚠️ This Page is currently in Beta Testing
+      {/* Top bar */}
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+        className="w-full flex justify-between items-center max-w-7xl mx-auto mb-6 gap-4">
+        <ReturnButton />
+        <div className="flex-1 bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-2.5 px-4 rounded-lg shadow-lg shadow-fuchsia-500/10">
+          <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
+            Organization Panel
           </p>
         </div>
+        <Button onClick={() => setShowSignOutDialog(true)} variant="outline" size="sm"
+          className="shrink-0 border-red-500/40 text-red-300 hover:bg-red-500/20 hover:border-red-400 hover:text-red-200 transition-all gap-2">
+          <LogOut className="w-4 h-4" /><span className="hidden sm:inline">Sign Out</span>
+        </Button>
       </motion.div>
 
       <div className="max-w-7xl mx-auto">
@@ -430,28 +427,8 @@ export default function OrgDashboardPage() {
           {/* ── Stat Cards ── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
           >
-            {/* Profile status card */}
-            <div
-              className="org-card-hover rounded-xl p-1 transition-all duration-300"
-              style={{ background: orgTheme.cardBg, border: orgTheme.borderColor }}
-            >
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col items-center justify-center text-center space-y-2">
-                  <div className="p-3 rounded-full" style={{ background: orgTheme.badgeBgPrimary, border: orgTheme.borderColorLight }}>
-                    <Building2 className="w-6 h-6 sm:w-8 sm:h-8" style={{ color: orgTheme.primaryText }} />
-                  </div>
-                  <div>
-                    <p className="text-xs sm:text-sm" style={{ color: orgTheme.mutedText }}>Your Profile</p>
-                    <p className="text-lg sm:text-xl font-bold" style={{ color: orgTheme.primaryText }}>
-                      {formData.active ? "Active" : "Inactive"}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </div>
-
             {/* Dynamic stat cards */}
             {statCards.map(({ label, count, Icon }) => (
               <div
@@ -568,7 +545,6 @@ export default function OrgDashboardPage() {
                           </div>
 
                           <div className="space-y-6">
-                            <OrgQuickStats formData={formData} totalAchievements={availableOrgAchievements.length} />
                             <div className="rounded-xl backdrop-blur-lg p-6 bg-red-950/40 border border-red-500/30">
                               <h3 className="text-xl font-bold text-red-300 mb-4 flex items-center gap-2">
                                 <AlertCircle className="w-5 h-5" />Danger Zone
