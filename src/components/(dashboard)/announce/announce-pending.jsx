@@ -305,12 +305,17 @@ const periodOptions = ["AM", "PM"]
 
   {/* START */}
 <div className="relative">
+
+  <label className="block text-sm font-semibold mb-1">
+    Start Date
+  </label>
+
   <DatePicker
     selected={startDate}
     onChange={(date) => setStartDate(date)}
     dateFormat="yyyy/MM/dd"
-  customInput={<CalendarInput />}  />
-
+    customInput={<CalendarInput />}
+  />
     {/* START TIME */}
     <div className="flex gap-2 mt-2">
 <select
@@ -332,12 +337,17 @@ const periodOptions = ["AM", "PM"]
 
  {/* END */}
 <div className="relative">
+
+  <label className="block text-sm font-semibold mb-1">
+    End Date
+  </label>
+
   <DatePicker
     selected={endDate}
     onChange={(date) => setEndDate(date)}
     dateFormat="yyyy/MM/dd"
-  customInput={<CalendarInput />}  />
-
+    customInput={<CalendarInput />}
+  />
     {/* END TIME */}
     <div className="flex gap-2 mt-2">
       <select value={endHour12} onChange={(e)=>setEndHour12(e.target.value)} className="bg-white/90 text-gray-900 border border-gray-300 rounded px-2 py-1 font-medium">

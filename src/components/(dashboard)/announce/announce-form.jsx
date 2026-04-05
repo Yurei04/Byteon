@@ -349,12 +349,17 @@ const convertTo24Hour = (hour12, minute, period) => {
 
   {/* START */}
 <div className="relative">
+
+  <label className="block text-sm font-semibold mb-1">
+    Start Date
+  </label>
+
   <DatePicker
     selected={startDate}
     onChange={(date) => setStartDate(date)}
     dateFormat="yyyy/MM/dd"
-  customInput={<CalendarInput />}  />
-  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
+    customInput={<CalendarInput />}
+  />
 
 {/* START TIME */}
 <div className="flex items-center gap-3 mt-2">
@@ -393,13 +398,17 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
 
  {/* END */}
 <div className="relative">
+
+  <label className="block text-sm font-semibold mb-1">
+    End Date
+  </label>
+
   <DatePicker
     selected={endDate}
     onChange={(date) => setEndDate(date)}
     dateFormat="yyyy/MM/dd"
-  customInput={<CalendarInput />}  />
-  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/70 pointer-events-none" />
-
+    customInput={<CalendarInput />}
+  />
 {/* END TIME */}
 <div className="flex items-center gap-3 mt-2">
 
