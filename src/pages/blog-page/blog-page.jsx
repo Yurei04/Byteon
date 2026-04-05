@@ -28,79 +28,72 @@ export default function BlogPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filter, setFilter] = useState("all")
 
-  useEffect(() => {
+    useEffect(() => {
+    const COLOR_CACHE = new Map()
+
     async function fetchBlogs() {
-      // ── 1. Fetch blogs ─────────────────────────────────────
+      // ── 1. Fetch all blogs ─────────────────────────────────────────────────
       const { data: blogData, error: blogError } = await supabase
         .from("blogs")
         .select("*")
         .order("created_at", { ascending: false })
 
-      if (blogError) {
-        console.error("Error fetching blogs:", blogError)
-        return
-      }
+      if (blogError) { console.error("Error fetching blogs:", blogError); return }
+      if (!blogData?.length) { setBlogs([]); return }
 
-      if (!blogData?.length) {
-        setBlogs([])
-        return
-      }
+      // ── 2. Collect unique org names from blogs ─────────────────────────────
+      const orgNames = [...new Set(blogData.map((b) => b.organization).filter(Boolean))]
 
-      // ── 2. Collect org IDs ─────────────────────────────────
-      const orgIds = [
-        ...new Set(blogData.map((b) => b.organization_id).filter(Boolean)),
-      ]
+      // ── 3. Fetch orgs by name ──────────────────────────────────────────────
+      let orgColorMap = {}   // { "OrgName": { primary_color, secondary_color } }
 
-      // ── 3. Fetch org colors ────────────────────────────────
-      const { data: orgData, error: orgError } = orgIds.length
-        ? await supabase
-            .from("organizations")
-            .select("user_id, primary_color, secondary_color")
-            .in("id", orgIds)
-        : { data: [] }
+      if (orgNames.length) {
+        const { data: orgData, error: orgError } = await supabase
+          .from("organizations")
+          .select("name, primary_color, secondary_color")
+          .in("name", orgNames)
 
-      if (orgError) {
-        console.error("Error fetching organizations:", orgError)
-      }
-
-      // ── 4. Map orgs ────────────────────────────────────────
-      const orgMap = {}
-      ;(orgData || []).forEach((org) => {
-        orgMap[org.user_id] = org
-      })
-
-      // ── 5. Enrich blogs (🔥 FIX HERE) ──────────────────────
-      const enriched = blogData.map((blog) => {
-        const isOrg = !!blog.organization_id
-        const org = isOrg ? orgMap[blog.organization_id] : null
-
-        let primary_color
-        let secondary_color
-
-        if (isOrg && org) {
-          // ✅ ORG COLORS
-          primary_color = org.primary_color ?? "#a855f7"
-          secondary_color = org.secondary_color ?? "#ec4899"
+        if (orgError) {
+          console.error("Error fetching org colors:", orgError)
         } else {
-          // ✅ USER DEFAULT COLORS
-          primary_color = USER_PRIMARY
-          secondary_color = USER_SECONDARY
+          // Key by name — exactly matches blog.organization
+          ;(orgData || []).forEach((org) => {
+            orgColorMap[org.name] = {
+              primary_color:   org.primary_color   ?? USER_PRIMARY,
+              secondary_color: org.secondary_color ?? USER_SECONDARY,
+            }
+          })
+        }
+      }
+
+      // ── 4. Enrich blogs ────────────────────────────────────────────────────
+      const enriched = blogData.map((blog) => {
+        const orgColors = blog.organization ? orgColorMap[blog.organization] : null
+
+        const primary_color   = orgColors?.primary_color   ?? USER_PRIMARY
+        const secondary_color = orgColors?.secondary_color ?? USER_SECONDARY
+
+        // Cache theme per org name so buildTheme() only runs once per unique org
+        const cacheKey = blog.organization ?? "user-default"
+
+        if (!COLOR_CACHE.has(cacheKey)) {
+          COLOR_CACHE.set(cacheKey, buildTheme(primary_color, secondary_color))
         }
 
         return {
           ...blog,
-          _authorType: isOrg ? "org" : "user",
+          _authorType: blog.organization ? "org" : "user",
           primary_color,
           secondary_color,
-          _theme: buildTheme(primary_color, secondary_color),
+          _theme: COLOR_CACHE.get(cacheKey),
         }
       })
 
       setBlogs(enriched)
     }
-
     fetchBlogs()
   }, [])
+
 
   // ── Filtering ─────────────────────────────────────────────
   const filteredData = useMemo(() => {
