@@ -1,6 +1,6 @@
 "use client"
 
-import "react-datepicker/dist/react-datepicker.css"
+import DatePicker from "@/components/DatePickerClient"
 import { forwardRef } from "react"
 import { Calendar } from "lucide-react"
 import DatePicker from "react-datepicker"
