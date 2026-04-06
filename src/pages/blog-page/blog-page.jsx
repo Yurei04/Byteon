@@ -1,25 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
+import { buildTheme } from "@/lib/blog-color"
 import BlogPublicCard from "@/components/blog/blog-public-card"
 import BlogEmpty from "@/components/blog/blog-empty"
 import { motion } from "framer-motion"
 import { Search } from "lucide-react"
 
-export default function BlogPage() {
-  const [blogs, setBlogs] = useState([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filter, setFilter] = useState("all")
+const CATEGORIES = [
+  "all",
+  "Technology",
+  "Personal Development",
+  "Innovation",
+  "Education",
+  "Health",
+  "AI",
+  "Science",
+]
 
-  const categories = [
-    "all", "Technology", "Personal Development",
-    "Innovation", "Education", "Health", "AI", "Science",
-  ]
+const USER_PRIMARY   = "#c026d3"
+const USER_SECONDARY = "#db2777"
+
+// ── Module-level cache: survives re-renders, built once per page load ─────────
+const COLOR_CACHE = new Map()
+
+export default function BlogPage() {
+  const [blogs, setBlogs]           = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filter, setFilter]         = useState("all")
 
   useEffect(() => {
     async function fetchBlogs() {
-      // ── Step 1: fetch blogs as-is (no join needed) ────────────────────────
+      // ── 1. Fetch all blogs ──────────────────────────────────────────────
       const { data: blogData, error: blogError } = await supabase
         .from("blogs")
         .select("*")
@@ -28,45 +41,45 @@ export default function BlogPage() {
       if (blogError) { console.error("Error fetching blogs:", blogError); return }
       if (!blogData?.length) { setBlogs([]); return }
 
-      // ── Step 2: collect the unique IDs we need to look up ─────────────────
-      const orgIds  = [...new Set(blogData.map((b) => b.organization_id).filter(Boolean))]
-      const userIds = [...new Set(blogData.map((b) => b.user_id).filter(Boolean))]
+      // ── 2. Collect unique org names ─────────────────────────────────────
+      const orgNames = [...new Set(blogData.map((b) => b.organization).filter(Boolean))]
 
-      // ── Step 3: batch-fetch colors only for IDs that appear in results ────
-      const [orgResult, userResult] = await Promise.all([
-        orgIds.length
-          ? supabase
-              .from("organizations")
-              .select("user_id, primary_color, secondary_color, color_scheme")
-              .in("user_id", orgIds)       // organizations.user_id = blogs.organization_id
-          : { data: [] },
+      // ── 3. Only fetch orgs not already in cache ─────────────────────────
+      const uncached = orgNames.filter((n) => !COLOR_CACHE.has(n))
 
-        userIds.length
-          ? supabase
-              .from("users")
-              .select("user_id, accent_color")
-              .in("user_id", userIds)      // users.user_id = blogs.user_id
-          : { data: [] },
-      ])
+      if (uncached.length) {
+        const { data: orgData, error: orgError } = await supabase
+          .from("organizations")
+          .select("name, primary_color, secondary_color")
+          .in("name", uncached)
 
-      // ── Step 4: O(1) lookup maps ──────────────────────────────────────────
-      const orgMap  = {}
-      const userMap = {}
-      ;(orgResult.data  || []).forEach((o) => { orgMap[o.user_id]  = o })
-      ;(userResult.data || []).forEach((u) => { userMap[u.user_id] = u })
-
-      // ── Step 5: enrich each blog with resolved colors ─────────────────────
-      const enriched = blogData.map((blog) => {
-        const isOrg = !!blog.organization_id
-        const org   = isOrg           ? orgMap[blog.organization_id] : null
-        const user  = !isOrg          ? userMap[blog.user_id]        : null
-
-        return {
-          ...blog,
-          _authorType:     isOrg ? "org" : "user",
-          primary_color:   org?.primary_color   ?? user?.accent_color ?? null,
-          secondary_color: org?.secondary_color ?? null,
+        if (orgError) {
+          console.error("Error fetching org colors:", orgError)
+        } else {
+          ;(orgData || []).forEach((org) => {
+            COLOR_CACHE.set(
+              org.name,
+              buildTheme(
+                org.primary_color   ?? USER_PRIMARY,
+                org.secondary_color ?? USER_SECONDARY,
+              ),
+            )
+          })
         }
+      }
+
+      // ── 4. Enrich blogs ─────────────────────────────────────────────────
+      const enriched = blogData.map((blog) => {
+        // Org blog with a cached theme
+        if (blog.organization && COLOR_CACHE.has(blog.organization)) {
+          return { ...blog, _authorType: "org", _theme: COLOR_CACHE.get(blog.organization) }
+        }
+
+        // User blog or org with no color data — use default, cache it once
+        if (!COLOR_CACHE.has("user-default")) {
+          COLOR_CACHE.set("user-default", buildTheme(USER_PRIMARY, USER_SECONDARY))
+        }
+        return { ...blog, _authorType: "user", _theme: COLOR_CACHE.get("user-default") }
       })
 
       setBlogs(enriched)
@@ -75,34 +88,38 @@ export default function BlogPage() {
     fetchBlogs()
   }, [])
 
-  const filteredData = blogs.filter((item) => {
-    const search       = searchTerm.toLowerCase()
-    const title        = (item.title        || "").toLowerCase()
-    const desc         = (item.des          || "").toLowerCase()
-    const content      = (item.content      || "").toLowerCase()
-    const organization = (item.organization || "").toLowerCase()
-    const hackathon    = (item.hackathon    || []).join(" ").toLowerCase()
+  // ── Filtering ──────────────────────────────────────────────────────────────
+  const filteredData = useMemo(() => {
+    return blogs.filter((item) => {
+      const search = searchTerm.toLowerCase()
 
-    let themeArray = []
-    if (Array.isArray(item.theme)) {
-      themeArray = item.theme.map((t) => t.toLowerCase())
-    } else if (typeof item.theme === "string") {
-      themeArray = item.theme.split(/[,|]/).map((t) => t.trim().toLowerCase())
-    }
+      const title        = (item.title        || "").toLowerCase()
+      const desc         = (item.des          || "").toLowerCase()
+      const content      = (item.content      || "").toLowerCase()
+      const organization = (item.organization || "").toLowerCase()
+      const hackathon    = (item.hackathon    || []).join(" ").toLowerCase()
 
-    const matchesSearch =
-      title.includes(search)        ||
-      desc.includes(search)         ||
-      content.includes(search)      ||
-      organization.includes(search) ||
-      hackathon.includes(search)    ||
-      themeArray.some((t) => t.includes(search))
+      let themeArray = []
+      if (Array.isArray(item.theme)) {
+        themeArray = item.theme.map((t) => t.toLowerCase())
+      } else if (typeof item.theme === "string") {
+        themeArray = item.theme.split(/[,|]/).map((t) => t.trim().toLowerCase())
+      }
 
-    const matchesFilter =
-      filter === "all" || themeArray.includes(filter.toLowerCase())
+      const matchesSearch =
+        title.includes(search)        ||
+        desc.includes(search)         ||
+        content.includes(search)      ||
+        organization.includes(search) ||
+        hackathon.includes(search)    ||
+        themeArray.some((t) => t.includes(search))
 
-    return matchesSearch && matchesFilter
-  })
+      const matchesFilter =
+        filter === "all" || themeArray.includes(filter.toLowerCase())
+
+      return matchesSearch && matchesFilter
+    })
+  }, [blogs, searchTerm, filter])
 
   return (
     <div className="w-full min-h-screen p-6 flex flex-col items-center">
@@ -124,12 +141,13 @@ export default function BlogPage() {
         </p>
       </motion.div>
 
-      {/* SEARCH BAR */}
+      {/* SEARCH */}
       <div className="w-full max-w-2xl mt-10 relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-fuchsia-300/60" />
         <input
           type="text"
-          placeholder="Search blog posts..."
+          value={searchTerm}
+          placeholder="Search blog posts…"
           className="w-full pl-12 p-3 bg-fuchsia-950/20 border border-fuchsia-800/40
             text-fuchsia-100 placeholder-fuchsia-300/40 rounded-xl backdrop-blur-md
             focus:ring-2 focus:ring-fuchsia-500/40 outline-none transition"
@@ -137,18 +155,13 @@ export default function BlogPage() {
         />
       </div>
 
-      {/* FILTER CHIPS */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="flex flex-wrap justify-center gap-3 mt-6"
-      >
-        {categories.map((cat) => (
+      {/* FILTERS */}
+      <motion.div className="flex flex-wrap justify-center gap-3 mt-6">
+        {CATEGORIES.map((cat) => (
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-            className={`px-4 py-2 rounded-full text-sm font-medium border backdrop-blur-md transition
+            className={`px-4 py-2 rounded-full text-sm border transition
               ${filter === cat
                 ? "bg-fuchsia-600 text-white border-fuchsia-400"
                 : "bg-fuchsia-950/20 text-fuchsia-200 border-fuchsia-800/40 hover:bg-fuchsia-700/40"
@@ -159,30 +172,16 @@ export default function BlogPage() {
         ))}
       </motion.div>
 
-      {/* CONTENT GRID */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="flex justify-center items-center w-full"
-      >
+      {/* GRID */}
+      <div className="w-[90%] mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredData.length === 0 ? (
-          <div className="w-full flex justify-center mt-16">
-            <BlogEmpty />
-          </div>
+          <BlogEmpty />
         ) : (
-          <div className="w-[90%] mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredData.map((item) => (
-              <BlogPublicCard
-                key={item.id}
-                item={item}
-                primaryColor={item.primary_color}
-                secondaryColor={item.secondary_color}
-              />
-            ))}
-          </div>
+          filteredData.map((item) => (
+            <BlogPublicCard key={item.id} item={item} theme={item._theme} />
+          ))
         )}
-      </motion.div>
+      </div>
     </div>
   )
 }

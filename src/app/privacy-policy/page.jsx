@@ -29,118 +29,201 @@ export default function PrivacyPolicyPage() {
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-2">Privacy Policy</h1>
-          <p className="text-purple-300 text-sm">Last updated: March 2025</p>
+          <p className="text-purple-300 text-sm">Last updated: April 2026</p>
         </div>
 
         <div className="border-t border-purple-400/20 mb-10" />
 
         <div className="space-y-10 text-purple-100/90 leading-relaxed">
 
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-3">1. Introduction</h2>
-            <p>
-              Byteon ("we", "us", or "our") is committed to protecting your personal information. This Privacy Policy explains how we collect, use, store, and protect your data when you use our platform. By using Byteon, you agree to the collection and use of information in accordance with this policy.
-            </p>
+        <section>
+            <h2 className="text-sm font-semibold text-white mb-2">1. Acceptance of Terms</h2>
+            <p>By accessing, registering for, or using Byteon (“Platform,” “we,” “us,” or “our”), you acknowledge that you have read, understood, and agree to be bound by these Terms of Service (“Terms”).</p>
+            <p className="mt-2">If you do not agree to these Terms, you must not access or use the Platform. We reserve the right to modify or update these Terms at any time. Changes will become effective upon posting. Continued use of the Platform after changes constitutes acceptance of the revised Terms.</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">2. Information We Collect</h2>
-            <p>We collect the following types of information:</p>
-            <ul className="list-disc list-inside mt-3 space-y-1.5 text-purple-100/80">
-              <li><strong className="text-white">Account information:</strong> Email address, password (stored as a secure hash), name, age, country, and occupation (for individual users), or organization name and description (for organizations).</li>
-              <li><strong className="text-white">Profile media:</strong> Profile photos you choose to upload.</li>
-              <li><strong className="text-white">Usage data:</strong> Information about how you interact with the platform, including pages visited, content viewed, and actions taken.</li>
-              <li><strong className="text-white">Device and technical data:</strong> IP address, browser type, operating system, and other technical identifiers.</li>
+            <h2 className="text-sm font-semibold text-white mb-2">2. Eligibility</h2>
+            <p>Byteon is intended solely for users who are <strong className="text-white">18 years of age or older</strong>. By registering, you represent and warrant that:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>You are at least 18 years old.</li>
+              <li>You have the legal capacity to enter into a binding agreement.</li>
+              <li>Your use of the platform does not violate any applicable law or regulation in your jurisdiction.</li>
+              <li>All registration information you submit is truthful and accurate.</li>
+            </ul>
+            <p className="mt-2">By using the Byteon, you represent and warrant that all registration information you provide is accurate and truthful. We reserve the right to suspend or terminate accounts that violate these requirements.</p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">3. Account Registration and Security</h2>
+            <p>To access certain features of Byteon, you must register for an account. You agree to:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Provide accurate, current, and complete information during registration.</li>
+              <li>Maintain the security and confidentiality of your login credentials.</li>
+              <li>Notify us immediately of any unauthorized use of your account.</li>
+              <li>Take full responsibility for all activity that occurs under your account.</li>
+            </ul>
+            <p className="mt-2">You may not:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Create multiple accounts for fraudulent purpose, each email address may only be associate with one account</li>
+              <li>Share or transfer your account without permission</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">3. How We Use Your Information</h2>
-            <p>We use the information we collect to:</p>
-            <ul className="list-disc list-inside mt-3 space-y-1.5 text-purple-100/80">
-              <li>Create and manage your account and provide access to the platform.</li>
-              <li>Verify your identity and eligibility (including age verification).</li>
-              <li>Communicate with you about your account, updates, or support requests.</li>
-              <li>Improve and maintain the platform's features, security, and performance.</li>
-              <li>Enforce our Terms of Service and respond to violations.</li>
-              <li>Comply with applicable legal obligations.</li>
+            <h2 className="text-sm font-semibold text-white mb-2">4. User Conduct</h2>
+            <p>You agree to use Byteon responsibly and lawfully. You must not:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Post or distribute unlawful, harmful, abusive, or defamatory content</li>
+              <li>Harass, threaten, or exploit other users</li>
+              <li>Impersonate individuals or entities</li>
+              <li>Upload malicious code (e.g., viruses, malware)</li>
+              <li>Engage in spam, phishing, or fraudulent activities</li>
+              <li>Attempt unauthorized access to systems or accounts</li>
+              <li>Use bots, scraping tools, or automation without permission</li>
+            <p className="mt-2">Violation of these rules may result in immediate suspension or termination.</p>
             </ul>
-            <p className="mt-3">
-              We do not sell your personal information to third parties.
-            </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">4. Data Storage and Security</h2>
-            <p>
-              Your data is stored securely using Supabase, a trusted cloud infrastructure provider. We implement industry-standard measures including encryption at rest and in transit, access controls, and regular security reviews to protect your personal information.
-            </p>
-            <p className="mt-3">
-              While we take all reasonable steps to protect your data, no method of transmission over the internet or electronic storage is 100% secure. We cannot guarantee absolute security.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-3">5. Profile Photos</h2>
-            <p>
-              Profile photos you upload are stored in secure cloud storage and are publicly accessible via your profile. Do not upload photos that contain sensitive personal information or images of others without their consent.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-3">6. Data Retention</h2>
-            <p>
-              We retain your personal data for as long as your account is active or as needed to provide services. If you request account deletion, we will delete or anonymize your personal information within a reasonable timeframe, except where retention is required by law or for legitimate business purposes such as fraud prevention.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-3">7. Third-Party Services</h2>
-            <p>
-              Byteon uses third-party services to operate the platform, including Supabase for authentication and data storage. These providers process data on our behalf and are contractually required to protect your information in accordance with applicable privacy laws.
-            </p>
-            <p className="mt-3">
-              We do not share your personal data with advertisers or unrelated third parties.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-semibold text-white mb-3">8. Your Rights</h2>
-            <p>Depending on your jurisdiction, you may have the right to:</p>
-            <ul className="list-disc list-inside mt-3 space-y-1.5 text-purple-100/80">
-              <li>Access the personal data we hold about you.</li>
-              <li>Request correction of inaccurate or incomplete data.</li>
-              <li>Request deletion of your personal data.</li>
-              <li>Object to or restrict certain processing of your data.</li>
-              <li>Withdraw consent where processing is based on consent.</li>
+            <h2 className="text-sm font-semibold text-white mb-2">5. Content Ownership and License</h2>
+            <p>You retain ownership of the content you submit (“User Content”).</p>
+            <p className="mt-2">By posting content, you grant Byteon a:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Non-exclusive</li>
+              <li>Worldwide</li>
+              <li>Royalty-free</li>
             </ul>
-            <p className="mt-3">
-              To exercise any of these rights, contact us at{" "}
-              <a href="mailto:support@byteon.com" className="underline text-purple-300 hover:text-white transition-colors">
-                support@byteon.com
-              </a>.
-            </p>
+            <p className="mt-2">license to use, reproduce, display, and distribute your content for platform operation, promotion, and improvement purposes.</p>
+            <p className="mt-2">You represent that:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>You own or have rights to the content</li>
+              <li>Your content does not violate any intellectual property or legal rights</li>
+            </ul>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">9. Children's Privacy</h2>
-            <p>
-              Byteon is not intended for users under the age of 18. We do not knowingly collect personal information from minors. If we discover that a user is under 18, their account will be terminated and their data removed promptly. If you believe a minor has registered on our platform, please contact us immediately.
-            </p>
+            <h2 className="text-sm font-semibold text-white mb-2">6. Organizations</h2>
+            <p>If you register on behalf of an organization, you represent that you are authorized to act on its behalf.</p>
+            <p>Organizations are responsible for:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>All activity under their account</li>
+              <li>Ensuring compliance with these Terms and applicable laws</li>
+            </ul>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">10. Changes to This Policy</h2>
-            <p>
-              We may update this Privacy Policy from time to time. We will notify users of significant changes by updating the "Last updated" date at the top of this page. Continued use of the platform after changes are posted constitutes acceptance of the revised policy.
-            </p>
+            <h2 className="text-sm font-semibold text-white mb-2">7. Privacy</h2>
+            <p>Your use of Byteon is also governed by our Privacy Policy, which explains how we collect, use, and protect your data.</p>
           </section>
 
           <section>
-            <h2 className="text-lg font-semibold text-white mb-3">11. Contact Us</h2>
+            <h2 className="text-sm font-semibold text-white mb-2">8. Disclaimer of Warranties</h2>
+            <p>Byteon is provided on an &quot;as is&quot; and &quot;as available&quot; We make no guarantees that:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>The Platform will be uninterrupted or error-free</li>
+              <li>Defects will be corrected</li>
+              <li>The Platform is free of viruses or harmful components</li>
+            </ul>
+            <p className="mt-2">Use of the Platform is at your own risk.</p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">9. Limitation of Liability</h2>
+            <p>To the fullest extent permitted by law, Byteon and its affiliates shall not be liable for:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Indirect, incidental, or consequential damages</li>
+              <li>Loss of data, revenue, or profits</li>
+              <li>Damages resulting from your use or inability to use the Platform</li>
+            </ul>
+            <p className="mt-2">Even if we have been advised of such risks.</p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">10. Indemnification</h2>
+            <p>You agree to defend, indemnify, and hold harmless Byteon, its affiliates, and team from any claims, damages, or expenses arising from:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Your use of the Platform</li>
+              <li>Your violation of these Terms</li>
+              <li>Your infringement of any rights of a third party</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">11. Governing Law</h2>
+            <p>These Terms shall be governed by and interpreted in accordance with the laws of the jurisdiction in which Byteon operates, without regard to conflict of law principles.</p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">12. Changes to the Platform</h2>
+            <p>We reserve the right to:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Modify or discontinue any part of the Platform</li>
+              <li>Add or remove features</li>
+              <li>Restrict access to certain users</li>
+            </ul>
+            <p className="mt-2">At any time, without prior notice.</p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">13. Account Suspension and Termination</h2>
+            <p>Byteon may suspend or terminate your account at our sole discretion, with or without notice, if:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>You violate these Terms & Conditions</li>
+              <li>Your actions harm the platform or other users</li>
+              <li>Required by law or legal request</li>
+            </ul>
+            <p className="mt-2">Upon termination, your right to use the platform ceases immediately. Provisions of these terms that by their nature should survive termination shall survive, including but not limited to ownership provisions, disclaimers, and limitations of liability.</p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">14. Account Deletion and Suspension Policy</h2>
+            <p>Byteon reserves the right to suspend, restrict, or permanently delete user accounts under the following conditions:</p>
+            <p className="mt-2">A. Grounds for Suspension or Termination</p>
+            <p className="mt-2">An account may be suspended or terminated if the user:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Violates any provision of these Terms of Service</li>
+              <li>Engages in fraudulent, abusive, or illegal activities</li>
+              <li>Provides false, misleading, or incomplete registration information</li>
+              <li>Compromises the security or integrity of the platform</li>
+              <li>Repeatedly receives complaints from other users</li>
+              <li>Uses the platform in a manner that may harm Byteon, its users, or third parties</li>
+            </ul>
+            <p className="mt-2">B. Types of Enforcement Actions</p>
+            <p className="mt-2">Depending on the severity of the violation, Byteon may take one or more of the following actions:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Warning Notice – Issuance of a formal warning to the user</li>
+              <li>Temporary Suspension – Limited restriction of account access for a defined period</li>
+              <li>Permanent Termination – Complete removal of the account and access to the platform</li>
+            </ul>
+            <p className="mt-2">C. User-Initiated Account Deletion</p>
+            <p className="mt-2">Users may request to delete their account at any time by:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Accessing account settings, or</li>
+              <li>Contacting support at support@byteon.com</li>
+            </ul>
+            <p className="mt-2">Upon deletion:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Your account will be deactivated immediately or within a reasonable processing period</li>
+              <li>Certain data may be retained as required by law or for legitimate business purposes (e.g., fraud prevention, legal compliance)</li>
+            </ul>
+            <p className="mt-2">D. Effect of Termination</p>
+            <p className="mt-2">Upon suspension or termination:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1 text-purple-100/75">
+              <li>Your right to access and use Byteon will immediately cease</li>
+              <li>Any active content, submissions, or participation (e.g., hackathons, posts) may be removed or retained at our discretion</li>
+              <li>Byteon shall not be liable for any loss of data or content resulting from account termination</li>
+            </ul>
+            <p className="mt-2">E. Appeals and Review</p>
+            <p className="mt-2">If you believe your account was suspended or terminated in error, you may submit an appeal by contacting: support@byteon.com</p>
+            <p className="mt-2">Byteon reserves the right to make the final decision after review.</p>
+          </section>
+
+          <section>
+            <h2 className="text-sm font-semibold text-white mb-2">15. Contact Us</h2>
             <p>
-              If you have any questions or concerns about this Privacy Policy or how we handle your data, please reach out to us at{" "}
-              <a href="mailto:support@byteon.com" className="underline text-purple-300 hover:text-white transition-colors">
+              If you have any questions about these Terms of Service, please contact us at{" "}
+              <a href="mailto:support@byteon.com" className="underline underline-offset-2 text-purple-300 hover:text-white transition-colors">
                 support@byteon.com
               </a>.
             </p>
