@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@google-cloud/aiplatform": "^6.5.0",
     "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -48,6 +50,7 @@
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.24",
+    "google-auth-library": "^10.6.2",
     "googleapis": "^166.0.0",
     "groq-sdk": "^1.1.1",
     "gsap": "^3.13.0",
