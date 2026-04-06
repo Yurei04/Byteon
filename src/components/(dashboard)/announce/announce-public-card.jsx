@@ -12,6 +12,24 @@ import { Button } from "../../ui/button"
 import { supabase } from "@/lib/supabase"
 import AnnouncementTrackingBadge from "./announce-tracking-badge"
 
+
+// UTC date + time formatter
+function formatUTCDateTime(dateString) {
+  if (!dateString) return "—"
+
+  const date = new Date(dateString)
+  if (isNaN(date)) return "—"
+
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  }).format(date) + " UTC"
+}
 // Prize card color schemes based on common prize names
 const getPrizeColorScheme = (prizeName) => {
   const name = prizeName.toLowerCase()
@@ -62,8 +80,9 @@ const getPrizeColorScheme = (prizeName) => {
 
 export default function AnnouncementPublicCard({ item, onDelete }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const isExpired = new Date(item.date_end) < new Date()
+  const isExpired = new Date(item.date_end).getTime() < Date.now()
   
+
   // Get prizes from JSONB field
   const prizes = item.prizes || []
 
@@ -173,11 +192,13 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
               </div>
               
               <div className="text-sm text-gray-400 space-y-2 bg-black/20 rounded-lg p-3 border border-purple-500/10">
-                <p className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-fuchsia-400" />
-                  <span className="text-gray-300">
-                    {new Date(item.date_begin).toLocaleDateString()} - {new Date(item.date_end).toLocaleDateString()}
-                  </span>
+              <p className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-fuchsia-400" />
+                <span className="text-gray-300">
+                {formatUTCDateTime(item.date_begin)}
+                <span className="text-white/25 mx-2">→</span>
+                {formatUTCDateTime(item.date_end)}
+                </span>
                 </p>
                 {item.open_to && (
                   <p className="text-gray-400">
@@ -304,10 +325,10 @@ export default function AnnouncementPublicCard({ item, onDelete }) {
                   <div>
                     <h4 className="text-sm font-semibold text-fuchsia-300 mb-2">Event Dates</h4>
                     <p className="text-gray-300 text-sm">
-                      <span className="font-medium">Start:</span> {new Date(item.date_begin).toLocaleString()}
+                      <span className="font-medium">Start:</span> {formatUTCDateTime(item.date_begin)}
                     </p>
                     <p className="text-gray-300 text-sm">
-                      <span className="font-medium">End:</span> {new Date(item.date_end).toLocaleString()}
+                      <span className="font-medium">End:</span> {formatUTCDateTime(item.date_end)}
                     </p>
                   </div>
                 </div>
