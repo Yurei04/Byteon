@@ -19,11 +19,12 @@ import {
   ChevronRight, Inbox, ShieldAlert, XCircle, CheckCircle,
   Hash, Globe, Mail, MapPin, BarChart2, Zap,
   AlertTriangle, Ban, BadgeAlert, Skull, FileWarning,
-  Activity,
+  Activity, ChevronLeft,
 } from "lucide-react"
 
-// ── Notification helpers — note the 's' at the end ────────────────────────────
-import { notifyAccountSuspended, notifyAccountReactivated } from "@/lib/notification" 
+import { notifyAccountSuspended, notifyAccountReactivated } from "@/lib/notification"
+
+const ITEMS_PER_PAGE = 10
 
 const ACCENTS = {
   users: {
@@ -40,6 +41,8 @@ const ACCENTS = {
     statGlow: "hover:shadow-[0_0_12px_rgba(6,182,212,0.1)]",
     suspendBg: "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/25 hover:border-amber-400/50 hover:shadow-[0_0_12px_rgba(245,158,11,0.2)]",
     headerLine: "bg-gradient-to-r from-cyan-500/60 to-transparent",
+    pageBtn: "hover:bg-cyan-500/10 hover:border-cyan-500/30 hover:text-cyan-300",
+    pageActive: "bg-cyan-500/20 border-cyan-500/40 text-cyan-300",
   },
   orgs: {
     dot: "bg-fuchsia-400", dotGlow: "shadow-[0_0_6px_2px_rgba(232,121,249,0.5)]",
@@ -55,6 +58,8 @@ const ACCENTS = {
     statGlow: "hover:shadow-[0_0_12px_rgba(192,38,211,0.1)]",
     suspendBg: "bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/25 hover:border-amber-400/50 hover:shadow-[0_0_12px_rgba(245,158,11,0.2)]",
     headerLine: "bg-gradient-to-r from-fuchsia-500/60 to-transparent",
+    pageBtn: "hover:bg-fuchsia-500/10 hover:border-fuchsia-500/30 hover:text-fuchsia-300",
+    pageActive: "bg-fuchsia-500/20 border-fuchsia-500/40 text-fuchsia-300",
   },
 }
 
@@ -77,6 +82,64 @@ const TAB_CONFIG = [
   { value: "orgs",  label: "Organizations", Icon: Building2 },
 ]
 
+// ── Pagination component ───────────────────────────────────────────────────────
+function Pagination({ currentPage, totalPages, onPageChange, ac }) {
+  if (totalPages <= 1) return null
+
+  const pages = []
+  const delta = 1
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+      pages.push(i)
+    }
+  }
+  // Insert ellipsis markers
+  const withEllipsis = []
+  pages.forEach((page, idx) => {
+    if (idx > 0 && page - pages[idx - 1] > 1) withEllipsis.push("…")
+    withEllipsis.push(page)
+  })
+
+  return (
+    <div className="flex items-center justify-between px-3 py-2 border-t border-white/6 shrink-0 bg-black/10">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
+      >
+        <ChevronLeft className="w-3 h-3" /> Prev
+      </button>
+
+      <div className="flex items-center gap-1">
+        {withEllipsis.map((item, idx) =>
+          item === "…" ? (
+            <span key={`ellipsis-${idx}`} className="text-white/20 text-[11px] px-1">…</span>
+          ) : (
+            <button
+              key={item}
+              onClick={() => onPageChange(item)}
+              className={`w-6 h-6 rounded-md border text-[11px] font-medium transition-all
+                ${currentPage === item
+                  ? ac.pageActive
+                  : `border-white/8 text-white/30 ${ac.pageBtn}`}`}
+            >
+              {item}
+            </button>
+          )
+        )}
+      </div>
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
+      >
+        Next <ChevronRight className="w-3 h-3" />
+      </button>
+    </div>
+  )
+}
+
 export default function AccountManageSection() {
   const [users, setUsers]               = useState([])
   const [orgs, setOrgs]                 = useState([])
@@ -92,6 +155,9 @@ export default function AccountManageSection() {
   const [deleteDialog, setDeleteDialog]   = useState(null)
   const [suspendReason, setSuspendReason] = useState("")
   const [deleteReason, setDeleteReason]   = useState("")
+
+  // Pagination state per tab
+  const [pages, setPages] = useState({ users: 1, orgs: 1 })
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type })
@@ -114,6 +180,13 @@ export default function AccountManageSection() {
   useEffect(() => { fetchAll() }, [])
   useEffect(() => { setSelectedItem(null) }, [activeTab])
 
+  // Reset page when search changes
+  useEffect(() => {
+    setPages({ users: 1, orgs: 1 })
+  }, [search])
+
+  const setPage = (tab, page) => setPages((prev) => ({ ...prev, [tab]: page }))
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return {
@@ -129,6 +202,17 @@ export default function AccountManageSection() {
     }
   }, [users, orgs, search])
 
+  // Paginated slices
+  const paginated = useMemo(() => ({
+    users: filtered.users.slice((pages.users - 1) * ITEMS_PER_PAGE, pages.users * ITEMS_PER_PAGE),
+    orgs:  filtered.orgs.slice((pages.orgs  - 1) * ITEMS_PER_PAGE, pages.orgs  * ITEMS_PER_PAGE),
+  }), [filtered, pages])
+
+  const totalPages = {
+    users: Math.ceil(filtered.users.length / ITEMS_PER_PAGE),
+    orgs:  Math.ceil(filtered.orgs.length  / ITEMS_PER_PAGE),
+  }
+
   // ── Suspend / Reactivate ──────────────────────────────────────────────────
   const confirmSuspend = async () => {
     if (!suspendDialog) return
@@ -137,32 +221,27 @@ export default function AccountManageSection() {
     const table     = isOrg ? "organizations" : "users"
     const wasActive = item.active !== false
 
-    // The reason to store in DB — used by the suspended page to display
     const finalReason = wasActive
       ? (suspendReason.trim() || "Suspended by administrator")
-      : null   // clear on reactivation
+      : null
 
     setSuspendDialog(null)
     setActionLoading(item.id)
     try {
-      // ── Write to DB (suspension_reason is what the suspended page reads) ──
       const { error: e1 } = await supabase.from(table).update({
         active:            !wasActive,
         suspension_reason: finalReason,
       }).eq("id", item.id)
 
       if (e1) {
-        // Fallback: try without suspension_reason column
         const { error: e2 } = await supabase.from(table).update({ active: !wasActive }).eq("id", item.id)
         if (e2) throw e2
       }
 
-      // Refetch
       const { data } = await supabase.from(table).select("*").order("created_at", { ascending: false })
       if (activeTab === "users") setUsers(data || [])
       else setOrgs(data || [])
 
-      // ── Notify the account holder ──────────────────────────────────────────
       if (wasActive) {
         await notifyAccountSuspended({
           authUserId: item.user_id,
@@ -271,19 +350,34 @@ export default function AccountManageSection() {
         {TAB_CONFIG.map(({ value }) => {
           const a    = ACCENTS[value]
           const list = filtered[value]
+          const pageList = paginated[value]
+          const tp = totalPages[value]
+          const cp = pages[value]
+
           return (
             <TabsContent key={value} value={value} className="flex-1 min-h-0 mt-0">
               <div className="flex gap-3 h-[680px]">
                 {/* LEFT */}
                 <div className={`w-[300px] shrink-0 flex flex-col rounded-2xl border bg-black/25 backdrop-blur-sm overflow-hidden transition-all duration-300
                   ${selectedItem ? `${a.border} ${a.borderGlow}` : "border-white/8 hover:border-white/12"}`}>
+
+                  {/* Header */}
                   <div className="relative px-4 py-3 border-b border-white/8 flex items-center justify-between shrink-0">
                     <div className={`absolute bottom-0 left-4 right-0 h-px ${a.headerLine}`} />
                     <span className={`text-xs font-bold uppercase tracking-widest ${a.heading}`}>
                       {value === "users" ? "Users" : "Organizations"}
                     </span>
-                    <span className="text-white/20 text-xs">{list.length} total</span>
+                    <div className="flex items-center gap-2">
+                      {tp > 1 && (
+                        <span className="text-white/18 text-[10px]">
+                          p.{cp}/{tp}
+                        </span>
+                      )}
+                      <span className="text-white/20 text-xs">{list.length} total</span>
+                    </div>
                   </div>
+
+                  {/* List */}
                   {loading ? (
                     <div className="flex-1 flex items-center justify-center">
                       <Loader2 className={`w-5 h-5 animate-spin ${a.tag}`} />
@@ -294,9 +388,9 @@ export default function AccountManageSection() {
                       <p className="text-xs">{search ? `No results for "${search}"` : `No ${value} found`}</p>
                     </div>
                   ) : (
-                    <ScrollArea className="flex-1">
+                    <ScrollArea className="flex-1 min-h-0">
                       <div className="py-1">
-                        {list.map((item) => (
+                        {pageList.map((item) => (
                           <AccountListRow key={item.id} item={item} type={value} ac={a}
                             isSelected={selectedItem?.id === item.id}
                             onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
@@ -305,6 +399,14 @@ export default function AccountManageSection() {
                       </div>
                     </ScrollArea>
                   )}
+
+                  {/* Pagination */}
+                  <Pagination
+                    currentPage={cp}
+                    totalPages={tp}
+                    onPageChange={(p) => { setPage(value, p); setSelectedItem(null) }}
+                    ac={a}
+                  />
                 </div>
 
                 {/* RIGHT */}
@@ -383,10 +485,8 @@ export default function AccountManageSection() {
                     : "They will regain full access to the platform."}
                 </div>
 
-                {/* Only show reason fields when suspending */}
                 {suspendDialog?.active !== false && (
                   <div className="space-y-3">
-                    {/* Quick preset buttons */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
                         <Zap className="w-3 h-3 text-amber-400/60 shrink-0" />Quick Reason
@@ -406,7 +506,6 @@ export default function AccountManageSection() {
                       </div>
                     </div>
 
-                    {/* Custom reason textarea */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
                         <ShieldAlert className="w-3 h-3 shrink-0 text-white/25" />Custom Reason
@@ -623,8 +722,6 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
 
       <ScrollArea className="flex-1">
         <div className="px-6 py-5 space-y-6">
-
-          {/* ── Suspension banner with stored reason ── */}
           {!isActive && (
             <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-red-500/6 border border-red-500/22">
               <ShieldOff className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -637,7 +734,6 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
             </div>
           )}
 
-          {/* Profile */}
           <DetailBlock icon={<User className="w-3.5 h-3.5" />} label={isUser ? "Profile" : "Contact"} ac={ac}>
             <div className="space-y-2.5">
               {isUser ? (
@@ -659,7 +755,6 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
             </div>
           </DetailBlock>
 
-          {/* Stats */}
           <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Activity Stats" ac={ac}>
             <div className="grid grid-cols-3 gap-2">
               {isUser ? (
