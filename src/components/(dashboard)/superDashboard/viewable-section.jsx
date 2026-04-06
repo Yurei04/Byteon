@@ -276,7 +276,7 @@ export default function ViewableSection() {
               <div className="flex gap-3 h-[680px]">
 
                 {/* LEFT — list */}
-                <div className={`w-[320px] shrink-0 flex flex-col rounded-2xl border bg-black/20 overflow-hidden transition-colors duration-200
+                <div className={`w-[320px] max-w-[320px] min-w-0 shrink-0 flex flex-col rounded-2xl border bg-black/20 overflow-hidden transition-colors duration-200
                   ${selectedItem ? ac.border : "border-white/8"}`}>
 
                   {/* Header */}
@@ -303,7 +303,7 @@ export default function ViewableSection() {
                       <p className="text-xs">{search ? `No results for "${search}"` : `No ${value} yet`}</p>
                     </div>
                   ) : (
-                    <ScrollArea className="flex-1 min-h-0">
+                    <ScrollArea className="flex-1 min-h-0 overflow-hidden">
                       <div className="divide-y divide-white/5">
                         {pageList.map((item) => (
                           <ListRow key={item.id} item={item} type={value} ac={ac}
@@ -407,40 +407,87 @@ export default function ViewableSection() {
 // ── List row ──────────────────────────────────────────────────────────────────
 function ListRow({ item, type, ac, isSelected, onClick }) {
   const isExpired = item.date_end && new Date(item.date_end) < new Date()
+
   return (
-    <button onClick={onClick}
+    <button
+      onClick={onClick}
       className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
-        ${isSelected ? `bg-white/6 ${ac.border}` : `border-l-transparent hover:bg-white/3 hover:${ac.border}`}`}
+        ${isSelected
+          ? `bg-white/6 ${ac.border}`
+          : `border-l-transparent hover:bg-white/3 hover:${ac.border}`
+        }`}
     >
-      <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 ${ac.dot} ${isSelected ? "opacity-100" : "opacity-40 group-hover:opacity-70"}`} />
+      {/* Dot */}
+      <span
+        className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 ${ac.dot} ${
+          isSelected ? "opacity-100" : "opacity-40 group-hover:opacity-70"
+        }`}
+      />
+
+      {/* Content */}
       <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className={`text-xs font-semibold leading-snug line-clamp-2 ${isSelected ? "text-white" : "text-white/60 group-hover:text-white/85"}`}>
+        {/* Title + Date */}
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <p
+            className={`text-xs font-semibold truncate whitespace-nowrap flex-1 min-w-0 ${
+              isSelected
+                ? "text-white"
+                : "text-white/60 group-hover:text-white/85"
+            }`}
+          >
             {item.title}
           </p>
-          <span className="text-white/20 text-[10px] shrink-0 mt-0.5">
-            {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+
+          <span className="text-white/20 text-[10px] shrink-0">
+            {new Date(item.created_at).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })}
           </span>
         </div>
+
+        {/* Organization / Author */}
         {(item.organization || item.author) && (
-          <p className={`text-[11px] truncate ${ac.tag} opacity-75`}>{item.organization || item.author}</p>
+          <p className={`text-[11px] truncate whitespace-nowrap min-w-0 ${ac.tag} opacity-75`}>
+            {item.organization || item.author}
+          </p>
         )}
-        <div className="flex items-center gap-1.5 flex-wrap">
+
+        {/* Tags + Description (ALL INLINE, NO WRAP) */}
+        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
           {type === "announcements" && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium
-              ${isExpired
-                ? "bg-red-500/10 text-red-400/70 border-red-500/15"
-                : "bg-emerald-500/10 text-emerald-400/70 border-emerald-500/15"}`}>
+            <span
+              className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium shrink-0
+                ${
+                  isExpired
+                    ? "bg-red-500/10 text-red-400/70 border-red-500/15"
+                    : "bg-emerald-500/10 text-emerald-400/70 border-emerald-500/15"
+                }`}
+            >
               {isExpired ? "Expired" : "Active"}
             </span>
           )}
+
           {type === "blogs" && item.theme && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/30">{item.theme}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/30 shrink-0">
+              {item.theme}
+            </span>
           )}
-          {item.des && <span className="text-[10px] text-white/20 truncate flex-1 min-w-0">{item.des}</span>}
+
+          {item.des && (
+            <span className="text-[10px] text-white/20 truncate whitespace-nowrap flex-1 min-w-0">
+              {item.des}
+            </span>
+          )}
         </div>
       </div>
-      <ChevronRight className={`w-3.5 h-3.5 shrink-0 mt-0.5 transition-colors ${isSelected ? ac.tag : "text-white/12 group-hover:text-white/25"}`} />
+
+      {/* Arrow */}
+      <ChevronRight
+        className={`w-3.5 h-3.5 shrink-0 mt-0.5 transition-colors ${
+          isSelected ? ac.tag : "text-white/12 group-hover:text-white/25"
+        }`}
+      />
     </button>
   )
 }
@@ -492,8 +539,8 @@ function DetailPane({ item, type, ac, actionLoading, onDelete }) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="px-6 py-5 space-y-6">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-6 py-5 space-y-6 min-h-full">
 
           {item.des && (
             <DetailBlock icon={<AlignLeft className="w-3.5 h-3.5" />} label="Description">

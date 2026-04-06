@@ -588,8 +588,9 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
         </p>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="px-6 py-5 space-y-5">
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-6 py-5 space-y-6 min-h-full">
+
           {item.des && <DetailBlock icon={<AlignLeft className="w-3.5 h-3.5" />} label="Description">
             <p className="text-white/60 text-sm leading-relaxed whitespace-pre-wrap">{item.des}</p>
           </DetailBlock>}

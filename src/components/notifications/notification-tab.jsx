@@ -113,7 +113,8 @@ export default function NotificationsTab({ userId, role }) {
               </div>
             </div>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 min-h-0">
+
               <div className="divide-y divide-white/5">
                 {notifications.map((n) => {
                   const read   = isReadByMe(n)
