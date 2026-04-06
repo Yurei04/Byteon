@@ -13,6 +13,8 @@ import {
   Plus, FileText, AlertCircle, User2,
   BookOpen, Eye, Loader2, Trophy, Star, Bell,
   ShieldAlert, XCircle, Trash2,
+  LogOut,
+  ShieldCheck,
 } from "lucide-react"
 import {
   AlertDialog,
@@ -176,18 +178,20 @@ export default function UserDashboardPage() {
   return (
     <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
 
-      {/* ── TOP BAR ── */}
+      {/* Top bar */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-7xl mx-auto mb-6">
-        <div className="fixed inset-0 p-6 pointer-events-none z-50">
-          <div className="pointer-events-auto w-fit"><ReturnButton /></div>
-        </div>
-        <div className="bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-3 px-4 rounded-xl shadow-lg shadow-fuchsia-500/10">
+        className="w-full flex justify-between items-center max-w-7xl mx-auto mb-6 gap-4">
+        <ReturnButton />
+        <div className="flex-1 bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-2.5 px-4 rounded-lg shadow-lg shadow-fuchsia-500/10">
           <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>⚠️ This Page is currently in Beta Testing</span>
+            <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
+            Participants Panel
           </p>
         </div>
+        <Button onClick={() => setShowSignOutDialog(true)} variant="outline" size="sm"
+          className="shrink-0 border-red-500/40 text-red-300 hover:bg-red-500/20 hover:border-red-400 hover:text-red-200 transition-all gap-2">
+          <LogOut className="w-4 h-4" /><span className="hidden sm:inline">Sign Out</span>
+        </Button>
       </motion.div>
 
       <div className="max-w-7xl mx-auto">
@@ -207,22 +211,7 @@ export default function UserDashboardPage() {
 
           {/* ── STAT CARDS ── */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-
-            <Card className="group relative bg-gradient-to-br from-purple-900/40 via-violet-900/40 to-slate-950/40 backdrop-blur-xl border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-purple-500/20">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-violet-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="relative p-4 sm:p-6">
-                <div className="flex flex-col items-center justify-center text-center space-y-2">
-                  <div className="p-3 bg-purple-500/20 rounded-full border border-purple-400/30">
-                    <User2 className="w-6 h-6 sm:w-8 sm:h-8 text-purple-300" />
-                  </div>
-                  <div>
-                    <p className="text-purple-200/70 text-xs sm:text-sm">Your Profile</p>
-                    <p className="text-lg sm:text-xl font-bold text-purple-300">Active</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
 
             <Card className="group relative bg-gradient-to-br from-fuchsia-900/40 via-pink-900/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-fuchsia-500/20">
               <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-pink-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
