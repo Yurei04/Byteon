@@ -1,5 +1,4 @@
 "use client"
-
 import DatePicker from "@/components/DatePickerClient"
 import { forwardRef } from "react"
 import { Calendar } from "lucide-react"
@@ -134,45 +133,56 @@ const convertTo24Hour = (hour12, minute, period) => {
   return `${hh}:${mm}`
 }
   const handleSubmit = async () => {
+    e.preventDefault()
+
+    setIsLoading(true) 
+
     if (!currentOrg || !authUserId) {
       setAlert({ type: "error", message: "Organization not found. Please refresh the page." })
+      setIsLoading(false)
       return
     }
+// ====calendar to iso====    
+const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
+const endTime24 = convertTo24Hour(endHour12, endMinute, endPeriod)
 
-    if (!formData.title || !formData.des || !formData.author || !formData.date_begin || !formData.date_end) {
-      setAlert({ type: "error", message: "Please fill in all required fields (Title, Description, Author, Start Date, End Date)" })
-      return
-    }
-    
+const startDateTime = new Date(startDate)
+const endDateTime = new Date(endDate)
+
+startDateTime.setHours(Number(startTime24.split(":")[0]))
+startDateTime.setMinutes(Number(startTime24.split(":")[1]))
+
+endDateTime.setHours(Number(endTime24.split(":")[0]))
+endDateTime.setMinutes(Number(endTime24.split(":")[1]))
+
+const date_begin = startDateTime.toISOString()
+const date_end = endDateTime.toISOString()
+
+
+if (!formData.title || !formData.des || !formData.author) {
+  setAlert({ type: "error", message: "Please fill in all required fields" })
+  setIsLoading(false)
+  return
+}
+
+if (!startDate || !endDate) {
+  setAlert({ type: "error", message: "Please select start and end date" })
+  setIsLoading(false)
+  return
+}    
     const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
     if (validPrizes.length === 0) {
       setAlert({ type: "error", message: "Please add at least one prize with a name and value" })
+      setIsLoading(false)
       return
     }
-
-    setIsLoading(true)
-    setAlert(null)
-
-  const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
-  const endTime24 = convertTo24Hour(endHour12, endMinute, endPeriod)
-  const startDateTime = new Date(startDate)
-  const endDateTime = new Date(endDate)
-
-  startDateTime.setHours(startTime24.split(":")[0])
-  startDateTime.setMinutes(startTime24.split(":")[1])
-
-  endDateTime.setHours(endTime24.split(":")[0])
-  endDateTime.setMinutes(endTime24.split(":")[1])
-
-  formData.date_begin = startDateTime.toISOString()
-  formData.date_end = endDateTime.toISOString()
-
+  
     const announcementData = {
       title: formData.title.trim(),
       des: formData.des.trim(),
       author: formData.author.trim(),
-      date_begin: formData.date_begin,
-      date_end: formData.date_end,
+      date_begin: date_begin,
+      date_end: date_end,
       open_to: formData.open_to.trim() || null,
       countries: formData.countries.trim() || null,
       prizes: validPrizes.map(({ id, ...p }) => ({
@@ -189,6 +199,25 @@ const convertTo24Hour = (hour12, minute, period) => {
       tracking_method: "automatic",
       google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
     }
+
+    // session check
+const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+if (sessionError || !session) {
+  const { error: refreshError } = await supabase.auth.refreshSession()
+  if (refreshError) throw new Error("Session expired. Please log in again.")
+}
+
+// send to pending_announcements
+const { error } = await supabase
+  .from("pending_announcements")
+  .insert([announcementData])
+
+if (error) throw error
+
+setAlert({ type: "success", message: "Announcement submitted for review!" })
+setIsLoading(false)
+return
+
 
     let lastError = null
 
@@ -251,8 +280,8 @@ const convertTo24Hour = (hour12, minute, period) => {
           </Alert>
         )}
 
-        <div className="space-y-6">
-          {/* Draft restored indicator */}
+<form onSubmit={handleSubmit} className="space-y-6">
+      {/* Draft restored indicator */}
           {hasDraft && (
             <div className="flex items-center justify-between gap-3 p-3 border border-amber-400/30 rounded-xl bg-amber-950/20">
               <div className="flex items-center gap-2">
@@ -476,16 +505,19 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
             <p className="text-xs text-white/30">File → Share → Publish to web → Comma-separated values (.csv) → copy URL</p>
           </div>
 
-          <Button onClick={handleSubmit} className="w-full" disabled={isLoading}>
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {retryCount > 1 ? `Retrying... (${retryCount}/${MAX_RETRIES})` : "Publishing..."}
-              </span>
-            ) : "Publish Announcement"}
-          </Button>
-        </div>
-      </CardContent>
+<button
+  type="submit"
+  onClick={() => {
+    handleSubmit();
+  }}
+  disabled={isLoading}
+  className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-md h-11 font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+>
+  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+  {isLoading ? "Publishing..." : "Publish Announcement"}
+</button>
+</form>
+     </CardContent>
     </Card>
   )
 }
