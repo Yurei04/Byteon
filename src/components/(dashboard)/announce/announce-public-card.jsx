@@ -11,6 +11,25 @@ import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
 import AnnouncementTrackingBadge from "./announce-tracking-badge"
 
+
+// UTC date + time formatter
+function formatUTCDateTime(dateString) {
+  if (!dateString) return "—"
+
+  const date = new Date(dateString)
+  if (isNaN(date)) return "—"
+
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  }).format(date) + " UTC"
+}
+// Prize card color schemes based on common prize names
 // ── Fallback theme if no org theme is passed ────────────────────────────────
 const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
 
@@ -108,10 +127,33 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
             {item.title}
           </h3>
 
-          {/* Description */}
-          <p className="text-gray-300 text-sm mb-4 leading-relaxed line-clamp-3">{item.des}</p>
 
-          {/* Badges */}
+<div className="text-sm text-gray-400 space-y-2 bg-black/20 rounded-lg p-3 border border-purple-500/10">
+  <p className="flex items-center gap-2">
+    <Calendar className="w-4 h-4 text-fuchsia-400" />
+    <span className="text-gray-300">
+      {formatUTCDateTime(item.date_begin)}
+      <span className="text-white/25 mx-2">→</span>
+      {formatUTCDateTime(item.date_end)}
+    </span>
+  </p>
+
+  {item.open_to && (
+    <p className="text-gray-400">
+      <span className="text-fuchsia-400 font-medium">Open to:</span> {item.open_to}
+    </p>
+  )}
+
+  {item.countries && (
+    <p className="text-gray-400">
+      <span className="text-purple-400 font-medium">Location:</span> {item.countries}
+    </p>
+  )}
+
+  <p className="text-gray-400">
+    <span className="text-pink-400 font-medium">By:</span> {item.author}
+  </p>
+</div>          {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-4">
             {prizes.length > 0 && (
               <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-xs font-medium flex items-center gap-1.5">
@@ -142,30 +184,6 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                 <AlertCircle className="w-3.5 h-3.5" />Sync Error
               </span>
             )}
-          </div>
-
-          {/* Meta */}
-          <div
-            className="rounded-lg p-3 space-y-2 text-sm"
-            style={{ background: "rgba(0,0,0,0.2)", border: `1px solid ${t.primary30}` }}
-          >
-            <p className="flex items-center gap-2 text-gray-300">
-              <Calendar className="w-4 h-4" style={{ color: t.primaryText }} />
-              {new Date(item.date_begin).toLocaleDateString()} – {new Date(item.date_end).toLocaleDateString()}
-            </p>
-            {item.open_to && (
-              <p className="text-gray-400">
-                <span style={{ color: t.primaryText }} className="font-medium">Open to:</span>{" "}{item.open_to}
-              </p>
-            )}
-            {item.countries && (
-              <p className="text-gray-400">
-                <span style={{ color: t.secondaryText }} className="font-medium">Location:</span>{" "}{item.countries}
-              </p>
-            )}
-            <p className="text-gray-400">
-              <span style={{ color: t.labelText }} className="font-medium">By:</span>{" "}{item.author}
-            </p>
           </div>
 
           {/* Action buttons */}
@@ -262,46 +280,62 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
               </div>
             )}
 
-            {/* Event details grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                {
-                  icon: <Calendar className="w-5 h-5" style={{ color: t.primaryText }} />,
-                  title: "Event Dates", titleColor: t.primaryText,
-                  content: (
-                    <>
-                      <p className="text-gray-300 text-sm"><span className="font-medium">Start:</span> {new Date(item.date_begin).toLocaleString()}</p>
-                      <p className="text-gray-300 text-sm"><span className="font-medium">End:</span>   {new Date(item.date_end).toLocaleString()}</p>
-                    </>
-                  ),
-                },
-                item.open_to && {
-                  icon: <Users className="w-5 h-5" style={{ color: t.secondaryText }} />,
-                  title: "Open To", titleColor: t.secondaryText,
-                  content: <p className="text-gray-300 text-sm">{item.open_to}</p>,
-                },
-                item.countries && {
-                  icon: <Globe className="w-5 h-5 text-blue-400" />,
-                  title: "Location", titleColor: "#60a5fa",
-                  content: <p className="text-gray-300 text-sm">{item.countries}</p>,
-                },
-                {
-                  icon: <Users className="w-5 h-5" style={{ color: t.labelText }} />,
-                  title: "Organized By", titleColor: t.labelText,
-                  content: <p className="text-gray-300 text-sm">{item.author}</p>,
-                },
-              ].filter(Boolean).map((detail, i) => (
-                <div key={i} className="rounded-xl p-4" style={{ background: "rgba(255,255,255,0.04)", border: t.borderColorFaint }}>
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5">{detail.icon}</div>
-                    <div>
-                      <h4 className="text-sm font-semibold mb-2" style={{ color: detail.titleColor }}>{detail.title}</h4>
-                      {detail.content}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+{/* Event details grid */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {[
+    {
+      icon: <Calendar className="w-5 h-5" style={{ color: t.primaryText }} />,
+      title: "Event Dates",
+      titleColor: t.primaryText,
+      content: (
+        <>
+          <p className="text-gray-300 text-sm">
+            <span className="font-medium">Start:</span> {formatUTCDateTime(item.date_begin)}
+          </p>
+          <p className="text-gray-300 text-sm">
+            <span className="font-medium">End:</span> {formatUTCDateTime(item.date_end)}
+          </p>
+        </>
+      ),
+    },
+    item.open_to && {
+      icon: <Users className="w-5 h-5" style={{ color: t.secondaryText }} />,
+      title: "Open To",
+      titleColor: t.secondaryText,
+      content: <p className="text-gray-300 text-sm">{item.open_to}</p>,
+    },
+    item.countries && {
+      icon: <Globe className="w-5 h-5 text-blue-400" />,
+      title: "Location",
+      titleColor: "#60a5fa",
+      content: <p className="text-gray-300 text-sm">{item.countries}</p>,
+    },
+    {
+      icon: <Users className="w-5 h-5" style={{ color: t.labelText }} />,
+      title: "Organized By",
+      titleColor: t.labelText,
+      content: <p className="text-gray-300 text-sm">{item.author}</p>,
+    },
+  ]
+    .filter(Boolean)
+    .map((detail, i) => (
+      <div
+        key={i}
+        className="rounded-xl p-4"
+        style={{ background: "rgba(255,255,255,0.04)", border: t.borderColorFaint }}
+      >
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5">{detail.icon}</div>
+          <div>
+            <h4 className="text-sm font-semibold mb-2" style={{ color: detail.titleColor }}>
+              {detail.title}
+            </h4>
+            {detail.content}
+          </div>
+        </div>
+      </div>
+    ))}
+</div>
 
             {/* Status + tracking */}
             <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: t.borderColorFaint }}>

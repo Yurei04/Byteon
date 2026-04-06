@@ -22,6 +22,25 @@ import {
   ShieldAlert, ShieldCheck, ChevronRight, ChevronLeft, Search,
 } from "lucide-react"
 
+// UTC date + time formatter
+function formatUTCDateTime(dateString) {
+  if (!dateString) return "—"
+
+  const date = new Date(dateString)
+  if (isNaN(date)) return "—"
+
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  }).format(date) + " UTC"
+}
+
+// ── Notification helpers ───────────────────────────────────────────────────────
 import { notifyPostApproved, notifyPostRejected } from "@/lib/notification"
 
 const ITEMS_PER_PAGE = 10
@@ -584,7 +603,7 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
         <h2 className="text-lg font-bold text-white leading-snug">{item.title}</h2>
         <p className="text-white/28 text-xs mt-1 flex items-center gap-1.5">
           <Clock className="w-3 h-3" />
-          Submitted {new Date(item.created_at).toLocaleString()}
+          Submitted {formatUTCDateTime(item.created_at)}
         </p>
       </div>
 
@@ -599,9 +618,9 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
             {(item.date_begin || item.date_end) && (
               <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Event Dates">
                 <p className="text-white/60 text-sm">
-                  {item.date_begin ? new Date(item.date_begin).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—"}
-                  <span className="text-white/25 mx-2">→</span>
-                  {item.date_end   ? new Date(item.date_end).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—"}
+                {item.date_begin ? formatUTCDateTime(item.date_begin) : "—"}
+                <span className="text-white/25 mx-2">→</span>
+                {item.date_end ? formatUTCDateTime(item.date_end) : "—"} 
                 </p>
               </DetailBlock>
             )}

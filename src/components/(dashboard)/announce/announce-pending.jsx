@@ -16,6 +16,8 @@ import {
   AlertCircle, CheckCircle, Loader2, Info,
   Trophy, Plus, X, Sparkles, RotateCcw, Clock,
 } from "lucide-react"
+const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
+const t = FALLBACK_THEME
 
 const STORAGE_KEY = "pending_announce_form_draft"
 const PRIZES_KEY  = "pending_announce_form_prizes"
@@ -125,8 +127,21 @@ const periodOptions = ["AM", "PM"]
     if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...template } : p))
     else setPrizes(prev => [...prev, { id: Date.now(), ...template, description: "" }])
   }
-  
-  
+  // 
+const createUTCISOString = (dateObj, time24) => {
+  const [hour, minute] = time24.split(":").map(Number)
+
+  //create local date
+  const localDate = new Date(
+    dateObj.getFullYear(),
+    dateObj.getMonth(),
+    dateObj.getDate(),
+    hour,
+    minute,
+    0
+  )
+  return localDate.toISOString()
+}
 const handleSubmit = async () => {
 
   // check
@@ -146,9 +161,8 @@ const handleSubmit = async () => {
   const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
   const endTime24   = convertTo24Hour(endHour12, endMinute, endPeriod)
 
-  const startISO = new Date(`${startDate.toISOString().split("T")[0]}T${startTime24}:00`).toISOString()
-  const endISO   = new Date(`${endDate.toISOString().split("T")[0]}T${endTime24}:00`).toISOString()
-
+  const startISO = createUTCISOString(startDate, startTime24)
+  const endISO   = createUTCISOString(endDate, endTime24)
 
   const updatedFormData = {
     ...formData,
