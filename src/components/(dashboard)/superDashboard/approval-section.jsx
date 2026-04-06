@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/components/(auth)/authContext"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -16,13 +17,71 @@ import {
 import {
   Megaphone, FileText, BookOpen, CheckCircle, XCircle,
   Loader2, AlertCircle, Calendar, Building2, Trophy,
-  Link2, Tag, MapPin, Clock, User, Hash, Globe,
+  Link2, Tag, Clock, User, Hash, Globe,
   AlignLeft, Award, Users, ExternalLink, Inbox,
-  ShieldAlert, ShieldCheck, ArrowLeft, ChevronRight,
+  ShieldAlert, ShieldCheck, ChevronRight, ChevronLeft, Search,
 } from "lucide-react"
 
-// ── Notification helpers ───────────────────────────────────────────────────────
 import { notifyPostApproved, notifyPostRejected } from "@/lib/notification"
+
+const ITEMS_PER_PAGE = 10
+
+// ── Pagination component ───────────────────────────────────────────────────────
+function Pagination({ currentPage, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null
+
+  const pages = []
+  const delta = 1
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+      pages.push(i)
+    }
+  }
+  const withEllipsis = []
+  pages.forEach((page, idx) => {
+    if (idx > 0 && page - pages[idx - 1] > 1) withEllipsis.push("…")
+    withEllipsis.push(page)
+  })
+
+  return (
+    <div className="flex items-center justify-between px-3 py-2 border-t border-white/6 shrink-0 bg-black/10">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
+      >
+        <ChevronLeft className="w-3 h-3" /> Prev
+      </button>
+
+      <div className="flex items-center gap-1">
+        {withEllipsis.map((item, idx) =>
+          item === "…" ? (
+            <span key={`ellipsis-${idx}`} className="text-white/20 text-[11px] px-1">…</span>
+          ) : (
+            <button
+              key={item}
+              onClick={() => onPageChange(item)}
+              className={`w-6 h-6 rounded-md border text-[11px] font-medium transition-all
+                ${currentPage === item
+                  ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                  : "border-white/8 text-white/30 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-300"}`}
+            >
+              {item}
+            </button>
+          )
+        )}
+      </div>
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
+      >
+        Next <ChevronRight className="w-3 h-3" />
+      </button>
+    </div>
+  )
+}
 
 export default function ApprovalSection({ onApprovalChange }) {
   const { session } = useAuth()
@@ -33,10 +92,14 @@ export default function ApprovalSection({ onApprovalChange }) {
   const [activeTab, setActiveTab]         = useState("announcements")
   const [selectedItem, setSelectedItem]   = useState(null)
   const [toast, setToast]                 = useState(null)
+  const [search, setSearch]               = useState("")
 
   const [approveDialog, setApproveDialog] = useState(null)
   const [rejectDialog, setRejectDialog]   = useState(null)
   const [rejectionReason, setRejectionReason] = useState("")
+
+  // Pagination per tab
+  const [pages, setPages] = useState({ announcements: 1, blogs: 1, resources: 1 })
 
   const totalPending =
     pending.announcements.length + pending.blogs.length + pending.resources.length
@@ -66,7 +129,7 @@ export default function ApprovalSection({ onApprovalChange }) {
   useEffect(() => { fetchPending() }, [fetchPending])
 
   useEffect(() => {
-    const list = pending[activeTab]
+    const list = filtered[activeTab]
     if (list.length > 0) {
       setSelectedItem((prev) =>
         prev && list.find((i) => i.id === prev.item?.id)
@@ -76,9 +139,43 @@ export default function ApprovalSection({ onApprovalChange }) {
     } else {
       setSelectedItem(null)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, pending])
 
-  const handleTabChange = (val) => { setActiveTab(val); setSelectedItem(null) }
+  // Reset pages on search/tab change
+  useEffect(() => {
+    setPages({ announcements: 1, blogs: 1, resources: 1 })
+  }, [search, activeTab])
+
+  const handleTabChange = (val) => { setActiveTab(val); setSelectedItem(null); setSearch("") }
+  const setPage = (tab, page) => setPages((prev) => ({ ...prev, [tab]: page }))
+
+  // Filtered lists
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    const filter = (arr) => arr.filter((i) =>
+      (i.title        || "").toLowerCase().includes(q) ||
+      (i.organization || "").toLowerCase().includes(q)
+    )
+    return {
+      announcements: filter(pending.announcements),
+      blogs:         filter(pending.blogs),
+      resources:     filter(pending.resources),
+    }
+  }, [pending, search])
+
+  // Paginated slices
+  const paginated = useMemo(() => ({
+    announcements: filtered.announcements.slice((pages.announcements - 1) * ITEMS_PER_PAGE, pages.announcements * ITEMS_PER_PAGE),
+    blogs:         filtered.blogs.slice((pages.blogs - 1) * ITEMS_PER_PAGE, pages.blogs * ITEMS_PER_PAGE),
+    resources:     filtered.resources.slice((pages.resources - 1) * ITEMS_PER_PAGE, pages.resources * ITEMS_PER_PAGE),
+  }), [filtered, pages])
+
+  const totalPages = {
+    announcements: Math.ceil(filtered.announcements.length / ITEMS_PER_PAGE),
+    blogs:         Math.ceil(filtered.blogs.length / ITEMS_PER_PAGE),
+    resources:     Math.ceil(filtered.resources.length / ITEMS_PER_PAGE),
+  }
 
   // ── Approve ────────────────────────────────────────────────────────────────
   const confirmApprove = async () => {
@@ -121,10 +218,9 @@ export default function ApprovalSection({ onApprovalChange }) {
         }
       }
 
-      // ── Notify the submitting org ──────────────────────────────────────────
       await notifyPostApproved({
         submittedBy:  item.submitted_by,
-        contentType:  type.replace(/s$/, ""), // "announcements" → "announcement"
+        contentType:  type.replace(/s$/, ""),
         title:        item.title,
       })
 
@@ -156,7 +252,6 @@ export default function ApprovalSection({ onApprovalChange }) {
         reviewed_at:      new Date().toISOString(),
       }).eq("id", item.id)
 
-      // ── Notify the submitting org ──────────────────────────────────────────
       await notifyPostRejected({
         submittedBy:  item.submitted_by,
         contentType:  type.replace(/s$/, ""),
@@ -213,82 +308,113 @@ export default function ApprovalSection({ onApprovalChange }) {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="bg-black/30 border border-white/8 p-1 rounded-xl h-auto mb-4">
-          {tabConfig.map(({ value, label, Icon, tabActive }) => (
-            <TabsTrigger key={value} value={value}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                text-white/40 hover:text-white/70
-                data-[state=active]:bg-gradient-to-r data-[state=active]:text-white data-[state=active]:shadow-lg
-                ${tabActive}`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-              {pending[value].length > 0 && (
-                <Badge className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-500/25 text-amber-200 border border-amber-500/30">
-                  {pending[value].length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        {/* Tabs + Search row */}
+        <div className="flex items-center gap-3 mb-4 flex-wrap">
+          <TabsList className="bg-black/30 border border-white/8 p-1 rounded-xl h-auto">
+            {tabConfig.map(({ value, label, Icon, tabActive }) => (
+              <TabsTrigger key={value} value={value}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                  text-white/40 hover:text-white/70
+                  data-[state=active]:bg-gradient-to-r data-[state=active]:text-white data-[state=active]:shadow-lg
+                  ${tabActive}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+                {pending[value].length > 0 && (
+                  <Badge className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-500/25 text-amber-200 border border-amber-500/30">
+                    {pending[value].length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        {tabConfig.map(({ value }) => (
-          <TabsContent key={value} value={value}>
-            {loading ? (
-              <div className="flex justify-center py-16">
-                <Loader2 className="w-6 h-6 animate-spin text-fuchsia-400/60" />
-              </div>
-            ) : pending[value].length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/20">
-                <CheckCircle className="w-10 h-10 opacity-30 text-emerald-400" />
-                <p className="text-sm">No pending {value}</p>
-              </div>
-            ) : (
-              <div className="flex gap-3 h-[620px]">
-                {/* LEFT — list */}
-                <div className="w-[300px] shrink-0 flex flex-col rounded-2xl border border-white/8 bg-black/20 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between shrink-0">
-                    <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Queue</span>
-                    <span className="text-white/25 text-xs">{pending[value].length} pending</span>
-                  </div>
-                  <ScrollArea className="flex-1">
-                    <div className="divide-y divide-white/5">
-                      {pending[value].map((item) => (
-                        <PendingListRow
-                          key={item.id}
-                          item={item}
-                          isSelected={selectedItem?.item?.id === item.id}
-                          onClick={() => setSelectedItem(
-                            selectedItem?.item?.id === item.id ? null : { item, type: value }
-                          )}
-                        />
-                      ))}
-                    </div>
-                  </ScrollArea>
+          <div className="relative flex-1 max-w-xs group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20 group-focus-within:text-white/50 transition-colors" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by title, organization…"
+              className="pl-9 h-9 bg-black/30 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/20 rounded-lg focus:ring-0 transition-colors"
+            />
+          </div>
+        </div>
+
+        {tabConfig.map(({ value }) => {
+          const list     = filtered[value]
+          const pageList = paginated[value]
+          const tp       = totalPages[value]
+          const cp       = pages[value]
+
+          return (
+            <TabsContent key={value} value={value}>
+              {loading ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 className="w-6 h-6 animate-spin text-fuchsia-400/60" />
                 </div>
+              ) : list.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/20">
+                  {search
+                    ? <><Inbox className="w-10 h-10 opacity-30" /><p className="text-sm">No results for "{search}"</p></>
+                    : <><CheckCircle className="w-10 h-10 opacity-30 text-emerald-400" /><p className="text-sm">No pending {value}</p></>}
+                </div>
+              ) : (
+                <div className="flex gap-3 h-[620px]">
+                  {/* LEFT — list */}
+                  <div className="w-[300px] shrink-0 flex flex-col rounded-2xl border border-white/8 bg-black/20 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between shrink-0">
+                      <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Queue</span>
+                      <div className="flex items-center gap-2">
+                        {tp > 1 && <span className="text-white/18 text-[10px]">p.{cp}/{tp}</span>}
+                        <span className="text-white/25 text-xs">{list.length} pending</span>
+                      </div>
+                    </div>
 
-                {/* RIGHT — detail */}
-                <div className="flex-1 rounded-2xl border border-white/8 bg-black/20 overflow-hidden">
-                  {selectedItem && selectedItem.type === value ? (
-                    <DetailPanel
-                      item={selectedItem.item}
-                      type={selectedItem.type}
-                      actionLoading={actionLoading}
-                      onClose={() => setSelectedItem(null)}
-                      onApprove={() => setApproveDialog(selectedItem.item)}
-                      onReject={() => { setRejectDialog(selectedItem.item); setRejectionReason("") }}
+                    <ScrollArea className="flex-1 min-h-0">
+                      <div className="divide-y divide-white/5">
+                        {pageList.map((item) => (
+                          <PendingListRow
+                            key={item.id}
+                            item={item}
+                            isSelected={selectedItem?.item?.id === item.id}
+                            onClick={() => setSelectedItem(
+                              selectedItem?.item?.id === item.id ? null : { item, type: value }
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </ScrollArea>
+
+                    <Pagination
+                      currentPage={cp}
+                      totalPages={tp}
+                      onPageChange={(p) => { setPage(value, p); setSelectedItem(null) }}
                     />
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center gap-3 text-white/15 select-none">
-                      <Inbox className="w-10 h-10 opacity-30" />
-                      <p className="text-sm text-white/20">Select a submission to review</p>
-                    </div>
-                  )}
+                  </div>
+
+                  {/* RIGHT — detail */}
+                  <div className="flex-1 rounded-2xl border border-white/8 bg-black/20 overflow-hidden">
+                    {selectedItem && selectedItem.type === value ? (
+                      <DetailPanel
+                        item={selectedItem.item}
+                        type={selectedItem.type}
+                        actionLoading={actionLoading}
+                        onClose={() => setSelectedItem(null)}
+                        onApprove={() => setApproveDialog(selectedItem.item)}
+                        onReject={() => { setRejectDialog(selectedItem.item); setRejectionReason("") }}
+                      />
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center gap-3 text-white/15 select-none">
+                        <Inbox className="w-10 h-10 opacity-30" />
+                        <p className="text-sm text-white/20">Select a submission to review</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </TabsContent>
-        ))}
+              )}
+            </TabsContent>
+          )
+        })}
       </Tabs>
 
       {/* ── Approve dialog ── */}

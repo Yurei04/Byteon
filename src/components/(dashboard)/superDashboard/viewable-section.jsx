@@ -18,11 +18,13 @@ import {
   AlertCircle, Search, Calendar, Building2, Tag,
   Link2, Trophy, Clock, Hash, ExternalLink,
   AlignLeft, Award, Users, Globe, User,
-  ShieldAlert, XCircle, CheckCircle, Inbox, ChevronRight,
+  ShieldAlert, XCircle, CheckCircle, Inbox,
+  ChevronRight, ChevronLeft,
 } from "lucide-react"
 
-// ── Notification helper ────────────────────────────────────────────────────────
 import { notifyPostDeletedByAdmin } from "@/lib/notification"
+
+const ITEMS_PER_PAGE = 10
 
 const ACCENTS = {
   announcements: {
@@ -30,18 +32,24 @@ const ACCENTS = {
     badge: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30",
     heading: "text-fuchsia-300", border: "border-fuchsia-500/30",
     tabActive: "data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600",
+    pageActive: "bg-fuchsia-500/20 border-fuchsia-500/40 text-fuchsia-300",
+    pageHover:  "hover:bg-fuchsia-500/10 hover:border-fuchsia-500/30 hover:text-fuchsia-300",
   },
   blogs: {
     dot: "bg-pink-400", tag: "text-pink-400",
     badge: "bg-pink-500/15 text-pink-300 border-pink-500/30",
     heading: "text-pink-300", border: "border-pink-500/30",
     tabActive: "data-[state=active]:from-pink-600 data-[state=active]:to-fuchsia-600",
+    pageActive: "bg-pink-500/20 border-pink-500/40 text-pink-300",
+    pageHover:  "hover:bg-pink-500/10 hover:border-pink-500/30 hover:text-pink-300",
   },
   resources: {
     dot: "bg-violet-400", tag: "text-violet-400",
     badge: "bg-violet-500/15 text-violet-300 border-violet-500/30",
     heading: "text-violet-300", border: "border-violet-500/30",
     tabActive: "data-[state=active]:from-violet-600 data-[state=active]:to-purple-600",
+    pageActive: "bg-violet-500/20 border-violet-500/40 text-violet-300",
+    pageHover:  "hover:bg-violet-500/10 hover:border-violet-500/30 hover:text-violet-300",
   },
 }
 
@@ -51,6 +59,64 @@ const TAB_CONFIG = [
   { value: "resources",     label: "Resources",     Icon: BookOpen  },
 ]
 
+// ── Pagination ────────────────────────────────────────────────────────────────
+function Pagination({ currentPage, totalPages, onPageChange, ac }) {
+  if (totalPages <= 1) return null
+
+  const pages = []
+  const delta = 1
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+      pages.push(i)
+    }
+  }
+  const withEllipsis = []
+  pages.forEach((page, idx) => {
+    if (idx > 0 && page - pages[idx - 1] > 1) withEllipsis.push("…")
+    withEllipsis.push(page)
+  })
+
+  return (
+    <div className="flex items-center justify-between px-3 py-2 border-t border-white/6 shrink-0 bg-black/10">
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
+      >
+        <ChevronLeft className="w-3 h-3" /> Prev
+      </button>
+
+      <div className="flex items-center gap-1">
+        {withEllipsis.map((item, idx) =>
+          item === "…" ? (
+            <span key={`ellipsis-${idx}`} className="text-white/20 text-[11px] px-1">…</span>
+          ) : (
+            <button
+              key={item}
+              onClick={() => onPageChange(item)}
+              className={`w-6 h-6 rounded-md border text-[11px] font-medium transition-all
+                ${currentPage === item
+                  ? ac.pageActive
+                  : `border-white/8 text-white/30 ${ac.pageHover}`}`}
+            >
+              {item}
+            </button>
+          )
+        )}
+      </div>
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
+      >
+        Next <ChevronRight className="w-3 h-3" />
+      </button>
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function ViewableSection() {
   const [data, setData]                   = useState({ announcements: [], blogs: [], resources: [] })
   const [loading, setLoading]             = useState(true)
@@ -61,6 +127,10 @@ export default function ViewableSection() {
   const [deleteReason, setDeleteReason]   = useState("")
   const [actionLoading, setActionLoading] = useState(null)
   const [toast, setToast]                 = useState(null)
+
+  // Pagination per tab
+  const [pages, setPages] = useState({ announcements: 1, blogs: 1, resources: 1 })
+  const setPage = (tab, p) => setPages((prev) => ({ ...prev, [tab]: p }))
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type })
@@ -86,6 +156,11 @@ export default function ViewableSection() {
   useEffect(() => { fetchAll() }, [])
   useEffect(() => { setSelectedItem(null) }, [activeTab])
 
+  // Reset pages on search change
+  useEffect(() => {
+    setPages({ announcements: 1, blogs: 1, resources: 1 })
+  }, [search])
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     const filter = (arr) =>
@@ -101,6 +176,18 @@ export default function ViewableSection() {
     }
   }, [data, search])
 
+  const paginated = useMemo(() => ({
+    announcements: filtered.announcements.slice((pages.announcements - 1) * ITEMS_PER_PAGE, pages.announcements * ITEMS_PER_PAGE),
+    blogs:         filtered.blogs.slice((pages.blogs - 1) * ITEMS_PER_PAGE, pages.blogs * ITEMS_PER_PAGE),
+    resources:     filtered.resources.slice((pages.resources - 1) * ITEMS_PER_PAGE, pages.resources * ITEMS_PER_PAGE),
+  }), [filtered, pages])
+
+  const totalPages = {
+    announcements: Math.ceil(filtered.announcements.length / ITEMS_PER_PAGE),
+    blogs:         Math.ceil(filtered.blogs.length / ITEMS_PER_PAGE),
+    resources:     Math.ceil(filtered.resources.length / ITEMS_PER_PAGE),
+  }
+
   const handleDelete = async () => {
     if (!deleteDialog) return
     const { id, type, item } = deleteDialog
@@ -113,11 +200,10 @@ export default function ViewableSection() {
       setData((prev) => ({ ...prev, [type]: prev[type].filter((i) => i.id !== id) }))
       if (selectedItem?.id === id) setSelectedItem(null)
 
-      // ── Notify the org whose content was removed ───────────────────────────
       if (item?.organization_id) {
         await notifyPostDeletedByAdmin({
           organizationId: item.organization_id,
-          contentType:    type.replace(/s$/, ""), // "announcements" → "announcement"
+          contentType:    type.replace(/s$/, ""),
           title:          item.title,
         })
       }
@@ -148,7 +234,7 @@ export default function ViewableSection() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setSearch("") }} className="flex flex-col flex-1 min-h-0">
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <TabsList className="bg-black/30 border border-white/8 p-1 rounded-xl h-auto">
             {TAB_CONFIG.map(({ value, label, Icon }) => {
@@ -169,30 +255,44 @@ export default function ViewableSection() {
             })}
           </TabsList>
 
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25" />
+          <div className="relative flex-1 max-w-xs group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 group-focus-within:text-white/50 transition-colors" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, org, author…"
-              className="pl-9 h-9 bg-black/25 border-white/8 text-white text-sm placeholder:text-white/25 rounded-lg focus:border-white/20 focus:ring-0"
+              className="pl-9 h-9 bg-black/25 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/25 rounded-lg focus:ring-0 transition-colors"
             />
           </div>
         </div>
 
         {TAB_CONFIG.map(({ value }) => {
-          const ac   = ACCENTS[value]
-          const list = filtered[value]
+          const ac       = ACCENTS[value]
+          const list     = filtered[value]
+          const pageList = paginated[value]
+          const cp       = pages[value]
+          const tp       = totalPages[value]
+
           return (
             <TabsContent key={value} value={value} className="flex-1 min-h-0 mt-0">
               <div className="flex gap-3 h-[680px]">
-                {/* LEFT */}
+
+                {/* LEFT — list */}
                 <div className={`w-[320px] shrink-0 flex flex-col rounded-2xl border bg-black/20 overflow-hidden transition-colors duration-200
                   ${selectedItem ? ac.border : "border-white/8"}`}>
+
+                  {/* Header */}
                   <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between shrink-0">
                     <span className={`text-xs font-bold uppercase tracking-widest ${ac.heading}`}>
                       {value === "announcements" ? "Announcements" : value === "blogs" ? "Blogs" : "Resources"}
                     </span>
-                    <span className="text-white/25 text-xs">{list.length} item{list.length !== 1 ? "s" : ""}</span>
+                    <div className="flex items-center gap-2">
+                      {tp > 1 && (
+                        <span className="text-white/18 text-[10px]">p.{cp}/{tp}</span>
+                      )}
+                      <span className="text-white/25 text-xs">{list.length} item{list.length !== 1 ? "s" : ""}</span>
+                    </div>
                   </div>
+
+                  {/* List body */}
                   {loading ? (
                     <div className="flex-1 flex items-center justify-center">
                       <Loader2 className="w-5 h-5 animate-spin text-fuchsia-400/60" />
@@ -203,9 +303,9 @@ export default function ViewableSection() {
                       <p className="text-xs">{search ? `No results for "${search}"` : `No ${value} yet`}</p>
                     </div>
                   ) : (
-                    <ScrollArea className="flex-1">
+                    <ScrollArea className="flex-1 min-h-0">
                       <div className="divide-y divide-white/5">
-                        {list.map((item) => (
+                        {pageList.map((item) => (
                           <ListRow key={item.id} item={item} type={value} ac={ac}
                             isSelected={selectedItem?.id === item.id}
                             onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
@@ -214,9 +314,17 @@ export default function ViewableSection() {
                       </div>
                     </ScrollArea>
                   )}
+
+                  {/* Pagination */}
+                  <Pagination
+                    currentPage={cp}
+                    totalPages={tp}
+                    onPageChange={(p) => { setPage(value, p); setSelectedItem(null) }}
+                    ac={ac}
+                  />
                 </div>
 
-                {/* RIGHT */}
+                {/* RIGHT — detail */}
                 <div className={`flex-1 rounded-2xl border bg-black/20 overflow-hidden transition-colors duration-200
                   ${selectedItem ? ac.border : "border-white/8"}`}>
                   {selectedItem ? (
@@ -302,7 +410,7 @@ function ListRow({ item, type, ac, isSelected, onClick }) {
   return (
     <button onClick={onClick}
       className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
-        ${isSelected ? "bg-white/6 border-l-current" : "border-l-transparent hover:bg-white/3 hover:border-l-white/10"}`}
+        ${isSelected ? `bg-white/6 ${ac.border}` : `border-l-transparent hover:bg-white/3 hover:${ac.border}`}`}
     >
       <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 ${ac.dot} ${isSelected ? "opacity-100" : "opacity-40 group-hover:opacity-70"}`} />
       <div className="flex-1 min-w-0 space-y-1">
@@ -319,7 +427,10 @@ function ListRow({ item, type, ac, isSelected, onClick }) {
         )}
         <div className="flex items-center gap-1.5 flex-wrap">
           {type === "announcements" && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium ${isExpired ? "bg-red-500/10 text-red-400/70 border-red-500/15" : "bg-emerald-500/10 text-emerald-400/70 border-emerald-500/15"}`}>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full border font-medium
+              ${isExpired
+                ? "bg-red-500/10 text-red-400/70 border-red-500/15"
+                : "bg-emerald-500/10 text-emerald-400/70 border-emerald-500/15"}`}>
               {isExpired ? "Expired" : "Active"}
             </span>
           )}
@@ -354,13 +465,18 @@ function DetailPane({ item, type, ac, actionLoading, onDelete }) {
                 {new Date(item.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
               </span>
               {type === "announcements" && (
-                <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium ${isExpired ? "bg-red-500/10 text-red-300 border-red-500/20" : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isExpired ? "bg-red-400" : "bg-emerald-400"}`} />
+                <span className={`flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full border font-medium
+                  ${isExpired
+                    ? "bg-red-500/10 text-red-300 border-red-500/20"
+                    : "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isExpired ? "bg-red-400" : "bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]"}`} />
                   {isExpired ? "Expired" : "Active"}
                 </span>
               )}
               {type === "blogs" && item.theme && (
-                <Badge className={`${ac.badge} border text-xs flex items-center gap-1`}><Tag className="w-3 h-3" />{item.theme}</Badge>
+                <Badge className={`${ac.badge} border text-xs flex items-center gap-1`}>
+                  <Tag className="w-3 h-3" />{item.theme}
+                </Badge>
               )}
             </div>
           </div>
@@ -368,7 +484,9 @@ function DetailPane({ item, type, ac, actionLoading, onDelete }) {
             className="shrink-0 h-9 px-4 bg-gradient-to-r from-pink-600/70 to-fuchsia-600/70
               hover:from-pink-500 hover:to-fuchsia-500 text-white border-0 gap-2 text-xs font-medium
               shadow-md hover:shadow-pink-500/20 active:scale-[0.97] transition-all duration-200">
-            {actionLoading === item.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+            {actionLoading === item.id
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : <Trash2  className="w-3.5 h-3.5" />}
             Delete
           </Button>
         </div>
@@ -376,51 +494,104 @@ function DetailPane({ item, type, ac, actionLoading, onDelete }) {
 
       <ScrollArea className="flex-1">
         <div className="px-6 py-5 space-y-6">
-          {item.des && <DetailBlock icon={<AlignLeft className="w-3.5 h-3.5" />} label="Description">
-            <p className="text-white/65 text-sm leading-relaxed">{item.des}</p>
-          </DetailBlock>}
-          {item.content && <DetailBlock icon={<FileText className="w-3.5 h-3.5" />} label="Content">
-            <p className="text-white/65 text-sm leading-relaxed whitespace-pre-line">{item.content}</p>
-          </DetailBlock>}
-          {type === "announcements" && <>
-            {(item.date_begin || item.date_end) && <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Schedule">
-              <div className="flex gap-3">
-                {[{ label: "Start", val: item.date_begin, expired: false }, { label: "End", val: item.date_end, expired: isExpired }]
-                  .filter(({ val }) => val).map(({ label, val, expired }) => (
-                    <div key={label} className="flex-1 px-4 py-3 rounded-xl bg-white/4 border border-white/8">
-                      <p className="text-[10px] text-white/30 mb-1 uppercase tracking-wider">{label}</p>
-                      <p className={`text-sm font-medium ${expired ? "text-red-300/80" : "text-white/75"}`}>
-                        {new Date(val).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-                      </p>
-                    </div>
-                  ))}
-              </div>
-            </DetailBlock>}
-            {item.prizes?.length > 0 && <DetailBlock icon={<Trophy className="w-3.5 h-3.5" />} label={`Prizes (${item.prizes.length})`}>
-              <div className="space-y-2">
-                {item.prizes.map((prize, i) => (
-                  <div key={i} className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                    <Award className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
-                    <div>
-                      {prize.place  && <p className="text-amber-300 text-xs font-semibold">{prize.place}</p>}
-                      {prize.reward && <p className="text-white/55 text-xs">{prize.reward}</p>}
-                      {typeof prize === "string" && <p className="text-white/55 text-xs">{prize}</p>}
-                    </div>
+
+          {item.des && (
+            <DetailBlock icon={<AlignLeft className="w-3.5 h-3.5" />} label="Description">
+              <p className="text-white/65 text-sm leading-relaxed">{item.des}</p>
+            </DetailBlock>
+          )}
+
+          {item.content && (
+            <DetailBlock icon={<FileText className="w-3.5 h-3.5" />} label="Content">
+              <p className="text-white/65 text-sm leading-relaxed whitespace-pre-line">{item.content}</p>
+            </DetailBlock>
+          )}
+
+          {type === "announcements" && (
+            <>
+              {(item.date_begin || item.date_end) && (
+                <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Schedule">
+                  <div className="flex gap-3">
+                    {[
+                      { label: "Start", val: item.date_begin, expired: false },
+                      { label: "End",   val: item.date_end,   expired: isExpired },
+                    ].filter(({ val }) => val).map(({ label, val, expired }) => (
+                      <div key={label} className="flex-1 px-4 py-3 rounded-xl bg-white/4 border border-white/8">
+                        <p className="text-[10px] text-white/30 mb-1 uppercase tracking-wider">{label}</p>
+                        <p className={`text-sm font-medium ${expired ? "text-red-300/80" : "text-white/75"}`}>
+                          {new Date(val).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </DetailBlock>}
-          </>}
-          {type === "blogs" && <>
-            {item.author && <DetailBlock icon={<User className="w-3.5 h-3.5" />} label="Author"><p className="text-white/65 text-sm">{item.author}</p></DetailBlock>}
-          </>}
-          {type === "resources" && item.link && <DetailBlock icon={<Globe className="w-3.5 h-3.5" />} label="Resource Link">
-            <a href={item.link} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1.5 text-sm ${ac.tag} hover:underline underline-offset-2 break-all`}>
-              {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
-            </a>
-          </DetailBlock>}
+                </DetailBlock>
+              )}
+
+              {item.open_to && (
+                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Open To">
+                  <p className="text-white/65 text-sm">{item.open_to}</p>
+                </DetailBlock>
+              )}
+
+              {item.prizes?.length > 0 && (
+                <DetailBlock icon={<Trophy className="w-3.5 h-3.5" />} label={`Prizes (${item.prizes.length})`}>
+                  <div className="space-y-2">
+                    {item.prizes.map((prize, i) => (
+                      <div key={i} className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
+                        <Award className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+                        <div>
+                          {prize.place  && <p className="text-amber-300 text-xs font-semibold">{prize.place}</p>}
+                          {prize.reward && <p className="text-white/55 text-xs">{prize.reward}</p>}
+                          {typeof prize === "string" && <p className="text-white/55 text-xs">{prize}</p>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </DetailBlock>
+              )}
+
+              {item.link && (
+                <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Link">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1.5 text-sm ${ac.tag} hover:underline underline-offset-2 break-all`}>
+                    {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+            </>
+          )}
+
+          {type === "blogs" && (
+            <>
+              {item.author && (
+                <DetailBlock icon={<User className="w-3.5 h-3.5" />} label="Author">
+                  <p className="text-white/65 text-sm">{item.author}</p>
+                </DetailBlock>
+              )}
+              {item.link && (
+                <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Link">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1.5 text-sm ${ac.tag} hover:underline underline-offset-2 break-all`}>
+                    {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+            </>
+          )}
+
+          {type === "resources" && item.link && (
+            <DetailBlock icon={<Globe className="w-3.5 h-3.5" />} label="Resource Link">
+              <a href={item.link} target="_blank" rel="noopener noreferrer"
+                className={`inline-flex items-center gap-1.5 text-sm ${ac.tag} hover:underline underline-offset-2 break-all`}>
+                {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+              </a>
+            </DetailBlock>
+          )}
+
           <div className="pt-1 pb-2">
-            <p className="flex items-center gap-1.5 text-[11px] text-white/15 font-mono"><Hash className="w-3 h-3" />{item.id}</p>
+            <p className="flex items-center gap-1.5 text-[11px] text-white/15 font-mono">
+              <Hash className="w-3 h-3" />{item.id}
+            </p>
           </div>
         </div>
       </ScrollArea>
