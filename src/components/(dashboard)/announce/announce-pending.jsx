@@ -16,6 +16,8 @@ import {
   AlertCircle, CheckCircle, Loader2, Info,
   Trophy, Plus, X, Sparkles, RotateCcw, Clock,
 } from "lucide-react"
+const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
+const t = FALLBACK_THEME
 
 const STORAGE_KEY = "pending_announce_form_draft"
 const PRIZES_KEY  = "pending_announce_form_prizes"
