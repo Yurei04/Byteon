@@ -81,24 +81,25 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
   const [formData, setFormData]     = useState(() => loadDraft())
   const [prizes, setPrizes]         = useState(() => loadPrizes())
 
-  // ── Dates ────────────────────────────────────────────────────────────────
-  const [startDate, setStartDate]     = useState(null)
-  const [endDate, setEndDate]         = useState(null)
-  const [startHour12, setStartHour12] = useState("12")
-  const [startMinute, setStartMinute] = useState("00")
-  const [startPeriod, setStartPeriod] = useState("AM")
-  const [endHour12, setEndHour12]     = useState("12")
-  const [endMinute, setEndMinute]     = useState("00")
-  const [endPeriod, setEndPeriod]     = useState("AM")
+// ===== DATE =====
+const [startDate, setStartDate] = useState(null)
+const [endDate, setEndDate] = useState(null)
 
-  const hourOptions   = ["01","02","03","04","05","06","07","08","09","10","11","12"]
-  const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","55"]
+// ===== START TIME  =====
+const [startHour12, setStartHour12] = useState("12")
+const [startMinute, setStartMinute] = useState("00")
+const [startPeriod, setStartPeriod] = useState("AM")
 
-  // ── Org theme ────────────────────────────────────────────────────────────
-  const t = useMemo(
-    () => buildTheme(currentOrg?.primary_color, currentOrg?.secondary_color),
-    [currentOrg?.primary_color, currentOrg?.secondary_color],
-  )
+// ===== END TIME  =====
+const [endHour12, setEndHour12] = useState("12")
+const [endMinute, setEndMinute] = useState("00")
+const [endPeriod, setEndPeriod] = useState("AM")
+
+// dropdown options
+const hourOptions = ["01","02","03","04","05","06","07","08","09","10","11","12"]
+const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","55"]
+
+const periodOptions = ["AM", "PM"]
 
   // ── Draft persistence ────────────────────────────────────────────────────
   useEffect(() => {
@@ -124,45 +125,97 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
     if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...template } : p))
     else setPrizes(prev => [...prev, { id: Date.now(), ...template, description: "" }])
   }
+  
+  
+const handleSubmit = async () => {
 
-  // ── Submit ───────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    if (!currentOrg || !authUserId) { setAlert({ type: "error", message: "Organization not found. Please refresh." }); return }
-    if (!formData.title || !formData.des || !formData.author || !formData.date_begin || !formData.date_end) {
-      setAlert({ type: "error", message: "Please fill in all required fields." }); return
-    }
-    const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
-    if (!validPrizes.length) { setAlert({ type: "error", message: "Please add at least one prize." }); return }
+  // check
+  if (!startDate || !endDate) {
+    setAlert({ type: "error", message: "Please select start and end date." })
+     setIsLoading(true)
+    return
+  }
 
-    setIsLoading(true); setAlert(null)
+    if (!formData.title || !formData.des || !formData.author) {
+    setAlert({ type: "error", message: "Please fill in all required fields." })
+    setIsLoading(false)
+    return
+  }
 
-    const payload = {
-      title:                formData.title.trim(),
-      des:                  formData.des.trim(),
-      author:               formData.author.trim(),
-      date_begin:           formData.date_begin,
-      date_end:             formData.date_end,
-      open_to:              formData.open_to.trim()               || null,
-      countries:            formData.countries.trim()             || null,
-      prizes:               validPrizes.map(({ id, ...p }) => ({ name: p.name.trim(), value: p.value.trim(), description: (p.description || "").trim() })),
-      website_link:         formData.website_link.trim()          || null,
-      dev_link:             formData.dev_link.trim()              || null,
-      color_scheme:         formData.color_scheme,
-      organization:         currentOrg.name,
-      organization_id:      currentOrg.id,
-      tracking_method:      "automatic",
-      google_sheet_csv_url: formData.google_sheet_csv_url.trim() || null,
-      status:               "pending",
-      submitted_by:         authUserId,
-    }
+  // ISO
+  const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
+  const endTime24   = convertTo24Hour(endHour12, endMinute, endPeriod)
 
+  const startISO = new Date(`${startDate.toISOString().split("T")[0]}T${startTime24}:00`).toISOString()
+  const endISO   = new Date(`${endDate.toISOString().split("T")[0]}T${endTime24}:00`).toISOString()
+
+
+  const updatedFormData = {
+    ...formData,
+    date_begin: startISO,
+    date_end: endISO
+  }
+
+if (!currentOrg || !authUserId) {
+  setAlert({ type: "error", message: "Organization not found. Please refresh." })
+  return
+}
+
+if (
+  !updatedFormData.title ||
+  !updatedFormData.des ||
+  !updatedFormData.author ||
+  !updatedFormData.date_begin ||
+  !updatedFormData.date_end
+) {
+  setAlert({ type: "error", message: "Please fill in all required fields." })
+  return
+}
+const validPrizes = prizes.filter(
+  p => p.name.trim() && p.value.trim()
+)
+
+if (validPrizes.length === 0) {
+  setAlert({ type: "error", message: "Please add at least one prize." })
+  return
+}
+
+const payload = {
+  title: updatedFormData.title.trim(),
+  des: updatedFormData.des.trim(),
+  author: updatedFormData.author.trim(),
+  date_begin: updatedFormData.date_begin,
+  date_end: updatedFormData.date_end,
+  open_to: updatedFormData.open_to?.trim() || null,
+  countries: updatedFormData.countries?.trim() || null,
+  prizes: validPrizes.map(({ id, ...p }) => ({
+    name: p.name.trim(),
+    value: p.value.trim(),
+    description: (p.description || "").trim()
+  })),
+  website_link: updatedFormData.website_link?.trim() || null,
+  dev_link: updatedFormData.dev_link?.trim() || null,
+  color_scheme: updatedFormData.color_scheme,
+  organization: currentOrg.name,
+  organization_id: currentOrg.id,
+  tracking_method: "automatic",
+  google_sheet_csv_url: updatedFormData.google_sheet_csv_url?.trim() || null,
+  status: "pending",
+  submitted_by: authUserId,
+}
     let lastError = null
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       setRetryCount(attempt)
       try {
-        const { data: { session }, error: sErr } = await supabase.auth.getSession()
-        if (sErr || !session) await supabase.auth.refreshSession()
-        const { error } = await supabase.from("pending_announcements").insert([payload])
+const { data: { session } } = await supabase.auth.getSession()
+if (!session) {
+  const { error: refreshError } = await supabase.auth.refreshSession()
+  if (refreshError) throw refreshError
+}
+const { data, error } = await supabase
+          .from("pending_announcements")
+          .insert([payload])
+          .select()
         if (error) throw error
         clearDraft()
         setAlert({ type: "success", message: "Submitted for approval! ✅ The super admin will review your announcement." })
