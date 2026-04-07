@@ -4,56 +4,97 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Building2 } from "lucide-react"
 
-export default function OrgAboutSection({ formData, isEditing, onChange }) {
+export default function OrgAboutSection({ 
+  formData, 
+  isEditing, 
+  onChange, 
+  orgTheme, 
+  primaryC, 
+  secondaryC 
+}) {
   return (
-    <Card className="bg-white/10 backdrop-blur-lg border-white/20">
+    <Card 
+      className="backdrop-blur-lg"
+      style={{
+        background: `${orgTheme?.background_color || "#0b0f1a"}cc`,
+        border: `1px solid ${primaryC}40`,
+        boxShadow: `0 10px 30px ${primaryC}20`
+      }}
+    >
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
+        <CardTitle 
+          className="flex items-center gap-2"
+          style={{ color: primaryC }}
+        >
           <Building2 className="w-5 h-5" />
           About Organization
         </CardTitle>
       </CardHeader>
+
       <CardContent className="space-y-4">
         {isEditing ? (
           <>
+            {/* NAME */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-white">Organization Name *</Label>
+              <Label htmlFor="name" style={{ color: primaryC }}>
+                Organization Name *
+              </Label>
               <Input
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={onChange}
-                className="bg-white/10 border-white/20 text-white"
                 placeholder="Your Organization"
                 required
+                style={{
+                  background: `${primaryC}10`,
+                  border: `1px solid ${primaryC}40`,
+                  color: primaryC
+                }}
               />
             </div>
 
+            {/* DESCRIPTION */}
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-white">Description *</Label>
+              <Label htmlFor="description" style={{ color: primaryC }}>
+                Description *
+              </Label>
               <Textarea
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={onChange}
-                className="bg-white/10 border-white/20 text-white min-h-[120px]"
                 placeholder="Describe your organization..."
                 required
+                className="min-h-[120px]"
+                style={{
+                  background: `${primaryC}10`,
+                  border: `1px solid ${primaryC}40`,
+                  color: primaryC
+                }}
               />
             </div>
 
+            {/* CONTACT */}
             <div className="space-y-2">
-              <Label htmlFor="author_name" className="text-white">Contact Person</Label>
+              <Label htmlFor="author_name" style={{ color: primaryC }}>
+                Contact Person
+              </Label>
               <Input
                 id="author_name"
                 name="author_name"
                 value={formData.author_name}
                 onChange={onChange}
-                className="bg-white/10 border-white/20 text-white"
                 placeholder="Admin Name"
+                style={{
+                  background: `${primaryC}10`,
+                  border: `1px solid ${primaryC}40`,
+                  color: primaryC
+                }}
               />
             </div>
 
+            {/* ACTIVE */}
             <div className="flex items-center gap-2 pt-2">
               <input
                 id="active"
@@ -61,30 +102,51 @@ export default function OrgAboutSection({ formData, isEditing, onChange }) {
                 type="checkbox"
                 checked={formData.active}
                 onChange={onChange}
-                className="h-5 w-5 rounded border-white/20 bg-white/10"
+                className="h-5 w-5 rounded"
+                style={{
+                  accentColor: secondaryC,
+                  background: `${primaryC}20`,
+                  border: `1px solid ${primaryC}40`
+                }}
               />
-              <Label htmlFor="active" className="text-white cursor-pointer">
+              <Label 
+                htmlFor="active" 
+                className="cursor-pointer"
+                style={{ color: primaryC }}
+              >
                 Organization is Active
               </Label>
             </div>
           </>
         ) : (
           <>
+            {/* VIEW MODE */}
+            {[
+              { label: "Organization Name", value: formData.name || "No name provided" },
+              { label: "Description", value: formData.description || "No description provided" },
+              { label: "Contact Person", value: formData.author_name || "Not specified" },
+            ].map((item, i) => (
+              <div key={i}>
+                <p style={{ color: `${primaryC}aa` }} className="text-sm mb-1">
+                  {item.label}
+                </p>
+                <p style={{ color: primaryC }}>
+                  {item.value}
+                </p>
+              </div>
+            ))}
+
             <div>
-              <p className="text-white/60 text-sm mb-1">Organization Name</p>
-              <p className="text-white">{formData.name || "No name provided"}</p>
-            </div>
-            <div>
-              <p className="text-white/60 text-sm mb-1">Description</p>
-              <p className="text-white">{formData.description || "No description provided"}</p>
-            </div>
-            <div>
-              <p className="text-white/60 text-sm mb-1">Contact Person</p>
-              <p className="text-white">{formData.author_name || "Not specified"}</p>
-            </div>
-            <div>
-              <p className="text-white/60 text-sm mb-1">Status</p>
-              <p className="text-white">{formData.active ? "✅ Active" : "⏸️ Inactive"}</p>
+              <p style={{ color: `${primaryC}aa` }} className="text-sm mb-1">
+                Status
+              </p>
+              <p 
+                style={{ 
+                  color: formData.active ? secondaryC : `${primaryC}aa` 
+                }}
+              >
+                {formData.active ? "● Active" : "○ Inactive"}
+              </p>
             </div>
           </>
         )}

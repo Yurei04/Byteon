@@ -947,16 +947,27 @@ export default function OrgDashboardPage() {
 
   return (
     <div
-      className="w-full min-h-screen p-4 sm:p-6"
+      className="w-full min-h-screen p-4 sm:p-6 bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px]"
       style={{
         ...orgTheme.cssVars,
-      background: `
-        radial-gradient(circle at 20% -10%, ${p}55 0%, transparent 45%),
-        radial-gradient(circle at 80% 110%, ${s}40 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, ${p}15 0%, transparent 60%),
-        linear-gradient(180deg, ${p}08 0%, ${s}05 100%),
-        #0b0f1a
-      `,
+
+        backgroundImage: `
+          radial-gradient(#ffffff33 1px, transparent 1px),
+          radial-gradient(circle at 20% -10%, ${p}55 0%, transparent 45%),
+          radial-gradient(circle at 80% 110%, ${s}40 0%, transparent 50%),
+          radial-gradient(circle at 50% 50%, ${p}15 0%, transparent 60%),
+          linear-gradient(180deg, ${p}08 0%, ${s}05 100%)
+        `,
+
+        backgroundSize: `
+          20px 20px,
+          auto,
+          auto,
+          auto,
+          auto
+        `,
+
+        backgroundColor: "#0b0f1a"
       }}
     >
       <style>{dynamicStyles}</style>
@@ -1131,7 +1142,14 @@ export default function OrgDashboardPage() {
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                           <div className="lg:col-span-2 space-y-6">
-                            <OrgAboutSection formData={formData} isEditing={isEditing} onChange={handleProfileChange} />
+                            <OrgAboutSection 
+                            formData={formData} 
+                            isEditing={isEditing} 
+                            onChange={handleProfileChange} 
+                            orgTheme={orgTheme}
+                            primaryC={p}
+                            secondaryC={s}
+                            />
 
                             {/* Account Information */}
                             <div className="rounded-2xl p-6 relative overflow-hidden"
