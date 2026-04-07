@@ -69,201 +69,240 @@ const DEFAULT_COLORS = {
   link_color:                  "#818cf8",
 }
 
-// ── 8 Preset Color Schemes ────────────────
 const COLOR_SCHEMES = [
   {
-    id: "cosmic-purple", name: "Cosmic Purple", emoji: "🔮",
+    id: "cosmic-purple",
+    name: "Cosmic Purple",
+    emoji: "🔮",
     preview: ["#c026d3", "#db2777", "#a855f7", "#0b0412", "#1f1130"],
     colors: {
-      primary_color: "#c026d3", secondary_color: "#db2777",
-
-      text_color: "#fafaff", // brighter white
-      text_secondary_color: "#c4b5fd", // purple-tinted
+      primary_color: "#c026d3",
+      secondary_color: "#db2777",
+      text_color: "#fafaff",
+      text_secondary_color: "#c4b5fd",
       heading_color: "#ffffff",
-
       background_color: "#0b0412",
       background_secondary_color: "#140a1f",
-
-      accent_color: "#a855f7", border_color: "#4c1d95",
+      accent_color: "#a855f7",
+      border_color: "#4c1d95",
       card_background_color: "#1f1130",
-
-      button_text_color: "#ffffff", button_background_color: "#9333ea",
-      navbar_background_color: "#0b0412", navbar_text_color: "#fafaff",
-      footer_background_color: "#0b0412", footer_text_color: "#c4b5fd",
-
-      success_color: "#22c55e", warning_color: "#f59e0b",
-      error_color: "#ef4444", link_color: "#a5b4fc",
+      button_text_color: "#ffffff",
+      button_background_color: "#9333ea",
+      navbar_background_color: "#0b0412",
+      navbar_text_color: "#fafaff",
+      footer_background_color: "#0b0412",
+      footer_text_color: "#c4b5fd",
+      success_color: "#22c55e",
+      warning_color: "#f59e0b",
+      error_color: "#ef4444",
+      link_color: "#a5b4fc",
     },
   },
+
   {
-    id: "ocean-blue", name: "Ocean Blue", emoji: "🌊",
+    id: "ocean-blue",
+    name: "Ocean Blue",
+    emoji: "🌊",
     preview: ["#0ea5e9", "#06b6d4", "#38bdf8", "#031421", "#123457"],
     colors: {
-      primary_color: "#0ea5e9", secondary_color: "#06b6d4",
-
+      primary_color: "#0ea5e9",
+      secondary_color: "#06b6d4",
       text_color: "#f8fdff",
       text_secondary_color: "#bae6fd",
       heading_color: "#ffffff",
-
       background_color: "#031421",
       background_secondary_color: "#0a2540",
-
-      accent_color: "#38bdf8", border_color: "#1e40af",
+      accent_color: "#38bdf8",
+      border_color: "#1e40af",
       card_background_color: "#123457",
-
-      button_text_color: "#ffffff", button_background_color: "#0284c7",
-      navbar_background_color: "#031421", navbar_text_color: "#f8fdff",
-      footer_background_color: "#031421", footer_text_color: "#bae6fd",
-
-      success_color: "#34d399", warning_color: "#fbbf24",
-      error_color: "#f87171", link_color: "#7dd3fc",
+      button_text_color: "#ffffff",
+      button_background_color: "#0284c7",
+      navbar_background_color: "#031421",
+      navbar_text_color: "#f8fdff",
+      footer_background_color: "#031421",
+      footer_text_color: "#bae6fd",
+      success_color: "#34d399",
+      warning_color: "#fbbf24",
+      error_color: "#f87171",
+      link_color: "#7dd3fc",
     },
   },
+
   {
-    id: "emerald-forest", name: "Emerald Forest", emoji: "🌿",
+    id: "emerald-forest",
+    name: "Emerald Forest",
+    emoji: "🌿",
     preview: ["#10b981", "#059669", "#34d399", "#021a12", "#065f46"],
     colors: {
-      primary_color: "#10b981", secondary_color: "#059669",
-
+      primary_color: "#10b981",
+      secondary_color: "#059669",
       text_color: "#f4fff8",
       text_secondary_color: "#bbf7d0",
       heading_color: "#ffffff",
-
       background_color: "#021a12",
       background_secondary_color: "#053d2a",
-
-      accent_color: "#34d399", border_color: "#166534",
+      accent_color: "#34d399",
+      border_color: "#166534",
       card_background_color: "#065f46",
-
-      button_text_color: "#ffffff", button_background_color: "#047857",
-      navbar_background_color: "#021a12", navbar_text_color: "#f4fff8",
-      footer_background_color: "#021a12", footer_text_color: "#bbf7d0",
-
-      success_color: "#4ade80", warning_color: "#facc15",
-      error_color: "#f87171", link_color: "#6ee7b7",
+      button_text_color: "#ffffff",
+      button_background_color: "#047857",
+      navbar_background_color: "#021a12",
+      navbar_text_color: "#f4fff8",
+      footer_background_color: "#021a12",
+      footer_text_color: "#bbf7d0",
+      success_color: "#4ade80",
+      warning_color: "#facc15",
+      error_color: "#f87171",
+      link_color: "#6ee7b7",
     },
   },
+
   {
-    id: "sunset-orange", name: "Sunset Orange", emoji: "🌅",
+    id: "sunset-orange",
+    name: "Sunset Orange",
+    emoji: "🌅",
     preview: ["#f97316", "#ef4444", "#fb923c", "#1a0700", "#4a1a00"],
     colors: {
-      primary_color: "#f97316", secondary_color: "#ef4444",
-
+      primary_color: "#f97316",
+      secondary_color: "#ef4444",
       text_color: "#fffaf5",
       text_secondary_color: "#fed7aa",
       heading_color: "#ffffff",
-
       background_color: "#1a0700",
       background_secondary_color: "#331000",
-
-      accent_color: "#fb923c", border_color: "#9a3412",
+      accent_color: "#fb923c",
+      border_color: "#9a3412",
       card_background_color: "#4a1a00",
-
-      button_text_color: "#ffffff", button_background_color: "#ea580c",
-      navbar_background_color: "#1a0700", navbar_text_color: "#fffaf5",
-      footer_background_color: "#1a0700", footer_text_color: "#fed7aa",
-
-      success_color: "#4ade80", warning_color: "#fbbf24",
-      error_color: "#f43f5e", link_color: "#fb923c",
+      button_text_color: "#ffffff",
+      button_background_color: "#ea580c",
+      navbar_background_color: "#1a0700",
+      navbar_text_color: "#fffaf5",
+      footer_background_color: "#1a0700",
+      footer_text_color: "#fed7aa",
+      success_color: "#4ade80",
+      warning_color: "#fbbf24",
+      error_color: "#f43f5e",
+      link_color: "#fb923c",
     },
   },
+
   {
-    id: "rose-gold", name: "Rose Gold", emoji: "🌸",
+    id: "rose-gold",
+    name: "Rose Gold",
+    emoji: "🌸",
     preview: ["#f43f5e", "#d4a373", "#fb7185", "#14030a", "#3f0f1f"],
     colors: {
-      primary_color: "#f43f5e", secondary_color: "#d4a373",
-
+      primary_color: "#f43f5e",
+      secondary_color: "#d4a373",
       text_color: "#fff7f9",
       text_secondary_color: "#fecdd3",
       heading_color: "#ffffff",
-
       background_color: "#14030a",
       background_secondary_color: "#2a0a14",
-
-      accent_color: "#fb7185", border_color: "#9f1239",
+      accent_color: "#fb7185",
+      border_color: "#9f1239",
       card_background_color: "#3f0f1f",
-
-      button_text_color: "#ffffff", button_background_color: "#e11d48",
-      navbar_background_color: "#14030a", navbar_text_color: "#fff7f9",
-      footer_background_color: "#14030a", footer_text_color: "#fecdd3",
-
-      success_color: "#34d399", warning_color: "#d4a373",
-      error_color: "#fb7185", link_color: "#fda4af",
+      button_text_color: "#ffffff",
+      button_background_color: "#e11d48",
+      navbar_background_color: "#14030a",
+      navbar_text_color: "#fff7f9",
+      footer_background_color: "#14030a",
+      footer_text_color: "#fecdd3",
+      success_color: "#34d399",
+      warning_color: "#d4a373",
+      error_color: "#fb7185",
+      link_color: "#fda4af",
     },
   },
+
   {
-    id: "midnight-slate", name: "Midnight Slate", emoji: "🌑",
-    preview: ["#64748b", "#475569", "#94a3b8", "#020b14", "#1e293b"],
-    colors: {
-      primary_color: "#64748b", secondary_color: "#475569",
-
-      text_color: "#f8fbff",
-      text_secondary_color: "#cbd5f5",
-      heading_color: "#ffffff",
-
-      background_color: "#020b14",
-      background_secondary_color: "#13202f",
-
-      accent_color: "#94a3b8", border_color: "#334155",
-      card_background_color: "#1e293b",
-
-      button_text_color: "#ffffff", button_background_color: "#475569",
-      navbar_background_color: "#020b14", navbar_text_color: "#f8fbff",
-      footer_background_color: "#020b14", footer_text_color: "#cbd5f5",
-
-      success_color: "#22c55e", warning_color: "#f59e0b",
-      error_color: "#ef4444", link_color: "#93c5fd",
-    },
-  },
-  {
-    id: "crimson-dark", name: "Crimson Dark", emoji: "🩸",
+    id: "crimson-dark",
+    name: "Crimson Dark",
+    emoji: "🩸",
     preview: ["#dc2626", "#b91c1c", "#ef4444", "#140000", "#3f0000"],
     colors: {
-      primary_color: "#dc2626", secondary_color: "#b91c1c",
-
+      primary_color: "#dc2626",
+      secondary_color: "#b91c1c",
       text_color: "#fff5f5",
       text_secondary_color: "#fecaca",
       heading_color: "#ffffff",
-
       background_color: "#140000",
       background_secondary_color: "#2a0000",
-
-      accent_color: "#ef4444", border_color: "#7f1d1d",
+      accent_color: "#ef4444",
+      border_color: "#7f1d1d",
       card_background_color: "#3f0000",
-
-      button_text_color: "#ffffff", button_background_color: "#b91c1c",
-      navbar_background_color: "#140000", navbar_text_color: "#fff5f5",
-      footer_background_color: "#140000", footer_text_color: "#fecaca",
-
-      success_color: "#4ade80", warning_color: "#fbbf24",
-      error_color: "#f87171", link_color: "#fca5a5",
+      button_text_color: "#ffffff",
+      button_background_color: "#b91c1c",
+      navbar_background_color: "#140000",
+      navbar_text_color: "#fff5f5",
+      footer_background_color: "#140000",
+      footer_text_color: "#fecaca",
+      success_color: "#4ade80",
+      warning_color: "#fbbf24",
+      error_color: "#f87171",
+      link_color: "#fca5a5",
     },
   },
+
   {
-    id: "golden-hour", name: "Golden Hour", emoji: "✨",
+    id: "golden-hour",
+    name: "Golden Hour",
+    emoji: "✨",
     preview: ["#f59e0b", "#d97706", "#fbbf24", "#1a1200", "#4d3800"],
     colors: {
-      primary_color: "#f59e0b", secondary_color: "#d97706",
-
+      primary_color: "#f59e0b",
+      secondary_color: "#d97706",
       text_color: "#fffdf7",
       text_secondary_color: "#fde68a",
       heading_color: "#ffffff",
-
       background_color: "#1a1200",
       background_secondary_color: "#332500",
-
-      accent_color: "#fbbf24", border_color: "#78350f",
+      accent_color: "#fbbf24",
+      border_color: "#78350f",
       card_background_color: "#4d3800",
-
-      button_text_color: "#1c1400", button_background_color: "#f59e0b",
-      navbar_background_color: "#1a1200", navbar_text_color: "#fffdf7",
-      footer_background_color: "#1a1200", footer_text_color: "#fde68a",
-
-      success_color: "#34d399", warning_color: "#f97316",
-      error_color: "#f87171", link_color: "#fde68a",
+      button_text_color: "#1c1400",
+      button_background_color: "#f59e0b",
+      navbar_background_color: "#1a1200",
+      navbar_text_color: "#fffdf7",
+      footer_background_color: "#1a1200",
+      footer_text_color: "#fde68a",
+      success_color: "#34d399",
+      warning_color: "#f97316",
+      error_color: "#f87171",
+      link_color: "#fde68a",
     },
   },
-]
+
+  // NEW: Replaces Midnight Slate
+  {
+    id: "violet-nebula",
+    name: "Violet Nebula",
+    emoji: "🪐",
+    preview: ["#a855f7", "#ec4899", "#6366f1", "#0a0612", "#1a1030"],
+    colors: {
+      primary_color: "#a855f7",
+      secondary_color: "#ec4899",
+      text_color: "#f8f7ff",
+      text_secondary_color: "#c4b5fd",
+      heading_color: "#ffffff",
+      background_color: "#0a0612",
+      background_secondary_color: "#1a1030",
+      accent_color: "#6366f1",
+      border_color: "#4c1d95",
+      card_background_color: "#1a1030",
+      button_text_color: "#ffffff",
+      button_background_color: "#a855f7",
+      navbar_background_color: "#0a0612",
+      navbar_text_color: "#f8f7ff",
+      footer_background_color: "#0a0612",
+      footer_text_color: "#c4b5fd",
+      success_color: "#22c55e",
+      warning_color: "#fbbf24",
+      error_color: "#ef4444",
+      link_color: "#f0abfc",
+    },
+  },
+];
 
 const COLOR_GROUPS = [
   {
