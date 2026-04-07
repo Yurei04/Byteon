@@ -20,7 +20,10 @@ export default function OrgProfileHeader({
   isLoading, 
   onEdit, 
   onSave, 
-  onCancel 
+  onCancel,
+  orgTheme,
+  primaryC,
+  secondaryC
 }) {
   const router = useRouter()
 
@@ -42,58 +45,100 @@ export default function OrgProfileHeader({
   }
 
   return (
-    <Card className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg border-white/20 overflow-hidden">
+    <Card 
+      className="overflow-hidden"
+      style={{
+        background: orgTheme?.background_color || "rgba(0,0,0,0.9)",
+        border: `2px solid ${primaryC}80`,
+        boxShadow: `0 10px 40px ${primaryC}20, inset 0 1px 0 rgba(255,255,255,0.05)`
+      }}
+    >
+      {/* HEADER GRADIENT */}
       <div 
         className="h-32 relative"
         style={{
-          background: `linear-gradient(135deg, ${formData.primary_color} 0%, ${formData.secondary_color} 100%)`
+          background: `linear-gradient(135deg, ${primaryC}, ${secondaryC})`
         }}
       >
-        <div className="absolute inset-0 bg-black/20" />
+        <div 
+          className="absolute inset-0 opacity-40"
+          style={{
+            background: orgTheme?.background_color
+          }}
+        />
       </div>
+
       <CardContent className="relative -mt-16 px-6 pb-6">
         <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
-          {/* Organization Avatar */}
+          
+          {/* AVATAR */}
           <div className="relative">
             <div 
-              className="w-32 h-32 rounded-2xl border-4 border-white/20 shadow-2xl flex items-center justify-center text-5xl backdrop-blur-xl"
+              className="w-32 h-32 rounded-2xl border-4 shadow-2xl flex items-center justify-center text-5xl backdrop-blur-xl"
               style={{
-                background: `linear-gradient(135deg, ${formData.primary_color}dd 0%, ${formData.secondary_color}dd 100%)`
+                borderColor: `${primaryC}40`,
+                background: `linear-gradient(135deg, ${primaryC}dd, ${secondaryC}dd)`
               }}
             >
               <Building2 className="w-16 h-16 text-white" />
             </div>
+
             {formData.active && (
-              <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-2 border-4 border-slate-950">
+              <div 
+                className="absolute -bottom-2 -right-2 rounded-full p-2 border-4"
+                style={{
+                  background: secondaryC,
+                  borderColor: orgTheme?.background_color || "#000"
+                }}
+              >
                 <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
               </div>
             )}
           </div>
 
-          {/* Organization Info */}
+          {/* INFO */}
           <div className="flex-1">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+              
               <div>
-                <h2 className="text-3xl font-bold text-white mb-1">{formData.name}</h2>
-                <p className="text-white/60 flex items-center gap-2">
+                <h2 
+                  className="text-3xl font-bold mb-1"
+                  style={{ color: primaryC }}
+                >
+                  {formData.name}
+                </h2>
+
+                <p 
+                  className="flex items-center gap-2"
+                  style={{ color: `${primaryC}aa` }}
+                >
                   <Calendar className="w-4 h-4" />
                   Member since {profile?.created_at ? formatDate(profile.created_at) : 'N/A'}
                 </p>
               </div>
+
+              {/* BUTTONS */}
               <div className="flex flex-wrap gap-2">
                 {!isEditing ? (
                   <>
                     <Button 
                       onClick={onEdit}
-                      className="bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-700 hover:to-purple-700"
+                      style={{
+                        background: `linear-gradient(135deg, ${primaryC}, ${secondaryC})`,
+                        color: "#fff"
+                      }}
                     >
                       <Edit className="w-4 h-4 sm:mr-2" />
                       <span className="hidden sm:inline">Edit Profile</span>
                     </Button>
+
                     <Button 
                       onClick={handleSignOut}
                       variant="outline"
-                      className="border-red-500/50 text-red-300 hover:bg-red-500/20 hover:border-red-500"
+                      style={{
+                        borderColor: `${secondaryC}80`,
+                        color: secondaryC
+                      }}
                     >
                       <LogOut className="w-4 h-4 sm:mr-2" />
                       <span className="hidden sm:inline">Sign Out</span>
@@ -104,15 +149,25 @@ export default function OrgProfileHeader({
                     <Button 
                       onClick={onSave}
                       disabled={isLoading}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                      style={{
+                        background: `linear-gradient(135deg, ${primaryC}, ${secondaryC})`,
+                        color: "#fff"
+                      }}
                     >
-                      {isLoading ? <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" /> : <Save className="w-4 h-4 sm:mr-2" />}
+                      {isLoading 
+                        ? <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" /> 
+                        : <Save className="w-4 h-4 sm:mr-2" />
+                      }
                       <span className="hidden sm:inline">Save Changes</span>
                     </Button>
+
                     <Button 
                       onClick={onCancel}
                       variant="outline"
-                      className="border-white/20 hover:bg-white/10"
+                      style={{
+                        borderColor: `${primaryC}50`,
+                        color: primaryC
+                      }}
                     >
                       <X className="w-4 h-4 sm:mr-2" />
                       <span className="hidden sm:inline">Cancel</span>
@@ -121,24 +176,41 @@ export default function OrgProfileHeader({
                 )}
               </div>
             </div>
-            
+
+            {/* BADGES */}
             <div className="flex flex-wrap gap-2 mt-3">
-              <Badge className="bg-fuchsia-500/20 text-fuchsia-200 border border-fuchsia-500/30">
+              
+              <Badge 
+                style={{
+                  background: `${primaryC}20`,
+                  color: primaryC,
+                  border: `1px solid ${primaryC}40`
+                }}
+              >
                 {formData.color_scheme}
               </Badge>
-              {formData.active ? (
-                <Badge className="bg-green-500/20 text-green-200 border border-green-500/30">
-                  ● Active
-                </Badge>
-              ) : (
-                <Badge className="bg-gray-500/20 text-gray-200 border border-gray-500/30">
-                  ○ Inactive
-                </Badge>
-              )}
-              <Badge className="bg-purple-500/20 text-purple-200 border border-purple-500/30">
+
+              <Badge 
+                style={{
+                  background: `${secondaryC}20`,
+                  color: secondaryC,
+                  border: `1px solid ${secondaryC}40`
+                }}
+              >
+                {formData.active ? "● Active" : "○ Inactive"}
+              </Badge>
+
+              <Badge 
+                style={{
+                  background: `${primaryC}15`,
+                  color: primaryC,
+                  border: `1px solid ${primaryC}30`
+                }}
+              >
                 <Award className="w-3 h-3 mr-1" />
                 {formData.achievements.length} Achievements
               </Badge>
+
             </div>
           </div>
         </div>
