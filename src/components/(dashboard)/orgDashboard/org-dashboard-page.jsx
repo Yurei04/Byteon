@@ -1299,7 +1299,12 @@ export default function OrgDashboardPage() {
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">All Live Content</h2>
                     <p className="text-white/40 text-sm mt-1">View and delete any published content across the platform.</p>
                   </div>
-                  <OrgViewableSection currentOrg={profile} authUserId={profile?.user_id} />
+                  <OrgViewableSection
+                    currentOrg={profile}
+                    authUserId={profile?.user_id}
+                    primaryColor={p}
+                    secondaryColor={s}
+                  />
                 </TabsContent>
 
                   {/* ── CREATE TAB ── */}
