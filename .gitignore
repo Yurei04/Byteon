@@ -39,3 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+service-account.json
+poster-bot-byteon-a7d69d4b470b.json
