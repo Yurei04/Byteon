@@ -41,6 +41,7 @@ import PosterMaker      from "@/components/poster-maker/poster-maker"
 import NotificationsTab from "@/components/notifications/notification-tab"
 import { useNotifications } from "@/components/notifications/use-notification"
 import { notifyContentDeletedByOrg } from "@/lib/notification"
+import OrgViewableSection from "./org-view-section"
 
 const ITEMS_PER_PAGE = 6
 
@@ -329,6 +330,7 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
       s.colors.secondary_color === formData.secondary_color &&
       s.colors.background_color === formData.background_color
     )
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSchemeId(match ? match.id : null)
   }, [formData.primary_color, formData.secondary_color, formData.background_color])
 
@@ -1253,71 +1255,13 @@ export default function OrgDashboardPage() {
                   </TabsContent>
 
                   {/* ── VIEW ALL TAB ── */}
-                  <TabsContent value="view">
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-                      <div className="rounded-2xl p-5"
-                        style={{ background: "rgba(0,0,0,0.15)", border: `1px solid ${p}15` }}>
-                        <Tabs value={activeViewTab} onValueChange={setActiveViewTab}>
-                          <TabsList className="grid w-full grid-cols-3 mb-6 p-1 rounded-xl org-sub-tabs">
-                            {viewSubTabs.map(({ tab, icon, label }) => (
-                              <TabsTrigger key={tab} value={tab}
-                                className="org-tab flex items-center rounded-lg transition-all"
-                                style={{ color: orgTheme.mutedText }}>
-                                {icon}{label}
-                              </TabsTrigger>
-                            ))}
-                          </TabsList>
-                          {viewSubTabs.map(({ tab, contentLabel, data, total, page, setPage, renderCard }) => (
-                            <TabsContent key={tab} value={tab}>
-                              <div className="flex items-center gap-3 mb-6">
-                                <h3 className="text-xl font-bold text-transparent bg-clip-text"
-                                  style={{ backgroundImage: `linear-gradient(135deg, ${p}, ${s})` }}>
-                                  Your {contentLabel}
-                                </h3>
-                                <span className="text-xs px-2.5 py-1 rounded-full font-medium"
-                                  style={{ background: `${p}18`, color: p, border: `1px solid ${p}35` }}>
-                                  {total.length} total
-                                </span>
-                              </div>
-
-                              {contentLoading ? (
-                                <div className="flex justify-center py-16">
-                                  <Loader2 className="w-7 h-7 animate-spin org-spinner" />
-                                </div>
-                              ) : data.length === 0 ? (
-                                <div className="rounded-2xl p-10 text-center"
-                                  style={{ background: `${p}08`, border: `1px solid ${p}20` }}>
-                                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                                    style={{ background: `${p}15`, border: `1px solid ${p}30` }}>
-                                    <AlertCircle className="w-6 h-6" style={{ color: p }} />
-                                  </div>
-                                  <p className="font-medium mb-1" style={{ color: orgTheme.primaryText }}>
-                                    No {contentLabel.toLowerCase()} yet
-                                  </p>
-                                  <p className="text-sm" style={{ color: orgTheme.mutedText }}>
-                                    Create your first one from the Create New tab.
-                                  </p>
-                                </div>
-                              ) : (
-                                <>
-                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                                    {data.map(renderCard)}
-                                  </div>
-                                  {getTotalPages(total) > 1 && (
-                                    <Pagination className="mt-8">
-                                      <PaginationContent>
-                                        {generatePaginationItems(getTotalPages(total), page, setPage)}
-                                      </PaginationContent>
-                                    </Pagination>
-                                  )}
-                                </>
-                              )}
-                            </TabsContent>
-                          ))}
-                        </Tabs>
-                      </div>
-                    </motion.div>
-                  </TabsContent>
+                <TabsContent value="view">
+                  <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">All Live Content</h2>
+                    <p className="text-white/40 text-sm mt-1">View and delete any published content across the platform.</p>
+                  </div>
+                  <OrgViewableSection currentOrg={profile} authUserId={profile?.user_id} />
+                </TabsContent>
 
                   {/* ── CREATE TAB ── */}
                   <TabsContent value="create">

@@ -83,25 +83,26 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
   const [formData, setFormData]     = useState(() => loadDraft())
   const [prizes, setPrizes]         = useState(() => loadPrizes())
 
-// ===== DATE =====
-const [startDate, setStartDate] = useState(null)
-const [endDate, setEndDate] = useState(null)
+  // ===== DATE =====
+  const [startDate, setStartDate] = useState(null)
+  const [endDate, setEndDate] = useState(null)
 
-// ===== START TIME  =====
-const [startHour12, setStartHour12] = useState("12")
-const [startMinute, setStartMinute] = useState("00")
-const [startPeriod, setStartPeriod] = useState("AM")
+  // ===== START TIME  =====
+  const [startHour12, setStartHour12] = useState("12")
+  const [startMinute, setStartMinute] = useState("00")
+  const [startPeriod, setStartPeriod] = useState("AM")
 
-// ===== END TIME  =====
-const [endHour12, setEndHour12] = useState("12")
-const [endMinute, setEndMinute] = useState("00")
-const [endPeriod, setEndPeriod] = useState("AM")
+  // ===== END TIME  =====
+  const [endHour12, setEndHour12] = useState("12")
+  const [endMinute, setEndMinute] = useState("00")
+  const [endPeriod, setEndPeriod] = useState("AM")
 
-// dropdown options
-const hourOptions = ["01","02","03","04","05","06","07","08","09","10","11","12"]
-const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","55"]
+  // dropdown options
+  const hourOptions = ["01","02","03","04","05","06","07","08","09","10","11","12"]
+  const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","55"]
 
-const periodOptions = ["AM", "PM"]
+  const periodOptions = ["AM", "PM"]
+  const theme = buildTheme(currentOrg?.primary_color, currentOrg?.secondary_color)
 
   // ── Draft persistence ────────────────────────────────────────────────────
   useEffect(() => {
@@ -258,8 +259,25 @@ const { data, error } = await supabase
   }
 
   // ── Shared input style ───────────────────────────────────────────────────
-  const inputStyle = { background: "rgba(255,255,255,0.06)", borderColor: t.primary30, color: "#fff" }
-  const selectStyle = { background: "rgba(255,255,255,0.9)", color: "#111", border: `1px solid ${t.primary30}`, borderRadius: "0.375rem", padding: "0.25rem 0.5rem", fontWeight: 500 }
+  const inputStyle = {
+    background: `${t.primaryFull}08`,
+    border: `1px solid ${t.primaryFull}30`,
+    color: t.primaryText,
+    backdropFilter: "blur(6px)",
+    transition: "all 0.25s ease",
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`
+  }
+  const selectStyle = { color: theme.primaryFull }
+
+  const handleFocus = (e) => {
+    e.target.style.borderColor = t.primaryFull
+    e.target.style.boxShadow = `0 0 0 2px ${t.primaryFull}40, 0 4px 20px ${t.primaryFull}25`
+  }
+
+  const handleBlur = (e) => {
+    e.target.style.borderColor = `${t.primaryFull}30`
+    e.target.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.04)`
+  }
 
   return (
     // Spread CSS vars so --p / --s are available to child components
@@ -311,7 +329,7 @@ const { data, error } = await supabase
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2 md:col-span-2">
             <Label className="text-white">Title *</Label>
-            <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            <Input onFocus={handleFocus} onBlur={handleBlur} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               className="text-white placeholder:text-white/30" style={inputStyle} placeholder="AI Hackathon 2025" />
           </div>
           <div className="space-y-2 md:col-span-2">
@@ -321,7 +339,7 @@ const { data, error } = await supabase
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label className="text-white">Author *</Label>
-            <Input value={formData.author} onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+            <Input onFocus={handleFocus} onBlur={handleBlur} value={formData.author} onChange={(e) => setFormData({ ...formData, author: e.target.value })}
               className="text-white placeholder:text-white/30" style={inputStyle} />
           </div>
         </div>
@@ -364,11 +382,11 @@ const { data, error } = await supabase
                   <div className="flex items-center gap-3 px-4 pt-3 pb-2">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${rank.badge} shrink-0`}>{rank.label}</span>
                     <div className="flex-1 grid grid-cols-2 gap-2">
-                      <Input value={prize.name} onChange={(e) => updatePrize(prize.id, "name", e.target.value)}
+                      <Input onFocus={handleFocus} onBlur={handleBlur} value={prize.name} onChange={(e) => updatePrize(prize.id, "name", e.target.value)}
                         className="h-8 text-sm text-white placeholder:text-white/25"
                         style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }}
                         placeholder="Prize name" />
-                      <Input value={prize.value} onChange={(e) => updatePrize(prize.id, "value", e.target.value)}
+                      <Input onFocus={handleFocus} onBlur={handleBlur} value={prize.value} onChange={(e) => updatePrize(prize.id, "value", e.target.value)}
                         className="h-8 text-sm text-white placeholder:text-white/25"
                         style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }}
                         placeholder="Value" />
@@ -432,6 +450,8 @@ const { data, error } = await supabase
             <div key={key} className="space-y-2">
               <Label className="text-white">{label}</Label>
               <Input
+                onFocus={handleFocus} 
+                onBlur={handleBlur}
                 type={type}
                 value={formData[key]}
                 onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
@@ -453,6 +473,8 @@ const { data, error } = await supabase
             <Label className="text-white font-semibold">Google Forms Tracking</Label>
           </div>
           <Input
+            onFocus={handleFocus} 
+            onBlur={handleBlur}
             value={formData.google_sheet_csv_url}
             onChange={(e) => setFormData({ ...formData, google_sheet_csv_url: e.target.value })}
             className="text-white font-mono text-xs placeholder:text-white/30"
