@@ -1,59 +1,131 @@
 "use client"
 
 import DatePicker from "@/components/DatePickerClient"
-import { forwardRef, useMemo } from "react"
-import { Calendar } from "lucide-react"
-import { useState, useEffect } from "react"
+import { forwardRef, useMemo, useState, useEffect, useCallback, useRef } from "react"
+import {
+  Calendar, Clock, Trophy, Plus, X, Sparkles, RotateCcw,
+  AlertCircle, CheckCircle, Loader2, Info, Link2, ChevronDown,
+  Globe, Code2, FileSpreadsheet, ClipboardList, GripVertical,
+} from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
-import { Card, CardContent } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import {
-  AlertCircle, CheckCircle, Loader2, Info,
-  Trophy, Plus, X, Sparkles, RotateCcw, Clock,
-} from "lucide-react"
+
+// ─── Constants ───────────────────────────────────────────────────────────────
 const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
 const t = FALLBACK_THEME
 
 const STORAGE_KEY = "pending_announce_form_draft"
 const PRIZES_KEY  = "pending_announce_form_prizes"
-
-const EMPTY_FORM = {
-  title: "", des: "", author: "", date_begin: "", date_end: "",
-  open_to: "", countries: "", website_link: "", dev_link: "",
-  color_scheme: "purple", google_sheet_csv_url: "",
-}
-const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
-
-const loadDraft  = () => { try { const s = localStorage.getItem(STORAGE_KEY); return s ? { ...EMPTY_FORM, ...JSON.parse(s) } : { ...EMPTY_FORM } } catch { return { ...EMPTY_FORM } } }
-const loadPrizes = () => { try { const s = localStorage.getItem(PRIZES_KEY);  return s ? JSON.parse(s) : [...EMPTY_PRIZES] }                  catch { return [...EMPTY_PRIZES] } }
-const saveDraft  = (d) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)) } catch {} }
-const savePrizes = (p) => { try { localStorage.setItem(PRIZES_KEY,  JSON.stringify(p)) } catch {} }
-const clearDraft = ()  => { try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(PRIZES_KEY) } catch {} }
-
-const PRIZE_TEMPLATES = [
-  { name: "1st Place",       value: "$5,000"     },
-  { name: "2nd Place",       value: "$3,000"     },
-  { name: "3rd Place",       value: "$2,000"     },
-  { name: "Best Design",     value: "$1,000"     },
-  { name: "Most Innovative", value: "$1,500"     },
-  { name: "Best Technical",  value: "$1,000"     },
-  { name: "People's Choice", value: "$500"       },
-  { name: "Participation",   value: "Certificate"},
-]
-
-const PRIZE_RANK_COLORS = [
-  { border: "border-yellow-400/40", bg: "bg-yellow-400/5",  badge: "bg-yellow-400/20 text-yellow-300 border-yellow-400/30", label: "🥇" },
-  { border: "border-slate-400/40",  bg: "bg-slate-400/5",   badge: "bg-slate-400/20 text-slate-300 border-slate-400/30",   label: "🥈" },
-  { border: "border-amber-700/40",  bg: "bg-amber-700/5",   badge: "bg-amber-700/20 text-amber-400 border-amber-700/30",   label: "🥉" },
-]
+const LINKS_KEY   = "pending_announce_form_links"
 
 const MAX_RETRIES    = 5
 const RETRY_DELAY_MS = 800
+
+const EMPTY_FORM = {
+  title: "", des: "", author: "",
+  date_begin: "", date_end: "",
+  open_to: "", countries: "",
+  color_scheme: "purple",
+}
+const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
+
+// ─── Link type config ─────────────────────────────────────────────────────────
+const LINK_TYPES = [
+  {
+    key: "website_link",
+    label: "Website",
+    placeholder: "https://yoursite.com",
+    icon: Globe,
+    color: "text-sky-400",
+    bg: "bg-sky-400/10",
+    border: "border-sky-400/25",
+  },
+  {
+    key: "dev_link",
+    label: "DevPost",
+    placeholder: "https://devpost.com/...",
+    icon: Code2,
+    color: "text-violet-400",
+    bg: "bg-violet-400/10",
+    border: "border-violet-400/25",
+  },
+  {
+    key: "google_sheet_csv_url",
+    label: "Google Sheet CSV",
+    placeholder: "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv",
+    icon: FileSpreadsheet,
+    color: "text-emerald-400",
+    bg: "bg-emerald-400/10",
+    border: "border-emerald-400/25",
+  },
+  {
+    key: "google_forms_url",
+    label: "Google Forms",
+    placeholder: "https://forms.google.com/...",
+    icon: ClipboardList,
+    color: "text-orange-400",
+    bg: "bg-orange-400/10",
+    border: "border-orange-400/25",
+  },
+]
+
+// ─── Prize templates ──────────────────────────────────────────────────────────
+const PRIZE_TEMPLATES = [
+  { name: "1st Place",       value: "$5,000" },
+  { name: "2nd Place",       value: "$3,000" },
+  { name: "3rd Place",       value: "$2,000" },
+  { name: "Best Design",     value: "$1,000" },
+  { name: "Most Innovative", value: "$1,500" },
+  { name: "Best Technical",  value: "$1,000" },
+  { name: "People's Choice", value: "$500"   },
+  { name: "Participation",   value: "Certificate" },
+]
+
+const RANK_STYLES = [
+  {
+    ring: "ring-1 ring-yellow-400/40",
+    bg: "bg-gradient-to-br from-yellow-400/8 to-amber-500/4",
+    badge: "bg-yellow-400/15 text-yellow-300 border border-yellow-400/30",
+    glow: "shadow-[0_0_12px_rgba(251,191,36,0.12)]",
+    medal: "🥇",
+  },
+  {
+    ring: "ring-1 ring-slate-400/40",
+    bg: "bg-gradient-to-br from-slate-400/8 to-slate-500/4",
+    badge: "bg-slate-400/15 text-slate-200 border border-slate-400/30",
+    glow: "shadow-[0_0_12px_rgba(148,163,184,0.10)]",
+    medal: "🥈",
+  },
+  {
+    ring: "ring-1 ring-amber-700/40",
+    bg: "bg-gradient-to-br from-amber-700/8 to-amber-800/4",
+    badge: "bg-amber-700/15 text-amber-400 border border-amber-700/30",
+    glow: "shadow-[0_0_12px_rgba(180,83,9,0.12)]",
+    medal: "🥉",
+  },
+]
+
+const DEFAULT_RANK = {
+  ring: "ring-1 ring-white/10",
+  bg: "bg-white/[0.03]",
+  badge: "bg-white/10 text-white/50 border border-white/15",
+  glow: "",
+  medal: null,
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const loadDraft  = () => { try { const s = localStorage.getItem(STORAGE_KEY); return s ? { ...EMPTY_FORM, ...JSON.parse(s) } : { ...EMPTY_FORM } } catch { return { ...EMPTY_FORM } } }
+const loadPrizes = () => { try { const s = localStorage.getItem(PRIZES_KEY);  return s ? JSON.parse(s) : [...EMPTY_PRIZES] }                  catch { return [...EMPTY_PRIZES] } }
+const loadLinks  = () => { try { const s = localStorage.getItem(LINKS_KEY);   return s ? JSON.parse(s) : [] }                               catch { return [] } }
+const saveDraft  = (d) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)) } catch {} }
+const savePrizes = (p) => { try { localStorage.setItem(PRIZES_KEY,  JSON.stringify(p)) } catch {} }
+const saveLinks  = (l) => { try { localStorage.setItem(LINKS_KEY,   JSON.stringify(l)) } catch {} }
+const clearDraft = ()  => { try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(PRIZES_KEY); localStorage.removeItem(LINKS_KEY) } catch {} }
 
 function convertTo24Hour(hour, minute, period) {
   let h = parseInt(hour)
@@ -62,46 +134,467 @@ function convertTo24Hour(hour, minute, period) {
   return `${String(h).padStart(2, "0")}:${minute}`
 }
 
-const CalendarInput = forwardRef(({ value, onClick, borderColor }, ref) => (
+const createUTCISOString = (dateObj, time24) => {
+  const [hour, minute] = time24.split(":").map(Number)
+  const localDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), hour, minute, 0)
+  return localDate.toISOString()
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+// BUG FIX #3: Universal toast notification — defined OUTSIDE main component
+// so it never remounts unexpectedly.
+function Toast({ toasts }) {
+  return (
+    <div
+      aria-live="polite"
+      className="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none"
+      style={{ maxWidth: "360px", width: "calc(100vw - 2.5rem)" }}
+    >
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          className="pointer-events-auto flex items-start gap-3 px-4 py-3.5 rounded-2xl shadow-2xl"
+          style={{
+            background:
+              toast.type === "success"
+                ? "rgba(16, 36, 20, 0.97)"
+                : "rgba(36, 16, 16, 0.97)",
+            border:
+              toast.type === "success"
+                ? "1px solid rgba(74,222,128,0.30)"
+                : "1px solid rgba(248,113,113,0.30)",
+            backdropFilter: "blur(20px)",
+            boxShadow:
+              toast.type === "success"
+                ? "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(74,222,128,0.08)"
+                : "0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(248,113,113,0.08)",
+            animation: "toast-in 0.28s cubic-bezier(0.34,1.56,0.64,1) both",
+          }}
+        >
+          {/* Icon */}
+          <span
+            className="shrink-0 w-7 h-7 rounded-xl flex items-center justify-center mt-0.5"
+            style={{
+              background:
+                toast.type === "success"
+                  ? "rgba(74,222,128,0.15)"
+                  : "rgba(248,113,113,0.15)",
+            }}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-4 h-4 text-green-400" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-red-400" />
+            )}
+          </span>
+
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-sm font-semibold leading-tight"
+              style={{ color: toast.type === "success" ? "#86efac" : "#fca5a5" }}
+            >
+              {toast.type === "success" ? "Success" : "Error"}
+            </p>
+            <p className="text-xs text-white/60 mt-0.5 leading-snug">{toast.message}</p>
+          </div>
+
+          {/* Progress bar */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full origin-left"
+            style={{
+              background:
+                toast.type === "success"
+                  ? "rgba(74,222,128,0.4)"
+                  : "rgba(248,113,113,0.4)",
+              animation: `toast-progress ${toast.duration}ms linear both`,
+            }}
+          />
+        </div>
+      ))}
+
+      <style>{`
+        @keyframes toast-in {
+          from { opacity: 0; transform: translateY(12px) scale(0.95); }
+          to   { opacity: 1; transform: translateY(0)    scale(1);    }
+        }
+        @keyframes toast-progress {
+          from { transform: scaleX(1); }
+          to   { transform: scaleX(0); }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// ─── useToast hook ────────────────────────────────────────────────────────────
+function useToast() {
+  const [toasts, setToasts] = useState([])
+  const timerRefs = useRef({})
+
+  const addToast = useCallback((type, message, duration = 4500) => {
+    const id = Date.now()
+    setToasts((prev) => [...prev, { id, type, message, duration }])
+    timerRefs.current[id] = setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id))
+      delete timerRefs.current[id]
+    }, duration)
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => Object.values(timerRefs.current).forEach(clearTimeout)
+  }, [])
+
+  return { toasts, addToast }
+}
+
+// ─── CalendarInput ────────────────────────────────────────────────────────────
+const CalendarInput = forwardRef(({ value, onClick }, ref) => (
   <div
     onClick={onClick}
     ref={ref}
-    className="w-full flex items-center justify-between text-white px-3 py-2 rounded cursor-pointer transition"
-    style={{ background: "rgba(255,255,255,0.08)", border: borderColor || "1px solid rgba(255,255,255,0.2)" }}
+    className="w-full flex items-center justify-between text-white px-3 py-2.5 rounded-xl cursor-pointer transition-all hover:bg-white/[0.07]"
+    style={{
+      background: "rgba(255,255,255,0.06)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      backdropFilter: "blur(8px)",
+    }}
   >
-    <span>{value || "Select date"}</span>
-    <Calendar className="w-4 h-4 text-white/60" />
+    <span className={value ? "text-white text-sm" : "text-white/30 text-sm"}>
+      {value || "Select date"}
+    </span>
+    <Calendar className="w-4 h-4 text-white/40" />
   </div>
 ))
 CalendarInput.displayName = "CalendarInput"
 
+// ─── TimeSelect ───────────────────────────────────────────────────────────────
+function TimeSelect({ hour, minute, period, onHour, onMinute, onPeriod, primaryFull }) {
+  const hourOpts   = ["01","02","03","04","05","06","07","08","09","10","11","12"]
+  const minuteOpts = ["00","05","10","15","20","25","30","35","40","45","50","55"]
+
+  const sel = {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    color: "#fff",
+    borderRadius: "0.6rem",
+    padding: "0.4rem 0.5rem",
+    fontSize: "0.8rem",
+    outline: "none",
+    cursor: "pointer",
+    backdropFilter: "blur(6px)",
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 mt-2">
+      <select value={hour}   onChange={(e) => onHour(e.target.value)}   style={sel}>
+        {hourOpts.map(h => <option key={h} style={{ background: "#1a1a2e" }}>{h}</option>)}
+      </select>
+      <span className="text-white/30 text-sm font-light">:</span>
+      <select value={minute} onChange={(e) => onMinute(e.target.value)} style={sel}>
+        {minuteOpts.map(m => <option key={m} style={{ background: "#1a1a2e" }}>{m}</option>)}
+      </select>
+      <select value={period} onChange={(e) => onPeriod(e.target.value)} style={sel}>
+        <option style={{ background: "#1a1a2e" }}>AM</option>
+        <option style={{ background: "#1a1a2e" }}>PM</option>
+      </select>
+    </div>
+  )
+}
+
+// ─── LinksSection ─────────────────────────────────────────────────────────────
+function LinksSection({ links, setLinks, inputStyle, onFocus, onBlur, hasError, onLinkAdded }) {
+  const [showDropdown, setShowDropdown] = useState(false)
+
+  const addLink = (e, typeKey) => {
+    e.preventDefault()
+    setLinks(prev => [...prev, { id: Date.now(), typeKey, value: "" }])
+    setShowDropdown(false)
+    if (onLinkAdded) onLinkAdded()
+  }
+
+  const removeLink = (e, id) => { e.preventDefault(); setLinks(prev => prev.filter(l => l.id !== id)) }
+  const updateLink = (id, value) => setLinks(prev => prev.map(l => l.id === id ? { ...l, value } : l))
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Link2 className="w-4 h-4 text-white/50" />
+          <Label className="text-white font-semibold">
+            Links <span className="text-red-400">*</span>
+          </Label>
+          {links.length > 0 && (
+            <span className="text-xs text-white/30 bg-white/8 border border-white/10 px-1.5 py-0.5 rounded-full">
+              {links.length}
+            </span>
+          )}
+        </div>
+
+        {/* Add link dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); setShowDropdown(p => !p) }}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              borderColor: "rgba(255,255,255,0.12)",
+              color: "rgba(255,255,255,0.6)",
+            }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Add Link
+            <ChevronDown className={`w-3 h-3 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+          </button>
+
+          {showDropdown && (
+            <div
+              className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden min-w-[180px]"
+              style={{
+                background: "rgba(15,15,25,0.95)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                backdropFilter: "blur(16px)",
+                boxShadow: "0 16px 40px rgba(0,0,0,0.5)",
+              }}
+            >
+              {LINK_TYPES.map((lt) => {
+                const Icon = lt.icon
+                return (
+                  <button
+                    key={lt.key}
+                    type="button"
+                    onClick={(e) => addLink(e, lt.key)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left transition-all hover:bg-white/5 ${lt.color}`}
+                  >
+                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${lt.bg}`}>
+                      <Icon className="w-3.5 h-3.5" />
+                    </span>
+                    <span className="text-white/80">{lt.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {links.length === 0 ? (
+        <div
+          className="flex flex-col items-center justify-center py-6 rounded-xl border border-dashed text-center transition-all"
+          style={{
+            background: hasError ? "rgba(239,68,68,0.04)" : "rgba(255,255,255,0.02)",
+            borderColor: hasError ? "rgba(239,68,68,0.35)" : "rgba(255,255,255,0.10)",
+          }}
+        >
+          <Link2 className={`w-5 h-5 mb-2 ${hasError ? "text-red-400/40" : "text-white/20"}`} />
+          <p className={`text-xs ${hasError ? "text-red-400/70" : "text-white/25"}`}>
+            {hasError ? "At least one link is required." : 'No links added yet. Click "Add Link" to get started.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {links.map((link) => {
+            const cfg = LINK_TYPES.find(lt => lt.key === link.typeKey) || LINK_TYPES[0]
+            const Icon = cfg.icon
+            return (
+              <div
+                key={link.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${cfg.border} transition-all`}
+                style={{ background: "rgba(255,255,255,0.03)" }}
+              >
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}>
+                  <Icon className={`w-3.5 h-3.5 ${cfg.color}`} />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[10px] font-medium mb-0.5 ${cfg.color}`}>{cfg.label}</p>
+                  <Input
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    type="url"
+                    value={link.value}
+                    onChange={(e) => updateLink(link.id, e.target.value)}
+                    placeholder={cfg.placeholder}
+                    className="h-7 text-xs text-white placeholder:text-white/25 border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    style={{ boxShadow: "none" }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => removeLink(e, link.id)}
+                  className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── PrizePool ────────────────────────────────────────────────────────────────
+function PrizePool({ prizes, setPrizes, primaryFull, primaryText, onFocus, onBlur }) {
+  const addPrize    = (e) => { e.preventDefault(); setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "" }]) }
+  const removePrize = (e, id) => { e.preventDefault(); prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id)) }
+  const updatePrize = (id, field, val) => setPrizes(prev => prev.map(p => p.id === id ? { ...p, [field]: val } : p))
+
+  const applyTemplate = (e, tmpl) => {
+    e.preventDefault()
+    const emptyIdx = prizes.findIndex(p => !p.name && !p.value)
+    if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...tmpl } : p))
+    else setPrizes(prev => [...prev, { id: Date.now(), ...tmpl }])
+  }
+
+  const total = prizes.reduce((acc, p) => {
+    const num = parseFloat((p.value || "").replace(/[^0-9.]/g, ""))
+    return isNaN(num) ? acc : acc + num
+  }, 0)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg bg-amber-400/15 border border-amber-400/25 flex items-center justify-center">
+          <Trophy className="w-3.5 h-3.5 text-amber-400" />
+        </div>
+        <div>
+          <Label className="text-white font-semibold leading-none">Prize Pool <span className="text-red-400">*</span></Label>
+          {total > 0 && (
+            <p className="text-xs text-amber-400/70 mt-0.5">≈ ${total.toLocaleString()} total</p>
+          )}
+        </div>
+      </div>
+
+      <div
+        className="p-3 rounded-xl"
+        style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+      >
+        <div className="flex items-center gap-1.5 mb-2">
+          <Sparkles className="w-3 h-3 text-amber-400/60" />
+          <span className="text-[10px] font-medium text-white/30 uppercase tracking-widest">Quick templates</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {PRIZE_TEMPLATES.map((tmpl) => (
+            <button
+              key={tmpl.name}
+              type="button"
+              onClick={(e) => applyTemplate(e, tmpl)}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-white/50 border border-white/8 bg-white/[0.03] hover:bg-amber-400/10 hover:text-amber-300 hover:border-amber-400/25 transition-all"
+            >
+              {tmpl.name}
+              <span className="text-white/25 text-[10px]">{tmpl.value}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {prizes.map((prize, index) => {
+          const rank = RANK_STYLES[index] || DEFAULT_RANK
+          return (
+            <div
+              key={prize.id}
+              className={`rounded-xl overflow-hidden ${rank.ring} ${rank.glow} transition-all`}
+            >
+              <div className={`px-4 py-3 ${rank.bg}`}>
+                <div className="flex items-center gap-3">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${rank.badge}`}>
+                    {rank.medal ?? `#${index + 1}`}
+                  </span>
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[9px] text-white/25 font-medium uppercase tracking-widest mb-1">Prize Name</p>
+                      <Input
+                        onFocus={onFocus} onBlur={onBlur}
+                        value={prize.name}
+                        onChange={(e) => updatePrize(prize.id, "name", e.target.value)}
+                        placeholder="e.g. 1st Place"
+                        className="h-8 text-sm text-white placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
+                        style={{ borderRadius: "0.5rem" }}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-white/25 font-medium uppercase tracking-widest mb-1">Value</p>
+                      <Input
+                        onFocus={onFocus} onBlur={onBlur}
+                        value={prize.value}
+                        onChange={(e) => updatePrize(prize.id, "value", e.target.value)}
+                        placeholder="$5,000"
+                        className="h-8 text-sm text-white placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
+                        style={{ borderRadius: "0.5rem" }}
+                      />
+                    </div>
+                  </div>
+                  {prizes.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => removePrize(e, prize.id)}
+                      className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <button
+        type="button"
+        onClick={addPrize}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-amber-500/25 text-amber-400/60 hover:text-amber-300 hover:bg-amber-500/8 hover:border-amber-500/40 text-sm transition-all"
+      >
+        <Plus className="w-4 h-4" />
+        Add Prize
+      </button>
+    </div>
+  )
+}
+
+// ─── Section wrapper ──────────────────────────────────────────────────────────
+// BUG FIX #2: MOVED OUTSIDE the main component so React never treats it as a
+// new component type on re-render, which was unmounting children and killing
+// input focus after every keystroke.
+function Section({ children, className = "" }) {
+  return (
+    <div
+      className={`rounded-2xl p-5 ${className}`}
+      style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+    >
+      {children}
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId }) {
-  const [isLoading, setIsLoading]   = useState(false)
-  const [retryCount, setRetryCount] = useState(0)
-  const [alert, setAlert]           = useState(null)
-  const [hasDraft, setHasDraft]     = useState(false)
-  const [formData, setFormData]     = useState(() => loadDraft())
+  const [isLoading, setIsLoading]       = useState(false)
+  const [retryCount, setRetryCount]     = useState(0)
+  const [hasDraft, setHasDraft]         = useState(false)
+  const [draftDismissed, setDraftDismissed] = useState(false)
+  const [formData, setFormData]         = useState(() => loadDraft())
   const [prizes, setPrizes]         = useState(() => loadPrizes())
+  const [links, setLinks]           = useState(() => loadLinks())
+  const [linkError, setLinkError]   = useState(false)
 
-  // ===== DATE =====
-  const [startDate, setStartDate] = useState(null)
-  const [endDate, setEndDate] = useState(null)
+  // Toast
+  const { toasts, addToast } = useToast()
 
-  // ===== START TIME  =====
+  // Dates & times
+  const [startDate, setStartDate]   = useState(null)
+  const [endDate,   setEndDate]     = useState(null)
   const [startHour12, setStartHour12] = useState("12")
   const [startMinute, setStartMinute] = useState("00")
   const [startPeriod, setStartPeriod] = useState("AM")
+  const [endHour12,   setEndHour12]   = useState("12")
+  const [endMinute,   setEndMinute]   = useState("00")
+  const [endPeriod,   setEndPeriod]   = useState("AM")
 
-  // ===== END TIME  =====
-  const [endHour12, setEndHour12] = useState("12")
-  const [endMinute, setEndMinute] = useState("00")
-  const [endPeriod, setEndPeriod] = useState("AM")
-
-  // dropdown options
-  const hourOptions = ["01","02","03","04","05","06","07","08","09","10","11","12"]
-  const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","55"]
-
-  const periodOptions = ["AM", "PM"]
   const theme = buildTheme(currentOrg?.primary_color, currentOrg?.secondary_color)
 
   // ── Draft persistence ────────────────────────────────────────────────────
@@ -110,133 +603,115 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId 
     setHasDraft(Object.entries(formData).some(([k, v]) => v && v !== EMPTY_FORM[k]))
   }, [formData])
   useEffect(() => { savePrizes(prizes) }, [prizes])
+  useEffect(() => { saveLinks(links)   }, [links])
 
   const resetForm = () => {
     clearDraft()
     setFormData({ ...EMPTY_FORM })
     setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
-    setHasDraft(false)
-    setAlert(null)
+    setLinks([])
+    setStartDate(null); setEndDate(null)
+    setHasDraft(false); setDraftDismissed(false)
   }
 
-  // ── Prize helpers ────────────────────────────────────────────────────────
-  const addPrize    = () => setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "", description: "" }])
-  const removePrize = (id) => prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id))
-  const updatePrize = (id, field, value) => setPrizes(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p))
-  const applyTemplate = (template) => {
-    const emptyIdx = prizes.findIndex(p => !p.name && !p.value)
-    if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...template } : p))
-    else setPrizes(prev => [...prev, { id: Date.now(), ...template, description: "" }])
-  }
-  // 
-const createUTCISOString = (dateObj, time24) => {
-  const [hour, minute] = time24.split(":").map(Number)
-
-  //create local date
-  const localDate = new Date(
-    dateObj.getFullYear(),
-    dateObj.getMonth(),
-    dateObj.getDate(),
-    hour,
-    minute,
-    0
-  )
-  return localDate.toISOString()
-}
-const handleSubmit = async () => {
-
-  // check
-  if (!startDate || !endDate) {
-    setAlert({ type: "error", message: "Please select start and end date." })
-     setIsLoading(true)
-    return
+  // ── Shared styles ────────────────────────────────────────────────────────
+  const inputStyle = {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    color: "#fff",
+    backdropFilter: "blur(6px)",
+    transition: "all 0.2s ease",
   }
 
+  const handleFocus = (e) => {
+    e.target.style.borderColor = t.primaryFull
+    e.target.style.boxShadow   = `0 0 0 2px ${t.primaryFull}35, 0 4px 18px ${t.primaryFull}20`
+  }
+  const handleBlur = (e) => {
+    e.target.style.borderColor = "rgba(255,255,255,0.10)"
+    e.target.style.boxShadow   = "none"
+  }
+
+  // ── Submit ───────────────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (!startDate || !endDate) {
+      addToast("error", "Please select start and end dates.")
+      return
+    }
     if (!formData.title || !formData.des || !formData.author) {
-    setAlert({ type: "error", message: "Please fill in all required fields." })
-    setIsLoading(false)
-    return
-  }
+      addToast("error", "Please fill in all required fields.")
+      return
+    }
+    if (!currentOrg || !authUserId) {
+      addToast("error", "Organization not found. Please refresh.")
+      return
+    }
 
-  // ISO
-  const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
-  const endTime24   = convertTo24Hour(endHour12, endMinute, endPeriod)
+    const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
+    const endTime24   = convertTo24Hour(endHour12, endMinute, endPeriod)
+    const startISO    = createUTCISOString(startDate, startTime24)
+    const endISO      = createUTCISOString(endDate, endTime24)
 
-  const startISO = createUTCISOString(startDate, startTime24)
-  const endISO   = createUTCISOString(endDate, endTime24)
+    const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
+    if (validPrizes.length === 0) {
+      addToast("error", "Please add at least one prize with a name and value.")
+      return
+    }
 
-  const updatedFormData = {
-    ...formData,
-    date_begin: startISO,
-    date_end: endISO
-  }
+    const filledLinks = links.filter(l => l.value.trim())
+    if (filledLinks.length === 0) {
+      setLinkError(true)
+      addToast("error", "Please add at least one link.")
+      return
+    }
+    setLinkError(false)
 
-if (!currentOrg || !authUserId) {
-  setAlert({ type: "error", message: "Organization not found. Please refresh." })
-  return
-}
+    const linkFields = {}
+    filledLinks.forEach(l => { linkFields[l.typeKey] = l.value.trim() })
 
-if (
-  !updatedFormData.title ||
-  !updatedFormData.des ||
-  !updatedFormData.author ||
-  !updatedFormData.date_begin ||
-  !updatedFormData.date_end
-) {
-  setAlert({ type: "error", message: "Please fill in all required fields." })
-  return
-}
-const validPrizes = prizes.filter(
-  p => p.name.trim() && p.value.trim()
-)
+    const payload = {
+      title:               formData.title.trim(),
+      des:                 formData.des.trim(),
+      author:              formData.author.trim(),
+      date_begin:          startISO,
+      date_end:            endISO,
+      open_to:             formData.open_to?.trim()   || null,
+      countries:           formData.countries?.trim() || null,
+      prizes:              validPrizes.map(({ id, ...p }) => ({
+                             name: p.name.trim(), value: p.value.trim(),
+                             description: (p.description || "").trim(),
+                           })),
+      website_link:        linkFields.website_link        || null,
+      dev_link:            linkFields.dev_link            || null,
+      color_scheme:        formData.color_scheme,
+      organization:        currentOrg.name,
+      organization_id:     currentOrg.id,
+      tracking_method:     "automatic",
+      google_sheet_csv_url: linkFields.google_sheet_csv_url || null,
+      google_forms_url:    linkFields.google_forms_url    || null,
+      status:              "pending",
+      submitted_by:        authUserId,
+    }
 
-if (validPrizes.length === 0) {
-  setAlert({ type: "error", message: "Please add at least one prize." })
-  return
-}
-
-const payload = {
-  title: updatedFormData.title.trim(),
-  des: updatedFormData.des.trim(),
-  author: updatedFormData.author.trim(),
-  date_begin: updatedFormData.date_begin,
-  date_end: updatedFormData.date_end,
-  open_to: updatedFormData.open_to?.trim() || null,
-  countries: updatedFormData.countries?.trim() || null,
-  prizes: validPrizes.map(({ id, ...p }) => ({
-    name: p.name.trim(),
-    value: p.value.trim(),
-    description: (p.description || "").trim()
-  })),
-  website_link: updatedFormData.website_link?.trim() || null,
-  dev_link: updatedFormData.dev_link?.trim() || null,
-  color_scheme: updatedFormData.color_scheme,
-  organization: currentOrg.name,
-  organization_id: currentOrg.id,
-  tracking_method: "automatic",
-  google_sheet_csv_url: updatedFormData.google_sheet_csv_url?.trim() || null,
-  status: "pending",
-  submitted_by: authUserId,
-}
+    setIsLoading(true)
     let lastError = null
+
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       setRetryCount(attempt)
       try {
-const { data: { session } } = await supabase.auth.getSession()
-if (!session) {
-  const { error: refreshError } = await supabase.auth.refreshSession()
-  if (refreshError) throw refreshError
-}
-const { data, error } = await supabase
-          .from("pending_announcements")
-          .insert([payload])
-          .select()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          const { error: refreshError } = await supabase.auth.refreshSession()
+          if (refreshError) throw refreshError
+        }
+        const { error } = await supabase.from("pending_announcements").insert([payload]).select()
         if (error) throw error
         clearDraft()
-        setAlert({ type: "success", message: "Submitted for approval! ✅ The super admin will review your announcement." })
+        addToast("success", "Submitted for approval! The super admin will review your announcement.")
         setFormData({ ...EMPTY_FORM })
         setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
-        setHasDraft(false); setIsLoading(false); setRetryCount(0)
+        setLinks([])
+        setHasDraft(false); setLinkError(false); setIsLoading(false); setRetryCount(0)
         if (onSuccess) onSuccess()
         return
       } catch (err) {
@@ -244,269 +719,212 @@ const { data, error } = await supabase
         if (attempt < MAX_RETRIES) await new Promise(res => setTimeout(res, RETRY_DELAY_MS))
       }
     }
-    setAlert({ type: "error", message: `Failed after ${MAX_RETRIES} attempts: ${lastError?.message}` })
+    addToast("error", `Failed after ${MAX_RETRIES} attempts: ${lastError?.message}`)
     setIsLoading(false); setRetryCount(0)
   }
 
-  // ── Loading state ────────────────────────────────────────────────────────
+  // ── Loading org ──────────────────────────────────────────────────────────
   if (!currentOrg) {
     return (
-      <div className="rounded-xl backdrop-blur-lg p-12 text-center" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}>
+      <div className="rounded-xl p-12 text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }}>
         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: t.primaryText }} />
-        <p style={{ color: t.mutedText }}>Loading organization information...</p>
+        <p style={{ color: t.mutedText }}>Loading organization…</p>
       </div>
     )
   }
 
-  // ── Shared input style ───────────────────────────────────────────────────
-  const inputStyle = {
-    background: `${t.primaryFull}08`,
-    border: `1px solid ${t.primaryFull}30`,
-    color: t.primaryText,
-    backdropFilter: "blur(6px)",
-    transition: "all 0.25s ease",
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`
-  }
-  const selectStyle = { color: theme.primaryFull }
-
-  const handleFocus = (e) => {
-    e.target.style.borderColor = t.primaryFull
-    e.target.style.boxShadow = `0 0 0 2px ${t.primaryFull}40, 0 4px 20px ${t.primaryFull}25`
-  }
-
-  const handleBlur = (e) => {
-    e.target.style.borderColor = `${t.primaryFull}30`
-    e.target.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.04)`
-  }
-
   return (
-    // Spread CSS vars so --p / --s are available to child components
-    <div style={t.cssVars}>
-      {/* Pending notice */}
-      <div className="flex items-center gap-2 mb-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-        <p className="text-amber-200 text-sm">
-          This submission will be <strong>reviewed by the super admin</strong> before going live.
+    <div style={t.cssVars} className="space-y-4">
+
+      {/* ── Toast portal ── */}
+      <Toast toasts={toasts} />
+
+      {/* ── Pending notice ── */}
+      <div className="flex items-start gap-2.5 p-3.5 rounded-xl" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
+        <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+        <p className="text-amber-200/80 text-sm leading-relaxed">
+          This submission will be <span className="text-amber-300 font-medium">reviewed by the super admin</span> before going live.
         </p>
       </div>
 
-      {alert && (
-        <Alert className={`mb-6 ${alert.type === "error" ? "border-red-500 bg-red-500/10" : "border-green-500 bg-green-500/10"}`}>
-          {alert.type === "error" ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-          <AlertDescription>{alert.message}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="space-y-6">
-
-        {/* Draft indicator */}
-        {hasDraft && (
-          <div
-            className="flex items-center justify-between gap-3 p-3 rounded-xl"
-            style={{ background: `rgba(245,158,11,0.08)`, border: "1px solid rgba(245,158,11,0.3)" }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-amber-200/80 text-xs">Draft auto-saved</span>
-            </div>
-            <button onClick={resetForm} className="flex items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
-              <RotateCcw className="w-3 h-3" /> Clear
-            </button>
-          </div>
-        )}
-
-        {/* Submitting as */}
+      {/* ── Auto-save draft indicator ── */}
+      {hasDraft && !draftDismissed && (
         <div
-          className="flex items-center gap-3 p-3 rounded-xl"
-          style={{ background: t.badgeBgPrimary, border: t.borderColorLight }}
-        >
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: t.primaryFull }} />
-          <span className="text-white/50 text-sm">Submitting as</span>
-          <span className="font-semibold text-sm" style={{ color: t.primaryText }}>{currentOrg.name}</span>
-        </div>
-
-        {/* Basic fields */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2 md:col-span-2">
-            <Label className="text-white">Title *</Label>
-            <Input onFocus={handleFocus} onBlur={handleBlur} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="text-white placeholder:text-white/30" style={inputStyle} placeholder="AI Hackathon 2025" />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label className="text-white">Description *</Label>
-            <Textarea value={formData.des} onChange={(e) => setFormData({ ...formData, des: e.target.value })}
-              className="text-white placeholder:text-white/30" style={inputStyle} rows={4} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label className="text-white">Author *</Label>
-            <Input onFocus={handleFocus} onBlur={handleBlur} value={formData.author} onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-              className="text-white placeholder:text-white/30" style={inputStyle} />
-          </div>
-        </div>
-
-        {/* Prize Pool */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-amber-400" />
-              <Label className="text-white font-semibold">Prize Pool *</Label>
-            </div>
-            <Button type="button" size="sm" onClick={addPrize}
-              className="h-8 px-3 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg">
-              <Plus className="w-3 h-3 mr-1" /> Add Prize
-            </Button>
-          </div>
-
-          {/* Quick-fill templates */}
-          <div className="flex flex-wrap gap-1.5 p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            <span className="text-xs text-white/30 w-full mb-1 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" style={{ color: t.primaryText }} /> Quick-fill
-            </span>
-            {PRIZE_TEMPLATES.map((tmpl) => (
-              <button key={tmpl.name} type="button" onClick={() => applyTemplate(tmpl)}
-                className="px-2.5 py-1 text-xs rounded-md text-white/60 border border-white/10 transition-all"
-                onMouseEnter={(e) => { e.currentTarget.style.background = t.badgeBgPrimary; e.currentTarget.style.color = t.primaryText; e.currentTarget.style.borderColor = t.primary30 }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = ""; e.currentTarget.style.color = ""; e.currentTarget.style.borderColor = "" }}
-              >
-                {tmpl.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Prize rows */}
-          <div className="space-y-2">
-            {prizes.map((prize, index) => {
-              const rank = PRIZE_RANK_COLORS[index] || { border: "border-white/10", bg: "bg-white/5", badge: "bg-white/10 text-white/50 border-white/10", label: `#${index + 1}` }
-              return (
-                <div key={prize.id} className={`rounded-xl border ${rank.border} ${rank.bg} overflow-hidden`}>
-                  <div className="flex items-center gap-3 px-4 pt-3 pb-2">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full border ${rank.badge} shrink-0`}>{rank.label}</span>
-                    <div className="flex-1 grid grid-cols-2 gap-2">
-                      <Input onFocus={handleFocus} onBlur={handleBlur} value={prize.name} onChange={(e) => updatePrize(prize.id, "name", e.target.value)}
-                        className="h-8 text-sm text-white placeholder:text-white/25"
-                        style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }}
-                        placeholder="Prize name" />
-                      <Input onFocus={handleFocus} onBlur={handleBlur} value={prize.value} onChange={(e) => updatePrize(prize.id, "value", e.target.value)}
-                        className="h-8 text-sm text-white placeholder:text-white/25"
-                        style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }}
-                        placeholder="Value" />
-                    </div>
-                    {prizes.length > 1 && (
-                      <button type="button" onClick={() => removePrize(prize.id)}
-                        className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-white/25 hover:text-red-400 hover:bg-red-400/10 transition-all">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Date / Time pickers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* START */}
-          <div>
-            <label className="block text-sm font-semibold mb-1 text-white">Start Date</label>
-            <DatePicker
-              selected={startDate}
-              onChange={(date) => setStartDate(date)}
-              dateFormat="yyyy/MM/dd"
-              customInput={<CalendarInput borderColor={t.borderColor} />}
-            />
-            <div className="flex gap-2 mt-2">
-              <select value={startHour12}  onChange={(e) => setStartHour12(e.target.value)}  style={selectStyle}>{hourOptions.map(h   => <option key={h}>{h}</option>)}</select>
-              <span className="text-white self-center">:</span>
-              <select value={startMinute}  onChange={(e) => setStartMinute(e.target.value)}  style={selectStyle}>{minuteOptions.map(m => <option key={m}>{m}</option>)}</select>
-              <select value={startPeriod}  onChange={(e) => setStartPeriod(e.target.value)}  style={selectStyle}><option>AM</option><option>PM</option></select>
-            </div>
-          </div>
-
-          {/* END */}
-          <div>
-            <label className="block text-sm font-semibold mb-1 text-white">End Date</label>
-            <DatePicker
-              selected={endDate}
-              onChange={(date) => setEndDate(date)}
-              dateFormat="yyyy/MM/dd"
-              customInput={<CalendarInput borderColor={t.borderColor} />}
-            />
-            <div className="flex gap-2 mt-2">
-              <select value={endHour12}   onChange={(e) => setEndHour12(e.target.value)}   style={selectStyle}>{hourOptions.map(h   => <option key={h}>{h}</option>)}</select>
-              <span className="text-white self-center">:</span>
-              <select value={endMinute}   onChange={(e) => setEndMinute(e.target.value)}   style={selectStyle}>{minuteOptions.map(m => <option key={m}>{m}</option>)}</select>
-              <select value={endPeriod}   onChange={(e) => setEndPeriod(e.target.value)}   style={selectStyle}><option>AM</option><option>PM</option></select>
-            </div>
-          </div>
-
-          {/* Other fields */}
-          {[
-            { key: "open_to",      label: "Open To",       placeholder: "Students, Everyone" },
-            { key: "countries",    label: "Countries",     placeholder: "Global, USA"        },
-            { key: "website_link", label: "Website Link",  type: "url", placeholder: ""      },
-            { key: "dev_link",     label: "DevPost Link",  type: "url", placeholder: ""      },
-          ].map(({ key, label, type = "text", placeholder }) => (
-            <div key={key} className="space-y-2">
-              <Label className="text-white">{label}</Label>
-              <Input
-                onFocus={handleFocus} 
-                onBlur={handleBlur}
-                type={type}
-                value={formData[key]}
-                onChange={(e) => setFormData({ ...formData, [key]: e.target.value })}
-                className="text-white placeholder:text-white/30"
-                style={inputStyle}
-                placeholder={placeholder}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Google Forms tracking */}
-        <div
-          className="space-y-3 p-4 rounded-xl"
-          style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(96,165,250,0.2)" }}
+          className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl"
+          style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)" }}
         >
           <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-blue-400 shrink-0" />
-            <Label className="text-white font-semibold">Google Forms Tracking</Label>
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+            <span className="text-amber-200/70 text-xs">Draft auto-saved</span>
           </div>
-          <Input
-            onFocus={handleFocus} 
-            onBlur={handleBlur}
-            value={formData.google_sheet_csv_url}
-            onChange={(e) => setFormData({ ...formData, google_sheet_csv_url: e.target.value })}
-            className="text-white font-mono text-xs placeholder:text-white/30"
-            style={inputStyle}
-            placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv"
-          />
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); resetForm() }}
+              className="text-xs text-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 px-2.5 py-1 rounded-lg transition-all"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); setDraftDismissed(true) }}
+              className="w-6 h-6 flex items-center justify-center rounded-lg text-amber-400/40 hover:text-amber-300 hover:bg-amber-400/10 transition-all"
+              title="Dismiss"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
+      )}
 
-        {/* Submit button — fully org-branded */}
-        <Button
-          onClick={handleSubmit}
-          disabled={isLoading}
-          className="w-full text-white border-0 transition-all duration-300"
-          style={{
-            background:  isLoading ? t.badgeBgPrimary : t.buttonGradient,
-            boxShadow:   t.buttonShadow,
-            opacity:     isLoading ? 0.7 : 1,
-          }}
-        >
-          {isLoading ? (
-            <span className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {retryCount > 1 ? `Retrying... (${retryCount}/${MAX_RETRIES})` : "Submitting..."}
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Submit for Approval
-            </span>
-          )}
-        </Button>
+      {/* ── Submitting as ── */}
+      <div
+        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl"
+        style={{ background: t.badgeBgPrimary, border: t.borderColorLight }}
+      >
+        <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: t.primaryFull }} />
+        <span className="text-white/40 text-sm">Submitting as</span>
+        <span className="font-semibold text-sm" style={{ color: t.primaryText }}>{currentOrg.name}</span>
       </div>
+
+      {/* ── Basic Info ── */}
+      <Section>
+        <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-4">Basic Info</p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-white/80 text-sm">Title <span className="text-red-400">*</span></Label>
+            <Input
+              onFocus={handleFocus} onBlur={handleBlur}
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+              placeholder="AI Hackathon 2025"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-white/80 text-sm">Description <span className="text-red-400">*</span></Label>
+            <Textarea
+              onFocus={handleFocus} onBlur={handleBlur}
+              value={formData.des}
+              onChange={(e) => setFormData({ ...formData, des: e.target.value })}
+              style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl resize-none"
+              rows={4} placeholder="Describe your competition..."
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-white/80 text-sm">Author <span className="text-red-400">*</span></Label>
+              <Input
+                onFocus={handleFocus} onBlur={handleBlur}
+                value={formData.author}
+                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-white/80 text-sm">Open To</Label>
+              <Input
+                onFocus={handleFocus} onBlur={handleBlur}
+                value={formData.open_to}
+                onChange={(e) => setFormData({ ...formData, open_to: e.target.value })}
+                style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+                placeholder="Students, Everyone"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-white/80 text-sm">Countries</Label>
+            <Input
+              onFocus={handleFocus} onBlur={handleBlur}
+              value={formData.countries}
+              onChange={(e) => setFormData({ ...formData, countries: e.target.value })}
+              style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+              placeholder="Global, USA, Philippines"
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Date & Time ── */}
+      <Section>
+        <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-4">Date & Time</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <Label className="text-white/80 text-sm block mb-1.5">Start Date <span className="text-red-400">*</span></Label>
+            <DatePicker
+              selected={startDate}
+              onChange={setStartDate}
+              dateFormat="yyyy/MM/dd"
+              customInput={<CalendarInput />}
+            />
+            <TimeSelect
+              hour={startHour12} minute={startMinute} period={startPeriod}
+              onHour={setStartHour12} onMinute={setStartMinute} onPeriod={setStartPeriod}
+              primaryFull={t.primaryFull}
+            />
+          </div>
+          <div>
+            <Label className="text-white/80 text-sm block mb-1.5">End Date <span className="text-red-400">*</span></Label>
+            <DatePicker
+              selected={endDate}
+              onChange={setEndDate}
+              dateFormat="yyyy/MM/dd"
+              customInput={<CalendarInput />}
+            />
+            <TimeSelect
+              hour={endHour12} minute={endMinute} period={endPeriod}
+              onHour={setEndHour12} onMinute={setEndMinute} onPeriod={setEndPeriod}
+              primaryFull={t.primaryFull}
+            />
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Prize Pool ── */}
+      <Section>
+        <PrizePool
+          prizes={prizes} setPrizes={setPrizes}
+          primaryFull={t.primaryFull} primaryText={t.primaryText}
+          onFocus={handleFocus} onBlur={handleBlur}
+        />
+      </Section>
+
+      {/* ── Links ── */}
+      <Section>
+        <LinksSection
+          links={links} setLinks={setLinks}
+          inputStyle={inputStyle}
+          onFocus={handleFocus} onBlur={handleBlur}
+          hasError={linkError}
+          onLinkAdded={() => setLinkError(false)}
+        />
+      </Section>
+
+      {/* ── Submit ── */}
+      {/* BUG FIX #1: type="button" prevents browser default submit scroll behavior */}
+      <Button
+        type="button"
+        onClick={handleSubmit}
+        disabled={isLoading}
+        className="w-full text-white border-0 rounded-xl h-11 text-sm font-semibold transition-all duration-300"
+        style={{
+          background: isLoading ? t.badgeBgPrimary : t.buttonGradient,
+          boxShadow:  t.buttonShadow,
+          opacity:    isLoading ? 0.7 : 1,
+        }}
+      >
+        {isLoading ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {retryCount > 1 ? `Retrying… (${retryCount}/${MAX_RETRIES})` : "Submitting…"}
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Submit for Approval
+          </span>
+        )}
+      </Button>
     </div>
   )
 }
