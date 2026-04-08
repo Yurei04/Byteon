@@ -70,9 +70,9 @@ async function generateWithVertex(prompt, aspectRatio) {
   const PROJECT_ID = process.env.GCP_PROJECT_ID;
   const mappedRatio = ASPECT_RATIO_MAP[aspectRatio] ?? "3:4";
 
-  const credentials = JSON.parse(
-    fs.readFileSync(path.join(process.cwd(), "poster-bot-byteon-a7d69d4b470b.json"), "utf8")
-  );
+  const credentials = JSON.parse(process.env.GCP_SERVICE_ACCOUNT_KEY);
+
+  credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
 
   const auth = new GoogleAuth({
     credentials,
