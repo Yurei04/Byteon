@@ -144,7 +144,7 @@ function OrgPagination({ currentPage, totalPages, onPageChange, ac }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function OrgViewableSection({ currentOrg, authUserId, primaryColor, secondaryColor }) {
+export default function OrgViewableSection({ currentOrg, authUserId, primaryColor, secondaryColor, addToast }) {
   // Derive accent set from live org colors — updates whenever the org changes scheme
   const accents = useMemo(
     () => buildAccents(
@@ -275,7 +275,7 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
         contentType:  type.replace(/s$/, ""),
         contentTitle: item?.title || "Untitled",
       })
-      showToast(`"${deleteDialog.title}" deleted successfully.`)
+      addToast("success", "Deleted Successfully"); return
     } catch (err) {
       showToast("Delete failed: " + err.message, "error")
     } finally {

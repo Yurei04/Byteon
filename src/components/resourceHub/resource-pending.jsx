@@ -10,10 +10,19 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, CheckCircle, Clock } from "lucide-react"
 
-export default function PendingResourceForm({ onSuccess, currentOrg, authUserId }) {
+export default function PendingResourceForm({ onSuccess, currentOrg, authUserId, addToast }) {
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert]         = useState(null)
   const [formData, setFormData]   = useState({ title: "", des: "", link: "", category: "" })
+
+
+  const LIMITS = {
+    title:       80,
+    des:         1000,
+    author:      60,
+    Content:     2000,
+    theme:   200,
+  }
 
   // ── Org theme ──────────────────────────────────────────────────────────────
   const t = useMemo(
@@ -32,7 +41,10 @@ export default function PendingResourceForm({ onSuccess, currentOrg, authUserId 
       setAlert({ type: "error", message: "Organization not found. Please refresh." }); return
     }
     if (!formData.title || !formData.link) {
-      setAlert({ type: "error", message: "Title and Link are required." }); return
+      addToast("error", "Please add a Title and link"); return
+    }
+    if (!formData.des) {
+      addToast("error", "Please add a description"); return
     }
 
     setIsLoading(true)
@@ -112,6 +124,7 @@ export default function PendingResourceForm({ onSuccess, currentOrg, authUserId 
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             className="text-white placeholder:text-white/30"
             style={inputStyle}
+            maxLength={LIMITS.title}
             placeholder="React Documentation"
           />
         </div>
@@ -125,6 +138,7 @@ export default function PendingResourceForm({ onSuccess, currentOrg, authUserId 
             className="text-white placeholder:text-white/30"
             style={inputStyle}
             rows={3}
+            maxLength={LIMITS.des}
             placeholder="Helpful resource for learning React"
           />
         </div>

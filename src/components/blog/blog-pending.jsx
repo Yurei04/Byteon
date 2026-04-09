@@ -19,7 +19,7 @@ const THEME_OPTIONS = [
   "Gaming","Finance","Environment","Personal Development","Other"
 ]
 
-export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }) {
+export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, addToast }) {
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert]         = useState(null)
   const [imageError, setImageError] = useState(false)
@@ -28,6 +28,15 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }
     image: "", hackathon: "", place: "", theme: ""
   })
 
+  const LIMITS = {
+    title:       80,
+    des:         1000,
+    author:      60,
+    Content:     2000,
+    theme:   200,
+  }
+
+
   // ── Derive theme from org colors ─────────────────────────────────────────
   const theme = buildTheme(currentOrg?.primary_color, currentOrg?.secondary_color)
 
@@ -35,9 +44,16 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }
     if (!currentOrg || !authUserId) {
       setAlert({ type: "error", message: "Organization not found. Please refresh." }); return
     }
-    if (!formData.title.trim() || !formData.content.trim()) {
-      setAlert({ type: "error", message: "Title and Content are required." }); return
+    if (!formData.title || !formData.content) {
+      addToast("error", "Please add a Title and Content"); return
     }
+    if (!formData.author) {
+      addToast("error", "Please add a author"); return
+    }
+    if (!formData.theme) {
+      addToast("error", "Please add a theme"); return
+    }
+
 
     setIsLoading(true)
     setAlert(null)
@@ -61,7 +77,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }
 
       const { error } = await supabase.from("pending_blogs").insert([payload])
       if (error) throw error
-
+      addToast("success", "Submitted for approval! The super admin will review your announcement.")
       setAlert({ type: "success", message: "Blog submitted for approval! ✅ The super admin will review it." })
       setFormData({ title: "", des: "", content: "", author: "", image: "", hackathon: "", place: "", theme: "" })
       setImageError(false)
@@ -191,6 +207,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 className="h-12 text-lg placeholder:opacity-40"
                 style={inputStyle}
+                maxLength={LIMITS.title}
                 placeholder="Enter an engaging title…"
               />
             </div>
@@ -204,6 +221,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }
                 className="resize-none placeholder:opacity-40"
                 style={inputStyle}
                 rows={3}
+                maxLength={LIMITS.des}
                 placeholder="Brief summary…"
               />
             </div>
@@ -219,6 +237,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }
                 className="resize-none placeholder:opacity-40"
                 style={inputStyle}
                 rows={10}
+                maxLength={LIMITS.content}
                 placeholder="Write your blog content here…"
               />
             </div>
@@ -232,6 +251,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId }
                   onChange={(e) => setFormData({ ...formData, author: e.target.value })}
                   className="placeholder:opacity-40"
                   style={inputStyle}
+                  maxLength={LIMITS.author}
                   placeholder={`Defaults to ${currentOrg.name}`}
                 />
               </div>

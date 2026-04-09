@@ -38,6 +38,10 @@ import { availableOrgAchievements } from "./org-achievements"
 import { ReturnButton } from "@/components/return"
 import PosterMaker      from "@/components/poster-maker/poster-maker"
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+import { Toast } from "../toast"  
+import { useToast } from "@/components/use-toast"
+
 import NotificationsTab from "@/components/notifications/notification-tab"
 import { useNotifications } from "@/components/notifications/use-notification"
 import { notifyContentDeletedByOrg } from "@/lib/notification"
@@ -98,7 +102,6 @@ const COLOR_SCHEMES = [
       link_color: "#a5b4fc",
     },
   },
-
   {
     id: "ocean-blue",
     name: "Ocean Blue",
@@ -127,7 +130,6 @@ const COLOR_SCHEMES = [
       link_color: "#7dd3fc",
     },
   },
-
   {
     id: "emerald-forest",
     name: "Emerald Forest",
@@ -156,7 +158,6 @@ const COLOR_SCHEMES = [
       link_color: "#6ee7b7",
     },
   },
-
   {
     id: "sunset-orange",
     name: "Sunset Orange",
@@ -185,7 +186,6 @@ const COLOR_SCHEMES = [
       link_color: "#fb923c",
     },
   },
-
   {
     id: "rose-gold",
     name: "Rose Gold",
@@ -214,7 +214,6 @@ const COLOR_SCHEMES = [
       link_color: "#fda4af",
     },
   },
-
   {
     id: "crimson-dark",
     name: "Crimson Dark",
@@ -243,7 +242,6 @@ const COLOR_SCHEMES = [
       link_color: "#fca5a5",
     },
   },
-
   {
     id: "golden-hour",
     name: "Golden Hour",
@@ -272,8 +270,6 @@ const COLOR_SCHEMES = [
       link_color: "#fde68a",
     },
   },
-
-  // NEW: Replaces Midnight Slate
   {
     id: "violet-nebula",
     name: "Violet Nebula",
@@ -302,7 +298,7 @@ const COLOR_SCHEMES = [
       link_color: "#f0abfc",
     },
   },
-];
+]
 
 const COLOR_GROUPS = [
   {
@@ -369,7 +365,6 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
       s.colors.secondary_color === formData.secondary_color &&
       s.colors.background_color === formData.background_color
     )
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSchemeId(match ? match.id : null)
   }, [formData.primary_color, formData.secondary_color, formData.background_color])
 
@@ -390,11 +385,9 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
         boxShadow: `0 0 0 1px ${p}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
       }}
     >
-      {/* Subtle corner accent */}
       <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
         style={{ background: `radial-gradient(circle at top right, ${p}15, transparent 70%)` }} />
 
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-lg font-semibold flex items-center gap-2.5" style={{ color: orgTheme.primaryText }}>
           <span className="flex items-center justify-center w-8 h-8 rounded-lg"
@@ -419,7 +412,6 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
         )}
       </div>
 
-      {/* Live color swatch bar */}
       <div className="mb-5">
         <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: orgTheme.mutedText }}>Current Palette</p>
         <div className="flex gap-1.5 h-9 rounded-xl overflow-hidden p-0.5"
@@ -436,7 +428,6 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
         </div>
       </div>
 
-      {/* Mode switcher */}
       <div className="flex gap-1 p-1 rounded-xl mb-5 w-fit"
         style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.06)" }}>
         {[
@@ -458,7 +449,6 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
         ))}
       </div>
 
-      {/* ── PRESET SCHEMES ── */}
       {pickerMode === "schemes" && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {COLOR_SCHEMES.map((scheme) => {
@@ -506,7 +496,6 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
         </div>
       )}
 
-      {/* ── CUSTOM PICKER ── */}
       {pickerMode === "custom" && (
         <>
           <div className="flex flex-wrap gap-2 mb-4">
@@ -576,7 +565,7 @@ export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
 
-  const [activeTab, setActiveTab]             = useState("profile")
+  const [activeTab, setActiveTab]             = useState("create")
   const [activeViewTab, setActiveViewTab]     = useState("viewAnnouncement")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
 
@@ -595,7 +584,7 @@ export default function OrgDashboardPage() {
 
   const [isEditing, setIsEditing]             = useState(false)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
-  const [alert, setAlert]                     = useState(null)
+  // ── alert state removed — replaced by toast ──────────────────────────────
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showSignOutDialog, setShowSignOutDialog] = useState(false)
 
@@ -613,42 +602,35 @@ export default function OrgDashboardPage() {
     [profile?.primary_color, profile?.secondary_color, formData.primary_color, formData.secondary_color],
   )
 
-  // ── All primary/secondary for dynamic use ────────────────────────────────
   const p = formData.primary_color   || DEFAULT_COLORS.primary_color
   const s = formData.secondary_color || DEFAULT_COLORS.secondary_color
 
-  // ── Dynamic stylesheet (org-color-aware) ─────────────────────────────────
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  const { toasts, addToast, removeToast } = useToast()
+
+  // ── Dynamic stylesheet ────────────────────────────────────────────────────
   const dynamicStyles = useMemo(() => `
-    /* Tab active states */
     .org-tab[data-state=active] {
       background: linear-gradient(135deg, ${p}, ${s}) !important;
       color: #ffffff !important;
       border: none !important;
       box-shadow: 0 2px 12px ${p}50, 0 0 0 1px ${p}30 !important;
     }
-    .org-tab {
-      transition: all 0.2s ease !important;
-    }
+    .org-tab { transition: all 0.2s ease !important; }
     .org-tab:hover:not([data-state=active]) {
       background: ${p}15 !important;
       color: ${orgTheme.primaryText} !important;
     }
-
-    /* Notification badge */
     .org-badge {
       background: linear-gradient(135deg, ${p}, ${s});
       box-shadow: 0 0 8px ${p}70;
     }
-
-    /* Pagination active link */
     .org-page-link[data-active=true] {
       background: ${p}25 !important;
       color: ${orgTheme.primaryText} !important;
       border-color: ${p}50 !important;
       box-shadow: 0 0 10px ${p}30 !important;
     }
-
-    /* Card hover: lift + glow */
     .org-card-hover {
       transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
       will-change: transform;
@@ -658,32 +640,22 @@ export default function OrgDashboardPage() {
       border-color: ${p}!important;
       box-shadow: 0 12px 32px ${p}25, 0 0 0 1px ${p}20 !important;
     }
-
-    /* Spinner */
     .org-spinner { color: ${p}; }
-
-    /* Stat card icon ring pulse */
     @keyframes org-pulse-ring {
       0%   { box-shadow: 0 0 0 0 ${p}50; }
       70%  { box-shadow: 0 0 0 8px ${p}00; }
       100% { box-shadow: 0 0 0 0 ${p}00; }
     }
     .org-icon-ring { animation: org-pulse-ring 2.8s ease-out infinite; }
-
-    /* Section heading gradient line */
     .org-section-divider {
       height: 1px;
       background: linear-gradient(to right, ${p}60, ${s}40, transparent);
     }
-
-    /* Input focus ring */
     .org-input:focus {
       outline: none !important;
       border-color: ${p}60 !important;
       box-shadow: 0 0 0 3px ${p}20 !important;
     }
-
-    /* Glow button */
     .org-btn-primary {
       background: linear-gradient(135deg, ${p}, ${s}) !important;
       box-shadow: 0 4px 18px ${p}45 !important;
@@ -693,11 +665,7 @@ export default function OrgDashboardPage() {
       transform: translateY(-1px) !important;
       box-shadow: 0 6px 24px ${p}60 !important;
     }
-    .org-btn-primary:active {
-      transform: translateY(0) !important;
-    }
-
-    /* Sub-tab list */
+    .org-btn-primary:active { transform: translateY(0) !important; }
     .org-sub-tabs {
       background: rgba(0,0,0,0.25) !important;
       border: 1px solid ${p}20 !important;
@@ -789,12 +757,14 @@ export default function OrgDashboardPage() {
 
   const handleProfileSubmit = async () => {
     if (!formData.name || !formData.description) {
-      setAlert({ type: "error", message: "Organization Name and Description are required." }); return
+      addToast("error", "Organization Name and Description are required.")
+      return
     }
     if (!formData.author_name) {
-      setAlert({ type: "error", message: "Username (Author Name) is required." }); return
+      addToast("error", "Username (Author Name) is required.")
+      return
     }
-    setIsProfileSaving(true); setAlert(null)
+    setIsProfileSaving(true)
     try {
       const colorPayload = Object.fromEntries(Object.keys(DEFAULT_COLORS).map(k => [k, formData[k]]))
       const { error } = await supabase.from("organizations").update({
@@ -809,11 +779,10 @@ export default function OrgDashboardPage() {
       }).eq("user_id", profile.user_id)
       if (error) throw error
       await refreshProfile()
-      setAlert({ type: "success", message: "Organization profile updated successfully!" })
+      addToast("success", "Organization profile updated successfully!")
       setIsEditing(false)
-      setTimeout(() => setAlert(null), 2000)
     } catch (error) {
-      setAlert({ type: "error", message: `Failed to update profile: ${error.message}` })
+      addToast("error", `Failed to update profile: ${error.message}`)
     } finally { setIsProfileSaving(false) }
   }
 
@@ -951,32 +920,10 @@ export default function OrgDashboardPage() {
       ),
     },
   ]
-
-  const viewSubTabs = [
-    {
-      tab: "viewAnnouncement", icon: <Megaphone className="w-4 h-4 mr-2" />, label: "Announcements",
-      data: paginatedAnnouncements, total: announcements, page: currentPageAnnouncement, setPage: setCurrentPageAnnouncement,
-      contentLabel: "Announcements",
-      renderCard: (item) => <AnnouncementCard key={item.id} item={item} onUpdate={refreshAnnouncements} onDelete={(id) => handleDelete("announcement", id)} />,
-    },
-    {
-      tab: "viewBlogs", icon: <FileText className="w-4 h-4 mr-2" />, label: "Blogs",
-      data: paginatedBlogs, total: blogs, page: currentPageBlogs, setPage: setCurrentPageBlogs,
-      contentLabel: "Blogs",
-      renderCard: (item) => <BlogCard key={item.id} item={item} onUpdate={refreshBlogs} onDelete={(id) => handleDelete("blog", id)} />,
-    },
-    {
-      tab: "viewResources", icon: <BookOpen className="w-4 h-4 mr-2" />, label: "Resources",
-      data: paginatedResources, total: resources, page: currentPageResources, setPage: setCurrentPageResources,
-      contentLabel: "Resources",
-      renderCard: (item) => <ResourceCard key={item.id} item={item} onDelete={(id) => handleDelete("resource", id)} />,
-    },
-  ]
-
   const createSubTabs = [
-    { tab: "createAnnouncement", icon: <Megaphone className="w-4 h-4 mr-2" />, label: "Announcement", content: <PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} /> },
-    { tab: "createBlogs",        icon: <FileText   className="w-4 h-4 mr-2" />, label: "Blog",         content: <PendingBlogOrgForm   onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} /> },
-    { tab: "createResources",    icon: <BookOpen   className="w-4 h-4 mr-2" />, label: "Resource",     content: <PendingResourceForm  onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} /> },
+    { tab: "createAnnouncement", icon: <Megaphone className="w-4 h-4 mr-2" />, label: "Announcement", content: <PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} /> },
+    { tab: "createBlogs",        icon: <FileText   className="w-4 h-4 mr-2" />, label: "Blog",         content: <PendingBlogOrgForm   onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} /> },
+    { tab: "createResources",    icon: <BookOpen   className="w-4 h-4 mr-2" />, label: "Resource",     content: <PendingResourceForm  onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} /> },
   ]
 
   const statCards = [
@@ -991,7 +938,6 @@ export default function OrgDashboardPage() {
       className="w-full min-h-screen p-4 sm:p-6 bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px]"
       style={{
         ...orgTheme.cssVars,
-
         backgroundImage: `
           radial-gradient(#ffffff33 1px, transparent 1px),
           radial-gradient(circle at 20% -10%, ${p}55 0%, transparent 45%),
@@ -999,26 +945,18 @@ export default function OrgDashboardPage() {
           radial-gradient(circle at 50% 50%, ${p}15 0%, transparent 60%),
           linear-gradient(180deg, ${p}08 0%, ${s}05 100%)
         `,
-
-        backgroundSize: `
-          20px 20px,
-          auto,
-          auto,
-          auto,
-          auto
-        `,
-
+        backgroundSize: `20px 20px, auto, auto, auto, auto`,
         backgroundColor: "#0b0f1a"
       }}
     >
       <style>{dynamicStyles}</style>
 
+      {/* ── Toast — fixed top-center, above all dashboard content ── */}
+      <Toast toasts={toasts} onRemove={removeToast} />
+
       {/* ── Top bar ── */}
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
         className="w-full flex justify-between items-center max-w-7xl mx-auto mb-8 gap-3">
-        <ReturnButton />
-
-        {/* Center badge */}
         <div className="flex-1 max-w-xs mx-auto rounded-full py-2 px-4 flex items-center justify-center gap-2"
           style={{
             background: `linear-gradient(135deg, ${p}15, ${s}10)`,
@@ -1028,27 +966,6 @@ export default function OrgDashboardPage() {
           <ShieldCheck className="w-3.5 h-3.5" style={{ color: p }} />
           <span className="text-xs font-medium" style={{ color: orgTheme.primaryText }}>Organization Panel</span>
         </div>
-
-        {/* Sign out */}
-        <button
-          onClick={() => setShowSignOutDialog(true)}
-          className="shrink-0 flex items-center gap-2 text-sm px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
-          style={{
-            background: "rgba(239,68,68,0.1)",
-            border: "1px solid rgba(239,68,68,0.3)",
-            color: "#fca5a5",
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = "rgba(239,68,68,0.2)"
-            e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)"
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = "rgba(239,68,68,0.1)"
-            e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"
-          }}>
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline">Sign Out</span>
-        </button>
       </motion.div>
 
       <div className="max-w-7xl mx-auto">
@@ -1086,11 +1003,8 @@ export default function OrgDashboardPage() {
                   boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
                 }}
               >
-                {/* Background glow on hover — done via CSS class org-card-hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl"
                   style={{ background: `radial-gradient(circle at 80% 20%, ${p}15, transparent 60%)` }} />
-
-                {/* Top row: label + icon */}
                 <div className="flex items-start justify-between mb-3">
                   <p className="text-xs font-medium uppercase tracking-wide" style={{ color: orgTheme.mutedText }}>
                     {label}
@@ -1103,8 +1017,6 @@ export default function OrgDashboardPage() {
                     <Icon className="w-4.5 h-4.5" style={{ color: p }} />
                   </div>
                 </div>
-
-                {/* Count */}
                 <div className="flex items-end gap-2">
                   <span className="text-4xl font-bold leading-none text-transparent bg-clip-text"
                     style={{ backgroundImage: `linear-gradient(135deg, ${p}, ${s})` }}>
@@ -1112,8 +1024,6 @@ export default function OrgDashboardPage() {
                   </span>
                 </div>
                 <p className="text-[11px] mt-1.5" style={{ color: `${orgTheme.mutedText}99` }}>{desc}</p>
-
-                {/* Bottom gradient line */}
                 <div className="absolute bottom-0 left-4 right-4 h-px"
                   style={{ background: `linear-gradient(to right, transparent, ${p}50, transparent)` }} />
               </motion.div>
@@ -1129,8 +1039,6 @@ export default function OrgDashboardPage() {
                 boxShadow: `0 0 0 1px ${p}08, 0 24px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)`,
                 backdropFilter: "blur(20px)",
               }}>
-
-              {/* Thin top accent line */}
               <div className="h-px w-full" style={{ background: `linear-gradient(to right, transparent, ${p}70, ${s}50, transparent)` }} />
 
               <div className="p-5 sm:p-7">
@@ -1138,10 +1046,7 @@ export default function OrgDashboardPage() {
 
                   {/* ── Main tab list ── */}
                   <TabsList className="grid w-full grid-cols-5 mb-7 p-1 rounded-xl gap-0.5"
-                    style={{
-                      background: "rgba(0,0,0,0.4)",
-                      border: `1px solid ${p}18`,
-                    }}>
+                    style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${p}18` }}>
                     {mainTabs.map(({ value, icon, label }) => (
                       <TabsTrigger key={value} value={value}
                         className="org-tab flex items-center gap-1.5 transition-all text-xs sm:text-sm rounded-lg py-2"
@@ -1156,19 +1061,7 @@ export default function OrgDashboardPage() {
                   <TabsContent value="profile" className="mt-0">
                     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
                       <div className="space-y-6">
-
-                        {alert && (
-                          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-                            <Alert className={alert.type === "error"
-                              ? "bg-red-500/10 border-red-500/40 text-red-200 rounded-xl"
-                              : "bg-green-500/10 border-green-500/40 text-green-200 rounded-xl"}>
-                              {alert.type === "error"
-                                ? <AlertCircle className="h-4 w-4" />
-                                : <CheckCircle className="h-4 w-4" />}
-                              <AlertDescription>{alert.message}</AlertDescription>
-                            </Alert>
-                          </motion.div>
-                        )}
+                        {/* alert block removed — toasts handle all feedback */}
 
                         <OrgProfileHeader
                           formData={formData} profile={profile}
@@ -1179,17 +1072,18 @@ export default function OrgDashboardPage() {
                           orgTheme={orgTheme}
                           primaryC={p}
                           secondaryC={s}
+                          addToast={addToast}
                         />
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                           <div className="lg:col-span-2 space-y-6">
-                            <OrgAboutSection 
-                            formData={formData} 
-                            isEditing={isEditing} 
-                            onChange={handleProfileChange} 
-                            orgTheme={orgTheme}
-                            primaryC={p}
-                            secondaryC={s}
+                            <OrgAboutSection
+                              formData={formData}
+                              isEditing={isEditing}
+                              onChange={handleProfileChange}
+                              orgTheme={orgTheme}
+                              primaryC={p}
+                              secondaryC={s}
                             />
 
                             {/* Account Information */}
@@ -1199,7 +1093,6 @@ export default function OrgDashboardPage() {
                                 border: `1px solid ${p}25`,
                                 boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)`,
                               }}>
-                              {/* Section header */}
                               <div className="flex items-center gap-2.5 mb-1">
                                 <span className="flex items-center justify-center w-7 h-7 rounded-lg"
                                   style={{ background: `${p}18`, border: `1px solid ${p}35` }}>
@@ -1250,7 +1143,7 @@ export default function OrgDashboardPage() {
                             />
                           </div>
 
-                          {/* Danger Zone sidebar */}
+                          {/* Danger Zone */}
                           <div className="space-y-6">
                             <div className="rounded-2xl p-6 relative overflow-hidden"
                               style={{
@@ -1294,18 +1187,19 @@ export default function OrgDashboardPage() {
                   </TabsContent>
 
                   {/* ── VIEW ALL TAB ── */}
-                <TabsContent value="view">
-                  <div className="mb-4">
-                    <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">All Live Content</h2>
-                    <p className="text-white/40 text-sm mt-1">View and delete any published content across the platform.</p>
-                  </div>
-                  <OrgViewableSection
-                    currentOrg={profile}
-                    authUserId={profile?.user_id}
-                    primaryColor={p}
-                    secondaryColor={s}
-                  />
-                </TabsContent>
+                  <TabsContent value="view">
+                    <div className="mb-4">
+                      <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">All Live Content</h2>
+                      <p className="text-white/40 text-sm mt-1">View and delete any published content across the platform.</p>
+                    </div>
+                    <OrgViewableSection
+                      currentOrg={profile}
+                      authUserId={profile?.user_id}
+                      primaryColor={p}
+                      secondaryColor={s}
+                      addToast={addToast}
+                    />
+                  </TabsContent>
 
                   {/* ── CREATE TAB ── */}
                   <TabsContent value="create">
@@ -1362,7 +1256,6 @@ export default function OrgDashboardPage() {
                 </Tabs>
               </div>
 
-              {/* Bottom accent line */}
               <div className="h-px w-full" style={{ background: `linear-gradient(to right, transparent, ${s}40, transparent)` }} />
             </div>
           </motion.div>

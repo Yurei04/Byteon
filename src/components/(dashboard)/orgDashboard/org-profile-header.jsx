@@ -23,7 +23,8 @@ export default function OrgProfileHeader({
   onCancel,
   orgTheme,
   primaryC,
-  secondaryC
+  secondaryC,
+  addToast
 }) {
   const router = useRouter()
 
@@ -32,12 +33,14 @@ export default function OrgProfileHeader({
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('Sign out error:', error)
-        alert('Failed to sign out. Please try again.')
+        addToast("success", "Sign out Unsuccessful"); 
         return
       }
-      
+
       router.push('/')
       router.refresh()
+      addToast("success", "Sign out successful"); 
+
     } catch (err) {
       console.error('Sign out exception:', err)
       alert('An error occurred while signing out.')
