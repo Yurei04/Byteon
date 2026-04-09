@@ -1,11 +1,12 @@
 "use client"
 
 import DatePicker from "@/components/DatePickerClient"
-import { forwardRef, useState, useEffect, useCallback, useRef } from "react"
+import { forwardRef, useState, useEffect, useRef } from "react"
 import {
   Calendar, Clock, Trophy, Plus, X, Sparkles,
-  AlertCircle, CheckCircle, Loader2, Link2, ChevronDown,
+  CheckCircle, Loader2, Link2, ChevronDown,
   Globe, Code2, FileSpreadsheet, ClipboardList,
+  Search, Check, ChevronUp, ShieldCheck,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
@@ -14,41 +15,74 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
 const t = FALLBACK_THEME
 
-const STORAGE_KEY = "pending_announce_form_draft"
-const PRIZES_KEY  = "pending_announce_form_prizes"
-const LINKS_KEY   = "pending_announce_form_links"
+const STORAGE_KEY   = "pending_announce_form_draft"
+const PRIZES_KEY    = "pending_announce_form_prizes"
+const LINKS_KEY     = "pending_announce_form_links"
+const COUNTRIES_KEY = "pending_announce_form_countries"
 
 const MAX_RETRIES    = 5
 const RETRY_DELAY_MS = 800
 
-// ─── Character limits ─────────────────────────────────────────────────────────
 const LIMITS = {
-  title:       80,
-  des:         1000,
-  author:      60,
-  open_to:     80,
-  countries:   120,
-  prize_name:  40,
+  title:      80,
+  des:        1000,
+  author:     60,
+  open_to:    80,
+  prize_name: 40,
 }
 
 const EMPTY_FORM = {
   title: "", des: "", author: "",
   date_begin: "", date_end: "",
-  open_to: "", countries: "",
+  open_to: "",
   color_scheme: "purple",
 }
 const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
+const EMPTY_COUNTRIES = { mode: "global", list: [] }
+
+// ─── Country list ─────────────────────────────────────────────────────────────
+const ALL_COUNTRIES = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola","Antigua and Barbuda",
+  "Argentina","Armenia","Australia","Austria","Azerbaijan","Bahamas","Bahrain",
+  "Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bhutan","Bolivia",
+  "Bosnia and Herzegovina","Botswana","Brazil","Brunei","Bulgaria","Burkina Faso",
+  "Burundi","Cabo Verde","Cambodia","Cameroon","Canada","Central African Republic",
+  "Chad","Chile","China","Colombia","Comoros","Congo","Costa Rica","Croatia","Cuba",
+  "Cyprus","Czech Republic","Denmark","Djibouti","Dominica","Dominican Republic",
+  "Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini",
+  "Ethiopia","Fiji","Finland","France","Gabon","Gambia","Georgia","Germany","Ghana",
+  "Greece","Grenada","Guatemala","Guinea","Guinea-Bissau","Guyana","Haiti","Honduras",
+  "Hungary","Iceland","India","Indonesia","Iran","Iraq","Ireland","Israel","Italy",
+  "Jamaica","Japan","Jordan","Kazakhstan","Kenya","Kiribati","Kuwait","Kyrgyzstan",
+  "Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania",
+  "Luxembourg","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta",
+  "Marshall Islands","Mauritania","Mauritius","Mexico","Micronesia","Moldova",
+  "Monaco","Mongolia","Montenegro","Morocco","Mozambique","Myanmar","Namibia",
+  "Nauru","Nepal","Netherlands","New Zealand","Nicaragua","Niger","Nigeria",
+  "North Korea","North Macedonia","Norway","Oman","Pakistan","Palau","Panama",
+  "Papua New Guinea","Paraguay","Peru","Philippines","Poland","Portugal","Qatar",
+  "Romania","Russia","Rwanda","Saint Kitts and Nevis","Saint Lucia",
+  "Saint Vincent and the Grenadines","Samoa","San Marino","Sao Tome and Principe",
+  "Saudi Arabia","Senegal","Serbia","Seychelles","Sierra Leone","Singapore",
+  "Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Korea",
+  "South Sudan","Spain","Sri Lanka","Sudan","Suriname","Sweden","Switzerland",
+  "Syria","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tonga",
+  "Trinidad and Tobago","Tunisia","Turkey","Turkmenistan","Tuvalu","Uganda",
+  "Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay",
+  "Uzbekistan","Vanuatu","Vatican City","Venezuela","Vietnam","Yemen","Zambia",
+  "Zimbabwe",
+]
 
 // ─── Link type config ─────────────────────────────────────────────────────────
 const LINK_TYPES = [
-  { key: "website_link",         label: "Website",          placeholder: "https://yoursite.com",                                              icon: Globe,          color: "text-sky-400",     bg: "bg-sky-400/10",     border: "border-sky-400/25"     },
-  { key: "dev_link",             label: "DevPost",          placeholder: "https://devpost.com/...",                                           icon: Code2,          color: "text-violet-400",  bg: "bg-violet-400/10",  border: "border-violet-400/25"  },
-  { key: "google_sheet_csv_url", label: "Google Sheet CSV", placeholder: "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv",        icon: FileSpreadsheet,color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/25" },
-  { key: "google_forms_url",     label: "Google Forms",     placeholder: "https://forms.google.com/...",                                      icon: ClipboardList,  color: "text-orange-400",  bg: "bg-orange-400/10",  border: "border-orange-400/25"  },
+  { key: "website_link",         label: "Website",          placeholder: "https://yoursite.com",                                         icon: Globe,          color: "text-sky-400",     bg: "bg-sky-400/10",     border: "border-sky-400/25"     },
+  { key: "dev_link",             label: "DevPost",          placeholder: "https://devpost.com/...",                                      icon: Code2,          color: "text-violet-400",  bg: "bg-violet-400/10",  border: "border-violet-400/25"  },
+  { key: "google_sheet_csv_url", label: "Google Sheet CSV", placeholder: "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv", icon: FileSpreadsheet,color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/25" },
+  { key: "google_forms_url",     label: "Google Forms",     placeholder: "https://forms.google.com/...",                                icon: ClipboardList,  color: "text-orange-400",  bg: "bg-orange-400/10",  border: "border-orange-400/25"  },
 ]
 
 // ─── Prize templates ──────────────────────────────────────────────────────────
@@ -71,13 +105,17 @@ const RANK_STYLES = [
 const DEFAULT_RANK = { ring: "ring-1 ring-white/10", bg: "bg-white/[0.03]", badge: "bg-white/10 text-white/50 border border-white/15", glow: "", medal: null }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const loadDraft  = () => { try { const s = localStorage.getItem(STORAGE_KEY); return s ? { ...EMPTY_FORM, ...JSON.parse(s) } : { ...EMPTY_FORM } } catch { return { ...EMPTY_FORM } } }
-const loadPrizes = () => { try { const s = localStorage.getItem(PRIZES_KEY);  return s ? JSON.parse(s) : [{ id: Date.now(), name: "", value: "", description: "" }] } catch { return [{ id: Date.now(), name: "", value: "", description: "" }] } }
-const loadLinks  = () => { try { const s = localStorage.getItem(LINKS_KEY);   return s ? JSON.parse(s) : [] } catch { return [] } }
-const saveDraft  = (d) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)) } catch {} }
-const savePrizes = (p) => { try { localStorage.setItem(PRIZES_KEY,  JSON.stringify(p)) } catch {} }
-const saveLinks  = (l) => { try { localStorage.setItem(LINKS_KEY,   JSON.stringify(l)) } catch {} }
-const clearDraft = ()  => { try { localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(PRIZES_KEY); localStorage.removeItem(LINKS_KEY) } catch {} }
+const loadDraft     = () => { try { const s = localStorage.getItem(STORAGE_KEY);   return s ? { ...EMPTY_FORM, ...JSON.parse(s) } : { ...EMPTY_FORM } } catch { return { ...EMPTY_FORM } } }
+const loadPrizes    = () => { try { const s = localStorage.getItem(PRIZES_KEY);    return s ? JSON.parse(s) : [{ id: Date.now(), name: "", value: "", description: "" }] } catch { return [{ id: Date.now(), name: "", value: "", description: "" }] } }
+const loadLinks     = () => { try { const s = localStorage.getItem(LINKS_KEY);     return s ? JSON.parse(s) : [] } catch { return [] } }
+const loadCountries = () => { try { const s = localStorage.getItem(COUNTRIES_KEY); return s ? JSON.parse(s) : { ...EMPTY_COUNTRIES } } catch { return { ...EMPTY_COUNTRIES } } }
+const saveDraft     = (d) => { try { localStorage.setItem(STORAGE_KEY,   JSON.stringify(d)) } catch {} }
+const savePrizes    = (p) => { try { localStorage.setItem(PRIZES_KEY,    JSON.stringify(p)) } catch {} }
+const saveLinks     = (l) => { try { localStorage.setItem(LINKS_KEY,     JSON.stringify(l)) } catch {} }
+const saveCountries = (c) => { try { localStorage.setItem(COUNTRIES_KEY, JSON.stringify(c)) } catch {} }
+const clearDraft    = ()  => { try {
+  [STORAGE_KEY, PRIZES_KEY, LINKS_KEY, COUNTRIES_KEY].forEach(k => localStorage.removeItem(k))
+} catch {} }
 
 function convertTo24Hour(hour, minute, period) {
   let h = parseInt(hour)
@@ -103,10 +141,7 @@ function CharCount({ current, max }) {
           style={{ width: `${Math.min(pct * 100, 100)}%`, background: over ? "#f87171" : near ? "#fbbf24" : "rgba(255,255,255,0.25)" }}
         />
       </div>
-      <span
-        className="text-[10px] tabular-nums transition-colors"
-        style={{ color: over ? "#f87171" : near ? "#fbbf24" : "rgba(255,255,255,0.22)" }}
-      >
+      <span className="text-[10px] tabular-nums transition-colors" style={{ color: over ? "#f87171" : near ? "#fbbf24" : "rgba(255,255,255,0.22)" }}>
         {current}/{max}
       </span>
     </div>
@@ -137,9 +172,9 @@ function TimeSelect({ hour, minute, period, onHour, onMinute, onPeriod }) {
   }
   return (
     <div className="flex items-center gap-1.5 mt-2">
-      <select value={hour}   onChange={(e) => onHour(e.target.value)}   style={sel}>{hourOpts.map(h   => <option key={h} style={{ background: "#1a1a2e" }}>{h}</option>)}</select>
+      <select value={hour}   onChange={(e) => onHour(e.target.value)}   style={sel}>{hourOpts.map(h   => <option key={h}   style={{ background: "#1a1a2e" }}>{h}</option>)}</select>
       <span className="text-white/30 text-sm font-light">:</span>
-      <select value={minute} onChange={(e) => onMinute(e.target.value)} style={sel}>{minuteOpts.map(m => <option key={m} style={{ background: "#1a1a2e" }}>{m}</option>)}</select>
+      <select value={minute} onChange={(e) => onMinute(e.target.value)} style={sel}>{minuteOpts.map(m => <option key={m}   style={{ background: "#1a1a2e" }}>{m}</option>)}</select>
       <select value={period} onChange={(e) => onPeriod(e.target.value)} style={sel}>
         <option style={{ background: "#1a1a2e" }}>AM</option>
         <option style={{ background: "#1a1a2e" }}>PM</option>
@@ -148,8 +183,151 @@ function TimeSelect({ hour, minute, period, onHour, onMinute, onPeriod }) {
   )
 }
 
+// ─── CountrySelector ─────────────────────────────────────────────────────────
+const COUNTRY_MODE_CONFIG = {
+  global:   { label: "Global",           sub: "Open to all countries",           icon: Globe,    accent: "text-sky-400",    ring: "ring-sky-400/50",    activeBg: "bg-sky-400/10"    },
+  included: { label: "Select countries", sub: "Only listed countries can join",   icon: Check,    accent: "text-emerald-400",ring: "ring-emerald-400/50",activeBg: "bg-emerald-400/10"},
+  excluded: { label: "Exclude countries",sub: "All except listed countries",      icon: X,        accent: "text-rose-400",   ring: "ring-rose-400/50",   activeBg: "bg-rose-400/10"   },
+}
+
+function CountrySelector({ value, onChange, hasError }) {
+  const { mode, list } = value
+  const [search, setSearch]     = useState("")
+  const [open, setOpen]         = useState(false)
+  const dropRef = useRef(null)
+
+  const filtered = ALL_COUNTRIES.filter(c =>
+    c.toLowerCase().includes(search.toLowerCase()) && !list.includes(c)
+  )
+
+  const setMode = (m) => onChange({ mode: m, list: m === "global" ? [] : list })
+  const addCountry = (c) => { onChange({ mode, list: [...list, c] }); setSearch("") }
+  const removeCountry = (c) => onChange({ mode, list: list.filter(x => x !== c) })
+
+  useEffect(() => {
+    const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
+
+  const needsCountries = mode !== "global"
+  const isError = hasError && needsCountries && list.length === 0
+
+  return (
+    <div className="space-y-3">
+      {/* Mode selector */}
+      <div className="grid grid-cols-3 gap-2">
+        {Object.entries(COUNTRY_MODE_CONFIG).map(([key, cfg]) => {
+          const Icon = cfg.icon
+          const active = mode === key
+          return (
+            <button
+              key={key} type="button"
+              onClick={() => setMode(key)}
+              className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border text-center transition-all ${
+                active
+                  ? `${cfg.activeBg} ring-1 ${cfg.ring} border-transparent`
+                  : "bg-white/[0.03] border-white/8 hover:bg-white/[0.06]"
+              }`}
+            >
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${active ? cfg.accent : "text-white/30"}`}
+                style={{ background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)" }}>
+                <Icon className="w-3.5 h-3.5" />
+              </span>
+              <span className={`text-[11px] font-semibold leading-tight transition-colors ${active ? "text-white" : "text-white/40"}`}>{cfg.label}</span>
+              <span className={`text-[9px] leading-tight transition-colors ${active ? "text-white/50" : "text-white/20"}`}>{cfg.sub}</span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Country picker — only shown when not global */}
+      {needsCountries && (
+        <div className="space-y-2">
+          {/* Selected tags */}
+          {list.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              {list.map(c => (
+                <span key={c} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
+                  mode === "included"
+                    ? "bg-emerald-400/10 text-emerald-300 border-emerald-400/25"
+                    : "bg-rose-400/10 text-rose-300 border-rose-400/25"
+                }`}>
+                  {c}
+                  <button type="button" onClick={() => removeCountry(c)} className="ml-0.5 hover:text-white transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Searchable dropdown */}
+          <div ref={dropRef} className="relative">
+            <div
+              onClick={() => setOpen(p => !p)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${isError ? "ring-1 ring-red-400/50" : ""}`}
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: `1px solid ${isError ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.12)"}`,
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <Search className="w-4 h-4 text-white/30 shrink-0" />
+              <input
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setOpen(true) }}
+                onFocus={() => setOpen(true)}
+                placeholder={`Search and add ${mode === "included" ? "allowed" : "excluded"} countries…`}
+                className="flex-1 bg-transparent text-white text-sm placeholder:text-white/25 outline-none"
+              />
+              {open ? <ChevronUp className="w-3.5 h-3.5 text-white/30 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-white/30 shrink-0" />}
+            </div>
+
+            {open && filtered.length > 0 && (
+              <div
+                className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-xl overflow-hidden max-h-48 overflow-y-auto"
+                style={{ background: "rgba(15,15,25,0.97)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(16px)", boxShadow: "0 16px 40px rgba(0,0,0,0.5)" }}
+              >
+                {filtered.slice(0, 60).map(c => (
+                  <button
+                    key={c} type="button"
+                    onClick={() => { addCountry(c); setOpen(false) }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left text-white/70 hover:bg-white/5 hover:text-white transition-all"
+                  >
+                    <Globe className="w-3 h-3 text-white/20 shrink-0" />
+                    {c}
+                  </button>
+                ))}
+                {filtered.length === 0 && (
+                  <p className="px-3 py-3 text-sm text-white/25 text-center">No countries match</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          {isError && (
+            <p className="text-xs text-red-400/70 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-red-400 inline-block" />
+              Please select at least one country for this mode.
+            </p>
+          )}
+
+          {list.length > 0 && (
+            <p className="text-[11px] text-white/30">
+              {mode === "included"
+                ? `${list.length} countr${list.length === 1 ? "y" : "ies"} allowed`
+                : `${list.length} countr${list.length === 1 ? "y" : "ies"} excluded · all others can join`}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── LinksSection ─────────────────────────────────────────────────────────────
-function LinksSection({ links, setLinks, inputStyle, onFocus, onBlur, hasError, onLinkAdded }) {
+function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded }) {
   const [showDropdown, setShowDropdown] = useState(false)
   const addLink    = (e, typeKey) => { e.preventDefault(); setLinks(prev => [...prev, { id: Date.now(), typeKey, value: "" }]); setShowDropdown(false); if (onLinkAdded) onLinkAdded() }
   const removeLink = (e, id)      => { e.preventDefault(); setLinks(prev => prev.filter(l => l.id !== id)) }
@@ -239,10 +417,10 @@ function LinksSection({ links, setLinks, inputStyle, onFocus, onBlur, hasError, 
 
 // ─── PrizePool ────────────────────────────────────────────────────────────────
 function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
-  const addPrize      = (e)          => { e.preventDefault(); setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "" }]) }
-  const removePrize   = (e, id)      => { e.preventDefault(); prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id)) }
+  const addPrize      = (e)              => { e.preventDefault(); setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "" }]) }
+  const removePrize   = (e, id)          => { e.preventDefault(); prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id)) }
   const updatePrize   = (id, field, val) => setPrizes(prev => prev.map(p => p.id === id ? { ...p, [field]: val } : p))
-  const applyTemplate = (e, tmpl)    => {
+  const applyTemplate = (e, tmpl)        => {
     e.preventDefault()
     const emptyIdx = prizes.findIndex(p => !p.name && !p.value)
     if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...tmpl } : p))
@@ -311,13 +489,11 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
                       <Input
                         onFocus={onFocus} onBlur={onBlur}
                         value={prize.value}
-                        onChange={(e) => updatePrize(prize.id, "value", e.target.value.slice(0, LIMITS.prize_value))}
+                        onChange={(e) => updatePrize(prize.id, "value", e.target.value)}
                         placeholder="$5,000"
-                        maxLength={LIMITS.prize_value}
                         className="h-8 text-sm text-white placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
                         style={{ borderRadius: "0.5rem" }}
                       />
-                      <CharCount current={prize.value.length} max={LIMITS.prize_value} />
                     </div>
                   </div>
                   {prizes.length > 1 && (
@@ -343,7 +519,52 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
   )
 }
 
-// ─── Section — OUTSIDE main component to prevent input remount bug ────────────
+// ─── TermsCheckbox ────────────────────────────────────────────────────────────
+function TermsCheckbox({ checked, onChange, hasError }) {
+  return (
+    <div
+      className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer select-none ${
+        hasError
+          ? "bg-red-400/5 border-red-400/30"
+          : checked
+            ? "bg-white/[0.04] border-white/15"
+            : "bg-white/[0.025] border-white/8 hover:bg-white/[0.04] hover:border-white/12"
+      }`}
+      onClick={() => onChange(!checked)}
+    >
+      <div className={`w-5 h-5 rounded-md shrink-0 mt-0.5 flex items-center justify-center border transition-all ${
+        checked
+          ? "bg-fuchsia-500 border-fuchsia-500"
+          : hasError
+            ? "bg-red-400/10 border-red-400/50"
+            : "bg-white/5 border-white/20"
+      }`}>
+        {checked && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+      </div>
+      <div className="flex-1">
+        <p className={`text-sm leading-relaxed transition-colors ${checked ? "text-white/80" : "text-white/50"}`}>
+          I confirm that the information provided is accurate and I agree to the{" "}
+          <span className="text-fuchsia-400 underline underline-offset-2 cursor-pointer hover:text-fuchsia-300 transition-colors">
+            Terms & Conditions
+          </span>{" "}
+          and{" "}
+          <span className="text-fuchsia-400 underline underline-offset-2 cursor-pointer hover:text-fuchsia-300 transition-colors">
+            Submission Guidelines
+          </span>
+          .
+        </p>
+        {hasError && (
+          <p className="text-xs text-red-400/80 mt-1.5 flex items-center gap-1.5">
+            <span className="w-1 h-1 rounded-full bg-red-400 inline-block shrink-0" />
+            You must accept the terms to submit.
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Section ──────────────────────────────────────────────────────────────────
 function Section({ children, className = "" }) {
   return (
     <div className={`rounded-2xl p-5 ${className}`} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
@@ -361,7 +582,11 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   const [formData, setFormData]             = useState(() => loadDraft())
   const [prizes, setPrizes]                 = useState(() => loadPrizes())
   const [links, setLinks]                   = useState(() => loadLinks())
+  const [countries, setCountries]           = useState(() => loadCountries())
   const [linkError, setLinkError]           = useState(false)
+  const [countriesError, setCountriesError] = useState(false)
+  const [termsAccepted, setTermsAccepted]   = useState(false)
+  const [termsError, setTermsError]         = useState(false)
 
   const [startDate,   setStartDate]   = useState(null)
   const [endDate,     setEndDate]     = useState(null)
@@ -377,25 +602,26 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
     saveDraft(formData)
     setHasDraft(Object.entries(formData).some(([k, v]) => v && v !== EMPTY_FORM[k]))
   }, [formData])
-  useEffect(() => { savePrizes(prizes) }, [prizes])
-  useEffect(() => { saveLinks(links)   }, [links])
+  useEffect(() => { savePrizes(prizes)       }, [prizes])
+  useEffect(() => { saveLinks(links)         }, [links])
+  useEffect(() => { saveCountries(countries) }, [countries])
 
   const resetForm = () => {
     clearDraft()
     setFormData({ ...EMPTY_FORM })
     setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
     setLinks([])
+    setCountries({ ...EMPTY_COUNTRIES })
     setStartDate(null); setEndDate(null)
     setHasDraft(false); setDraftDismissed(false)
+    setTermsAccepted(false)
   }
 
-  // ── Clamped field setter ─────────────────────────────────────────────────
   const setField = (field, raw) => {
     const limit = LIMITS[field]
     setFormData(prev => ({ ...prev, [field]: limit ? raw.slice(0, limit) : raw }))
   }
 
-  // ── Shared input styles ──────────────────────────────────────────────────
   const inputStyle = {
     background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)",
     color: "#fff", backdropFilter: "blur(6px)", transition: "all 0.2s ease",
@@ -409,26 +635,49 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
     e.target.style.boxShadow   = "none"
   }
 
+  // ── Serialize countries for payload ─────────────────────────────────────
+  const serializeCountries = () => {
+    if (countries.mode === "global") return "Global"
+    if (countries.list.length === 0)  return null
+    const prefix = countries.mode === "included" ? "Only: " : "Excluded: "
+    return prefix + countries.list.join(", ")
+  }
+
   // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
-    if (!startDate || !endDate)                     { addToast("error", "Please select start and end dates."); return }
-    if (!formData.title || !formData.des || !formData.author) { addToast("error", "Please fill in all required fields."); return }
-    if (!currentOrg || !authUserId)                 { addToast("error", "Organization not found. Please refresh."); return }
+    let hasErrors = false
+
+    if (!startDate || !endDate)                               { addToast("error", "Please select start and end dates."); hasErrors = true }
+    if (!formData.title || !formData.des || !formData.author || !formData.open_to) { addToast("error", "Please fill in all required fields."); hasErrors = true }
+    if (!currentOrg || !authUserId)                           { addToast("error", "Organization not found. Please refresh."); return }
+
+    const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
+    if (validPrizes.length === 0) { addToast("error", "Please add at least one prize with a name and value."); hasErrors = true }
+
+    const filledLinks = links.filter(l => l.value.trim())
+    if (filledLinks.length === 0) { setLinkError(true); hasErrors = true }
+    else setLinkError(false)
+
+    if (countries.mode !== "global" && countries.list.length === 0) {
+      setCountriesError(true); hasErrors = true
+    } else { setCountriesError(false) }
+
+    if (!termsAccepted) { setTermsError(true); hasErrors = true }
+    else setTermsError(false)
+
+    if (hasErrors) {
+      if (filledLinks.length === 0) addToast("error", "Please add at least one link.")
+      if (!termsAccepted)           addToast("error", "Please accept the terms and conditions.")
+      return
+    }
 
     const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
     const endTime24   = convertTo24Hour(endHour12, endMinute, endPeriod)
     const startISO    = createUTCISOString(startDate, startTime24)
     const endISO      = createUTCISOString(endDate, endTime24)
 
-    const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
-    if (validPrizes.length === 0) { addToast("error", "Please add at least one prize with a name and value."); return }
-
-    const filledLinks = links.filter(l => l.value.trim())
-    if (filledLinks.length === 0) { setLinkError(true); addToast("error", "Please add at least one link."); return }
-    setLinkError(false)
-
     const linkFields = {}
-    filledLinks.forEach(l => { linkFields[l.typeKey] = l.value.trim() })
+    links.filter(l => l.value.trim()).forEach(l => { linkFields[l.typeKey] = l.value.trim() })
 
     const payload = {
       title:                formData.title.trim(),
@@ -436,8 +685,8 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       author:               formData.author.trim(),
       date_begin:           startISO,
       date_end:             endISO,
-      open_to:              formData.open_to?.trim()   || null,
-      countries:            formData.countries?.trim() || null,
+      open_to:              formData.open_to.trim(),
+      countries:            serializeCountries(),
       prizes:               validPrizes.map(({ id, ...p }) => ({ name: p.name.trim(), value: p.value.trim(), description: (p.description || "").trim() })),
       website_link:         linkFields.website_link         || null,
       dev_link:             linkFields.dev_link             || null,
@@ -468,7 +717,10 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         setFormData({ ...EMPTY_FORM })
         setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
         setLinks([])
-        setHasDraft(false); setLinkError(false); setIsLoading(false); setRetryCount(0)
+        setCountries({ ...EMPTY_COUNTRIES })
+        setTermsAccepted(false)
+        setHasDraft(false); setLinkError(false); setCountriesError(false)
+        setIsLoading(false); setRetryCount(0)
         if (onSuccess) onSuccess()
         return
       } catch (err) {
@@ -546,7 +798,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
               onChange={(e) => setField("des", e.target.value)}
               maxLength={LIMITS.des}
               style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl resize-none"
-              rows={4} placeholder="Describe your competition..."
+              rows={4} placeholder="Describe your competition…"
             />
             <CharCount current={formData.des.length} max={LIMITS.des} />
           </div>
@@ -560,34 +812,30 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
                 onChange={(e) => setField("author", e.target.value)}
                 maxLength={LIMITS.author}
                 style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+                placeholder="Jane Doe"
               />
               <CharCount current={formData.author.length} max={LIMITS.author} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-white/80 text-sm">Open To</Label>
+              <Label className="text-white/80 text-sm">Open To <span className="text-red-400">*</span></Label>
               <Input
                 onFocus={handleFocus} onBlur={handleBlur}
                 value={formData.open_to}
                 onChange={(e) => setField("open_to", e.target.value)}
                 maxLength={LIMITS.open_to}
                 style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
-                placeholder="Students, Everyone"
+                placeholder="Students, Everyone, 18+"
               />
               <CharCount current={formData.open_to.length} max={LIMITS.open_to} />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-white/80 text-sm">Countries</Label>
-            <Input
-              onFocus={handleFocus} onBlur={handleBlur}
-              value={formData.countries}
-              onChange={(e) => setField("countries", e.target.value)}
-              maxLength={LIMITS.countries}
-              style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
-              placeholder="Global, USA, Philippines"
-            />
-            <CharCount current={formData.countries.length} max={LIMITS.countries} />
+          {/* Countries */}
+          <div className="space-y-2">
+            <Label className="text-white/80 text-sm">
+              Countries <span className="text-red-400">*</span>
+            </Label>
+            <CountrySelector value={countries} onChange={setCountries} hasError={countriesError} />
           </div>
         </div>
       </Section>
@@ -616,8 +864,17 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
 
       {/* ── Links ── */}
       <Section>
-        <LinksSection links={links} setLinks={setLinks} inputStyle={inputStyle} onFocus={handleFocus} onBlur={handleBlur} hasError={linkError} onLinkAdded={() => setLinkError(false)} />
+        <LinksSection links={links} setLinks={setLinks} onFocus={handleFocus} onBlur={handleBlur} hasError={linkError} onLinkAdded={() => setLinkError(false)} />
       </Section>
+
+      {/* ── Terms & Conditions ── */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-1">
+          <ShieldCheck className="w-4 h-4 text-white/30" />
+          <Label className="text-white/50 text-xs uppercase tracking-widest font-semibold">Agreement</Label>
+        </div>
+        <TermsCheckbox checked={termsAccepted} onChange={(v) => { setTermsAccepted(v); if (v) setTermsError(false) }} hasError={termsError} />
+      </div>
 
       {/* ── Submit ── */}
       <Button
