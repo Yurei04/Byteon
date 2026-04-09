@@ -589,7 +589,7 @@ export default function OrgDashboardPage() {
   const [showSignOutDialog, setShowSignOutDialog] = useState(false)
 
   const [formData, setFormData] = useState({
-    name: "", description: "", author_name: "",
+    name: "", description: "", author_name: "", contact_email: "",
     color_scheme: "black", active: true, achievements: [],
     ...DEFAULT_COLORS,
   })

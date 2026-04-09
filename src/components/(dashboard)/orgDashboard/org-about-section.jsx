@@ -78,7 +78,7 @@ export default function OrgAboutSection({
             {/* CONTACT */}
             <div className="space-y-2">
               <Label htmlFor="author_name" style={{ color: primaryC }}>
-                Contact Person
+                Contact Person *
               </Label>
               <Input
                 id="author_name"
@@ -86,6 +86,21 @@ export default function OrgAboutSection({
                 value={formData.author_name}
                 onChange={onChange}
                 placeholder="Admin Name"
+                style={{
+                  background: `${primaryC}10`,
+                  border: `1px solid ${primaryC}40`,
+                  color: primaryC
+                }}
+              />
+              <Label htmlFor="contact_email" style={{ color: primaryC }}>
+                Email *
+              </Label>
+              <Input
+                id="contact_email"
+                name="contact_email"
+                value={formData.contact_email}
+                onChange={onChange}
+                placeholder="Admin Email"
                 style={{
                   background: `${primaryC}10`,
                   border: `1px solid ${primaryC}40`,
@@ -125,6 +140,7 @@ export default function OrgAboutSection({
               { label: "Organization Name", value: formData.name || "No name provided" },
               { label: "Description", value: formData.description || "No description provided" },
               { label: "Contact Person", value: formData.author_name || "Not specified" },
+              { label: "Contact Email", value: formData.contact_email || "Not specified" },
             ].map((item, i) => (
               <div key={i}>
                 <p style={{ color: `${primaryC}aa` }} className="text-sm mb-1">
