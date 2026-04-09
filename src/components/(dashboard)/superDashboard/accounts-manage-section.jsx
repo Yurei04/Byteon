@@ -22,6 +22,8 @@ import {
   Activity, ChevronLeft,
   ScrollText,
   BookOpenCheck,
+  PauseCircle,
+  PlayCircle,
 } from "lucide-react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -180,9 +182,52 @@ const TAB_CONFIG = [
 ]
 
 
-// ── Guidelines Dialog ──────────────────────────────────────────────────────────
-function GuidelinesDialog({ open, onClose, mode }) {
+// ── Inline Guidelines Panel (used inside dialogs) ──────────────────────────────
+function InlineGuidelinesPanel({ mode }) {
   const isSuspend = mode === "suspend"
+  const sections  = isSuspend ? SUSPENSION_GUIDELINES : DELETION_GUIDELINES
+  const accent    = isSuspend ? "amber" : "red"
+
+  return (
+    <div className={`flex flex-col h-full border-l ${isSuspend ? "border-amber-500/15" : "border-red-500/15"}`}>
+      {/* Panel header */}
+      <div className={`px-4 py-3 border-b flex items-center gap-2 shrink-0 ${isSuspend ? "border-amber-500/15 bg-amber-500/5" : "border-red-500/15 bg-red-500/5"}`}>
+        {isSuspend
+          ? <BookOpenCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          : <ScrollText    className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+        <span className={`text-[11px] font-bold uppercase tracking-widest ${isSuspend ? "text-amber-300/80" : "text-red-300/80"}`}>
+          {isSuspend ? "Suspension Guidelines" : "Deletion Rules"}
+        </span>
+      </div>
+
+      {/* Scrollable content */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-4 py-4 space-y-5">
+          {sections.map((sec, i) => (
+            <div key={i}>
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${sec.color ?? (isSuspend ? "text-amber-400/80" : "text-red-400/80")}`}>
+                {sec.title}
+              </p>
+              <ul className="space-y-1.5">
+                {sec.items.map((item, j) => (
+                  <li key={j} className="flex items-start gap-2 text-white/40 text-[11px] leading-relaxed">
+                    <span className={`mt-[5px] w-1 h-1 rounded-full shrink-0 ${isSuspend ? "bg-amber-500/50" : "bg-red-500/50"}`} />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>
+  )
+}
+
+
+// ── Standalone Guidelines Dialog (from top-bar buttons) ──────────────────────
+function GuidelinesDialog({ open, onClose, mode }) {
+  const isSuspend = mode === "suspension"
   const sections   = isSuspend ? SUSPENSION_GUIDELINES : DELETION_GUIDELINES
 
   return (
@@ -249,7 +294,6 @@ function Pagination({ currentPage, totalPages, onPageChange, ac }) {
       pages.push(i)
     }
   }
-  // Insert ellipsis markers
   const withEllipsis = []
   pages.forEach((page, idx) => {
     if (idx > 0 && page - pages[idx - 1] > 1) withEllipsis.push("…")
@@ -296,7 +340,7 @@ function Pagination({ currentPage, totalPages, onPageChange, ac }) {
   )
 }
 
-export default function AccountManageSection({addToast}) {
+export default function AccountManageSection({ addToast }) {
   const [users, setUsers]               = useState([])
   const [orgs, setOrgs]                 = useState([])
   const [loading, setLoading]           = useState(true)
@@ -306,17 +350,20 @@ export default function AccountManageSection({addToast}) {
   const [selectedItem, setSelectedItem] = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
 
-  const [suspendDialog, setSuspendDialog] = useState(null)
-  const [deleteDialog, setDeleteDialog]   = useState(null)
-  const [suspendReason, setSuspendReason] = useState("")
-  const [deleteReason, setDeleteReason]   = useState("")
+  const [suspendDialog, setSuspendDialog]     = useState(null)
+  const [suspendReason, setSuspendReason]     = useState("")
+  const [suspendConfirmed, setSuspendConfirmed] = useState(false)
 
-  // Guidelines panel
+  const [deleteDialog, setDeleteDialog]       = useState(null)
+  const [deleteReason, setDeleteReason]       = useState("")
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+
+  // Standalone guidelines panel
   const [guidelinesMode, setGuidelinesMode] = useState(null)
-
 
   // Pagination state per tab
   const [pages, setPages] = useState({ users: 1, orgs: 1 })
+
   const fetchAll = async () => {
     setLoading(true); setError(null)
     try {
@@ -332,11 +379,7 @@ export default function AccountManageSection({addToast}) {
 
   useEffect(() => { fetchAll() }, [])
   useEffect(() => { setSelectedItem(null) }, [activeTab])
-
-  // Reset page when search changes
-  useEffect(() => {
-    setPages({ users: 1, orgs: 1 })
-  }, [search])
+  useEffect(() => { setPages({ users: 1, orgs: 1 }) }, [search])
 
   const setPage = (tab, page) => setPages((prev) => ({ ...prev, [tab]: page }))
 
@@ -355,7 +398,6 @@ export default function AccountManageSection({addToast}) {
     }
   }, [users, orgs, search])
 
-  // Paginated slices
   const paginated = useMemo(() => ({
     users: filtered.users.slice((pages.users - 1) * ITEMS_PER_PAGE, pages.users * ITEMS_PER_PAGE),
     orgs:  filtered.orgs.slice((pages.orgs  - 1) * ITEMS_PER_PAGE, pages.orgs  * ITEMS_PER_PAGE),
@@ -366,8 +408,21 @@ export default function AccountManageSection({addToast}) {
     orgs:  Math.ceil(filtered.orgs.length  / ITEMS_PER_PAGE),
   }
 
+  // ── Helpers to reset dialog state ─────────────────────────────────────────
+  const resetSuspendState = () => {
+    setSuspendDialog(null)
+    setSuspendReason("")
+    setSuspendConfirmed(false)
+  }
+
+  const resetDeleteState = () => {
+    setDeleteDialog(null)
+    setDeleteReason("")
+    setDeleteConfirmText("")
+  }
+
   // ── Suspend / Reactivate ──────────────────────────────────────────────────
-  const confirmSuspend = async () => {
+  const handleConfirmSuspend = async () => {
     if (!suspendDialog) return
     const item      = suspendDialog
     const isOrg     = activeTab === "orgs"
@@ -378,9 +433,9 @@ export default function AccountManageSection({addToast}) {
       ? (suspendReason.trim() || "Suspended by administrator")
       : null
 
-    setSuspendDialog(null)
+    resetSuspendState()
     setActionLoading(item.id)
-    
+
     try {
       const { error: e1 } = await supabase.from(table).update({
         active:            !wasActive,
@@ -411,27 +466,25 @@ export default function AccountManageSection({addToast}) {
         })
       }
 
-      setSelectedItem((prev) => prev?.id === item.id ? { ...prev, active: !wasActive, suspension_reason: finalReason } : prev)
-       addToast(
-        "success",
-        wasActive
-          ? "Post Reactivated Successfully"
-          : "Post Suspended Successfully",
+      setSelectedItem((prev) =>
+        prev?.id === item.id
+          ? { ...prev, active: !wasActive, suspension_reason: finalReason }
+          : prev
       )
+      addToast("success", wasActive ? "Account suspended successfully." : "Account reactivated successfully.")
     } catch (err) {
-      addToast("error", "Error in reactivation/suspension")
+      addToast("error", "Error updating account status.")
     } finally {
       setActionLoading(null)
-      setSuspendReason("")
     }
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
-  const confirmDelete = async () => {
+  const handleConfirmDelete = async () => {
     if (!deleteDialog) return
     const item  = deleteDialog
     const table = activeTab === "users" ? "users" : "organizations"
-    setDeleteDialog(null)
+    resetDeleteState()
     setActionLoading(item.id)
     try {
       const { error } = await supabase.from(table).delete().eq("id", item.id)
@@ -441,12 +494,18 @@ export default function AccountManageSection({addToast}) {
       if (selectedItem?.id === item.id) setSelectedItem(null)
       addToast("success", "Account permanently deleted.")
     } catch (err) {
-      addToast("error", "Error In deletion")
+      addToast("error", "Error deleting account.")
     } finally {
       setActionLoading(null)
-      setDeleteReason("")
     }
   }
+
+  // ── Derived dialog booleans ───────────────────────────────────────────────
+  const suspendIsReactivate = suspendDialog?.active === false
+  const suspendCanSubmit    = suspendIsReactivate
+    ? true
+    : (suspendReason.trim().length >= 10 && suspendConfirmed)
+  const deleteCanSubmit     = deleteReason.trim().length >= 10 && deleteConfirmText === "DELETE"
 
   return (
     <div className="flex flex-col h-full gap-4">
@@ -484,22 +543,20 @@ export default function AccountManageSection({addToast}) {
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
           </Button>
 
-          
-            { /* ── Top-right: Guidelines buttons ── */}
-            <div className="flex items-center gap-2 ml-auto">
-              <button
-                onClick={() => setGuidelinesMode("suspension")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/25 bg-amber-500/8 text-amber-300/80 text-xs font-medium hover:bg-yellow-500/15 hover:border-yellow-400/40 hover:text-yellow-200 transition-all">
-                <BookOpenCheck className="w-3.5 h-3.5" />
-                Suspension Guide
-              </button>
-              <button
-                onClick={() => setGuidelinesMode("deletion")}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
-                <ScrollText className="w-3.5 h-3.5" />
-                Deletion Rules
-              </button>
-            </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={() => setGuidelinesMode("suspension")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/25 bg-amber-500/8 text-amber-300/80 text-xs font-medium hover:bg-yellow-500/15 hover:border-yellow-400/40 hover:text-yellow-200 transition-all">
+              <BookOpenCheck className="w-3.5 h-3.5" />
+              Suspension Guide
+            </button>
+            <button
+              onClick={() => setGuidelinesMode("deletion")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
+              <ScrollText className="w-3.5 h-3.5" />
+              Deletion Rules
+            </button>
+          </div>
         </div>
 
         {error && (
@@ -521,24 +578,17 @@ export default function AccountManageSection({addToast}) {
                 {/* LEFT */}
                 <div className={`w-[300px] shrink-0 flex flex-col rounded-2xl border bg-black/25 backdrop-blur-sm overflow-hidden transition-all duration-300
                   ${selectedItem ? `${a.border} ${a.borderGlow}` : "border-white/8 hover:border-white/12"}`}>
-
-                  {/* Header */}
                   <div className="relative px-4 py-3 border-b border-white/8 flex items-center justify-between shrink-0">
                     <div className={`absolute bottom-0 left-4 right-0 h-px ${a.headerLine}`} />
                     <span className={`text-xs font-bold uppercase tracking-widest ${a.heading}`}>
                       {value === "users" ? "Users" : "Organizations"}
                     </span>
                     <div className="flex items-center gap-2">
-                      {tp > 1 && (
-                        <span className="text-white/18 text-[10px]">
-                          p.{cp}/{tp}
-                        </span>
-                      )}
+                      {tp > 1 && <span className="text-white/18 text-[10px]">p.{cp}/{tp}</span>}
                       <span className="text-white/20 text-xs">{list.length} total</span>
                     </div>
                   </div>
 
-                  {/* List */}
                   {loading ? (
                     <div className="flex-1 flex items-center justify-center">
                       <Loader2 className={`w-5 h-5 animate-spin ${a.tag}`} />
@@ -561,7 +611,6 @@ export default function AccountManageSection({addToast}) {
                     </ScrollArea>
                   )}
 
-                  {/* Pagination */}
                   <Pagination
                     currentPage={cp}
                     totalPages={tp}
@@ -599,201 +648,312 @@ export default function AccountManageSection({addToast}) {
         })}
       </Tabs>
 
-      {/* ── Suspend dialog ── */}
-      <AlertDialog
-        open={!!suspendDialog}
-        onOpenChange={(open) => { if (!open) { setSuspendDialog(null); setSuspendReason("") } }}
-      >
-        <AlertDialogContent className={`backdrop-blur-xl border shadow-2xl max-w-md
-          ${suspendDialog?.active !== false
-            ? "bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 border-amber-500/20 shadow-amber-900/20"
-            : "bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20 shadow-emerald-900/20"}`}
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          SUSPEND / REACTIVATE DIALOG — split screen with guidelines
+      ══════════════════════════════════════════════════════════════════════ */}
+      <AlertDialog open={!!suspendDialog} onOpenChange={(open) => { if (!open) resetSuspendState() }}>
+        <AlertDialogContent className={`backdrop-blur-xl border shadow-2xl p-0 overflow-hidden
+          max-w-3xl w-full
+          ${suspendIsReactivate
+            ? "bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20 shadow-emerald-900/20"
+            : "bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 border-amber-500/20 shadow-amber-900/20"
+          }`}
         >
-          <AlertDialogHeader className="gap-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border
-                ${suspendDialog?.active !== false
-                  ? "bg-amber-500/10 border-amber-500/25 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
-                  : "bg-emerald-500/10 border-emerald-500/25 shadow-[0_0_20px_rgba(16,185,129,0.15)]"}`}
-              >
-                {suspendDialog?.active !== false
-                  ? <ShieldOff className="w-5 h-5 text-amber-400" />
-                  : <ShieldCheck className="w-5 h-5 text-emerald-400" />}
-              </div>
-              <div>
-                <AlertDialogTitle className={`text-base font-semibold ${suspendDialog?.active !== false ? "text-amber-200" : "text-emerald-200"}`}>
-                  {suspendDialog?.active !== false ? "Suspend Account" : "Reactivate Account"}
-                </AlertDialogTitle>
-                <p className="text-white/28 text-xs mt-0.5">
-                  {suspendDialog?.active !== false
-                    ? "Account locked immediately — reason will be shown to user"
-                    : "Account restored — user will regain full access"}
-                </p>
-              </div>
+          <div className="flex h-[520px]">
+
+            {/* LEFT — form */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <AlertDialogHeader className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border
+                    ${suspendIsReactivate
+                      ? "bg-emerald-500/10 border-emerald-500/25"
+                      : "bg-amber-500/10 border-amber-500/25"}`}>
+                    {suspendIsReactivate
+                      ? <PlayCircle  className="w-5 h-5 text-emerald-400" />
+                      : <PauseCircle className="w-5 h-5 text-amber-400" />}
+                  </div>
+                  <div>
+                    <AlertDialogTitle className={`text-base font-semibold ${suspendIsReactivate ? "text-emerald-200" : "text-amber-200"}`}>
+                      {suspendIsReactivate ? "Reactivate Account" : "Suspend Account"}
+                    </AlertDialogTitle>
+                    <p className="text-white/30 text-xs mt-0.5">
+                      {suspendIsReactivate
+                        ? "This account will become fully active again."
+                        : "This account will be hidden from the platform until reactivated."}
+                    </p>
+                  </div>
+                </div>
+              </AlertDialogHeader>
+
+              <ScrollArea className="flex-1 min-h-0">
+                <AlertDialogDescription asChild>
+                  <div className="px-6 py-5 space-y-5">
+
+                    {/* Target account info */}
+                    <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
+                      {suspendIsReactivate ? "Reactivating" : "Suspending"}{" "}
+                      <span className="text-white font-medium">"{suspendDialog?.name}"</span>.
+                    </div>
+
+                    {!suspendIsReactivate && (
+                      <>
+                        {/* Quick presets */}
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                            <Zap className="w-3 h-3 text-amber-400/60 shrink-0" />
+                            Quick Reason
+                          </label>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {SUSPEND_PRESETS.map(({ label, icon, value }) => (
+                              <button key={label} onClick={() => setSuspendReason(value)}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left active:scale-[0.98]
+                                  ${suspendReason === value
+                                    ? "bg-amber-500/18 border-amber-500/45 text-amber-300"
+                                    : "bg-white/3 border-white/8 text-white/35 hover:bg-amber-500/8 hover:border-amber-500/25 hover:text-amber-200/80"}`}>
+                                <span className={suspendReason === value ? "text-amber-400" : "text-white/20"}>{icon}</span>
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Reason textarea */}
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                            <PauseCircle className="w-3 h-3 shrink-0" />
+                            Suspension Reason
+                            <span className="text-amber-400 font-bold">*</span>
+                          </label>
+                          <Textarea
+                            value={suspendReason}
+                            onChange={(e) => setSuspendReason(e.target.value)}
+                            placeholder="Describe the reason for suspending this account (min. 10 characters)…"
+                            className="bg-black/40 border border-amber-500/15 hover:border-amber-500/25 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-amber-400/35 focus:ring-0 rounded-lg"
+                            rows={3}
+                          />
+                          <div className="flex items-center justify-between">
+                            <p className="text-white/18 text-[11px]">Required for moderation audit trail.</p>
+                            <span className={`text-[11px] tabular-nums ${suspendReason.trim().length >= 10 ? "text-emerald-400/60" : "text-white/20"}`}>
+                              {suspendReason.trim().length}/10 min
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Confirmation checkbox */}
+                        <label className="flex items-start gap-3 cursor-pointer group/check">
+                          <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
+                            ${suspendConfirmed
+                              ? "bg-amber-500 border-amber-500"
+                              : "bg-white/5 border-white/15 group-hover/check:border-amber-500/40"}`}>
+                            {suspendConfirmed && <CheckCircle className="w-3 h-3 text-white" />}
+                          </div>
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={suspendConfirmed}
+                            onChange={(e) => setSuspendConfirmed(e.target.checked)}
+                          />
+                          <p className="text-[11px] text-white/40 leading-snug group-hover/check:text-white/60 transition-colors select-none">
+                            I confirm that I have reviewed the suspension guidelines and understand that this account
+                            will be hidden from the platform until manually reactivated by an administrator.
+                          </p>
+                        </label>
+                      </>
+                    )}
+
+                    {suspendIsReactivate && (
+                      <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-emerald-500/6 border border-emerald-500/22">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <p className="text-white/50 text-xs leading-relaxed">
+                          Reactivating this account will restore full access. The suspension reason will be cleared.
+                          Ensure the account issue has been resolved before proceeding.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </ScrollArea>
+
+              <AlertDialogFooter className="px-6 py-4 border-t border-white/8 gap-2 shrink-0">
+                <AlertDialogCancel onClick={resetSuspendState}
+                  className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all">
+                  Cancel
+                </AlertDialogCancel>
+                <Button
+                  onClick={handleConfirmSuspend}
+                  disabled={!!actionLoading || !suspendCanSubmit}
+                  className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={suspendIsReactivate
+                    ? { background: "linear-gradient(135deg, #059669, #047857)", boxShadow: "0 4px 16px rgba(5,150,105,0.35)" }
+                    : { background: "linear-gradient(135deg, #d97706, #b45309)", boxShadow: "0 4px 16px rgba(217,119,6,0.35)" }
+                  }
+                >
+                  {actionLoading
+                    ? <Loader2    className="w-4 h-4 animate-spin shrink-0" />
+                    : suspendIsReactivate
+                      ? <PlayCircle  className="w-4 h-4 shrink-0" />
+                      : <PauseCircle className="w-4 h-4 shrink-0" />}
+                  {suspendIsReactivate ? "Reactivate Account" : "Suspend Account"}
+                </Button>
+              </AlertDialogFooter>
             </div>
 
-            <AlertDialogDescription asChild>
-              <div className="space-y-4 text-sm">
-                <div className={`px-3 py-2.5 rounded-lg border text-xs leading-relaxed
-                  ${suspendDialog?.active !== false
-                    ? "bg-amber-500/5 border-amber-500/15 text-white/45"
-                    : "bg-emerald-500/5 border-emerald-500/15 text-white/45"}`}
-                >
-                  You are {suspendDialog?.active !== false ? "suspending" : "reactivating"}{" "}
-                  <span className="text-white font-medium">"{suspendDialog?.name}"</span>.{" "}
-                  {suspendDialog?.active !== false
-                    ? "They will immediately lose all platform access."
-                    : "They will regain full access to the platform."}
-                </div>
+            {/* RIGHT — guidelines panel */}
+            <div className="w-[220px] shrink-0 flex flex-col">
+              <InlineGuidelinesPanel mode="suspend" />
+            </div>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
 
-                {suspendDialog?.active !== false && (
-                  <div className="space-y-3">
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          DELETE DIALOG — split screen with guidelines
+      ══════════════════════════════════════════════════════════════════════ */}
+      <AlertDialog open={!!deleteDialog} onOpenChange={(open) => { if (!open) resetDeleteState() }}>
+        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 p-0 overflow-hidden 
+        max-w-3xl w-full">
+          <div className="flex h-[540px]">
+
+            {/* LEFT — form */}
+            <div className="flex-1 flex flex-col min-w-0">
+              <AlertDialogHeader className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
+                    <ShieldAlert className="w-5 h-5 text-red-400" />
+                  </div>
+                  <div>
+                    <AlertDialogTitle className="text-red-200 text-base font-semibold">Delete Account Permanently</AlertDialogTitle>
+                    <p className="text-white/28 text-xs mt-0.5">Irreversible — cascades to all associated data</p>
+                  </div>
+                </div>
+              </AlertDialogHeader>
+
+              <ScrollArea className="flex-1 min-h-0">
+                <AlertDialogDescription asChild>
+                  <div className="px-6 py-5 space-y-5">
+
+                    {/* Target account info */}
+                    <div className="px-3 py-2.5 rounded-lg bg-red-500/6 border border-red-500/18 text-white/45 text-xs leading-relaxed">
+                      Permanently deleting{" "}
+                      <span className="text-white font-medium">"{deleteDialog?.name}"</span>.{" "}
+                      This cannot be undone.
+                    </div>
+
+                    {/* Quick reason presets */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                        <Zap className="w-3 h-3 text-amber-400/60 shrink-0" />Quick Reason
+                        <Zap className="w-3 h-3 text-rose-400/60 shrink-0" />Quick Reason
                       </label>
                       <div className="grid grid-cols-2 gap-1.5">
-                        {SUSPEND_PRESETS.map(({ label, icon, value }) => (
-                          <button key={label} onClick={() => setSuspendReason(value)}
+                        {DELETE_PRESETS.map(({ label, icon, value }) => (
+                          <button key={label} onClick={() => setDeleteReason(value)}
                             className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left active:scale-[0.98]
-                              ${suspendReason === value
-                                ? "bg-amber-500/18 border-amber-500/45 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.12)]"
-                                : "bg-white/3 border-white/8 text-white/35 hover:bg-amber-500/8 hover:border-amber-500/25 hover:text-amber-200/80"}`}
-                          >
-                            <span className={suspendReason === value ? "text-amber-400" : "text-white/20"}>{icon}</span>
+                              ${deleteReason === value
+                                ? "bg-rose-500/18 border-rose-500/45 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.12)]"
+                                : "bg-white/3 border-white/8 text-white/35 hover:bg-rose-500/8 hover:border-rose-500/25 hover:text-rose-200/80"}`}>
+                            <span className={deleteReason === value ? "text-rose-400" : "text-white/20"}>{icon}</span>
                             {label}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    {/* Deletion reason textarea — REQUIRED */}
+                    <div className="space-y-1.5">
                       <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                        <ShieldAlert className="w-3 h-3 shrink-0 text-white/25" />Custom Reason
-                        <span className="text-white/16 font-normal normal-case tracking-normal"></span>
+                        <XCircle className="w-3 h-3 shrink-0 text-white/25" />
+                        Deletion Reason
+                        <span className="text-red-400 font-bold">*</span>
                       </label>
                       <Textarea
-                        value={suspendReason}
-                        onChange={(e) => setSuspendReason(e.target.value)}
-                        placeholder="Describe why this account is being suspended…"
-                        className="bg-black/40 border border-amber-500/15 hover:border-amber-500/25 text-white/70 placeholder:text-white/16 text-xs resize-none focus:border-amber-400/35 focus:ring-0 rounded-lg"
+                        value={deleteReason}
+                        onChange={(e) => setDeleteReason(e.target.value)}
+                        placeholder="Describe why this account is being permanently deleted (min. 10 characters)…"
+                        className="bg-black/40 border border-red-500/15 hover:border-red-500/25 text-white/70 placeholder:text-white/16 text-xs resize-none focus:border-red-400/35 focus:ring-0 rounded-lg"
                         rows={3}
                       />
-                      <p className="text-white/18 text-[11px] leading-relaxed">
-                        This reason will be saved to the database and displayed on the user's suspension page.
+                      <div className="flex items-center justify-between">
+                        <p className="text-white/18 text-[11px]">Required for permanent deletion audit log.</p>
+                        <span className={`text-[11px] tabular-nums ${deleteReason.trim().length >= 10 ? "text-emerald-400/60" : "text-white/20"}`}>
+                          {deleteReason.trim().length}/10 min
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Type DELETE confirmation */}
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
+                        <AlertTriangle className="w-3 h-3 shrink-0 text-red-400/60" />
+                        Confirm Deletion
+                        <span className="text-red-400 font-bold">*</span>
+                      </label>
+                      <p className="text-white/30 text-[11px]">
+                        Type <span className="font-mono font-bold text-red-300 tracking-widest">DELETE</span> below to confirm this action.
                       </p>
+                      <div className="relative">
+                        <Input
+                          value={deleteConfirmText}
+                          onChange={(e) => setDeleteConfirmText(e.target.value)}
+                          placeholder="Type DELETE to confirm"
+                          className={`bg-black/40 text-white text-sm font-mono tracking-widest placeholder:text-white/15 placeholder:font-sans placeholder:tracking-normal focus:ring-0 rounded-lg transition-colors
+                            ${deleteConfirmText === "DELETE"
+                              ? "border-emerald-500/40 focus:border-emerald-400/60"
+                              : deleteConfirmText.length > 0
+                                ? "border-red-500/40 focus:border-red-400/50"
+                                : "border-red-500/15 hover:border-red-500/25 focus:border-red-400/35"}`}
+                        />
+                        {deleteConfirmText === "DELETE" && (
+                          <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                        )}
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+                </AlertDialogDescription>
+              </ScrollArea>
 
-          <AlertDialogFooter className="gap-2 mt-1">
-            <AlertDialogCancel onClick={() => setSuspendReason("")}
-              className="cursor-pointer bg-white/4 hover:bg-white/8 text-white/45 hover:text-white/80 border border-white/8 hover:border-white/18 text-sm transition-all">
-              Cancel
-            </AlertDialogCancel>
-            <Button onClick={confirmSuspend} disabled={!!actionLoading}
-              className={`cursor-pointer active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg
-                ${suspendDialog?.active !== false
-                  ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 hover:shadow-amber-500/30"
-                  : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 hover:shadow-emerald-500/30"}`}
-            >
-              {actionLoading
-                ? <Loader2   className="w-4 h-4 animate-spin shrink-0" />
-                : suspendDialog?.active !== false
-                  ? <ShieldOff  className="w-4 h-4 shrink-0" />
-                  : <ShieldCheck className="w-4 h-4 shrink-0" />}
-              {suspendDialog?.active !== false ? "Confirm Suspension" : "Reactivate Account"}
-            </Button>
-          </AlertDialogFooter>
+              <AlertDialogFooter className="px-6 py-4 border-t border-white/8 gap-2 shrink-0">
+                <AlertDialogCancel onClick={resetDeleteState}
+                  className="cursor-pointer bg-white/4 hover:bg-white/8 text-white/45 hover:text-white/80 border border-white/8 hover:border-white/18 text-sm transition-all">
+                  Cancel
+                </AlertDialogCancel>
+                <Button
+                  onClick={handleConfirmDelete}
+                  disabled={!!actionLoading || !deleteCanSubmit}
+                  className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
+                    hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
+                    active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg
+                    hover:shadow-[0_4px_20px_rgba(236,72,153,0.3)]
+                    disabled:opacity-40 disabled:cursor-not-allowed">
+                  {actionLoading
+                    ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    : <Trash2  className="w-4 h-4 shrink-0" />}
+                  Delete Permanently
+                </Button>
+              </AlertDialogFooter>
+            </div>
+
+            {/* RIGHT — deletion guidelines panel */}
+            <div className="w-[220px] shrink-0 flex flex-col">
+              <InlineGuidelinesPanel mode="delete" />
+            </div>
+          </div>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* ── Guidelines Dialog ── */}
+
+      {/* ── Standalone Guidelines Dialog (top-bar buttons) ── */}
       <GuidelinesDialog
         open={!!guidelinesMode}
         onClose={() => setGuidelinesMode(null)}
         mode={guidelinesMode}
       />
-
-      {/* ── Delete dialog ── */}
-      <AlertDialog
-        open={!!deleteDialog}
-        onOpenChange={(open) => { if (!open) { setDeleteDialog(null); setDeleteReason("") } }}
-      >
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
-          <AlertDialogHeader className="gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
-                <ShieldAlert className="w-5 h-5 text-red-400" />
-              </div>
-              <div>
-                <AlertDialogTitle className="text-red-200 text-base font-semibold">Delete Account</AlertDialogTitle>
-                <p className="text-white/28 text-xs mt-0.5">Permanent — cascades to all associated data</p>
-              </div>
-            </div>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4 text-sm">
-                <div className="px-3 py-2.5 rounded-lg bg-red-500/6 border border-red-500/18 text-white/45 text-xs leading-relaxed">
-                  Permanently deleting{" "}
-                  <span className="text-white font-medium">"{deleteDialog?.name}"</span>.{" "}
-                  Cannot be undone.
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                    <Zap className="w-3 h-3 text-rose-400/60 shrink-0" />Quick Reason
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {DELETE_PRESETS.map(({ label, icon, value }) => (
-                      <button key={label} onClick={() => setDeleteReason(value)}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left active:scale-[0.98]
-                          ${deleteReason === value
-                            ? "bg-rose-500/18 border-rose-500/45 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.12)]"
-                            : "bg-white/3 border-white/8 text-white/35 hover:bg-rose-500/8 hover:border-rose-500/25 hover:text-rose-200/80"}`}
-                      >
-                        <span className={deleteReason === value ? "text-rose-400" : "text-white/20"}>{icon}</span>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                    <XCircle className="w-3 h-3 shrink-0 text-white/25" />Reason
-                    <span className="text-white/16 font-normal normal-case tracking-normal">(optional)</span>
-                  </label>
-                  <Textarea value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)}
-                    placeholder="Describe why this account is being permanently deleted…"
-                    className="bg-black/40 border border-red-500/15 hover:border-red-500/25 text-white/70 placeholder:text-white/16 text-xs resize-none focus:border-red-400/35 focus:ring-0 rounded-lg"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 mt-1">
-            <AlertDialogCancel onClick={() => setDeleteReason("")}
-              className="cursor-pointer bg-white/4 hover:bg-white/8 text-white/45 hover:text-white/80 border border-white/8 hover:border-white/18 text-sm transition-all">
-              Cancel
-            </AlertDialogCancel>
-            <Button onClick={confirmDelete} disabled={!!actionLoading}
-              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
-                hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
-                active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg
-                hover:shadow-[0_4px_20px_rgba(236,72,153,0.3)]">
-              {actionLoading
-                ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                : <Trash2  className="w-4 h-4 shrink-0" />}
-              Delete Permanently
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
+
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 function AccountListRow({ item, type, ac, isSelected, onClick }) {
@@ -842,7 +1002,7 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className={`w-[52px] h-[52px] rounded-xl border flex items-center justify-center shrink-0 transition-all duration-300 ${ac.avatarBg} ${ac.avatarGlow}`}>
               {isUser
-                ? <User     className={`w-5 h-5 ${ac.avatarText}`} />
+                ? <User      className={`w-5 h-5 ${ac.avatarText}`} />
                 : <Building2 className={`w-5 h-5 ${ac.avatarText}`} />}
             </div>
             <div className="flex-1 min-w-0 space-y-1.5">
@@ -872,7 +1032,7 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
                   ? ac.suspendBg
                   : "bg-emerald-500/15 hover:bg-emerald-500/28 text-emerald-300 border border-emerald-500/25 hover:border-emerald-400/50 hover:shadow-[0_0_12px_rgba(16,185,129,0.2)]"}`}>
               {actionLoading === item.id
-                ? <Loader2    className="w-3.5 h-3.5 animate-spin" />
+                ? <Loader2     className="w-3.5 h-3.5 animate-spin" />
                 : isActive
                   ? <ShieldOff   className="w-3.5 h-3.5" />
                   : <ShieldCheck className="w-3.5 h-3.5" />}
