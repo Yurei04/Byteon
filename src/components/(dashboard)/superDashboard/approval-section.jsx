@@ -15,94 +15,224 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Megaphone, FileText, BookOpen, CheckCircle, XCircle,
   Loader2, AlertCircle, Calendar, Building2, Trophy,
   Link2, Tag, Clock, User, Hash, Globe,
   AlignLeft, Award, Users, ExternalLink, Inbox,
   ShieldAlert, ShieldCheck, ChevronRight, ChevronLeft, Search,
+  BookOpenCheck, ScrollText, PauseCircle, Info,
 } from "lucide-react"
 
 // UTC date + time formatter
 function formatUTCDateTime(dateString) {
   if (!dateString) return "—"
-
   const date = new Date(dateString)
   if (isNaN(date)) return "—"
-
   return new Intl.DateTimeFormat("en-GB", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
+    year: "numeric", month: "long", day: "numeric",
+    hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "UTC",
   }).format(date) + " UTC"
 }
 
-// ── Notification helpers ───────────────────────────────────────────────────────
 import { notifyPostApproved, notifyPostRejected } from "@/lib/notification"
 
 const ITEMS_PER_PAGE = 10
 
-// ── Pagination component ───────────────────────────────────────────────────────
+// ── Guidelines content ─────────────────────────────────────────────────────────
+const APPROVAL_GUIDELINES = [
+  {
+    title: "General Standard",
+    items: [
+      "Content must comply with platform standards of accuracy, relevance, clarity, and appropriateness.",
+      "Approved content immediately becomes visible to all platform users.",
+      "Every approval is logged permanently under your admin account.",
+    ],
+  },
+  {
+    title: "Hackathon / Announcement Checklist",
+    items: [
+      "Title, description, date, and organizer details are complete and accurate.",
+      "Event is genuinely related to hackathons, innovation, or technology.",
+      "No duplicate submission already exists on the platform.",
+      "Content is free from harmful, discriminatory, or unethical material.",
+      "External links are safe and lead to legitimate registration pages.",
+    ],
+  },
+  {
+    title: "Blog Post Checklist",
+    items: [
+      "Content is well-written with clear structure and sufficient substance.",
+      "Topic is relevant to hackathons, learning, or innovation.",
+      "No plagiarism — original work or properly credited sources.",
+      "All claims are accurate and verifiable.",
+    ],
+  },
+  {
+    title: "Learning Resource Checklist",
+    items: [
+      "Information is accurate and up-to-date.",
+      "Content aligns with hackathon learning objectives.",
+      "Resource is complete and of acceptable quality.",
+    ],
+  },
+]
+
+const REJECTION_GUIDELINES = [
+  {
+    title: "1 · General Rule",
+    color: "text-red-300",
+    items: [
+      "Any submission violating platform standards of accuracy, relevance, clarity, or appropriateness may be rejected.",
+      "The submitting organization receives a clear rejection reason to guide improvements and resubmission.",
+    ],
+  },
+  {
+    title: "2 · Hackathon / Announcement Rejections",
+    color: "text-orange-300",
+    items: [
+      "Invalid or Incomplete Information — missing title, description, date, or organizer details; unclear or misleading event details.",
+      "Irrelevant Content — event is not related to hackathons, innovation, or technology.",
+      "Duplicate Submission — same hackathon posted multiple times.",
+      "Inappropriate or Offensive Content — harmful, discriminatory, or unethical material.",
+      "Suspicious Activity — fake events, misleading registration details, or harmful external links.",
+    ],
+  },
+  {
+    title: "3 · Blog Post Rejections",
+    color: "text-pink-300",
+    items: [
+      "Low-Quality Content — poor grammar, unclear structure, or lack of substance.",
+      "Irrelevant Topics — not related to hackathons, learning, or innovation.",
+      "Plagiarism — copied content without proper credit.",
+      "Misleading Information — false or unverified claims.",
+    ],
+  },
+  {
+    title: "4 · Learning Resource Rejections",
+    color: "text-violet-300",
+    items: [
+      "Content is inaccurate or outdated.",
+      "Not aligned with hackathon learning objectives.",
+      "Poor quality or incomplete material.",
+    ],
+  },
+  {
+    title: "5 · Rejection Process Flow",
+    color: "text-blue-300",
+    items: [
+      "Organizer / user submits content → system stores as 'Pending'.",
+      "Super Admin reviews the submission in the approval queue.",
+      "Admin approves (content becomes visible) or rejects (content removed / sent back).",
+      "System logs the rejection reason for full transparency.",
+      "Submitting organization is notified with the specific reason.",
+    ],
+  },
+]
+
+// ── Guidelines Dialog ──────────────────────────────────────────────────────────
+function GuidelinesDialog({ open, onClose, mode }) {
+  const isApproval = mode === "approval"
+  const sections   = isApproval ? APPROVAL_GUIDELINES : REJECTION_GUIDELINES
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className={`max-w-lg bg-gradient-to-br ${
+        isApproval
+          ? "from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20"
+          : "from-slate-950 via-rose-950/20 to-slate-950 border-red-500/20"
+        } backdrop-blur-xl border shadow-2xl`}>
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-1">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+              isApproval
+                ? "bg-emerald-500/10 border border-emerald-500/25"
+                : "bg-red-500/10 border border-red-500/25"}`}>
+              {isApproval
+                ? <BookOpenCheck className="w-4 h-4 text-emerald-400" />
+                : <ScrollText   className="w-4 h-4 text-red-400" />}
+            </div>
+            <div>
+              <DialogTitle className={`text-base font-semibold ${isApproval ? "text-emerald-200" : "text-red-200"}`}>
+                {isApproval ? "Approval Guidelines" : "Rejection Rules & Guidelines"}
+              </DialogTitle>
+              <p className="text-white/30 text-xs mt-0.5">Platform policy — read before acting on a submission</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-[68vh] pr-1 mt-2">
+          <div className="space-y-5 pb-2">
+            {sections.map((sec, i) => (
+              <div key={i}>
+                <p className={`text-[11px] font-bold uppercase tracking-widest mb-2 ${
+                  sec.color ?? (isApproval ? "text-emerald-400" : "text-red-400")}`}>
+                  {sec.title}
+                </p>
+                <ul className="space-y-1.5">
+                  {sec.items.map((item, j) => (
+                    <li key={j} className="flex items-start gap-2 text-white/55 text-xs leading-relaxed">
+                      <span className={`mt-[5px] w-1.5 h-1.5 rounded-full shrink-0 ${
+                        isApproval ? "bg-emerald-500/60" : "bg-red-500/60"}`} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── Pagination ─────────────────────────────────────────────────────────────────
 function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null
-
   const pages = []
   const delta = 1
   for (let i = 1; i <= totalPages; i++) {
-    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
-      pages.push(i)
-    }
+    if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) pages.push(i)
   }
   const withEllipsis = []
   pages.forEach((page, idx) => {
     if (idx > 0 && page - pages[idx - 1] > 1) withEllipsis.push("…")
     withEllipsis.push(page)
   })
-
   return (
     <div className="flex items-center justify-between px-3 py-2 border-t border-white/6 shrink-0 bg-black/10">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
-      >
+      <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
         <ChevronLeft className="w-3 h-3" /> Prev
       </button>
-
       <div className="flex items-center gap-1">
         {withEllipsis.map((item, idx) =>
           item === "…" ? (
             <span key={`ellipsis-${idx}`} className="text-white/20 text-[11px] px-1">…</span>
           ) : (
-            <button
-              key={item}
-              onClick={() => onPageChange(item)}
+            <button key={item} onClick={() => onPageChange(item)}
               className={`w-6 h-6 rounded-md border text-[11px] font-medium transition-all
                 ${currentPage === item
                   ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                  : "border-white/8 text-white/30 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-300"}`}
-            >
+                  : "border-white/8 text-white/30 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-300"}`}>
               {item}
             </button>
           )
         )}
       </div>
-
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15"
-      >
+      <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
         Next <ChevronRight className="w-3 h-3" />
       </button>
     </div>
   )
 }
 
-export default function ApprovalSection({ onApprovalChange }) {
+// ── Main component ─────────────────────────────────────────────────────────────
+export default function ApprovalSection({ onApprovalChange, addToast }) {
   const { session } = useAuth()
 
   const [pending, setPending]             = useState({ announcements: [], blogs: [], resources: [] })
@@ -110,23 +240,22 @@ export default function ApprovalSection({ onApprovalChange }) {
   const [actionLoading, setActionLoading] = useState(null)
   const [activeTab, setActiveTab]         = useState("announcements")
   const [selectedItem, setSelectedItem]   = useState(null)
-  const [toast, setToast]                 = useState(null)
   const [search, setSearch]               = useState("")
 
-  const [approveDialog, setApproveDialog] = useState(null)
-  const [rejectDialog, setRejectDialog]   = useState(null)
+  const [approveDialog, setApproveDialog]     = useState(null)
+  const [rejectDialog, setRejectDialog]       = useState(null)
   const [rejectionReason, setRejectionReason] = useState("")
 
-  // Pagination per tab
+  // Guidelines panel
+  const [guidelinesMode, setGuidelinesMode] = useState(null) // "approval" | "rejection" | null
+
+  // Pre-approval checklist state
+  const [approvalChecks, setApprovalChecks] = useState({})
+
   const [pages, setPages] = useState({ announcements: 1, blogs: 1, resources: 1 })
 
   const totalPending =
     pending.announcements.length + pending.blogs.length + pending.resources.length
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
-  }
 
   const fetchPending = useCallback(async () => {
     setLoading(true)
@@ -139,7 +268,7 @@ export default function ApprovalSection({ onApprovalChange }) {
       setPending({ announcements: ann || [], blogs: blogs || [], resources: res || [] })
       onApprovalChange?.((ann?.length || 0) + (blogs?.length || 0) + (res?.length || 0))
     } catch (err) {
-      showToast("Failed to load pending items: " + err.message, "error")
+      addToast("error", "Loading / Fetching Failed")
     } finally {
       setLoading(false)
     }
@@ -161,7 +290,6 @@ export default function ApprovalSection({ onApprovalChange }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, pending])
 
-  // Reset pages on search/tab change
   useEffect(() => {
     setPages({ announcements: 1, blogs: 1, resources: 1 })
   }, [search, activeTab])
@@ -169,7 +297,6 @@ export default function ApprovalSection({ onApprovalChange }) {
   const handleTabChange = (val) => { setActiveTab(val); setSelectedItem(null); setSearch("") }
   const setPage = (tab, page) => setPages((prev) => ({ ...prev, [tab]: page }))
 
-  // Filtered lists
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     const filter = (arr) => arr.filter((i) =>
@@ -183,7 +310,6 @@ export default function ApprovalSection({ onApprovalChange }) {
     }
   }, [pending, search])
 
-  // Paginated slices
   const paginated = useMemo(() => ({
     announcements: filtered.announcements.slice((pages.announcements - 1) * ITEMS_PER_PAGE, pages.announcements * ITEMS_PER_PAGE),
     blogs:         filtered.blogs.slice((pages.blogs - 1) * ITEMS_PER_PAGE, pages.blogs * ITEMS_PER_PAGE),
@@ -195,6 +321,40 @@ export default function ApprovalSection({ onApprovalChange }) {
     blogs:         Math.ceil(filtered.blogs.length / ITEMS_PER_PAGE),
     resources:     Math.ceil(filtered.resources.length / ITEMS_PER_PAGE),
   }
+
+  // Checklist items per content type
+  const getChecklistForType = (type) => {
+    const common = [
+      "Content is accurate, relevant, and clearly written.",
+      "No harmful, discriminatory, or inappropriate material.",
+      "Post complies with all platform guidelines.",
+    ]
+    if (type === "announcements") return [
+      ...common,
+      "Event details (title, date, organizer) are complete.",
+      "This is not a duplicate submission.",
+      "External links are safe and legitimate.",
+    ]
+    if (type === "blogs") return [
+      ...common,
+      "Content is original and not plagiarized.",
+      "Topic is relevant to hackathons, learning, or innovation.",
+    ]
+    return [
+      ...common,
+      "Resource is up-to-date and aligns with learning objectives.",
+    ]
+  }
+
+  // Open approve dialog and reset checklist
+  const openApproveDialog = (item) => {
+    const checks = {}
+    getChecklistForType(activeTab).forEach((_, i) => { checks[i] = false })
+    setApprovalChecks(checks)
+    setApproveDialog(item)
+  }
+
+  const allChecked = Object.values(approvalChecks).every(Boolean)
 
   // ── Approve ────────────────────────────────────────────────────────────────
   const confirmApprove = async () => {
@@ -222,7 +382,7 @@ export default function ApprovalSection({ onApprovalChange }) {
       }
 
       await supabase.from(`pending_${type}`).update({
-        status: "approved",
+        status:      "approved",
         reviewed_by: session?.user?.id,
         reviewed_at: new Date().toISOString(),
       }).eq("id", item.id)
@@ -238,9 +398,9 @@ export default function ApprovalSection({ onApprovalChange }) {
       }
 
       await notifyPostApproved({
-        submittedBy:  item.submitted_by,
-        contentType:  type.replace(/s$/, ""),
-        title:        item.title,
+        submittedBy: item.submitted_by,
+        contentType: type.replace(/s$/, ""),
+        title:       item.title,
       })
 
       setPending((prev) => {
@@ -249,9 +409,9 @@ export default function ApprovalSection({ onApprovalChange }) {
         onApprovalChange?.(next.announcements.length + next.blogs.length + next.resources.length)
         return next
       })
-      showToast(`"${item.title}" approved and published!`)
+      addToast("success", "approved and published!")
     } catch (err) {
-      showToast("Approval failed: " + err.message, "error")
+      addToast("error", "Post Rejected Error")
     } finally {
       setActionLoading(null)
     }
@@ -272,10 +432,10 @@ export default function ApprovalSection({ onApprovalChange }) {
       }).eq("id", item.id)
 
       await notifyPostRejected({
-        submittedBy:  item.submitted_by,
-        contentType:  type.replace(/s$/, ""),
-        title:        item.title,
-        reason:       rejectionReason.trim() || "No reason provided",
+        submittedBy: item.submitted_by,
+        contentType: type.replace(/s$/, ""),
+        title:       item.title,
+        reason:      rejectionReason.trim() || "No reason provided",
       })
 
       setPending((prev) => {
@@ -284,9 +444,9 @@ export default function ApprovalSection({ onApprovalChange }) {
         onApprovalChange?.(next.announcements.length + next.blogs.length + next.resources.length)
         return next
       })
-      showToast(`"${item.title}" rejected.`)
+      addToast("success", "Post Reject")
     } catch (err) {
-      showToast("Rejection failed: " + err.message, "error")
+      addToast("error", "error in rejection")
     } finally {
       setActionLoading(null)
       setRejectionReason("")
@@ -301,21 +461,6 @@ export default function ApprovalSection({ onApprovalChange }) {
 
   return (
     <>
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm font-medium
-          animate-in slide-in-from-top-2 fade-in duration-300
-          ${toast.type === "error"
-            ? "bg-red-950/90 border-red-500/40 text-red-200 shadow-red-900/40"
-            : "bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-900/40"}`}
-        >
-          {toast.type === "error"
-            ? <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            : <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />}
-          {toast.msg}
-        </div>
-      )}
-
       {/* Summary bar */}
       <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-amber-500/8 border border-amber-500/18">
         <Clock className="w-4 h-4 text-amber-400 shrink-0" />
@@ -327,7 +472,7 @@ export default function ApprovalSection({ onApprovalChange }) {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        {/* Tabs + Search row */}
+        {/* Tabs + Search + Guidelines buttons row */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
           <TabsList className="bg-black/30 border border-white/8 p-1 rounded-xl h-auto">
             {tabConfig.map(({ value, label, Icon, tabActive }) => (
@@ -335,8 +480,7 @@ export default function ApprovalSection({ onApprovalChange }) {
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                   text-white/40 hover:text-white/70
                   data-[state=active]:bg-gradient-to-r data-[state=active]:text-white data-[state=active]:shadow-lg
-                  ${tabActive}`}
-              >
+                  ${tabActive}`}>
                 <Icon className="w-3.5 h-3.5" />
                 {label}
                 {pending[value].length > 0 && (
@@ -356,6 +500,22 @@ export default function ApprovalSection({ onApprovalChange }) {
               placeholder="Search by title, organization…"
               className="pl-9 h-9 bg-black/30 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/20 rounded-lg focus:ring-0 transition-colors"
             />
+          </div>
+
+          {/* ── Top-right: Guidelines buttons ── */}
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={() => setGuidelinesMode("approval")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/8 text-emerald-300/80 text-xs font-medium hover:bg-emerald-500/15 hover:border-emerald-400/40 hover:text-emerald-200 transition-all">
+              <BookOpenCheck className="w-3.5 h-3.5" />
+              Approval Guide
+            </button>
+            <button
+              onClick={() => setGuidelinesMode("rejection")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
+              <ScrollText className="w-3.5 h-3.5" />
+              Rejection Rules
+            </button>
           </div>
         </div>
 
@@ -419,7 +579,7 @@ export default function ApprovalSection({ onApprovalChange }) {
                         type={selectedItem.type}
                         actionLoading={actionLoading}
                         onClose={() => setSelectedItem(null)}
-                        onApprove={() => setApproveDialog(selectedItem.item)}
+                        onApprove={() => openApproveDialog(selectedItem.item)}
                         onReject={() => { setRejectDialog(selectedItem.item); setRejectionReason("") }}
                       />
                     ) : (
@@ -436,9 +596,16 @@ export default function ApprovalSection({ onApprovalChange }) {
         })}
       </Tabs>
 
-      {/* ── Approve dialog ── */}
+      {/* ── Guidelines Dialog ── */}
+      <GuidelinesDialog
+        open={!!guidelinesMode}
+        onClose={() => setGuidelinesMode(null)}
+        mode={guidelinesMode}
+      />
+
+      {/* ── Approve dialog (checklist) ── */}
       <AlertDialog open={!!approveDialog} onOpenChange={(open) => !open && setApproveDialog(null)}>
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 backdrop-blur-xl border border-emerald-500/20 shadow-2xl shadow-emerald-900/20 max-w-md">
+        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 backdrop-blur-xl border border-emerald-500/20 shadow-2xl shadow-emerald-900/20 max-w-lg">
           <AlertDialogHeader className="gap-4">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shrink-0">
@@ -446,33 +613,73 @@ export default function ApprovalSection({ onApprovalChange }) {
               </div>
               <div>
                 <AlertDialogTitle className="text-emerald-200 text-base font-semibold">Approve & Publish</AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">The submitting organization will be notified</p>
+                <p className="text-white/30 text-xs mt-0.5">Tick every item to confirm this post meets platform standards</p>
               </div>
             </div>
+
             <AlertDialogDescription asChild>
-              <div className="space-y-3 text-sm">
+              <div className="space-y-4 text-sm">
                 <p className="text-white/55">
-                  You are publishing{" "}
+                  Publishing{" "}
                   <span className="text-white font-medium">"{approveDialog?.title}"</span>{" "}
                   by <span className="text-emerald-300 font-medium">{approveDialog?.organization || "unknown org"}</span>.
                 </p>
-                <div className="rounded-lg bg-emerald-950/60 border border-emerald-500/20 p-4 space-y-2">
+
+                {/* Pre-approval checklist */}
+                <div className="rounded-xl bg-emerald-950/50 border border-emerald-500/20 p-4 space-y-3">
                   <p className="text-emerald-300 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5" />Admin Disclaimer
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Pre-Approval Checklist
+                    <span className="ml-auto text-emerald-500/60 font-normal normal-case tracking-normal">
+                      {Object.values(approvalChecks).filter(Boolean).length} / {Object.keys(approvalChecks).length} confirmed
+                    </span>
                   </p>
-                  <ul className="text-white/45 text-xs space-y-1.5 leading-relaxed">
-                    {[
-                      "This content will be immediately visible to all platform users.",
-                      "You confirm this post complies with platform guidelines.",
-                      "This action is logged under your admin account.",
-                      "The submitting organization will be notified of this approval.",
-                    ].map((t, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-emerald-500/50 mt-0.5 shrink-0">•</span>{t}
+                  <ul className="space-y-2.5">
+                    {getChecklistForType(activeTab).map((label, i) => (
+                      <li key={i}
+                        onClick={() => setApprovalChecks((prev) => ({ ...prev, [i]: !prev[i] }))}
+                        className="flex items-start gap-2.5 cursor-pointer group">
+                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
+                          ${approvalChecks[i]
+                            ? "bg-emerald-500 border-emerald-400"
+                            : "border-white/20 bg-white/5 group-hover:border-emerald-500/50"}`}>
+                          {approvalChecks[i] && <CheckCircle className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className={`text-xs leading-relaxed transition-colors ${
+                          approvalChecks[i]
+                            ? "text-emerald-200/60 line-through"
+                            : "text-white/50 group-hover:text-white/75"}`}>
+                          {label}
+                        </span>
                       </li>
                     ))}
                   </ul>
                 </div>
+
+                {/* Admin notice */}
+                <div className="rounded-lg bg-black/25 border border-white/8 p-3 space-y-1.5">
+                  <p className="text-white/28 text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                    <Info className="w-3 h-3" />Admin Notice
+                  </p>
+                  <ul className="text-white/35 text-xs space-y-1 leading-relaxed">
+                    {[
+                      "Content becomes immediately visible to all platform users.",
+                      "This action is permanently logged under your admin account.",
+                      "The submitting organization will be notified of this approval.",
+                    ].map((t, i) => (
+                      <li key={i} className="flex items-start gap-1.5">
+                        <span className="text-white/20 mt-0.5 shrink-0">•</span>{t}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {!allChecked && (
+                  <p className="text-amber-400/70 text-xs flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    Confirm all checklist items before approving.
+                  </p>
+                )}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -480,8 +687,11 @@ export default function ApprovalSection({ onApprovalChange }) {
             <AlertDialogCancel className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all">
               Cancel
             </AlertDialogCancel>
-            <Button onClick={confirmApprove} className="cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-emerald-500/25">
-              <CheckCircle className="w-4 h-4 shrink-0" />Yes, Approve & Publish
+            <Button
+              onClick={confirmApprove}
+              disabled={!allChecked}
+              className="cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed">
+              <CheckCircle className="w-4 h-4 shrink-0" />Approve & Publish
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -506,19 +716,43 @@ export default function ApprovalSection({ onApprovalChange }) {
                   Rejecting <span className="text-white font-medium">"{rejectDialog?.title}"</span>{" "}
                   by <span className="text-red-300 font-medium">{rejectDialog?.organization || "unknown org"}</span>.
                 </p>
+
+                {/* Quick-pick common reasons */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                    <XCircle className="w-3 h-3 shrink-0" />Reason for Rejection
-                    <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/28">Common Reasons</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      "Incomplete event details",
+                      "Duplicate submission",
+                      "Irrelevant content",
+                      "Plagiarism detected",
+                      "Misleading information",
+                      "Inappropriate content",
+                    ].map((r) => (
+                      <button key={r}
+                        onClick={() => setRejectionReason(r)}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-all
+                          ${rejectionReason === r
+                            ? "bg-red-500/25 border-red-400/50 text-red-200"
+                            : "bg-white/4 border-white/10 text-white/35 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300"}`}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
+                    <XCircle className="w-3 h-3 shrink-0" />Custom Reason
                   </label>
                   <Textarea
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                     placeholder="e.g. Content does not meet community guidelines…"
                     className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
-                    rows={4}
+                    rows={3}
                   />
-                  <p className="text-white/20 text-[11px] leading-relaxed">
+                  <p className="text-white/20 text-[11px]">
                     This reason will be delivered to the organization via notification.
                   </p>
                 </div>
@@ -546,11 +780,9 @@ function PendingListRow({ item, isSelected, onClick }) {
   return (
     <button onClick={onClick}
       className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
-        ${isSelected ? "bg-amber-500/8 border-l-amber-400" : "border-l-transparent hover:bg-white/3 hover:border-l-amber-500/30"}`}
-    >
+        ${isSelected ? "bg-amber-500/8 border-l-amber-400" : "border-l-transparent hover:bg-white/3 hover:border-l-amber-500/30"}`}>
       <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 bg-amber-400
-        ${isSelected ? "opacity-100 shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "opacity-40 group-hover:opacity-70"}`}
-      />
+        ${isSelected ? "opacity-100 shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "opacity-40 group-hover:opacity-70"}`} />
       <div className="flex-1 min-w-0 space-y-1">
         <p className={`text-xs font-semibold leading-snug line-clamp-2 ${isSelected ? "text-white" : "text-white/55 group-hover:text-white/85"}`}>
           {item.title}
@@ -571,15 +803,15 @@ function PendingListRow({ item, isSelected, onClick }) {
 function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }) {
   const isBusy = actionLoading === item.id
   const accent = {
-    announcements: { border: "border-fuchsia-500/30", heading: "text-fuchsia-300", badge: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30" },
-    blogs:         { border: "border-pink-500/30",    heading: "text-pink-300",    badge: "bg-pink-500/15 text-pink-300 border-pink-500/30"           },
-    resources:     { border: "border-violet-500/30",  heading: "text-violet-300",  badge: "bg-violet-500/15 text-violet-300 border-violet-500/30"     },
+    announcements: { heading: "text-fuchsia-300", badge: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30" },
+    blogs:         { heading: "text-pink-300",    badge: "bg-pink-500/15 text-pink-300 border-pink-500/30"           },
+    resources:     { heading: "text-violet-300",  badge: "bg-violet-500/15 text-violet-300 border-violet-500/30"     },
   }[type]
 
   return (
     <div className="h-full flex flex-col">
       <div className="px-6 pt-5 pb-4 border-b border-white/8 shrink-0">
-        <div className="flex items-center justify-between gap-3 mb-4">
+        <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
           <span className={`text-xs font-bold uppercase tracking-widest ${accent.heading}`}>
             {type === "announcements" ? "Announcement" : type === "blogs" ? "Blog Post" : "Resource"} Preview
           </span>
@@ -618,9 +850,9 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
             {(item.date_begin || item.date_end) && (
               <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Event Dates">
                 <p className="text-white/60 text-sm">
-                {item.date_begin ? formatUTCDateTime(item.date_begin) : "—"}
-                <span className="text-white/25 mx-2">→</span>
-                {item.date_end ? formatUTCDateTime(item.date_end) : "—"} 
+                  {item.date_begin ? formatUTCDateTime(item.date_begin) : "—"}
+                  <span className="text-white/25 mx-2">→</span>
+                  {item.date_end ? formatUTCDateTime(item.date_end) : "—"}
                 </p>
               </DetailBlock>
             )}

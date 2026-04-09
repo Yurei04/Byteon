@@ -217,7 +217,7 @@ function StatusFilterBar({ tab, value, onChange, counts, ac }) {
 
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function ViewableSection() {
+export default function ViewableSection({addToast}) {
   const [data, setData]                   = useState({ announcements: [], blogs: [], resources: [] })
   const [loading, setLoading]             = useState(true)
   const [activeTab, setActiveTab]         = useState("announcements")
@@ -226,18 +226,12 @@ export default function ViewableSection() {
   const [deleteDialog, setDeleteDialog]   = useState(null)
   const [deleteReason, setDeleteReason]   = useState("")
   const [actionLoading, setActionLoading] = useState(null)
-  const [toast, setToast]                 = useState(null)
   const [statusFilter, setStatusFilter]   = useState({ announcements: "all", blogs: "all", resources: "all" })
   const [suspendDialog, setSuspendDialog] = useState(null)
   const [actionReason, setActionReason]   = useState("")
   const [pages, setPages]                 = useState({ announcements: 1, blogs: 1, resources: 1 })
 
   const setPage = (tab, p) => setPages(prev => ({ ...prev, [tab]: p }))
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
-  }
 
   const fetchAll = async () => {
     setLoading(true)
@@ -249,7 +243,7 @@ export default function ViewableSection() {
       ])
       setData({ announcements: ann || [], blogs: blogs || [], resources: res || [] })
     } catch (err) {
-      showToast("Failed to load content: " + err.message, "error")
+      addToast("error", "Loading / Fetching Failed")
     } finally {
       setLoading(false)
     }
@@ -331,9 +325,9 @@ export default function ViewableSection() {
       if (error) throw error
       setData(prev => ({ ...prev, [type]: prev[type].filter(i => i.id !== id) }))
       if (selectedItem?.id === id) setSelectedItem(null)
-      showToast(`"${deleteDialog.title}" deleted successfully.`)
+      addToast("success", "Post Deleted Successfully")
     } catch (err) {
-      showToast("Delete failed: " + err.message, "error")
+      addToast("error", "Post Deletion Error")
     } finally {
       setActionLoading(null)
       setDeleteDialog(null)
@@ -352,14 +346,14 @@ export default function ViewableSection() {
       const { error } = await supabase.from(TABLE_MAP[type]).update({ status: newStatus }).eq("id", id)
       if (error) throw error
       patchItem(type, id, { status: newStatus })
-      showToast(
+      addToast(
+        "success",
         wasSuspended
-          ? `"${item?.title}" has been reactivated.`
-          : `"${item?.title}" has been suspended.`,
-        "success"
+          ? "Post Reactivated Successfully"
+          : "Post Suspended Successfully",
       )
     } catch (err) {
-      showToast(`Action failed: ${err.message}`, "error")
+      addToast("error", "Error in suspension")
     } finally {
       setActionLoading(null)
       setSuspendDialog(null)
@@ -370,20 +364,6 @@ export default function ViewableSection() {
   return (
     <div className="flex flex-col h-full gap-4">
 
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm font-medium
-          animate-in slide-in-from-top-2 fade-in duration-300
-          ${toast.type === "error"
-            ? "bg-red-950/90 border-red-500/40 text-red-200 shadow-red-900/40"
-            : "bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-900/40"}`}
-        >
-          {toast.type === "error"
-            ? <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            : <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />}
-          {toast.msg}
-        </div>
-      )}
 
       <Tabs value={activeTab} onValueChange={v => { setActiveTab(v); setSearch("") }} className="flex flex-col flex-1 min-h-0">
         <div className="flex items-center gap-3 mb-4 flex-wrap">

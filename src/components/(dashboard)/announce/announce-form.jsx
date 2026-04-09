@@ -108,6 +108,10 @@ const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","5
     setAlert(null)
   }
 
+  const removeForm = () => {
+    setAlert(null)
+  }
+
   const addPrize = () => setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "", description: "" }])
   const removePrize = (id) => prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id))
   const updatePrize = (id, field, value) => setPrizes(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p))
@@ -280,7 +284,7 @@ return
           </Alert>
         )}
 
-<form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Draft restored indicator */}
           {hasDraft && (
             <div className="flex items-center justify-between gap-3 p-3 border border-amber-400/30 rounded-xl bg-amber-950/20">
@@ -288,8 +292,11 @@ return
                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                 <span className="text-amber-200/80 text-xs">Draft auto-saved — your progress is safe</span>
               </div>
-              <button onClick={resetForm} className="flex items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
-                <RotateCcw className="w-3 h-3" /> Clear
+              <button onClick={resetForm} className="flex cursor-pointer items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
+                <RotateCcw className="w-3 h-3" /> Clear Form
+              </button>
+              <button onClick={removeForm} className="flex cursor-pointer items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
+                <RotateCcw className="w-3 h-3" />
               </button>
             </div>
           )}
@@ -304,7 +311,7 @@ return
             <div className="space-y-2 md:col-span-2">
               <Label className="text-white">Title *</Label>
               <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="bg-white/10 border-white/20 text-white" placeholder="AI Hackathon 2025" />
+                className="bg-white/10 border-white/20 text-white" placeholder="Hackatjon " />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label className="text-white">Description *</Label>

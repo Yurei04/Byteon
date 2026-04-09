@@ -93,7 +93,7 @@ export default function OrgProfileHeader({
                     <Button 
                       onClick={handleSignOut}
                       variant="outline"
-                      className="border-red-500/50 text-red-300 hover:bg-red-500/20 hover:border-red-500"
+                      className="border-red-500/50 text-red-300 hover:bg-red-500/20 hover:border-red-500 cursor-pointer"
                     >
                       <LogOut className="w-4 h-4 sm:mr-2" />
                       <span className="hidden sm:inline">Sign Out</span>
@@ -135,10 +135,6 @@ export default function OrgProfileHeader({
                   ○ Inactive
                 </Badge>
               )}
-              <Badge className="bg-purple-500/20 text-purple-200 border border-purple-500/30">
-                <Award className="w-3 h-3 mr-1" />
-                {formData.achievements.length} Achievements
-              </Badge>
             </div>
           </div>
         </div>

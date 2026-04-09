@@ -140,7 +140,7 @@ function Pagination({ currentPage, totalPages, onPageChange, ac }) {
   )
 }
 
-export default function AccountManageSection() {
+export default function AccountManageSection({addToast}) {
   const [users, setUsers]               = useState([])
   const [orgs, setOrgs]                 = useState([])
   const [loading, setLoading]           = useState(true)
@@ -149,7 +149,6 @@ export default function AccountManageSection() {
   const [activeTab, setActiveTab]       = useState("users")
   const [selectedItem, setSelectedItem] = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
-  const [toast, setToast]               = useState(null)
 
   const [suspendDialog, setSuspendDialog] = useState(null)
   const [deleteDialog, setDeleteDialog]   = useState(null)
@@ -158,12 +157,6 @@ export default function AccountManageSection() {
 
   // Pagination state per tab
   const [pages, setPages] = useState({ users: 1, orgs: 1 })
-
-  const showToast = (msg, type = "success") => {
-    setToast({ msg, type })
-    setTimeout(() => setToast(null), 3500)
-  }
-
   const fetchAll = async () => {
     setLoading(true); setError(null)
     try {
@@ -227,6 +220,7 @@ export default function AccountManageSection() {
 
     setSuspendDialog(null)
     setActionLoading(item.id)
+    
     try {
       const { error: e1 } = await supabase.from(table).update({
         active:            !wasActive,
@@ -258,9 +252,14 @@ export default function AccountManageSection() {
       }
 
       setSelectedItem((prev) => prev?.id === item.id ? { ...prev, active: !wasActive, suspension_reason: finalReason } : prev)
-      showToast(`Account ${wasActive ? "suspended" : "reactivated"} successfully.`)
+       addToast(
+        "success",
+        wasActive
+          ? "Post Reactivated Successfully"
+          : "Post Suspended Successfully",
+      )
     } catch (err) {
-      showToast("Failed to update status: " + err.message, "error")
+      addToast("error", "Error in reactivation/suspension")
     } finally {
       setActionLoading(null)
       setSuspendReason("")
@@ -280,9 +279,9 @@ export default function AccountManageSection() {
       if (activeTab === "users") setUsers((p) => p.filter((u) => u.id !== item.id))
       else setOrgs((p) => p.filter((o) => o.id !== item.id))
       if (selectedItem?.id === item.id) setSelectedItem(null)
-      showToast("Account permanently deleted.")
+      addToast("Account permanently deleted.")
     } catch (err) {
-      showToast("Failed to delete: " + err.message, "error")
+      addToast("Failed to delete: " + err.message, "error")
     } finally {
       setActionLoading(null)
       setDeleteReason("")
@@ -291,20 +290,6 @@ export default function AccountManageSection() {
 
   return (
     <div className="flex flex-col h-full gap-4">
-      {/* Toast */}
-      {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm font-medium
-          animate-in slide-in-from-top-2 fade-in duration-300
-          ${toast.type === "error"
-            ? "bg-red-950/95 border-red-500/40 text-red-200 shadow-red-900/50"
-            : "bg-emerald-950/95 border-emerald-500/40 text-emerald-200 shadow-emerald-900/50"}`}
-        >
-          {toast.type === "error"
-            ? <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            : <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />}
-          {toast.msg}
-        </div>
-      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 min-h-0">
         {/* Top bar */}

@@ -34,12 +34,15 @@ import HistorySection     from "./historyRecordsSection"
 // ── Notifications ──────────────────────────────────────────────────────────────
 import NotificationsTab from "@/components/notifications/notification-tab"
 import { useNotifications } from "@/components/notifications/use-notification" 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+import { Toast } from "../toast"  
+import { useToast } from "@/components/use-toast"
 
 function SuperAdminDashboardPage() {
   const { profile, session, logout } = useAuth()
   const router = useRouter()
 
-  const [activeTab, setActiveTab]         = useState("profile")
+  const [activeTab, setActiveTab]         = useState("approval")
   const [pendingCount, setPendingCount]   = useState(0)
   const [showSignOutDialog, setShowSignOutDialog] = useState(false)
   const [signingOut, setSigningOut]       = useState(false)
@@ -52,6 +55,9 @@ function SuperAdminDashboardPage() {
   const userId     = session?.user?.id
   const platformOrg = profile?.linkedOrg
 
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  const { toasts, addToast, removeToast } = useToast()
+  
   // ── Notifications ────────────────────────────────────────────────────────────
   const { unreadCount } = useNotifications({ userId, role: "super_admin" })
 
@@ -131,7 +137,7 @@ function SuperAdminDashboardPage() {
       ),
     },
     { value: "view",          icon: <Eye          className="w-4 h-4" />, label: "View All"  },
-    { value: "history",       icon: <History      className="w-4 h-4" />, label: "Records"   },
+    { value: "history",       icon: <History      className="w-4 h-4" />, label: "Archives"   },
     {
       value: "notifications",
       icon:  <Bell className="w-4 h-4" />,
@@ -152,6 +158,9 @@ function SuperAdminDashboardPage() {
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-fuchsia-950 p-4 sm:p-6">
+
+      {/* ── Toast — fixed top-center, above all dashboard content ── */}
+      <Toast toasts={toasts} onRemove={removeToast} />
 
       {/* Top bar */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
@@ -227,7 +236,7 @@ function SuperAdminDashboardPage() {
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Account Management</h2>
                     <p className="text-white/40 text-sm mt-1">Suspend or delete user and organization accounts.</p>
                   </div>
-                  <AccountManageSection />
+                  <AccountManageSection addToast={addToast}  />
                 </TabsContent>
 
                 <TabsContent value="approval">
@@ -235,7 +244,7 @@ function SuperAdminDashboardPage() {
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-300">Content Approval Queue</h2>
                     <p className="text-white/40 text-sm mt-1">Review submissions from organizations before they go live.</p>
                   </div>
-                  <ApprovalSection onApprovalChange={(count) => setPendingCount(count)} />
+                  <ApprovalSection addToast={addToast} onApprovalChange={(count) => setPendingCount(count)} />
                 </TabsContent>
 
                 <TabsContent value="view">
@@ -243,7 +252,7 @@ function SuperAdminDashboardPage() {
                     <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">All Live Content</h2>
                     <p className="text-white/40 text-sm mt-1">View and delete any published content across the platform.</p>
                   </div>
-                  <ViewableSection />
+                  <ViewableSection addToast={addToast} />
                 </TabsContent>
 
                 <TabsContent value="history">
