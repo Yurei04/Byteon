@@ -957,12 +957,14 @@ export default function OrgDashboardPage() {
       {/* ── Top bar ── */}
       <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
         className="w-full flex justify-between items-center max-w-7xl mx-auto mb-8 gap-3">
+        <ReturnButton primaryC={p} secondaryC={s} />
         <div className="flex-1 max-w-xs mx-auto rounded-full py-2 px-4 flex items-center justify-center gap-2"
           style={{
             background: `linear-gradient(135deg, ${p}15, ${s}10)`,
             border: `1px solid ${p}35`,
             boxShadow: `0 0 20px ${p}15, inset 0 1px 0 ${p}20`,
           }}>
+
           <ShieldCheck className="w-3.5 h-3.5" style={{ color: p }} />
           <span className="text-xs font-medium" style={{ color: orgTheme.primaryText }}>Organization Panel</span>
         </div>
