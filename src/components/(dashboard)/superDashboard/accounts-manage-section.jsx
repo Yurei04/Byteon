@@ -279,9 +279,9 @@ export default function AccountManageSection({addToast}) {
       if (activeTab === "users") setUsers((p) => p.filter((u) => u.id !== item.id))
       else setOrgs((p) => p.filter((o) => o.id !== item.id))
       if (selectedItem?.id === item.id) setSelectedItem(null)
-      addToast("Account permanently deleted.")
+      addToast("success", "Account permanently deleted.")
     } catch (err) {
-      addToast("Failed to delete: " + err.message, "error")
+      addToast("error", "Error In deletion")
     } finally {
       setActionLoading(null)
       setDeleteReason("")

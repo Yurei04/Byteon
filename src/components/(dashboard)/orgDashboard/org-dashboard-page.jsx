@@ -1141,6 +1141,38 @@ export default function OrgDashboardPage() {
                               onResetDefaults={handleResetColors}
                               onApplyScheme={handleApplyScheme}
                             />
+                            <div>
+                              {isEditing && (
+                                <button
+                                  type="button"
+                                  onClick={handleProfileSubmit}
+                                  style={{
+                                    borderColor: `${p}80`,
+                                    color: "#ffffff",
+                                    background: `linear-gradient(135deg, ${p}30, ${s}25)`,
+                                    boxShadow: `0 0 0 1px ${p}30, 0 8px 20px ${p}20`
+                                  }}
+                                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all duration-200 backdrop-blur-md"
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = `linear-gradient(135deg, ${p}55, ${s}45)`
+                                    e.currentTarget.style.borderColor = `${p}`
+                                    e.currentTarget.style.color = "#ffffff"
+                                    e.currentTarget.style.boxShadow = `0 0 0 1px ${p}, 0 10px 30px ${p}40`
+                                    e.currentTarget.style.transform = "translateY(-1px)"
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = `linear-gradient(135deg, ${p}30, ${s}25)`
+                                    e.currentTarget.style.borderColor = `${p}80`
+                                    e.currentTarget.style.color = "#ffffff"
+                                    e.currentTarget.style.boxShadow = `0 0 0 1px ${p}30, 0 8px 20px ${p}20`
+                                    e.currentTarget.style.transform = "translateY(0)"
+                                  }}
+                                >
+                                  <Plus className="w-4 h-4" />
+                                  Save Changes
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           {/* Danger Zone */}
