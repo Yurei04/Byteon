@@ -22,9 +22,108 @@ import {
   PauseCircle, PlayCircle, Filter,
   DollarSign, MapPin, BarChart2, Sheet,
   Palette, UserCheck, UserX, Info,
+  BookOpenCheck,
+  ScrollText,
+  RefreshCw,
 } from "lucide-react"
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
 
 const ITEMS_PER_PAGE = 10
+
+
+
+// ── Guidelines content ─────────────────────────────────────────────────────────
+const SUSPENSION_GUIDELINES = [
+  {
+    title: "General Standard",
+    items: [
+      "Content must comply with platform standards of accuracy, relevance, clarity, and appropriateness.",
+      "Approved content immediately becomes visible to all platform users.",
+      "Every approval is logged permanently under your admin account.",
+    ],
+  },
+  {
+    title: "Hackathon / Announcement Checklist",
+    items: [
+      "Title, description, date, and organizer details are complete and accurate.",
+      "Event is genuinely related to hackathons, innovation, or technology.",
+      "No duplicate submission already exists on the platform.",
+      "Content is free from harmful, discriminatory, or unethical material.",
+      "External links are safe and lead to legitimate registration pages.",
+    ],
+  },
+  {
+    title: "Blog Post Checklist",
+    items: [
+      "Content is well-written with clear structure and sufficient substance.",
+      "Topic is relevant to hackathons, learning, or innovation.",
+      "No plagiarism — original work or properly credited sources.",
+      "All claims are accurate and verifiable.",
+    ],
+  },
+  {
+    title: "Learning Resource Checklist",
+    items: [
+      "Information is accurate and up-to-date.",
+      "Content aligns with hackathon learning objectives.",
+      "Resource is complete and of acceptable quality.",
+    ],
+  },
+]
+
+const DELETION_GUIDELINES = [
+  {
+    title: "1 · General Rule",
+    color: "text-red-300",
+    items: [
+      "Any submission violating platform standards of accuracy, relevance, clarity, or appropriateness may be rejected.",
+      "The submitting organization receives a clear rejection reason to guide improvements and resubmission.",
+    ],
+  },
+  {
+    title: "2 · Hackathon / Announcement Rejections",
+    color: "text-orange-300",
+    items: [
+      "Invalid or Incomplete Information — missing title, description, date, or organizer details; unclear or misleading event details.",
+      "Irrelevant Content — event is not related to hackathons, innovation, or technology.",
+      "Duplicate Submission — same hackathon posted multiple times.",
+      "Inappropriate or Offensive Content — harmful, discriminatory, or unethical material.",
+      "Suspicious Activity — fake events, misleading registration details, or harmful external links.",
+    ],
+  },
+  {
+    title: "3 · Blog Post Rejections",
+    color: "text-pink-300",
+    items: [
+      "Low-Quality Content — poor grammar, unclear structure, or lack of substance.",
+      "Irrelevant Topics — not related to hackathons, learning, or innovation.",
+      "Plagiarism — copied content without proper credit.",
+      "Misleading Information — false or unverified claims.",
+    ],
+  },
+  {
+    title: "4 · Learning Resource Rejections",
+    color: "text-violet-300",
+    items: [
+      "Content is inaccurate or outdated.",
+      "Not aligned with hackathon learning objectives.",
+      "Poor quality or incomplete material.",
+    ],
+  },
+  {
+    title: "5 · Rejection Process Flow",
+    color: "text-blue-300",
+    items: [
+      "Organizer / user submits content → system stores as 'Pending'.",
+      "Super Admin reviews the submission in the approval queue.",
+      "Admin approves (content becomes visible) or rejects (content removed / sent back).",
+      "System logs the rejection reason for full transparency.",
+      "Submitting organization is notified with the specific reason.",
+    ],
+  },
+]
 
 // ACCENTS includes both Tailwind classes AND raw hex values for inline styles
 const ACCENTS = {
@@ -117,6 +216,65 @@ const STATUS_FILTERS = {
     { value: "suspended", label: "Suspended" },
   ],
 }
+
+
+// ── Guidelines Dialog ──────────────────────────────────────────────────────────
+function GuidelinesDialog({ open, onClose, mode }) {
+  const isSuspend = mode === "suspend"
+  const sections   = isSuspend ? SUSPENSION_GUIDELINES : DELETION_GUIDELINES
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className={`max-w-lg bg-gradient-to-br ${
+        isSuspend
+          ? "from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20"
+          : "from-slate-950 via-rose-950/20 to-slate-950 border-red-500/20"
+        } backdrop-blur-xl border shadow-2xl`}>
+        <DialogHeader>
+          <div className="flex items-center gap-3 mb-1">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+              isSuspend
+                ? "bg-emerald-500/10 border border-emerald-500/25"
+                : "bg-red-500/10 border border-red-500/25"}`}>
+              {isSuspend
+                ? <BookOpenCheck className="w-4 h-4 text-emerald-400" />
+                : <ScrollText   className="w-4 h-4 text-red-400" />}
+            </div>
+            <div>
+              <DialogTitle className={`text-base font-semibold ${isSuspend ? "text-emerald-200" : "text-red-200"}`}>
+                {isSuspend ? "Approval Guidelines" : "Rejection Rules & Guidelines"}
+              </DialogTitle>
+              <p className="text-white/30 text-xs mt-0.5">Platform policy — read before acting on a submission</p>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <ScrollArea className="max-h-[68vh] pr-1 mt-2">
+          <div className="space-y-5 pb-2">
+            {sections.map((sec, i) => (
+              <div key={i}>
+                <p className={`text-[11px] font-bold uppercase tracking-widest mb-2 ${
+                  sec.color ?? (isSuspend ? "text-emerald-400" : "text-red-400")}`}>
+                  {sec.title}
+                </p>
+                <ul className="space-y-1.5">
+                  {sec.items.map((item, j) => (
+                    <li key={j} className="flex items-start gap-2 text-white/55 text-xs leading-relaxed">
+                      <span className={`mt-[5px] w-1.5 h-1.5 rounded-full shrink-0 ${
+                        isSuspend ? "bg-emerald-500/60" : "bg-red-500/60"}`} />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 
 
 // ── Pagination ────────────────────────────────────────────────────────────────
@@ -230,6 +388,7 @@ export default function ViewableSection({addToast}) {
   const [suspendDialog, setSuspendDialog] = useState(null)
   const [actionReason, setActionReason]   = useState("")
   const [pages, setPages]                 = useState({ announcements: 1, blogs: 1, resources: 1 })
+  const [guidelinesMode, setGuidelinesMode] = useState(null)
 
   const setPage = (tab, p) => setPages(prev => ({ ...prev, [tab]: p }))
 
@@ -395,6 +554,27 @@ export default function ViewableSection({addToast}) {
               className="pl-9 h-9 bg-black/25 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/25 rounded-lg focus:ring-0 transition-colors"
             />
           </div>
+          <Button size="sm" onClick={fetchAll} disabled={loading} variant="ghost"
+            className="h-9 w-9 p-0 border border-white/8 hover:border-white/20 text-white/30 hover:text-white/70 hover:bg-white/6 bg-black/30 backdrop-blur-sm transition-all duration-200 rounded-lg">
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          </Button>
+
+          
+            { /* ── Top-right: Guidelines buttons ── */}
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                onClick={() => setGuidelinesMode("suspension")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/25 bg-amber-500/8 text-amber-300/80 text-xs font-medium hover:bg-yellow-500/15 hover:border-yellow-400/40 hover:text-yellow-200 transition-all">
+                <BookOpenCheck className="w-3.5 h-3.5" />
+                Suspension Guide
+              </button>
+              <button
+                onClick={() => setGuidelinesMode("deletion")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
+                <ScrollText className="w-3.5 h-3.5" />
+                Deletion Rules
+              </button>
+            </div>
         </div>
 
         {TAB_CONFIG.map(({ value }) => {
@@ -488,6 +668,14 @@ export default function ViewableSection({addToast}) {
           )
         })}
       </Tabs>
+
+      
+      {/* ── Guidelines Dialog ── */}
+      <GuidelinesDialog
+        open={!!guidelinesMode}
+        onClose={() => setGuidelinesMode(null)}
+        mode={guidelinesMode}
+      />
 
       {/* Delete dialog */}
       <AlertDialog open={!!deleteDialog} onOpenChange={open => { if (!open) { setDeleteDialog(null); setDeleteReason("") } }}>
