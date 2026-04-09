@@ -25,6 +25,8 @@ import {
   BookOpenCheck,
   ScrollText,
   RefreshCw,
+  ShieldCheck,
+  ShieldOff,
 } from "lucide-react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -383,13 +385,15 @@ export default function ViewableSection({addToast}) {
   const [selectedItem, setSelectedItem]   = useState(null)
   const [deleteDialog, setDeleteDialog]   = useState(null)
   const [deleteReason, setDeleteReason]   = useState("")
-  const [actionLoading, setActionLoading] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
   const [statusFilter, setStatusFilter]   = useState({ announcements: "all", blogs: "all", resources: "all" })
   const [suspendDialog, setSuspendDialog] = useState(null)
-  const [actionReason, setActionReason]   = useState("")
+  const [actionReason, setActionReason] = useState("")
+  const [actionLoading, setActionLoading] = useState(false)
   const [pages, setPages]                 = useState({ announcements: 1, blogs: 1, resources: 1 })
   const [guidelinesMode, setGuidelinesMode] = useState(null)
-
+  const [confirmSuspend, setConfirmSuspend] = useState(false)
+    
   const setPage = (tab, p) => setPages(prev => ({ ...prev, [tab]: p }))
 
   const fetchAll = async () => {
@@ -677,132 +681,188 @@ export default function ViewableSection({addToast}) {
         mode={guidelinesMode}
       />
 
-      {/* Delete dialog */}
-      <AlertDialog open={!!deleteDialog} onOpenChange={open => { if (!open) { setDeleteDialog(null); setDeleteReason("") } }}>
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
-          <AlertDialogHeader className="gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
-                <ShieldAlert className="w-5 h-5 text-red-400" />
-              </div>
-              <div>
-                <AlertDialogTitle className="text-red-200 text-base font-semibold">Delete Content</AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">This action is permanent and cannot be undone</p>
-              </div>
-            </div>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4 text-sm">
-                <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
-                  Permanently deleting <span className="text-white font-medium">"{deleteDialog?.title}"</span>.
-                  This cannot be undone.
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                    <XCircle className="w-3 h-3 shrink-0" />Reason
-                    <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
-                  </label>
-                  <Textarea
-                    value={deleteReason}
-                    onChange={e => setDeleteReason(e.target.value)}
-                    placeholder="e.g. Outdated content, policy violation…"
-                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 mt-1">
-            <AlertDialogCancel
-              onClick={() => setDeleteReason("")}
-              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <Button
-              onClick={handleDelete}
-              disabled={!!actionLoading}
-              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600 hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500 active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-pink-500/25"
-            >
-              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Trash2 className="w-4 h-4 shrink-0" />}
-              Delete Permanently
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Suspend / Reactivate dialog */}
-      <AlertDialog open={!!suspendDialog} onOpenChange={open => { if (!open) { setSuspendDialog(null); setActionReason("") } }}>
+      <AlertDialog
+        open={!!suspendDialog}
+        onOpenChange={open => {
+          if (!open) {
+            setSuspendDialog(null)
+            setActionReason("")
+            setConfirmSuspend(false)
+          }
+        }}
+      >
         {(() => {
           const isSuspended = suspendDialog?.item?.status === "suspended"
+
+          const quickReasons = [
+            "Under review",
+            "Policy violation",
+            "Spam or misleading content",
+            "Temporary hold",
+            "User reported content"
+          ]
+
           return (
-            <AlertDialogContent className={`backdrop-blur-xl border shadow-2xl max-w-md
-              ${isSuspended
-                ? "bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20 shadow-emerald-900/20"
-                : "bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 border-amber-500/20 shadow-amber-900/20"}`}
+            <AlertDialogContent
+              className={`backdrop-blur-xl border shadow-2xl max-w-md
+              ${
+                isSuspended
+                  ? "bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20 shadow-emerald-900/20"
+                  : "bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 border-amber-500/20 shadow-amber-900/20"
+              }`}
             >
               <AlertDialogHeader className="gap-4">
+
+                {/* Header */}
                 <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border
-                    ${isSuspended ? "bg-emerald-500/10 border-emerald-500/25" : "bg-amber-500/10 border-amber-500/25"}`}>
-                    {isSuspended
-                      ? <PlayCircle  className="w-5 h-5 text-emerald-400" />
-                      : <PauseCircle className="w-5 h-5 text-amber-400"   />}
+                  <div
+                    className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border
+                    ${
+                      isSuspended
+                        ? "bg-emerald-500/10 border-emerald-500/25"
+                        : "bg-amber-500/10 border-amber-500/25"
+                    }`}
+                  >
+                    {isSuspended ? (
+                      <PlayCircle className="w-5 h-5 text-emerald-400" />
+                    ) : (
+                      <PauseCircle className="w-5 h-5 text-amber-400" />
+                    )}
                   </div>
+
                   <div>
-                    <AlertDialogTitle className={`text-base font-semibold ${isSuspended ? "text-emerald-200" : "text-amber-200"}`}>
+                    <AlertDialogTitle
+                      className={`text-base font-semibold ${
+                        isSuspended ? "text-emerald-200" : "text-amber-200"
+                      }`}
+                    >
                       {isSuspended ? "Reactivate Post" : "Suspend Post"}
                     </AlertDialogTitle>
+
                     <p className="text-white/30 text-xs mt-0.5">
-                      {isSuspended ? "The post will become visible on the platform again" : "The post will be hidden from the platform until reactivated"}
+                      {isSuspended
+                        ? "The post will become visible again"
+                        : "The post will be hidden until reactivated"}
                     </p>
                   </div>
                 </div>
+
                 <AlertDialogDescription asChild>
                   <div className="space-y-4 text-sm">
+
+                    {/* Warning */}
                     <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
                       {isSuspended ? "Reactivating" : "Suspending"}{" "}
-                      <span className="text-white font-medium">"{suspendDialog?.title}"</span>.
-                      {!isSuspended && " The post will be hidden from the platform until reactivated."}
+                      <span className="text-white font-medium">
+                        "{suspendDialog?.title}"
+                      </span>.
                     </div>
+
+                    {/* ONLY FOR SUSPEND */}
                     {!isSuspended && (
-                      <div className="space-y-2">
-                        <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                          <PauseCircle className="w-3 h-3 shrink-0" />Reason
-                          <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
-                        </label>
-                        <Textarea
-                          value={actionReason}
-                          onChange={e => setActionReason(e.target.value)}
-                          placeholder="e.g. Under review, policy concern, temporary hold…"
-                          className="bg-black/40 border border-amber-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-amber-400/30 focus:ring-0 rounded-lg"
-                          rows={3}
-                        />
-                      </div>
+                      <>
+                        {/* REQUIRED REASON */}
+                        <div className="space-y-2">
+                          <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                            <PauseCircle className="w-3 h-3 shrink-0" />
+                            Reason <span className="text-amber-400">*</span>
+                          </label>
+
+                          <Textarea
+                            value={actionReason}
+                            onChange={e => setActionReason(e.target.value)}
+                            placeholder="Provide reason for suspension..."
+                            className="bg-black/40 border border-amber-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-amber-400/30 focus:ring-0 rounded-lg"
+                            rows={3}
+                          />
+
+                          <p className="text-white/18 text-[11px]">
+                            Required for moderation audit trail.
+                          </p>
+                        </div>
+
+                        {/* QUICK FILL */}
+                        <div className="space-y-2">
+                          <p className="text-[11px] uppercase text-white/30">
+                            Quick reasons
+                          </p>
+
+                          <div className="flex flex-wrap gap-2">
+                            {quickReasons.map((reason, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setActionReason(reason)}
+                                className="text-[11px] px-2.5 py-1 rounded-md bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition"
+                              >
+                                {reason}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* CONFIRM CHECKBOX */}
+                        <div className="flex items-start gap-2 pt-1">
+                          <input
+                            type="checkbox"
+                            checked={confirmSuspend}
+                            onChange={e => setConfirmSuspend(e.target.checked)}
+                            className="mt-1 accent-amber-500 cursor-pointer"
+                          />
+                          <p className="text-[11px] text-white/40 leading-snug">
+                            I understand this will hide the post from the platform
+                            until manually reactivated.
+                          </p>
+                        </div>
+                      </>
                     )}
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
+
               <AlertDialogFooter className="gap-2 mt-1">
                 <AlertDialogCancel
-                  onClick={() => setActionReason("")}
+                  onClick={() => {
+                    setActionReason("")
+                    setConfirmSuspend(false)
+                  }}
                   className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
                 >
                   Cancel
                 </AlertDialogCancel>
+
                 <Button
                   onClick={handleToggleSuspend}
-                  disabled={!!actionLoading}
-                  className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97]"
-                  style={isSuspended
-                    ? { background: "linear-gradient(135deg, #059669, #047857)", boxShadow: "0 4px 16px rgba(5,150,105,0.35)" }
-                    : { background: "linear-gradient(135deg, #d97706, #b45309)", boxShadow: "0 4px 16px rgba(217,119,6,0.35)" }}
+                  disabled={
+                    !!actionLoading ||
+                    (!isSuspended &&
+                      (!actionReason.trim() || !confirmSuspend))
+                  }
+                  className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={
+                    isSuspended
+                      ? {
+                          background:
+                            "linear-gradient(135deg, #059669, #047857)",
+                          boxShadow:
+                            "0 4px 16px rgba(5,150,105,0.35)"
+                        }
+                      : {
+                          background:
+                            "linear-gradient(135deg, #d97706, #b45309)",
+                          boxShadow:
+                            "0 4px 16px rgba(217,119,6,0.35)"
+                        }
+                  }
                 >
-                  {actionLoading
-                    ? <Loader2    className="w-4 h-4 animate-spin shrink-0" />
-                    : isSuspended
-                      ? <PlayCircle  className="w-4 h-4 shrink-0" />
-                      : <PauseCircle className="w-4 h-4 shrink-0" />}
+                  {actionLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  ) : isSuspended ? (
+                    <PlayCircle className="w-4 h-4 shrink-0" />
+                  ) : (
+                    <PauseCircle className="w-4 h-4 shrink-0" />
+                  )}
                   {isSuspended ? "Reactivate Post" : "Suspend Post"}
                 </Button>
               </AlertDialogFooter>
@@ -810,10 +870,130 @@ export default function ViewableSection({addToast}) {
           )
         })()}
       </AlertDialog>
+
+
+      {/* ── Delete dialog ───────────────────────────────────────────────────── */}
+      <AlertDialog
+        open={!!deleteDialog}
+        onOpenChange={open => {
+          if (!open) {
+            setDeleteDialog(null)
+            setDeleteReason("")
+            setDeleteConfirm("")
+          }
+        }}
+      >
+        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
+          <AlertDialogHeader className="gap-4">
+            
+            {/* Header */}
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
+                <ShieldAlert className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <AlertDialogTitle className="text-red-200 text-base font-semibold">
+                  Delete Content
+                </AlertDialogTitle>
+                <p className="text-white/30 text-xs mt-0.5">
+                  Platform admins will be notified
+                </p>
+              </div>
+            </div>
+
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-sm">
+                
+                {/* Warning */}
+                <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
+                  Permanently deleting{" "}
+                  <span className="text-white font-medium">
+                    "{deleteDialog?.title}"
+                  </span>.
+                  This cannot be undone.
+                </div>
+
+                {/* REQUIRED REASON */}
+                <div className="space-y-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/70 flex items-center gap-2">
+                    <XCircle className="w-3 h-3 shrink-0" />
+                    Reason <span className="text-red-400">*</span>
+                  </label>
+
+                  <Textarea
+                    value={deleteReason}
+                    onChange={e => setDeleteReason(e.target.value)}
+                    placeholder="Provide a reason for deletion..."
+                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
+                    rows={3}
+                  />
+
+                  <p className="text-white/60 text-[11px] leading-relaxed">
+                    Required for audit trail. Super admins will see this.
+                  </p>
+                </div>
+
+                {/* CONFIRMATION INPUT */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-white/70 py-2">
+                    Type <span className="text-red-400 text-md font-bold">&quot;DELETE&quot;</span> to confirm
+                  </label>
+
+                  <Input
+                    value={deleteConfirm}
+                    onChange={e => setDeleteConfirm(e.target.value)}
+                    placeholder="DELETE"
+                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs focus:border-red-400/30 focus:ring-0 rounded-lg"
+                  />
+                </div>
+
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="gap-2 mt-1">
+            <AlertDialogCancel
+              onClick={() => {
+                setDeleteReason("")
+                setDeleteConfirm("")
+              }}
+              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
+            >
+              Cancel
+            </AlertDialogCancel>
+
+            <Button
+              onClick={handleDelete}
+              disabled={
+                !!actionLoading ||
+                !deleteReason.trim() ||
+                deleteConfirm !== "DELETE"
+              }
+              className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background: `linear-gradient(135deg, #ec4899, #c026d3)`,
+                boxShadow: `0 4px 16px rgba(192, 38, 211, 0.4)`
+              }}
+              onMouseEnter={e =>
+                (e.currentTarget.style.boxShadow = `0 6px 24px rgba(192, 38, 211, 0.6)`)
+              }
+              onMouseLeave={e =>
+                (e.currentTarget.style.boxShadow = `0 4px 16px rgba(192, 38, 211, 0.4)`)
+              }
+            >
+              {actionLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              ) : (
+                <Trash2 className="w-4 h-4 shrink-0" />
+              )}
+              Delete Permanently
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
-
 
 // ── List row ──────────────────────────────────────────────────────────────────
 function ListRow({ item, type, ac, isSelected, onClick }) {

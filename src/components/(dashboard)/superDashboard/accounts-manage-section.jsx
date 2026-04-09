@@ -485,7 +485,7 @@ export default function AccountManageSection({addToast}) {
           </Button>
 
           
-          {/* ── Top-right: Guidelines buttons ── */}
+            { /* ── Top-right: Guidelines buttons ── */}
             <div className="flex items-center gap-2 ml-auto">
               <button
                 onClick={() => setGuidelinesMode("suspension")}

@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { PostingTermsDialog } from "@/components/terms-and-condition/posting-condition"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
@@ -520,7 +521,7 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
 }
 
 // ─── TermsCheckbox ────────────────────────────────────────────────────────────
-function TermsCheckbox({ checked, onChange, hasError }) {
+function TermsCheckbox({ checked, onChange, hasError, addToast }) {
   return (
     <div
       className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer select-none ${
@@ -544,13 +545,10 @@ function TermsCheckbox({ checked, onChange, hasError }) {
       <div className="flex-1">
         <p className={`text-sm leading-relaxed transition-colors ${checked ? "text-white/80" : "text-white/50"}`}>
           I confirm that the information provided is accurate and I agree to the{" "}
-          <span className="text-fuchsia-400 underline underline-offset-2 cursor-pointer hover:text-fuchsia-300 transition-colors">
-            Terms & Conditions
-          </span>{" "}
-          and{" "}
-          <span className="text-fuchsia-400 underline underline-offset-2 cursor-pointer hover:text-fuchsia-300 transition-colors">
-            Submission Guidelines
-          </span>
+
+          <PostingTermsDialog trigger={
+            <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Submission Guidelines </button>
+          } />
           .
         </p>
         {hasError && (
@@ -873,7 +871,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
           <ShieldCheck className="w-4 h-4 text-white/30" />
           <Label className="text-white/50 text-xs uppercase tracking-widest font-semibold">Agreement</Label>
         </div>
-        <TermsCheckbox checked={termsAccepted} onChange={(v) => { setTermsAccepted(v); if (v) setTermsError(false) }} hasError={termsError} />
+        <TermsCheckbox addToast={addToast} checked={termsAccepted} onChange={(v) => { setTermsAccepted(v); if (v) setTermsError(false) }} hasError={termsError} />
       </div>
 
       {/* ── Submit ── */}

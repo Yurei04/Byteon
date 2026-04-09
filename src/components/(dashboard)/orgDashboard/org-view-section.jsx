@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 
 import { notifyContentDeletedByOrg } from "@/lib/notification"
+import { Input } from "@/components/ui/input"
 
 const ITEMS_PER_PAGE = 10
 
@@ -208,6 +209,7 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
   const [statusFilter, setStatusFilter] = useState({ announcements: "all", blogs: "all", resources: "all" })
   const [selectedItem, setSelectedItem] = useState(null)
   const [deleteDialog, setDeleteDialog] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState("")
   const [deleteReason, setDeleteReason] = useState("")
   const [actionLoading, setActionLoading] = useState(null)
   const [toast, setToast]               = useState(null)
@@ -496,57 +498,119 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
       </Tabs>
 
       {/* ── Delete dialog ───────────────────────────────────────────────────── */}
-      <AlertDialog open={!!deleteDialog} onOpenChange={open => { if (!open) { setDeleteDialog(null); setDeleteReason("") } }}>
+      <AlertDialog
+        open={!!deleteDialog}
+        onOpenChange={open => {
+          if (!open) {
+            setDeleteDialog(null)
+            setDeleteReason("")
+            setDeleteConfirm("")
+          }
+        }}
+      >
         <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
           <AlertDialogHeader className="gap-4">
+            
+            {/* Header */}
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
                 <ShieldAlert className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <AlertDialogTitle className="text-red-200 text-base font-semibold">Delete Content</AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">Platform admins will be notified</p>
+                <AlertDialogTitle className="text-red-200 text-base font-semibold">
+                  Delete Content
+                </AlertDialogTitle>
+                <p className="text-white/30 text-xs mt-0.5">
+                  Platform admins will be notified
+                </p>
               </div>
             </div>
+
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
+                
+                {/* Warning */}
                 <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
-                  Permanently deleting <span className="text-white font-medium">"{deleteDialog?.title}"</span>.
+                  Permanently deleting{" "}
+                  <span className="text-white font-medium">
+                    "{deleteDialog?.title}"
+                  </span>.
                   This cannot be undone.
                 </div>
+
+                {/* REQUIRED REASON */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                    <XCircle className="w-3 h-3 shrink-0" />Reason
-                    <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
+                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/70 flex items-center gap-2">
+                    <XCircle className="w-3 h-3 shrink-0" />
+                    Reason <span className="text-red-400">*</span>
                   </label>
+
                   <Textarea
-                    value={deleteReason} onChange={e => setDeleteReason(e.target.value)}
-                    placeholder="e.g. Outdated content, no longer relevant…"
+                    value={deleteReason}
+                    onChange={e => setDeleteReason(e.target.value)}
+                    placeholder="Provide a reason for deletion..."
                     className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
                     rows={3}
                   />
-                  <p className="text-white/18 text-[11px] leading-relaxed">
-                    For audit trail. Super admins will see this in their activity feed.
+
+                  <p className="text-white/60 text-[11px] leading-relaxed">
+                    Required for audit trail. Super admins will see this.
                   </p>
                 </div>
+
+                {/* CONFIRMATION INPUT */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-white/70 py-2">
+                    Type <span className="text-red-400 text-md font-bold">&quot;DELETE&quot;</span> to confirm
+                  </label>
+
+                  <Input
+                    value={deleteConfirm}
+                    onChange={e => setDeleteConfirm(e.target.value)}
+                    placeholder="DELETE"
+                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs focus:border-red-400/30 focus:ring-0 rounded-lg"
+                  />
+                </div>
+
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter className="gap-2 mt-1">
             <AlertDialogCancel
-              onClick={() => setDeleteReason("")}
+              onClick={() => {
+                setDeleteReason("")
+                setDeleteConfirm("")
+              }}
               className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
             >
               Cancel
             </AlertDialogCancel>
+
             <Button
-              onClick={handleDelete} disabled={!!actionLoading}
-              className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97]"
-              style={{ background: `linear-gradient(135deg, ${p}, ${s})`, boxShadow: `0 4px 16px ${p}40` }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = `0 6px 24px ${p}60`}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = `0 4px 16px ${p}40`}
+              onClick={handleDelete}
+              disabled={
+                !!actionLoading ||
+                !deleteReason.trim() ||
+                deleteConfirm !== "DELETE"
+              }
+              className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background: `linear-gradient(135deg, ${p}, ${s})`,
+                boxShadow: `0 4px 16px ${p}40`
+              }}
+              onMouseEnter={e =>
+                (e.currentTarget.style.boxShadow = `0 6px 24px ${p}60`)
+              }
+              onMouseLeave={e =>
+                (e.currentTarget.style.boxShadow = `0 4px 16px ${p}40`)
+              }
             >
-              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Trash2 className="w-4 h-4 shrink-0" />}
+              {actionLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+              ) : (
+                <Trash2 className="w-4 h-4 shrink-0" />
+              )}
               Delete Permanently
             </Button>
           </AlertDialogFooter>
