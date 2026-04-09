@@ -42,6 +42,9 @@ import NotificationsTab          from "@/components/notifications/notification-t
 import { useNotifications }      from "@/components/notifications/use-notification"
 import { notifyBlogDeletedByUser } from "@/lib/notification" 
 
+import { Toast } from "../toast"  
+import { useToast } from "@/components/use-toast"
+
 const ITEMS_PER_PAGE = 6
 
 export default function UserDashboardPage() {
@@ -64,6 +67,9 @@ export default function UserDashboardPage() {
   const [deleteDialog, setDeleteDialog]   = useState(null)   // full blog object
   const [deleteReason, setDeleteReason]   = useState("")
   const [actionLoading, setActionLoading] = useState(false)
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  const { toasts, addToast, removeToast } = useToast()
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -143,12 +149,13 @@ export default function UserDashboardPage() {
         userName:  profile?.name  || "A user",
         blogTitle: deleteDialog.title || "Untitled",
       })
-
+      
       setDeleteDialog(null)
       setDeleteReason("")
     } catch (err) {
       console.error("Delete error:", err)
     } finally {
+      addToast("error", "Please add a Title and Content"); 
       setActionLoading(false)
     }
   }
@@ -177,6 +184,9 @@ export default function UserDashboardPage() {
 
   return (
     <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
+      {/* ── Toast — fixed top-center, above all dashboard content ── */}
+      <Toast toasts={toasts} onRemove={removeToast} />
+
 
       {/* Top bar */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
@@ -371,7 +381,7 @@ export default function UserDashboardPage() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
                       <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
                         <CardContent className="p-4 sm:p-6">
-                          <PendingBlogUserForm onSuccess={handleBlogUpdate} currentUser={profile} authUserId={profile?.id} />
+                          <PendingBlogUserForm onSuccess={handleBlogUpdate} currentUser={profile} addToast={addToast} authUserId={profile?.id} />
                         </CardContent>
                       </Card>
                     </motion.div>

@@ -18,9 +18,8 @@ const THEME_OPTIONS = [
   "Gaming","Finance","Environment","Personal Development","Other"
 ]
 
-export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId }) {
+export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId, addToast }) {
   const [isLoading, setIsLoading]   = useState(false)
-  const [alert, setAlert]           = useState(null)
   const [imageError, setImageError] = useState(false)
   const [formData, setFormData]     = useState({
     title: "", des: "", content: "", image: "", theme: ""
@@ -30,12 +29,14 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
     if (!currentUser || !authUserId) {
       setAlert({ type: "error", message: "User not found. Please refresh and log in again." }); return
     }
-    if (!formData.title.trim() || !formData.content.trim()) {
-      setAlert({ type: "error", message: "Title and Content are required." }); return
+    if (!formData.title || !formData.content) {
+      addToast("error", "Please add a Title and Content"); return
+    }
+    if (!formData.theme) {
+      addToast("error", "Please add a theme"); return
     }
 
     setIsLoading(true)
-    setAlert(null)
 
     try {
       const payload = {
@@ -56,7 +57,7 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
       const { error } = await supabase.from("pending_blogs").insert([payload])
       if (error) throw error
 
-      setAlert({ type: "success", message: "Blog submitted for approval! ✅ The super admin will review it before it goes live." })
+      addToast("success", "Submitted for approval! The super admin will review your announcement.")
       setFormData({ title: "", des: "", content: "", image: "", theme: "" })
       setImageError(false)
       setTimeout(() => { if (onSuccess) onSuccess() }, 1500)
@@ -108,13 +109,6 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
               This blog will be <strong>reviewed by the super admin</strong> before going live.
             </p>
           </div>
-
-          {alert && (
-            <Alert className={`mb-6 ${alert.type === "error" ? "border-red-500 bg-red-500/10 text-red-100" : "border-green-500 bg-green-500/10 text-green-100"}`}>
-              {alert.type === "error" ? <AlertCircle className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
-              <AlertDescription className="text-base">{alert.message}</AlertDescription>
-            </Alert>
-          )}
 
           <div className="space-y-6">
             <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-lg border border-purple-400/30">
