@@ -191,15 +191,22 @@ const COUNTRY_MODE_CONFIG = {
   excluded: { label: "Exclude countries",sub: "All except listed countries",      icon: X,        accent: "text-rose-400",   ring: "ring-rose-400/50",   activeBg: "bg-rose-400/10"   },
 }
 
+// ── COUNTRIES_PER_PAGE controls how many items render in the dropdown at once.
+// All countries are still searchable; this just avoids rendering 195 DOM nodes
+// when the list is unfiltered. Increase if you want more visible without scrolling.
+const COUNTRIES_PER_PAGE = 120
+
 function CountrySelector({ value, onChange, hasError }) {
   const { mode, list } = value
   const [search, setSearch]     = useState("")
   const [open, setOpen]         = useState(false)
   const dropRef = useRef(null)
 
+  // Show all countries when searching, page-limit only when browsing the full list
   const filtered = ALL_COUNTRIES.filter(c =>
     c.toLowerCase().includes(search.toLowerCase()) && !list.includes(c)
   )
+  const visible = search.trim() ? filtered : filtered.slice(0, COUNTRIES_PER_PAGE)
 
   const setMode = (m) => onChange({ mode: m, list: m === "global" ? [] : list })
   const addCountry = (c) => { onChange({ mode, list: [...list, c] }); setSearch("") }
@@ -285,12 +292,12 @@ function CountrySelector({ value, onChange, hasError }) {
               {open ? <ChevronUp className="w-3.5 h-3.5 text-white/30 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-white/30 shrink-0" />}
             </div>
 
-            {open && filtered.length > 0 && (
+            {open && visible.length > 0 && (
               <div
                 className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-xl overflow-hidden max-h-48 overflow-y-auto"
                 style={{ background: "rgba(15,15,25,0.97)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(16px)", boxShadow: "0 16px 40px rgba(0,0,0,0.5)" }}
               >
-                {filtered.slice(0, 60).map(c => (
+                {visible.map(c => (
                   <button
                     key={c} type="button"
                     onClick={() => { addCountry(c); setOpen(false) }}
@@ -300,6 +307,12 @@ function CountrySelector({ value, onChange, hasError }) {
                     {c}
                   </button>
                 ))}
+                {/* Hint when browsing unfiltered and more countries exist beyond the page limit */}
+                {!search.trim() && filtered.length > COUNTRIES_PER_PAGE && (
+                  <p className="px-3 py-2 text-[11px] text-white/25 text-center border-t border-white/5">
+                    Type to search all {filtered.length} remaining countries
+                  </p>
+                )}
                 {filtered.length === 0 && (
                   <p className="px-3 py-3 text-sm text-white/25 text-center">No countries match</p>
                 )}

@@ -251,7 +251,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
 
   // Pre-approval checklist state
   const [approvalChecks, setApprovalChecks] = useState({})
-
+  const [confirmRejectCheck, setConfirmRejectCheck] = useState(false)
   const [pages, setPages] = useState({ announcements: 1, blogs: 1, resources: 1 })
 
   const totalPending =
@@ -698,28 +698,54 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
       </AlertDialog>
 
       {/* ── Reject dialog ── */}
-      <AlertDialog open={!!rejectDialog} onOpenChange={(open) => { if (!open) { setRejectDialog(null); setRejectionReason("") } }}>
+      <AlertDialog
+        open={!!rejectDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejectDialog(null)
+            setRejectionReason("")
+            setConfirmRejectCheck(false)
+          }
+        }}
+      >
         <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/20 max-w-md">
+          
           <AlertDialogHeader className="gap-4">
+
+            {/* Header */}
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
                 <ShieldAlert className="w-5 h-5 text-red-400" />
               </div>
               <div>
-                <AlertDialogTitle className="text-red-200 text-base font-semibold">Reject Submission</AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">The organization will be notified with your reason</p>
+                <AlertDialogTitle className="text-red-200 text-base font-semibold">
+                  Reject Submission
+                </AlertDialogTitle>
+                <p className="text-white/30 text-xs mt-0.5">
+                  The organization will be notified with your reason
+                </p>
               </div>
             </div>
+
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
+
                 <p className="text-white/55">
-                  Rejecting <span className="text-white font-medium">"{rejectDialog?.title}"</span>{" "}
-                  by <span className="text-red-300 font-medium">{rejectDialog?.organization || "unknown org"}</span>.
+                  Rejecting{" "}
+                  <span className="text-white font-medium">
+                    "{rejectDialog?.title}"
+                  </span>{" "}
+                  by{" "}
+                  <span className="text-red-300 font-medium">
+                    {rejectDialog?.organization || "unknown org"}
+                  </span>.
                 </p>
 
                 {/* Quick-pick common reasons */}
                 <div className="space-y-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/28">Common Reasons</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/28">
+                    Common Reasons
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       "Incomplete event details",
@@ -729,46 +755,83 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
                       "Misleading information",
                       "Inappropriate content",
                     ].map((r) => (
-                      <button key={r}
+                      <button
+                        key={r}
+                        type="button"
                         onClick={() => setRejectionReason(r)}
                         className={`text-[11px] px-2.5 py-1 rounded-full border transition-all
-                          ${rejectionReason === r
-                            ? "bg-red-500/25 border-red-400/50 text-red-200"
-                            : "bg-white/4 border-white/10 text-white/35 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300"}`}>
+                          ${
+                            rejectionReason === r
+                              ? "bg-red-500/25 border-red-400/50 text-red-200"
+                              : "bg-white/4 border-white/10 text-white/35 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300"
+                          }`}
+                      >
                         {r}
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* REQUIRED REASON */}
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                    <XCircle className="w-3 h-3 shrink-0" />Custom Reason
+                    <XCircle className="w-3 h-3 shrink-0" />
+                    Reason <span className="text-red-400">*</span>
                   </label>
+
                   <Textarea
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="e.g. Content does not meet community guidelines…"
+                    placeholder="Provide a clear reason for rejection..."
                     className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
                     rows={3}
                   />
+
                   <p className="text-white/20 text-[11px]">
-                    This reason will be delivered to the organization via notification.
+                    Required. This will be sent to the organization.
                   </p>
                 </div>
+
+                {/* CONFIRMATION CHECKBOX */}
+                <div className="flex items-start gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    checked={confirmRejectCheck}
+                    onChange={(e) => setConfirmRejectCheck(e.target.checked)}
+                    className="mt-1 accent-red-500 cursor-pointer"
+                  />
+                  <p className="text-[11px] text-white/40 leading-snug">
+                    I confirm that this submission violates guidelines or does not meet requirements.
+                  </p>
+                </div>
+
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter className="gap-2 mt-1">
-            <AlertDialogCancel onClick={() => setRejectionReason("")}
-              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all">
+            <AlertDialogCancel
+              onClick={() => {
+                setRejectionReason("")
+                setConfirmRejectCheck(false)
+              }}
+              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
+            >
               Cancel
             </AlertDialogCancel>
-            <Button onClick={confirmReject}
-              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600 hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500 active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-pink-500/25">
-              <XCircle className="w-4 h-4 shrink-0" />Confirm Rejection
+
+            <Button
+              onClick={confirmReject}
+              disabled={
+                !rejectionReason.trim() || !confirmRejectCheck
+              }
+              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600 hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500 active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-pink-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <XCircle className="w-4 h-4 shrink-0" />
+              Confirm Rejection
             </Button>
           </AlertDialogFooter>
+
         </AlertDialogContent>
       </AlertDialog>
     </>
