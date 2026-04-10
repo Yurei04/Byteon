@@ -35,94 +35,101 @@ import {
 const ITEMS_PER_PAGE = 10
 
 
-
 // ── Guidelines content ─────────────────────────────────────────────────────────
+
+// 🔶 SUSPENSION GUIDE (Temporary restriction / needs correction)
 const SUSPENSION_GUIDELINES = [
   {
-    title: "General Standard",
+    title: "General Suspension Principles",
     items: [
-      "Content must comply with platform standards of accuracy, relevance, clarity, and appropriateness.",
-      "Approved content immediately becomes visible to all platform users.",
-      "Every approval is logged permanently under your admin account.",
+      "Suspension is applied when content requires correction, verification, or moderation review.",
+      "Suspended content is temporarily hidden from public view.",
+      "Submitting users or organizations are notified with the reason for suspension.",
+      "Content may be reactivated once issues are resolved and verified.",
     ],
   },
   {
-    title: "Hackathon / Announcement Checklist",
+    title: "Hackathon Announcements (Suspension Triggers)",
     items: [
-      "Title, description, date, and organizer details are complete and accurate.",
-      "Event is genuinely related to hackathons, innovation, or technology.",
-      "No duplicate submission already exists on the platform.",
-      "Content is free from harmful, discriminatory, or unethical material.",
-      "External links are safe and lead to legitimate registration pages.",
+      "Incomplete details (missing title, description, date, or organizer information).",
+      "Unverified or unclear event legitimacy.",
+      "Minor inconsistencies or unclear event information.",
+      "External links that require validation or safety checks.",
+      "Potential duplicate submissions pending confirmation.",
     ],
   },
   {
-    title: "Blog Post Checklist",
+    title: "Blog Posts (Suspension Triggers)",
     items: [
-      "Content is well-written with clear structure and sufficient substance.",
-      "Topic is relevant to hackathons, learning, or innovation.",
-      "No plagiarism — original work or properly credited sources.",
-      "All claims are accurate and verifiable.",
+      "Content requires formatting, clarity, or structure improvements.",
+      "Claims or information need verification.",
+      "Possible attribution issues (sources not clearly cited).",
+      "Content relevance is uncertain and requires review.",
     ],
   },
   {
-    title: "Learning Resource Checklist",
+    title: "Learning Resources (Suspension Triggers)",
     items: [
-      "Information is accurate and up-to-date.",
-      "Content aligns with hackathon learning objectives.",
-      "Resource is complete and of acceptable quality.",
+      "Information may be outdated or needs validation.",
+      "Resource quality requires further review.",
+      "Incomplete materials or unclear instructional value.",
     ],
   },
 ]
 
+// 🔴 DELETION GUIDE (Permanent removal)
 const DELETION_GUIDELINES = [
   {
-    title: "1 · General Rule",
+    title: "1 · General Deletion Policy",
     color: "text-red-300",
     items: [
-      "Any submission violating platform standards of accuracy, relevance, clarity, or appropriateness may be rejected.",
-      "The submitting organization receives a clear rejection reason to guide improvements and resubmission.",
+      "Deletion is applied to content that clearly violates platform standards and cannot be corrected.",
+      "Removed content is permanently deleted from public visibility.",
+      "A clear deletion reason is logged and sent to the submitting user or organization.",
     ],
   },
   {
-    title: "2 · Hackathon / Announcement Rejections",
+    title: "2 · Hackathon Announcements (Deletion Reasons)",
     color: "text-orange-300",
     items: [
-      "Invalid or Incomplete Information — missing title, description, date, or organizer details; unclear or misleading event details.",
-      "Irrelevant Content — event is not related to hackathons, innovation, or technology.",
-      "Duplicate Submission — same hackathon posted multiple times.",
-      "Inappropriate or Offensive Content — harmful, discriminatory, or unethical material.",
-      "Suspicious Activity — fake events, misleading registration details, or harmful external links.",
+      "Fake or fraudulent events.",
+      "Severely incomplete or misleading event information.",
+      "Irrelevant content not related to hackathons, innovation, or technology.",
+      "Duplicate submissions confirmed to be redundant.",
+      "Harmful, offensive, or unethical content.",
+      "Malicious or unsafe external links.",
     ],
   },
   {
-    title: "3 · Blog Post Rejections",
+    title: "3 · Blog Posts (Deletion Reasons)",
     color: "text-pink-300",
     items: [
-      "Low-Quality Content — poor grammar, unclear structure, or lack of substance.",
-      "Irrelevant Topics — not related to hackathons, learning, or innovation.",
-      "Plagiarism — copied content without proper credit.",
-      "Misleading Information — false or unverified claims.",
+      "Plagiarized or copied content without proper attribution.",
+      "Low-quality content with no substantial value.",
+      "False, misleading, or unverifiable information.",
+      "Content unrelated to hackathons, learning, or innovation.",
+      "Offensive, harmful, or inappropriate material.",
     ],
   },
   {
-    title: "4 · Learning Resource Rejections",
+    title: "4 · Learning Resources (Deletion Reasons)",
     color: "text-violet-300",
     items: [
-      "Content is inaccurate or outdated.",
-      "Not aligned with hackathon learning objectives.",
-      "Poor quality or incomplete material.",
+      "Inaccurate or misleading educational content.",
+      "Outdated resources with no relevance.",
+      "Poor-quality or unusable materials.",
+      "Resources that do not align with platform learning goals.",
     ],
   },
   {
-    title: "5 · Rejection Process Flow",
+    title: "5 · Moderation Flow",
     color: "text-blue-300",
     items: [
-      "Organizer / user submits content → system stores as 'Pending'.",
-      "Super Admin reviews the submission in the approval queue.",
-      "Admin approves (content becomes visible) or rejects (content removed / sent back).",
-      "System logs the rejection reason for full transparency.",
-      "Submitting organization is notified with the specific reason.",
+      "User submits content → stored as 'Pending'.",
+      "Admin reviews submission in moderation queue.",
+      "Admin may approve, suspend (for fixes), or delete (permanent removal).",
+      "System logs all actions (approval, suspension, deletion) for transparency.",
+      "Submitting user is notified with the corresponding action and reason.",
     ],
   },
 ]
@@ -244,7 +251,7 @@ function GuidelinesDialog({ open, onClose, mode }) {
             </div>
             <div>
               <DialogTitle className={`text-base font-semibold ${isSuspend ? "text-emerald-200" : "text-red-200"}`}>
-                {isSuspend ? "Approval Guidelines" : "Rejection Rules & Guidelines"}
+                {isSuspend ? "Suspension Guidelines" : "Deletion Guidelines"}
               </DialogTitle>
               <p className="text-white/30 text-xs mt-0.5">Platform policy — read before acting on a submission</p>
             </div>

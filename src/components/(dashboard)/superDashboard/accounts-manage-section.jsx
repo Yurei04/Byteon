@@ -34,97 +34,98 @@ import { notifyAccountSuspended, notifyAccountReactivated } from "@/lib/notifica
 const ITEMS_PER_PAGE = 10
 
 
-// ── Guidelines content ─────────────────────────────────────────────────────────
+// ── ACCOUNT MODERATION GUIDELINES ─────────────────────────────────────────────
+
+// 🔶 ACCOUNT SUSPENSION (Temporary restriction)
 const SUSPENSION_GUIDELINES = [
   {
-    title: "General Standard",
+    title: "General Suspension Principles",
     items: [
-      "Content must comply with platform standards of accuracy, relevance, clarity, and appropriateness.",
-      "Approved content immediately becomes visible to all platform users.",
-      "Every approval is logged permanently under your admin account.",
+      "Account suspension is a temporary restriction due to policy violations or suspicious activity.",
+      "Suspended users cannot post, edit, or interact with content.",
+      "The user is notified with a clear reason for the suspension.",
+      "Accounts may be reinstated after review or once issues are resolved.",
     ],
   },
   {
-    title: "Hackathon / Announcement Checklist",
+    title: "Common Suspension Reasons",
     items: [
-      "Title, description, date, and organizer details are complete and accurate.",
-      "Event is genuinely related to hackathons, innovation, or technology.",
-      "No duplicate submission already exists on the platform.",
-      "Content is free from harmful, discriminatory, or unethical material.",
-      "External links are safe and lead to legitimate registration pages.",
+      "Posting misleading, incomplete, or low-quality content repeatedly.",
+      "Spamming submissions (multiple duplicate hackathons, blogs, or resources).",
+      "Suspicious activity such as fake events or unverified links.",
+      "Minor violations of community guidelines (non-severe but repeated).",
+      "Abusive behavior towards other users or admins.",
     ],
   },
   {
-    title: "Blog Post Checklist",
+    title: "Security & Integrity Flags",
     items: [
-      "Content is well-written with clear structure and sufficient substance.",
-      "Topic is relevant to hackathons, learning, or innovation.",
-      "No plagiarism — original work or properly credited sources.",
-      "All claims are accurate and verifiable.",
+      "Unusual login or activity patterns detected.",
+      "Use of multiple accounts to manipulate submissions or approvals.",
+      "Attempts to bypass moderation systems.",
     ],
   },
   {
-    title: "Learning Resource Checklist",
+    title: "Reactivation Conditions",
     items: [
-      "Information is accurate and up-to-date.",
-      "Content aligns with hackathon learning objectives.",
-      "Resource is complete and of acceptable quality.",
+      "User acknowledges and corrects the violations.",
+      "Content issues are resolved or removed.",
+      "Admin review confirms compliance with platform standards.",
     ],
   },
 ]
 
-const DELETION_GUIDELINES = [
+// 🔴 ACCOUNT DELETION (Permanent removal)
+const ACCOUNT_DELETION_GUIDELINES = [
   {
-    title: "1 · General Rule",
+    title: "1 · General Deletion Policy",
     color: "text-red-300",
     items: [
-      "Any submission violating platform standards of accuracy, relevance, clarity, or appropriateness may be rejected.",
-      "The submitting organization receives a clear rejection reason to guide improvements and resubmission.",
+      "Account deletion is permanent and applied to severe or repeated violations.",
+      "Deleted accounts lose all access and associated content may be removed or archived.",
+      "This action is irreversible and logged for audit purposes.",
     ],
   },
   {
-    title: "2 · Hackathon / Announcement Rejections",
+    title: "2 · Severe Violations",
     color: "text-orange-300",
     items: [
-      "Invalid or Incomplete Information — missing title, description, date, or organizer details; unclear or misleading event details.",
-      "Irrelevant Content — event is not related to hackathons, innovation, or technology.",
-      "Duplicate Submission — same hackathon posted multiple times.",
-      "Inappropriate or Offensive Content — harmful, discriminatory, or unethical material.",
-      "Suspicious Activity — fake events, misleading registration details, or harmful external links.",
+      "Fraudulent activities (fake hackathons, scams, phishing links).",
+      "Malicious use of the platform (spreading harmful or dangerous content).",
+      "Severe harassment, hate speech, or abusive behavior.",
+      "Impersonation of individuals or organizations.",
     ],
   },
   {
-    title: "3 · Blog Post Rejections",
+    title: "3 · Repeated Violations",
     color: "text-pink-300",
     items: [
-      "Low-Quality Content — poor grammar, unclear structure, or lack of substance.",
-      "Irrelevant Topics — not related to hackathons, learning, or innovation.",
-      "Plagiarism — copied content without proper credit.",
-      "Misleading Information — false or unverified claims.",
+      "Multiple suspensions without improvement.",
+      "Continuous posting of low-quality or irrelevant content.",
+      "Repeated attempts to bypass moderation decisions.",
     ],
   },
   {
-    title: "4 · Learning Resource Rejections",
+    title: "4 · Security Threats",
     color: "text-violet-300",
     items: [
-      "Content is inaccurate or outdated.",
-      "Not aligned with hackathon learning objectives.",
-      "Poor quality or incomplete material.",
+      "Accounts involved in coordinated spam or bot activity.",
+      "Unauthorized access attempts or platform exploitation.",
+      "Use of the platform for illegal activities.",
     ],
   },
   {
-    title: "5 · Rejection Process Flow",
+    title: "5 · Enforcement Flow",
     color: "text-blue-300",
     items: [
-      "Organizer / user submits content → system stores as 'Pending'.",
-      "Super Admin reviews the submission in the approval queue.",
-      "Admin approves (content becomes visible) or rejects (content removed / sent back).",
-      "System logs the rejection reason for full transparency.",
-      "Submitting organization is notified with the specific reason.",
+      "System or admin flags account for review.",
+      "Admin evaluates behavior, history, and severity of violations.",
+      "Account may be suspended (temporary) or deleted (permanent).",
+      "All actions are logged for transparency and accountability.",
+      "User is notified of the action and reason (if applicable).",
     ],
   },
 ]
-
 const ACCENTS = {
   users: {
     dot: "bg-cyan-400", dotGlow: "shadow-[0_0_6px_2px_rgba(34,211,238,0.5)]",
@@ -228,7 +229,7 @@ function InlineGuidelinesPanel({ mode }) {
 // ── Standalone Guidelines Dialog (from top-bar buttons) ──────────────────────
 function GuidelinesDialog({ open, onClose, mode }) {
   const isSuspend = mode === "suspension"
-  const sections   = isSuspend ? SUSPENSION_GUIDELINES : DELETION_GUIDELINES
+  const sections   = isSuspend ? SUSPENSION_GUIDELINES : ACCOUNT_DELETION_GUIDELINES
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -249,7 +250,7 @@ function GuidelinesDialog({ open, onClose, mode }) {
             </div>
             <div>
               <DialogTitle className={`text-base font-semibold ${isSuspend ? "text-emerald-200" : "text-red-200"}`}>
-                {isSuspend ? "Approval Guidelines" : "Rejection Rules & Guidelines"}
+                {isSuspend ? "Suspension Guidelines" : "Deletion Guidelines"}
               </DialogTitle>
               <p className="text-white/30 text-xs mt-0.5">Platform policy — read before acting on a submission</p>
             </div>
@@ -650,299 +651,280 @@ export default function AccountManageSection({ addToast }) {
 
 
       {/* ══════════════════════════════════════════════════════════════════════
-          SUSPEND / REACTIVATE DIALOG — split screen with guidelines
+          SUSPEND / REACTIVATE DIALOG
       ══════════════════════════════════════════════════════════════════════ */}
       <AlertDialog open={!!suspendDialog} onOpenChange={(open) => { if (!open) resetSuspendState() }}>
         <AlertDialogContent className={`backdrop-blur-xl border shadow-2xl p-0 overflow-hidden
-          max-w-3xl w-full
+          max-w-xl w-full
           ${suspendIsReactivate
             ? "bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20 shadow-emerald-900/20"
             : "bg-gradient-to-br from-slate-950 via-amber-950/20 to-slate-950 border-amber-500/20 shadow-amber-900/20"
           }`}
         >
-          <div className="flex h-[520px]">
-
-            {/* LEFT — form */}
-            <div className="flex-1 flex flex-col min-w-0">
-              <AlertDialogHeader className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border
-                    ${suspendIsReactivate
-                      ? "bg-emerald-500/10 border-emerald-500/25"
-                      : "bg-amber-500/10 border-amber-500/25"}`}>
-                    {suspendIsReactivate
-                      ? <PlayCircle  className="w-5 h-5 text-emerald-400" />
-                      : <PauseCircle className="w-5 h-5 text-amber-400" />}
-                  </div>
-                  <div>
-                    <AlertDialogTitle className={`text-base font-semibold ${suspendIsReactivate ? "text-emerald-200" : "text-amber-200"}`}>
-                      {suspendIsReactivate ? "Reactivate Account" : "Suspend Account"}
-                    </AlertDialogTitle>
-                    <p className="text-white/30 text-xs mt-0.5">
-                      {suspendIsReactivate
-                        ? "This account will become fully active again."
-                        : "This account will be hidden from the platform until reactivated."}
-                    </p>
-                  </div>
+          <div className="flex flex-col h-[580px]">
+            <AlertDialogHeader className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 border
+                  ${suspendIsReactivate
+                    ? "bg-emerald-500/10 border-emerald-500/25"
+                    : "bg-amber-500/10 border-amber-500/25"}`}>
+                  {suspendIsReactivate
+                    ? <PlayCircle  className="w-5 h-5 text-emerald-400" />
+                    : <PauseCircle className="w-5 h-5 text-amber-400" />}
                 </div>
-              </AlertDialogHeader>
+                <div>
+                  <AlertDialogTitle className={`text-base font-semibold ${suspendIsReactivate ? "text-emerald-200" : "text-amber-200"}`}>
+                    {suspendIsReactivate ? "Reactivate Account" : "Suspend Account"}
+                  </AlertDialogTitle>
+                  <p className="text-white/30 text-xs mt-0.5">
+                    {suspendIsReactivate
+                      ? "This account will become fully active again."
+                      : "This account will be hidden from the platform until reactivated."}
+                  </p>
+                </div>
+              </div>
+            </AlertDialogHeader>
 
-              <ScrollArea className="flex-1 min-h-0">
-                <AlertDialogDescription asChild>
-                  <div className="px-6 py-5 space-y-5">
+            <ScrollArea className="flex-1 min-h-0">
+              <AlertDialogDescription asChild>
+                <div className="px-6 py-5 space-y-5">
 
-                    {/* Target account info */}
-                    <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
-                      {suspendIsReactivate ? "Reactivating" : "Suspending"}{" "}
-                      <span className="text-white font-medium">"{suspendDialog?.name}"</span>.
-                    </div>
-
-                    {!suspendIsReactivate && (
-                      <>
-                        {/* Quick presets */}
-                        <div className="space-y-2">
-                          <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                            <Zap className="w-3 h-3 text-amber-400/60 shrink-0" />
-                            Quick Reason
-                          </label>
-                          <div className="grid grid-cols-2 gap-1.5">
-                            {SUSPEND_PRESETS.map(({ label, icon, value }) => (
-                              <button key={label} onClick={() => setSuspendReason(value)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left active:scale-[0.98]
-                                  ${suspendReason === value
-                                    ? "bg-amber-500/18 border-amber-500/45 text-amber-300"
-                                    : "bg-white/3 border-white/8 text-white/35 hover:bg-amber-500/8 hover:border-amber-500/25 hover:text-amber-200/80"}`}>
-                                <span className={suspendReason === value ? "text-amber-400" : "text-white/20"}>{icon}</span>
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Reason textarea */}
-                        <div className="space-y-1.5">
-                          <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                            <PauseCircle className="w-3 h-3 shrink-0" />
-                            Suspension Reason
-                            <span className="text-amber-400 font-bold">*</span>
-                          </label>
-                          <Textarea
-                            value={suspendReason}
-                            onChange={(e) => setSuspendReason(e.target.value)}
-                            placeholder="Describe the reason for suspending this account (min. 10 characters)…"
-                            className="bg-black/40 border border-amber-500/15 hover:border-amber-500/25 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-amber-400/35 focus:ring-0 rounded-lg"
-                            rows={3}
-                          />
-                          <div className="flex items-center justify-between">
-                            <p className="text-white/18 text-[11px]">Required for moderation audit trail.</p>
-                            <span className={`text-[11px] tabular-nums ${suspendReason.trim().length >= 10 ? "text-emerald-400/60" : "text-white/20"}`}>
-                              {suspendReason.trim().length}/10 min
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Confirmation checkbox */}
-                        <label className="flex items-start gap-3 cursor-pointer group/check">
-                          <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
-                            ${suspendConfirmed
-                              ? "bg-amber-500 border-amber-500"
-                              : "bg-white/5 border-white/15 group-hover/check:border-amber-500/40"}`}>
-                            {suspendConfirmed && <CheckCircle className="w-3 h-3 text-white" />}
-                          </div>
-                          <input
-                            type="checkbox"
-                            className="sr-only"
-                            checked={suspendConfirmed}
-                            onChange={(e) => setSuspendConfirmed(e.target.checked)}
-                          />
-                          <p className="text-[11px] text-white/40 leading-snug group-hover/check:text-white/60 transition-colors select-none">
-                            I confirm that I have reviewed the suspension guidelines and understand that this account
-                            will be hidden from the platform until manually reactivated by an administrator.
-                          </p>
-                        </label>
-                      </>
-                    )}
-
-                    {suspendIsReactivate && (
-                      <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-emerald-500/6 border border-emerald-500/22">
-                        <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                        <p className="text-white/50 text-xs leading-relaxed">
-                          Reactivating this account will restore full access. The suspension reason will be cleared.
-                          Ensure the account issue has been resolved before proceeding.
-                        </p>
-                      </div>
-                    )}
+                  {/* Target account info */}
+                  <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
+                    {suspendIsReactivate ? "Reactivating" : "Suspending"}{" "}
+                    <span className="text-white font-medium">"{suspendDialog?.name}"</span>.
                   </div>
-                </AlertDialogDescription>
-              </ScrollArea>
 
-              <AlertDialogFooter className="px-6 py-4 border-t border-white/8 gap-2 shrink-0">
-                <AlertDialogCancel onClick={resetSuspendState}
-                  className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all">
-                  Cancel
-                </AlertDialogCancel>
-                <Button
-                  onClick={handleConfirmSuspend}
-                  disabled={!!actionLoading || !suspendCanSubmit}
-                  className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
-                  style={suspendIsReactivate
-                    ? { background: "linear-gradient(135deg, #059669, #047857)", boxShadow: "0 4px 16px rgba(5,150,105,0.35)" }
-                    : { background: "linear-gradient(135deg, #d97706, #b45309)", boxShadow: "0 4px 16px rgba(217,119,6,0.35)" }
-                  }
-                >
-                  {actionLoading
-                    ? <Loader2    className="w-4 h-4 animate-spin shrink-0" />
-                    : suspendIsReactivate
-                      ? <PlayCircle  className="w-4 h-4 shrink-0" />
-                      : <PauseCircle className="w-4 h-4 shrink-0" />}
-                  {suspendIsReactivate ? "Reactivate Account" : "Suspend Account"}
-                </Button>
-              </AlertDialogFooter>
-            </div>
+                  {!suspendIsReactivate && (
+                    <>
+                      {/* Quick presets */}
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                          <Zap className="w-3 h-3 text-amber-400/60 shrink-0" />
+                          Quick Reason
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {SUSPEND_PRESETS.map(({ label, icon, value }) => (
+                            <button key={label} onClick={() => setSuspendReason(value)}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left active:scale-[0.98]
+                                ${suspendReason === value
+                                  ? "bg-amber-500/18 border-amber-500/45 text-amber-300"
+                                  : "bg-white/3 border-white/8 text-white/35 hover:bg-amber-500/8 hover:border-amber-500/25 hover:text-amber-200/80"}`}>
+                              <span className={suspendReason === value ? "text-amber-400" : "text-white/20"}>{icon}</span>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
-            {/* RIGHT — guidelines panel */}
-            <div className="w-[220px] shrink-0 flex flex-col">
-              <InlineGuidelinesPanel mode="suspend" />
-            </div>
+                      {/* Reason textarea */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                          <PauseCircle className="w-3 h-3 shrink-0" />
+                          Suspension Reason
+                          <span className="text-amber-400 font-bold">*</span>
+                        </label>
+                        <Textarea
+                          value={suspendReason}
+                          onChange={(e) => setSuspendReason(e.target.value)}
+                          placeholder="Describe the reason for suspending this account (min. 10 characters)…"
+                          className="bg-black/40 border border-amber-500/15 hover:border-amber-500/25 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-amber-400/35 focus:ring-0 rounded-lg"
+                          rows={3}
+                        />
+                        <div className="flex items-center justify-between">
+                          <p className="text-white/18 text-[11px]">Required for moderation audit trail.</p>
+                          <span className={`text-[11px] tabular-nums ${suspendReason.trim().length >= 10 ? "text-emerald-400/60" : "text-white/20"}`}>
+                            {suspendReason.trim().length}/10 min
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Confirmation checkbox */}
+                      <label className="flex items-start gap-3 cursor-pointer group/check">
+                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
+                          ${suspendConfirmed
+                            ? "bg-amber-500 border-amber-500"
+                            : "bg-white/5 border-white/15 group-hover/check:border-amber-500/40"}`}>
+                          {suspendConfirmed && <CheckCircle className="w-3 h-3 text-white" />}
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="sr-only"
+                          checked={suspendConfirmed}
+                          onChange={(e) => setSuspendConfirmed(e.target.checked)}
+                        />
+                        <p className="text-[11px] text-white/40 leading-snug group-hover/check:text-white/60 transition-colors select-none">
+                          I confirm that I have reviewed the suspension guidelines and understand that this account
+                          will be hidden from the platform until manually reactivated by an administrator.
+                        </p>
+                      </label>
+                    </>
+                  )}
+
+                  {suspendIsReactivate && (
+                    <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-emerald-500/6 border border-emerald-500/22">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <p className="text-white/50 text-xs leading-relaxed">
+                        Reactivating this account will restore full access. The suspension reason will be cleared.
+                        Ensure the account issue has been resolved before proceeding.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </AlertDialogDescription>
+            </ScrollArea>
+
+            <AlertDialogFooter className="px-6 py-4 border-t border-white/8 gap-2 shrink-0">
+              <AlertDialogCancel onClick={resetSuspendState}
+                className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all">
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                onClick={handleConfirmSuspend}
+                disabled={!!actionLoading || !suspendCanSubmit}
+                className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                style={suspendIsReactivate
+                  ? { background: "linear-gradient(135deg, #059669, #047857)", boxShadow: "0 4px 16px rgba(5,150,105,0.35)" }
+                  : { background: "linear-gradient(135deg, #d97706, #b45309)", boxShadow: "0 4px 16px rgba(217,119,6,0.35)" }
+                }
+              >
+                {actionLoading
+                  ? <Loader2    className="w-4 h-4 animate-spin shrink-0" />
+                  : suspendIsReactivate
+                    ? <PlayCircle  className="w-4 h-4 shrink-0" />
+                    : <PauseCircle className="w-4 h-4 shrink-0" />}
+                {suspendIsReactivate ? "Reactivate Account" : "Suspend Account"}
+              </Button>
+            </AlertDialogFooter>
           </div>
         </AlertDialogContent>
       </AlertDialog>
 
 
       {/* ══════════════════════════════════════════════════════════════════════
-          DELETE DIALOG — split screen with guidelines
+          DELETE DIALOG
       ══════════════════════════════════════════════════════════════════════ */}
       <AlertDialog open={!!deleteDialog} onOpenChange={(open) => { if (!open) resetDeleteState() }}>
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 p-0 overflow-hidden 
-        max-w-3xl w-full">
-          <div className="flex h-[540px]">
+        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 p-0 overflow-hidden
+        max-w-xl w-full">
+          <div className="flex flex-col h-[540px]">
+            <AlertDialogHeader className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
+                  <ShieldAlert className="w-5 h-5 text-red-400" />
+                </div>
+                <div>
+                  <AlertDialogTitle className="text-red-200 text-base font-semibold">Delete Account Permanently</AlertDialogTitle>
+                  <p className="text-white/28 text-xs mt-0.5">Irreversible — cascades to all associated data</p>
+                </div>
+              </div>
+            </AlertDialogHeader>
 
-            {/* LEFT — form */}
-            <div className="flex-1 flex flex-col min-w-0">
-              <AlertDialogHeader className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
-                    <ShieldAlert className="w-5 h-5 text-red-400" />
+            <ScrollArea className="flex-1 min-h-0">
+              <AlertDialogDescription asChild>
+                <div className="px-6 py-5 space-y-5">
+
+                  {/* Target account info */}
+                  <div className="px-3 py-2.5 rounded-lg bg-red-500/6 border border-red-500/18 text-white/45 text-xs leading-relaxed">
+                    Permanently deleting{" "}
+                    <span className="text-white font-medium">"{deleteDialog?.name}"</span>.{" "}
+                    This cannot be undone.
                   </div>
-                  <div>
-                    <AlertDialogTitle className="text-red-200 text-base font-semibold">Delete Account Permanently</AlertDialogTitle>
-                    <p className="text-white/28 text-xs mt-0.5">Irreversible — cascades to all associated data</p>
+
+                  {/* Quick reason presets */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
+                      <Zap className="w-3 h-3 text-rose-400/60 shrink-0" />Quick Reason
+                    </label>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {DELETE_PRESETS.map(({ label, icon, value }) => (
+                        <button key={label} onClick={() => setDeleteReason(value)}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left active:scale-[0.98]
+                            ${deleteReason === value
+                              ? "bg-rose-500/18 border-rose-500/45 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.12)]"
+                              : "bg-white/3 border-white/8 text-white/35 hover:bg-rose-500/8 hover:border-rose-500/25 hover:text-rose-200/80"}`}>
+                          <span className={deleteReason === value ? "text-rose-400" : "text-white/20"}>{icon}</span>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Deletion reason textarea — REQUIRED */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
+                      <XCircle className="w-3 h-3 shrink-0 text-white/25" />
+                      Deletion Reason
+                      <span className="text-red-400 font-bold">*</span>
+                    </label>
+                    <Textarea
+                      value={deleteReason}
+                      onChange={(e) => setDeleteReason(e.target.value)}
+                      placeholder="Describe why this account is being permanently deleted (min. 10 characters)…"
+                      className="bg-black/40 border border-red-500/15 hover:border-red-500/25 text-white/70 placeholder:text-white/16 text-xs resize-none focus:border-red-400/35 focus:ring-0 rounded-lg"
+                      rows={3}
+                    />
+                    <div className="flex items-center justify-between">
+                      <p className="text-white/18 text-[11px]">Required for permanent deletion audit log.</p>
+                      <span className={`text-[11px] tabular-nums ${deleteReason.trim().length >= 10 ? "text-emerald-400/60" : "text-white/20"}`}>
+                        {deleteReason.trim().length}/10 min
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Type DELETE confirmation */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
+                      <AlertTriangle className="w-3 h-3 shrink-0 text-red-400/60" />
+                      Confirm Deletion
+                      <span className="text-red-400 font-bold">*</span>
+                    </label>
+                    <p className="text-white/30 text-[11px]">
+                      Type <span className="font-mono font-bold text-red-300 tracking-widest">DELETE</span> below to confirm this action.
+                    </p>
+                    <div className="relative">
+                      <Input
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="Type DELETE to confirm"
+                        className={`bg-black/40 text-white text-sm font-mono tracking-widest placeholder:text-white/15 placeholder:font-sans placeholder:tracking-normal focus:ring-0 rounded-lg transition-colors
+                          ${deleteConfirmText === "DELETE"
+                            ? "border-emerald-500/40 focus:border-emerald-400/60"
+                            : deleteConfirmText.length > 0
+                              ? "border-red-500/40 focus:border-red-400/50"
+                              : "border-red-500/15 hover:border-red-500/25 focus:border-red-400/35"}`}
+                      />
+                      {deleteConfirmText === "DELETE" && (
+                        <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </AlertDialogHeader>
+              </AlertDialogDescription>
+            </ScrollArea>
 
-              <ScrollArea className="flex-1 min-h-0">
-                <AlertDialogDescription asChild>
-                  <div className="px-6 py-5 space-y-5">
-
-                    {/* Target account info */}
-                    <div className="px-3 py-2.5 rounded-lg bg-red-500/6 border border-red-500/18 text-white/45 text-xs leading-relaxed">
-                      Permanently deleting{" "}
-                      <span className="text-white font-medium">"{deleteDialog?.name}"</span>.{" "}
-                      This cannot be undone.
-                    </div>
-
-                    {/* Quick reason presets */}
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                        <Zap className="w-3 h-3 text-rose-400/60 shrink-0" />Quick Reason
-                      </label>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {DELETE_PRESETS.map(({ label, icon, value }) => (
-                          <button key={label} onClick={() => setDeleteReason(value)}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all duration-150 text-left active:scale-[0.98]
-                              ${deleteReason === value
-                                ? "bg-rose-500/18 border-rose-500/45 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.12)]"
-                                : "bg-white/3 border-white/8 text-white/35 hover:bg-rose-500/8 hover:border-rose-500/25 hover:text-rose-200/80"}`}>
-                            <span className={deleteReason === value ? "text-rose-400" : "text-white/20"}>{icon}</span>
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Deletion reason textarea — REQUIRED */}
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                        <XCircle className="w-3 h-3 shrink-0 text-white/25" />
-                        Deletion Reason
-                        <span className="text-red-400 font-bold">*</span>
-                      </label>
-                      <Textarea
-                        value={deleteReason}
-                        onChange={(e) => setDeleteReason(e.target.value)}
-                        placeholder="Describe why this account is being permanently deleted (min. 10 characters)…"
-                        className="bg-black/40 border border-red-500/15 hover:border-red-500/25 text-white/70 placeholder:text-white/16 text-xs resize-none focus:border-red-400/35 focus:ring-0 rounded-lg"
-                        rows={3}
-                      />
-                      <div className="flex items-center justify-between">
-                        <p className="text-white/18 text-[11px]">Required for permanent deletion audit log.</p>
-                        <span className={`text-[11px] tabular-nums ${deleteReason.trim().length >= 10 ? "text-emerald-400/60" : "text-white/20"}`}>
-                          {deleteReason.trim().length}/10 min
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Type DELETE confirmation */}
-                    <div className="space-y-2">
-                      <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
-                        <AlertTriangle className="w-3 h-3 shrink-0 text-red-400/60" />
-                        Confirm Deletion
-                        <span className="text-red-400 font-bold">*</span>
-                      </label>
-                      <p className="text-white/30 text-[11px]">
-                        Type <span className="font-mono font-bold text-red-300 tracking-widest">DELETE</span> below to confirm this action.
-                      </p>
-                      <div className="relative">
-                        <Input
-                          value={deleteConfirmText}
-                          onChange={(e) => setDeleteConfirmText(e.target.value)}
-                          placeholder="Type DELETE to confirm"
-                          className={`bg-black/40 text-white text-sm font-mono tracking-widest placeholder:text-white/15 placeholder:font-sans placeholder:tracking-normal focus:ring-0 rounded-lg transition-colors
-                            ${deleteConfirmText === "DELETE"
-                              ? "border-emerald-500/40 focus:border-emerald-400/60"
-                              : deleteConfirmText.length > 0
-                                ? "border-red-500/40 focus:border-red-400/50"
-                                : "border-red-500/15 hover:border-red-500/25 focus:border-red-400/35"}`}
-                        />
-                        {deleteConfirmText === "DELETE" && (
-                          <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </AlertDialogDescription>
-              </ScrollArea>
-
-              <AlertDialogFooter className="px-6 py-4 border-t border-white/8 gap-2 shrink-0">
-                <AlertDialogCancel onClick={resetDeleteState}
-                  className="cursor-pointer bg-white/4 hover:bg-white/8 text-white/45 hover:text-white/80 border border-white/8 hover:border-white/18 text-sm transition-all">
-                  Cancel
-                </AlertDialogCancel>
-                <Button
-                  onClick={handleConfirmDelete}
-                  disabled={!!actionLoading || !deleteCanSubmit}
-                  className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
-                    hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
-                    active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg
-                    hover:shadow-[0_4px_20px_rgba(236,72,153,0.3)]
-                    disabled:opacity-40 disabled:cursor-not-allowed">
-                  {actionLoading
-                    ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                    : <Trash2  className="w-4 h-4 shrink-0" />}
-                  Delete Permanently
-                </Button>
-              </AlertDialogFooter>
-            </div>
-
-            {/* RIGHT — deletion guidelines panel */}
-            <div className="w-[220px] shrink-0 flex flex-col">
-              <InlineGuidelinesPanel mode="delete" />
-            </div>
+            <AlertDialogFooter className="px-6 py-4 border-t border-white/8 gap-2 shrink-0">
+              <AlertDialogCancel onClick={resetDeleteState}
+                className="cursor-pointer bg-white/4 hover:bg-white/8 text-white/45 hover:text-white/80 border border-white/8 hover:border-white/18 text-sm transition-all">
+                Cancel
+              </AlertDialogCancel>
+              <Button
+                onClick={handleConfirmDelete}
+                disabled={!!actionLoading || !deleteCanSubmit}
+                className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
+                  hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
+                  active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg
+                  hover:shadow-[0_4px_20px_rgba(236,72,153,0.3)]
+                  disabled:opacity-40 disabled:cursor-not-allowed">
+                {actionLoading
+                  ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  : <Trash2  className="w-4 h-4 shrink-0" />}
+                Delete Permanently
+              </Button>
+            </AlertDialogFooter>
           </div>
         </AlertDialogContent>
       </AlertDialog>
-
 
       {/* ── Standalone Guidelines Dialog (top-bar buttons) ── */}
       <GuidelinesDialog
