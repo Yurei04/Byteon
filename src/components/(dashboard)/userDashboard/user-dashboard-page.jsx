@@ -112,7 +112,9 @@ export default function UserDashboardPage() {
 
       <div className=" max-w-7xl mx-auto">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-6">
-          <div className="text-center space-y-2 mt-12">
+          <ReturnButton/>
+          <div className="text-center space-y-2 mt-2">
+
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
                 Participant&apos;s Dashboard

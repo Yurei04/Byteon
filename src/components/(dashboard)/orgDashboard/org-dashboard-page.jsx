@@ -1047,11 +1047,11 @@ export default function OrgDashboardPage() {
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
 
                   {/* ── Main tab list ── */}
-                  <TabsList className="grid w-full grid-cols-5 mb-7 p-1 rounded-xl gap-0.5"
+                  <TabsList className="grid w-full grid-cols-5 mb-5 rounded-xl gap-0.5 p-1 gap-1 h-auto"
                     style={{ background: "rgba(0,0,0,0.4)", border: `1px solid ${p}18` }}>
                     {mainTabs.map(({ value, icon, label }) => (
                       <TabsTrigger key={value} value={value}
-                        className="org-tab flex items-center gap-1.5 transition-all text-xs sm:text-sm rounded-lg py-2"
+                        className="org-tab flex items-center gap-1.5 transition-all text-xs py-2 sm:text-sm rounded-lg cursor-pointer"
                         style={{ color: orgTheme.mutedText }}>
                         {icon}
                         <span className="hidden sm:inline">{label}</span>
