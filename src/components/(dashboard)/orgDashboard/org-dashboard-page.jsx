@@ -994,8 +994,68 @@ export default function OrgDashboardPage() {
                           </div>
                         </div>
 
-                        <ColorCustomizationSection formData={formData} isEditing={isEditing} onChange={handleProfileChange} orgTheme={orgTheme} onResetDefaults={handleResetColors} onApplyScheme={handleApplyScheme} />
+                        {isEditing ? (
+                          <ColorCustomizationSection
+                            formData={formData}
+                            isEditing={isEditing}
+                            onChange={handleProfileChange}
+                            orgTheme={orgTheme}
+                            onResetDefaults={handleResetColors}
+                            onApplyScheme={handleApplyScheme}
+                          />
+                        ) : (
+                          <div
+                            className="rounded-2xl p-6"
+                            style={{
+                              background: "rgba(0,0,0,0.25)",
+                              border: `1px solid ${p}30`,
+                            }}
+                          >
+                            <h3
+                              className="text-lg font-semibold flex items-center gap-2.5 mb-5"
+                              style={{ color: orgTheme.primaryText }}
+                            >
+                              <span
+                                className="flex items-center justify-center w-8 h-8 rounded-lg"
+                                style={{ background: `${p}20`, border: `1px solid ${p}40` }}
+                              >
+                                <Palette className="w-4 h-4" style={{ color: p }} />
+                              </span>
+                              Color Customization
+                            </h3>
 
+                            <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: orgTheme.mutedText }}>
+                              Current Palette
+                            </p>
+                            <div
+                              className="flex gap-1.5 h-9 rounded-xl overflow-hidden p-0.5"
+                              style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${p}25` }}
+                            >
+                              {[
+                                formData.primary_color,
+                                formData.secondary_color,
+                                formData.accent_color,
+                                formData.background_color,
+                                formData.card_background_color,
+                                formData.success_color,
+                                formData.warning_color,
+                                formData.error_color,
+                              ].map((c, i) => (
+                                <div
+                                  key={i}
+                                  title={c}
+                                  className="flex-1 rounded-lg"
+                                  style={{ background: c }}
+                                />
+                              ))}
+                            </div>
+
+                            <p className="text-[10px] mt-3 flex items-center gap-1.5" style={{ color: orgTheme.mutedText }}>
+                              <Palette className="w-3 h-3" />
+                              Enable edit mode to customize colors
+                            </p>
+                          </div>
+                        )}
                         {isEditing && (
                           <button type="button" onClick={handleProfileSubmit}
                             style={{ borderColor: `${p}80`, color: "#ffffff", background: `linear-gradient(135deg, ${p}30, ${s}25)`, boxShadow: `0 0 0 1px ${p}30, 0 8px 20px ${p}20` }}
