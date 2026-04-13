@@ -3,7 +3,7 @@
     {
       "id": "chapter1",
       "title": "The Invitation",
-      "background": "your_room_evening.jpg",
+      "background": "your_room_evening.png",
       "music": "soft_typing_ambient.mp3",
       "events": [
         {
@@ -133,7 +133,7 @@
         },
         {
           "id": "scene5",
-          "background": "digital_space.jpg",
+          "background": "digital_space.png",
           "music": "virtual_theme.mp3",
           "dialogs": [
             {
@@ -175,7 +175,7 @@
         },
         {
           "id": "scene6",
-          "background": "hall_of_hackers.jpg",
+          "background": "hall_of_hackers.png",
           "dialogs": [
             {
               "character": "Aira",
@@ -375,7 +375,7 @@
         },
         {
           "id": "scene12",
-          "background": "digital_grid_console.jpg",
+          "background": "digital_grid_console.png",
           "dialogs": [
             {
               "character": "Aira",
@@ -544,7 +544,7 @@
         },
         {
           "id": "scene14",
-          "background": "your_room_evening.jpg",
+          "background": "your_room_evening.png",
           "music": "soft_typing_ambient.mp3",
           "dialogs": [
             {
