@@ -1091,6 +1091,14 @@ function DetailPane({ item, type, ac, actionLoading, onDelete, onToggleSuspend }
   const isExpired   = item.date_end && new Date(item.date_end) < new Date()
   const isSuspended = item.status === "suspended"
 
+  // Safely parse prizes — handles both array-of-objects and array-of-strings
+  const prizes = useMemo(() => {
+    if (!item.prizes) return []
+    if (Array.isArray(item.prizes)) return item.prizes
+    try { return JSON.parse(item.prizes) } catch { return [] }
+  }, [item.prizes])
+
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -1234,20 +1242,89 @@ function DetailPane({ item, type, ac, actionLoading, onDelete, onToggleSuspend }
                 </DetailBlock>
               )}
 
-              {/* Prizes */}
-              {item.prizes?.length > 0 && (
-                <DetailBlock icon={<Trophy className="w-3.5 h-3.5" />} label={`Prizes (${item.prizes.length})${item.prize_currency ? ` · ${item.prize_currency}` : ""}`}>
-                  <div className="space-y-2">
-                    {item.prizes.map((prize, i) => (
-                      <div key={i} className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                        <Award className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
-                        <div>
-                          {prize.place  && <p className="text-amber-300 text-xs font-semibold">{prize.place}</p>}
-                          {prize.reward && <p className="text-white/55 text-xs">{prize.reward}</p>}
-                          {typeof prize === "string" && <p className="text-white/55 text-xs">{prize}</p>}
-                        </div>
-                      </div>
-                    ))}
+               {/* Prizes — robustly handles objects, strings, and empty arrays */}
+                  {Array.isArray(prizes) && prizes.length > 0 && (
+                    <DetailBlock
+                      icon={<Trophy className="w-3.5 h-3.5" />}
+                      label={`Prizes (${prizes.length})${item?.prize_currency ? ` · ${item.prize_currency}` : ""}`}
+                      ac={ac}
+                    >
+                      <div className="space-y-2">
+                        {prizes.map((prize, i) => {
+                          // Normalize prize formats
+                          let name = ""
+                          let value = ""
+                          let description = ""
+    
+                          if (typeof prize === "string") {
+                            value = prize
+                          } else if (typeof prize === "object" && prize !== null) {
+                            name =
+                              prize.name ||
+                              prize.title ||
+                              prize.place ||
+                              `Prize ${i + 1}`
+    
+                            value =
+                              prize.value ||
+                              prize.reward ||
+                              prize.amount ||
+                              ""
+    
+                            description =
+                              prize.description ||
+                              prize.details ||
+                              ""
+                          }
+    
+                          return (
+                            <div
+                              key={i}
+                              className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15"
+                            >
+                              <Award className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+    
+                              <div className="min-w-0">
+                                <div className="flex items-start gap-3">
+                                  <span className="text-md leading-none mt-0.5">
+                                    #{i + 1}
+                                  </span>
+    
+                                  <div className="min-w-0">
+                                    {name && (
+                                      <p className="text-xs uppercase tracking-widest font-bold text-white/60 mb-1">
+                                        {name}
+                                      </p>
+                                    )}
+    
+                                    {value && (
+                                      <p className="text-md font-bold text-white/90 leading-tight">
+                                        {value}
+                                      </p>
+                                    )}
+    
+                                    {description && (
+                                      <p className="text-xs text-white/60 mt-1.5 leading-relaxed opacity-80">
+                                        {description}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+    
+                                {/* Fallback for unknown object shapes */}
+                                {typeof prize === "object" &&
+                                  prize !== null &&
+                                  !prize.name &&
+                                  !prize.value &&
+                                  !prize.reward && (
+                                    <p className="text-white/40 text-xs font-mono break-all mt-1">
+                                      {JSON.stringify(prize)}
+                                    </p>
+                                  )}
+                              </div>
+                            </div>
+                          )
+                        })}
                   </div>
                 </DetailBlock>
               )}

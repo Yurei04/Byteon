@@ -829,33 +829,89 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
               {/* Countries */}
               {item.countries && (
                 <DetailBlock icon={<MapPin className="w-3.5 h-3.5" />} label="Countries" ac={ac}>
-                  <p className="text-white/65 text-sm">{item.countries}</p>
+                  <p className="text-white/80 text-sm">{item.countries}</p>
                 </DetailBlock>
               )}
 
-              {/* Prizes — robustly handles objects, strings, and empty arrays */}
-              {prizes.length > 0 && (
+             {/* Prizes — robustly handles objects, strings, and empty arrays */}
+              {Array.isArray(prizes) && prizes.length > 0 && (
                 <DetailBlock
                   icon={<Trophy className="w-3.5 h-3.5" />}
-                  label={`Prizes (${prizes.length})${item.prize_currency ? ` · ${item.prize_currency}` : ""}`}
+                  label={`Prizes (${prizes.length})${item?.prize_currency ? ` · ${item.prize_currency}` : ""}`}
                   ac={ac}
                 >
                   <div className="space-y-2">
                     {prizes.map((prize, i) => {
-                      const place  = typeof prize === "object" ? prize.place  : null
-                      const reward = typeof prize === "object" ? prize.reward : null
-                      const raw    = typeof prize === "string" ? prize        : null
+                      // Normalize prize formats
+                      let name = ""
+                      let value = ""
+                      let description = ""
+
+                      if (typeof prize === "string") {
+                        value = prize
+                      } else if (typeof prize === "object" && prize !== null) {
+                        name =
+                          prize.name ||
+                          prize.title ||
+                          prize.place ||
+                          `Prize ${i + 1}`
+
+                        value =
+                          prize.value ||
+                          prize.reward ||
+                          prize.amount ||
+                          ""
+
+                        description =
+                          prize.description ||
+                          prize.details ||
+                          ""
+                      }
+
                       return (
-                        <div key={i} className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
+                        <div
+                          key={i}
+                          className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15"
+                        >
                           <Award className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
+
                           <div className="min-w-0">
-                            {place  && <p className="text-amber-300 text-xs font-semibold">{place}</p>}
-                            {reward && <p className="text-white/55 text-xs">{reward}</p>}
-                            {raw    && <p className="text-white/55 text-xs">{raw}</p>}
-                            {/* Fallback: show all keys if neither known shape matches */}
-                            {!place && !reward && !raw && typeof prize === "object" && (
-                              <p className="text-white/40 text-xs font-mono break-all">{JSON.stringify(prize)}</p>
-                            )}
+                            <div className="flex items-start gap-3">
+                              <span className="text-md leading-none mt-0.5">
+                                #{i + 1}
+                              </span>
+
+                              <div className="min-w-0">
+                                {name && (
+                                  <p className="text-xs uppercase tracking-widest font-bold text-white/60 mb-1">
+                                    {name}
+                                  </p>
+                                )}
+
+                                {value && (
+                                  <p className="text-md font-bold text-white/90 leading-tight">
+                                    {value}
+                                  </p>
+                                )}
+
+                                {description && (
+                                  <p className="text-xs text-white/60 mt-1.5 leading-relaxed opacity-80">
+                                    {description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Fallback for unknown object shapes */}
+                            {typeof prize === "object" &&
+                              prize !== null &&
+                              !prize.name &&
+                              !prize.value &&
+                              !prize.reward && (
+                                <p className="text-white/40 text-xs font-mono break-all mt-1">
+                                  {JSON.stringify(prize)}
+                                </p>
+                              )}
                           </div>
                         </div>
                       )
@@ -905,19 +961,6 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
                       <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
                     </a>
                   )}
-                </DetailBlock>
-              )}
-
-              {/* Color scheme */}
-              {item.color_scheme && (
-                <DetailBlock icon={<Palette className="w-3.5 h-3.5" />} label="Color Scheme" ac={ac}>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className="w-5 h-5 rounded-md border border-white/10 shrink-0"
-                      style={{ background: item.color_scheme }}
-                    />
-                    <p className="text-white/65 text-sm font-mono">{item.color_scheme}</p>
-                  </div>
                 </DetailBlock>
               )}
 
