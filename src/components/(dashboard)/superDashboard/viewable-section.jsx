@@ -44,34 +44,41 @@ const SUSPENSION_GUIDELINES = [
     items: [
       "Suspension is applied when content requires correction, verification, or moderation review.",
       "Suspended content is temporarily hidden from public view.",
-      "Submitting users or organizations are notified with the reason for suspension.",
+      "Submitting users or organizations are notified with a clear reason for suspension.",
       "Content may be reactivated once issues are resolved and verified.",
+      "Applies specifically to online hackathons, digital blogs, and learning resources.",
     ],
   },
   {
-    title: "Hackathon Announcements (Suspension Triggers)",
+    title: "Online Hackathon Announcements (Suspension Triggers)",
     items: [
-      "Incomplete details (missing title, description, date, or organizer information).",
-      "Unverified or unclear event legitimacy.",
-      "Minor inconsistencies or unclear event information.",
-      "External links that require validation or safety checks.",
-      "Potential duplicate submissions pending confirmation.",
+      "Missing key details (event title, description, date, time, or registration link).",
+      "No clear indication that the event is conducted online (e.g., platform, tools, or setup).",
+      "Unverified organizer identity or unclear hosting organization.",
+      "Missing or unclear participation instructions (e.g., how to join, submit, or attend).",
+      "External links (Discord, Zoom, Devpost, Google Forms) require validation.",
+      "Inconsistent event details (dates, mechanics, or prizes unclear).",
+      "Possible duplicate submissions pending verification.",
+      "Prize or reward details are vague or need confirmation.",
     ],
   },
   {
     title: "Blog Posts (Suspension Triggers)",
     items: [
-      "Content requires formatting, clarity, or structure improvements.",
-      "Claims or information need verification.",
-      "Possible attribution issues (sources not clearly cited).",
-      "Content relevance is uncertain and requires review.",
+      "Content requires formatting, clarity, or readability improvements.",
+      "Claims about online hackathons, tools, or results need verification.",
+      "Sources or references are missing or unclear.",
+      "Content relevance to online hackathons, tech, or learning is uncertain.",
+      "Misleading or exaggerated claims about events or achievements.",
     ],
   },
   {
     title: "Learning Resources (Suspension Triggers)",
     items: [
-      "Information may be outdated or needs validation.",
-      "Resource quality requires further review.",
+      "Information may be outdated or needs validation (especially tools/platforms).",
+      "Resource quality requires further review (unclear tutorials or broken flow).",
+      "Missing context on how the resource applies to online hackathons.",
+      "Broken, inaccessible, or unverified external links.",
       "Incomplete materials or unclear instructional value.",
     ],
   },
@@ -86,18 +93,21 @@ const DELETION_GUIDELINES = [
       "Deletion is applied to content that clearly violates platform standards and cannot be corrected.",
       "Removed content is permanently deleted from public visibility.",
       "A clear deletion reason is logged and sent to the submitting user or organization.",
+      "Applies strictly to online hackathon-related content, blogs, and resources.",
     ],
   },
   {
-    title: "2 · Hackathon Announcements (Deletion Reasons)",
+    title: "2 · Online Hackathon Announcements (Deletion Reasons)",
     color: "text-orange-300",
     items: [
-      "Fake or fraudulent events.",
+      "Fake, fraudulent, or scam events.",
+      "No actual online event exists (misleading or bait content).",
       "Severely incomplete or misleading event information.",
       "Irrelevant content not related to hackathons, innovation, or technology.",
-      "Duplicate submissions confirmed to be redundant.",
-      "Harmful, offensive, or unethical content.",
-      "Malicious or unsafe external links.",
+      "Duplicate submissions confirmed as redundant.",
+      "Malicious or unsafe links (phishing, harmful downloads, suspicious redirects).",
+      "Offensive, unethical, or harmful event themes or content.",
+      "False promises regarding prizes, certifications, or partnerships.",
     ],
   },
   {
@@ -105,10 +115,11 @@ const DELETION_GUIDELINES = [
     color: "text-pink-300",
     items: [
       "Plagiarized or copied content without proper attribution.",
-      "Low-quality content with no substantial value.",
+      "Low-quality or spam-like content with no substantial value.",
       "False, misleading, or unverifiable information.",
-      "Content unrelated to hackathons, learning, or innovation.",
+      "Content unrelated to online hackathons, tech, or learning.",
       "Offensive, harmful, or inappropriate material.",
+      "AI-generated spam or content flooding without meaningful insight.",
     ],
   },
   {
@@ -116,9 +127,10 @@ const DELETION_GUIDELINES = [
     color: "text-violet-300",
     items: [
       "Inaccurate or misleading educational content.",
-      "Outdated resources with no relevance.",
-      "Poor-quality or unusable materials.",
+      "Outdated tools/resources no longer usable in modern online hackathons.",
+      "Poor-quality, broken, or unusable materials.",
       "Resources that do not align with platform learning goals.",
+      "Malicious or unsafe external resources.",
     ],
   },
   {
@@ -127,9 +139,10 @@ const DELETION_GUIDELINES = [
     items: [
       "User submits content → stored as 'Pending'.",
       "Admin reviews submission in moderation queue.",
-      "Admin may approve, suspend (for fixes), or delete (permanent removal).",
+      "Admin may approve, suspend (needs fixes), or delete (permanent removal).",
       "System logs all actions (approval, suspension, deletion) for transparency.",
-      "Submitting user is notified with the corresponding action and reason.",
+      "Submitting user is notified with the action taken and the reason.",
+      "Suspended content can be edited and resubmitted for approval.",
     ],
   },
 ]
@@ -229,7 +242,7 @@ const STATUS_FILTERS = {
 
 // ── Guidelines Dialog ──────────────────────────────────────────────────────────
 function GuidelinesDialog({ open, onClose, mode }) {
-  const isSuspend = mode === "suspend"
+  const isSuspend = mode === "suspension"
   const sections   = isSuspend ? SUSPENSION_GUIDELINES : DELETION_GUIDELINES
 
   return (
