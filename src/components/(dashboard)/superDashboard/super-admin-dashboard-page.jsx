@@ -47,7 +47,7 @@ function SidebarNavItem({ value, icon, label, isActive, onClick, badge, pulse })
   return (
     <button
       onClick={() => onClick(value)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
+      className="w-full flex cursor-pointer  items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
       style={isActive ? {
         background: `linear-gradient(135deg, ${P}22, ${S}14)`,
         color: "#ffffff",
@@ -245,7 +245,7 @@ function SuperAdminDashboardPage() {
         </div>
 
         {/* Nav items */}
-        <nav className="flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto sa-scrollbar">
+        <nav className="flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto sa-scrollbar cursor-pointer ">
           {navItems.map(({ value, icon, label, badge, pulse }) => (
             <SidebarNavItem
               key={value} value={value} icon={icon} label={label}
@@ -302,9 +302,9 @@ function SuperAdminDashboardPage() {
             {/* Pending pill */}
             {pendingCount > 0 && (
               <button onClick={() => setActiveTab("approval")}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
+                className="hidden cursor-pointer  sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200"
                 style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.35)", color: "#fbbf24" }}>
-                <Clock className="w-3.5 h-3.5" />
+                <Clock className="w-3.5 h-3.5 " />
                 {pendingCount} pending
               </button>
             )}
@@ -317,9 +317,9 @@ function SuperAdminDashboardPage() {
                 border: `1px solid ${activeTab === "notifications" ? `${P}40` : "rgba(255,255,255,0.08)"}`,
                 color: activeTab === "notifications" ? P : "rgba(255,255,255,0.4)",
               }}>
-              <Bell className="w-4 h-4" />
+              <Bell className="w-4 h-4 cursor-pointer " />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-white text-[9px] font-bold px-1"
+                <span className="absolute  -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-white text-[9px] font-bold px-1"
                   style={{ background: `linear-gradient(135deg, ${P}, ${S})`, boxShadow: `0 0 8px ${P}` }}>
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
@@ -411,7 +411,7 @@ function SuperAdminDashboardPage() {
                         { label: "View Archives",    icon: <History     className="w-5 h-5" />, tab: "history",   accent: "#10b981" },
                       ].map(({ label, icon, tab, accent }) => (
                         <button key={label} onClick={() => setActiveTab(tab)}
-                          className="flex flex-col items-center gap-3 p-4 rounded-2xl text-sm font-medium transition-all duration-200"
+                          className="cursor-pointer flex flex-col items-center gap-3 p-4 rounded-2xl text-sm font-medium transition-all duration-200"
                           style={{ background: "rgba(255,255,255,0.03)", border: `1px solid rgba(255,255,255,0.06)` }}
                           onMouseEnter={e => { e.currentTarget.style.background = `${accent}12`; e.currentTarget.style.borderColor = `${accent}40`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${accent}15` }}
                           onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none" }}
@@ -443,7 +443,7 @@ function SuperAdminDashboardPage() {
                       </p>
                       {pendingCount > 0 && (
                         <button onClick={() => setActiveTab("approval")}
-                          className="mt-3 flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
+                          className="mt-3 flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70 cursor-pointer "
                           style={{ color: "#fbbf24" }}>
                           Review now <ArrowUpRight className="w-3 h-3" />
                         </button>

@@ -97,13 +97,13 @@ export default function NotificationsTab({ userId, role }) {
         <div className="flex items-center gap-2">
           {unreadCount > 0 && (
             <Button size="sm" onClick={markAllRead} variant="ghost"
-              className="h-8 px-3 text-xs text-white/45 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 gap-1.5 transition-all">
+              className="h-8 px-3 cursor-pointer  text-xs text-white/45 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 gap-1.5 transition-all">
               <CheckCheck className="w-3.5 h-3.5" />Mark all read
             </Button>
           )}
           {notifications.some(n => n.recipient_user_id === userId) && (
             <Button size="sm" onClick={() => { clearAll(); setSelected(null) }} variant="ghost"
-              className="h-8 px-3 text-xs text-white/45 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 gap-1.5 transition-all">
+              className="h-8 px-3 text-xs cursor-pointer  text-white/45 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 gap-1.5 transition-all">
               <Trash2 className="w-3.5 h-3.5" />Clear all
             </Button>
           )}
@@ -168,7 +168,7 @@ export default function NotificationsTab({ userId, role }) {
                     <button
                       key={n.id}
                       onClick={() => handleSelect(n)}
-                      className="w-full text-left group relative flex items-start gap-3 px-4 py-3.5 transition-all duration-150 border-l-2"
+                      className="w-full cursor-pointer  text-left group relative flex items-start gap-3 px-4 py-3.5 transition-all duration-150 border-l-2"
                       style={{
                         background:    isSelected ? `${cfg.color}10` : read ? "transparent" : "rgba(255,255,255,0.02)",
                         borderLeftColor: isSelected ? cfg.color : "transparent",

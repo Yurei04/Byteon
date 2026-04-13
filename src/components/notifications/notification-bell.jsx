@@ -71,7 +71,7 @@ export default function NotificationBell({ userId, role }) {
       <button
         ref={buttonRef}
         onClick={handleOpen}
-        className={`relative h-9 w-9 flex items-center justify-center rounded-lg border transition-all duration-200
+        className={`relative cursor-pointer  h-9 w-9 flex items-center justify-center rounded-lg border transition-all duration-200
           ${open
             ? "bg-fuchsia-500/15 border-fuchsia-500/40 text-fuchsia-300"
             : "bg-black/30 border-white/10 text-white/45 hover:text-white/80 hover:border-white/20 hover:bg-white/6"
@@ -97,7 +97,7 @@ export default function NotificationBell({ userId, role }) {
       {open && (
         <div
           ref={panelRef}
-          className="absolute right-0 top-11 w-[360px] z-50
+          className="absolute cursor-pointer  right-0 top-11 w-[360px] z-50
             bg-slate-950/95 backdrop-blur-xl border border-fuchsia-500/20
             rounded-2xl shadow-2xl shadow-fuchsia-900/30
             animate-in slide-in-from-top-2 fade-in duration-200"
@@ -118,7 +118,7 @@ export default function NotificationBell({ userId, role }) {
                 <button
                   onClick={markAllRead}
                   title="Mark all as read"
-                  className="h-7 px-2 flex items-center gap-1 rounded-lg text-[11px] text-white/40 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 transition-all duration-150"
+                  className="h-7 px-2 flex cursor-pointer  items-center gap-1 rounded-lg text-[11px] text-white/40 hover:text-emerald-300 hover:bg-emerald-500/10 border border-transparent hover:border-emerald-500/20 transition-all duration-150"
                 >
                   <CheckCheck className="w-3 h-3" />All read
                 </button>
@@ -127,7 +127,7 @@ export default function NotificationBell({ userId, role }) {
                 <button
                   onClick={clearAll}
                   title="Clear targeted notifications"
-                  className="h-7 px-2 flex items-center gap-1 rounded-lg text-[11px] text-white/40 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-150"
+                  className="h-7 px-2 cursor-pointer  flex items-center gap-1 rounded-lg text-[11px] text-white/40 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all duration-150"
                 >
                   <Trash2 className="w-3 h-3" />Clear
                 </button>
@@ -198,7 +198,7 @@ export default function NotificationBell({ userId, role }) {
                       {/* dismiss btn */}
                       <button
                         onClick={(e) => { e.stopPropagation(); deleteOne(n.id) }}
-                        className="shrink-0 opacity-0 group-hover:opacity-100 h-6 w-6 flex items-center justify-center rounded-md text-white/25 hover:text-rose-300 hover:bg-rose-500/12 transition-all duration-150 mt-0.5"
+                        className="shrink-0 cursor-pointer  opacity-0 group-hover:opacity-100 h-6 w-6 flex items-center justify-center rounded-md text-white/25 hover:text-rose-300 hover:bg-rose-500/12 transition-all duration-150 mt-0.5"
                       >
                         <X className="w-3 h-3" />
                       </button>

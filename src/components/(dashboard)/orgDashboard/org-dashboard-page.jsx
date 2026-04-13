@@ -215,7 +215,7 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
           <div className="flex flex-wrap gap-2 mb-4">
             {COLOR_GROUPS.map(({ label, icon }) => (
               <button key={label} type="button" onClick={() => setOpenGroup(label)}
-                className="text-xs px-3 py-1.5 rounded-full font-medium transition-all duration-200 hover:scale-105 active:scale-95"
+                className="cursor-pointer text-xs px-3 py-1.5 rounded-full font-medium transition-all duration-200 hover:scale-105 active:scale-95"
                 style={openGroup === label ? { background: `linear-gradient(135deg, ${p}, ${s})`, color: "#fff", boxShadow: `0 2px 10px ${p}40` } : { background: "rgba(255,255,255,0.05)", color: orgTheme.mutedText, border: "1px solid rgba(255,255,255,0.08)" }}>
                 {icon} {label}
               </button>
@@ -243,7 +243,7 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
                         onBlur={e => e.target.style.boxShadow = "none"}
                         placeholder="#000000" />
                     ) : (
-                      <span className="flex-1 text-xs font-mono px-2.5 py-1.5 rounded-lg"
+                      <span className="flex-1 text-xs font-mono px-2.5 py-1.5 rounded-lg cursor-pointer "
                         style={{ background: "rgba(0,0,0,0.2)", color: orgTheme.mutedText }}>
                         {formData[key] || DEFAULT_COLORS[key]}
                       </span>
@@ -264,7 +264,7 @@ function SidebarNavItem({ value, icon, label, isActive, onClick, p, s, orgTheme,
   return (
     <button
       onClick={() => onClick(value)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative"
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative cursor-pointer "
       style={isActive ? {
         background: `linear-gradient(135deg, ${p}22, ${s}14)`,
         color: "#ffffff",

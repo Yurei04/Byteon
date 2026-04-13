@@ -519,7 +519,7 @@ export default function AccountManageSection({ addToast }) {
               const a = ACCENTS[value]
               return (
                 <TabsTrigger key={value} value={value}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                  className={`flex cursor-pointer  items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                     text-white/35 hover:text-white/65 hover:bg-white/5
                     data-[state=active]:bg-gradient-to-r data-[state=active]:text-white
                     data-[state=active]:shadow-lg ${a.tabActive} ${a.tabGlow}`}
@@ -536,24 +536,24 @@ export default function AccountManageSection({ addToast }) {
           <div className="relative flex-1 max-w-xs group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20 group-focus-within:text-white/50 transition-colors" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name, affiliation…"
-              className="pl-9 h-9 bg-black/30 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/20 rounded-lg focus:ring-0 transition-colors backdrop-blur-sm"
+              className="pl-9 h-9 cursor-pointer  bg-black/30 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/20 rounded-lg focus:ring-0 transition-colors backdrop-blur-sm"
             />
           </div>
           <Button size="sm" onClick={fetchAll} disabled={loading} variant="ghost"
-            className="h-9 w-9 p-0 border border-white/8 hover:border-white/20 text-white/30 hover:text-white/70 hover:bg-white/6 bg-black/30 backdrop-blur-sm transition-all duration-200 rounded-lg">
+            className="h-9 w-9 p-0 cursor-pointer  border border-white/8 hover:border-white/20 text-white/30 hover:text-white/70 hover:bg-white/6 bg-black/30 backdrop-blur-sm transition-all duration-200 rounded-lg">
             {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
           </Button>
 
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => setGuidelinesMode("suspension")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/25 bg-amber-500/8 text-amber-300/80 text-xs font-medium hover:bg-yellow-500/15 hover:border-yellow-400/40 hover:text-yellow-200 transition-all">
+              className="flex items-center cursor-pointer  gap-1.5 px-3 py-1.5 rounded-lg border border-amber-500/25 bg-amber-500/8 text-amber-300/80 text-xs font-medium hover:bg-yellow-500/15 hover:border-yellow-400/40 hover:text-yellow-200 transition-all">
               <BookOpenCheck className="w-3.5 h-3.5" />
               Suspension Guide
             </button>
             <button
               onClick={() => setGuidelinesMode("deletion")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
+              className="flex items-center cursor-pointer  gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
               <ScrollText className="w-3.5 h-3.5" />
               Deletion Rules
             </button>
@@ -942,7 +942,7 @@ function AccountListRow({ item, type, ac, isSelected, onClick }) {
   const isActive = item.active !== false
   return (
     <button onClick={onClick}
-      className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
+      className={`w-full cursor-pointer  text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
         ${isSelected ? `${ac.rowSelected} bg-opacity-100` : `border-l-transparent ${ac.rowHover}`}`}
     >
       <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-200 ${ac.dot}
@@ -979,7 +979,7 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0">
+      <div className="px-6 pt-6 pb-5 border-b border-white/8 shrink-0 ">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className={`w-[52px] h-[52px] rounded-xl border flex items-center justify-center shrink-0 transition-all duration-300 ${ac.avatarBg} ${ac.avatarGlow}`}>
@@ -1021,7 +1021,7 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
               {isActive ? "Suspend" : "Reactivate"}
             </Button>
             <Button size="sm" onClick={onDelete} disabled={actionLoading === item.id}
-              className="h-9 px-4 bg-gradient-to-r from-pink-600/65 to-fuchsia-600/65
+              className="h-9 cursor-pointer  px-4 bg-gradient-to-r from-pink-600/65 to-fuchsia-600/65
                 hover:from-pink-500 hover:to-fuchsia-500 text-white border-0 gap-2 text-xs font-medium
                 hover:shadow-[0_4px_16px_rgba(236,72,153,0.28)] active:scale-[0.97] transition-all">
               <Trash2 className="w-3.5 h-3.5" />Delete
@@ -1085,7 +1085,7 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
 
           {(item.bio || item.description) && (
             <DetailBlock icon={<Activity className="w-3.5 h-3.5" />} label={isUser ? "Bio" : "Description"} ac={ac}>
-              <p className="text-white/50 text-sm leading-relaxed">{item.bio || item.description}</p>
+              <p className="text-white/70 text-sm leading-relaxed">{item.bio || item.description}</p>
             </DetailBlock>
           )}
 
@@ -1103,7 +1103,7 @@ function AccountDetailPane({ item, type, ac, actionLoading, onSuspend, onDelete 
 function DetailBlock({ icon, label, ac, children }) {
   return (
     <div>
-      <p className={`text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-3 ${ac.heading} opacity-60`}>
+      <p className={`text-[11px]  font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-3 ${ac.heading} opacity-60`}>
         <span>{icon}</span>{label}
       </p>
       {children}
@@ -1113,7 +1113,7 @@ function DetailBlock({ icon, label, ac, children }) {
 
 function InfoRow({ icon, label, value }) {
   return (
-    <div className="flex items-center gap-2.5 group/row">
+    <div className="flex items-center gap-2.5 group/row ">
       <span className="text-white/20 shrink-0 group-hover/row:text-white/35 transition-colors">{icon}</span>
       <span className="text-white/28 text-xs min-w-[80px]">{label}</span>
       <span className="text-white/60 text-xs truncate group-hover/row:text-white/75 transition-colors">{value}</span>
@@ -1125,7 +1125,7 @@ function StatCard({ label, value, ac }) {
   return (
     <div className={`px-3 py-3 rounded-xl bg-white/3 border text-center transition-all duration-200 cursor-default ${ac.statBorder} ${ac.statGlow}`}>
       <p className={`text-xl font-bold ${ac.tag}`}>{value}</p>
-      <p className="text-[10px] text-white/28 mt-0.5">{label}</p>
+      <p className="text-[10px] text-white/70 mt-0.5">{label}</p>
     </div>
   )
 }

@@ -205,7 +205,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   return (
     <div className="flex items-center justify-between px-3 py-2 border-t border-white/6 shrink-0 bg-black/10">
       <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}
-        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
+        className="flex cursor-pointer  items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
         <ChevronLeft className="w-3 h-3" /> Prev
       </button>
       <div className="flex items-center gap-1">
@@ -224,7 +224,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
         )}
       </div>
       <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}
-        className="flex items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
+        className="flex items-center cursor-pointer  gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
         Next <ChevronRight className="w-3 h-3" />
       </button>
     </div>
@@ -477,7 +477,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
           <TabsList className="bg-black/30 border border-white/8 p-1 rounded-xl h-auto">
             {tabConfig.map(({ value, label, Icon, tabActive }) => (
               <TabsTrigger key={value} value={value}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+                className={` cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                   text-white/40 hover:text-white/70
                   data-[state=active]:bg-gradient-to-r data-[state=active]:text-white data-[state=active]:shadow-lg
                   ${tabActive}`}>
@@ -498,7 +498,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, organization…"
-              className="pl-9 h-9 bg-black/30 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/20 rounded-lg focus:ring-0 transition-colors"
+              className="pl-9 h-9 cursor-pointer  bg-black/30 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/20 rounded-lg focus:ring-0 transition-colors"
             />
           </div>
 
@@ -506,13 +506,13 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => setGuidelinesMode("approval")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/8 text-emerald-300/80 text-xs font-medium hover:bg-emerald-500/15 hover:border-emerald-400/40 hover:text-emerald-200 transition-all">
+              className="flex cursor-pointer  items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/8 text-emerald-300/80 text-xs font-medium hover:bg-emerald-500/15 hover:border-emerald-400/40 hover:text-emerald-200 transition-all">
               <BookOpenCheck className="w-3.5 h-3.5" />
               Approval Guide
             </button>
             <button
               onClick={() => setGuidelinesMode("rejection")}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
+              className="flex cursor-pointer  items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
               <ScrollText className="w-3.5 h-3.5" />
               Rejection Rules
             </button>
@@ -842,7 +842,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
 function PendingListRow({ item, isSelected, onClick }) {
   return (
     <button onClick={onClick}
-      className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
+      className={`w-full cursor-pointer  text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
         ${isSelected ? "bg-amber-500/8 border-l-amber-400" : "border-l-transparent hover:bg-white/3 hover:border-l-amber-500/30"}`}>
       <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 bg-amber-400
         ${isSelected ? "opacity-100 shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "opacity-40 group-hover:opacity-70"}`} />
@@ -880,11 +880,11 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
           </span>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={onApprove} disabled={isBusy}
-              className="h-8 px-3 bg-emerald-600/18 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-500/28 hover:border-emerald-400/50 text-xs gap-1.5 transition-all">
+              className="h-8 px-3 cursor-pointer  bg-emerald-600/18 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-500/28 hover:border-emerald-400/50 text-xs gap-1.5 transition-all">
               {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}Approve
             </Button>
             <Button size="sm" onClick={onReject} disabled={isBusy}
-              className="h-8 px-3 bg-red-600/18 hover:bg-red-600/35 text-red-300 border border-red-500/28 hover:border-red-400/50 text-xs gap-1.5 transition-all">
+              className="h-8 px-3 cursor-pointer  bg-red-600/18 hover:bg-red-600/35 text-red-300 border border-red-500/28 hover:border-red-400/50 text-xs gap-1.5 transition-all">
               <XCircle className="w-3 h-3" />Reject
             </Button>
           </div>
