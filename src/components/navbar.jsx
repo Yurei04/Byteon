@@ -1,44 +1,29 @@
 "use client"
 
-import Link from "next/link"
-import { Menu, X, Zap } from "lucide-react"
-import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import {
+  Zap, Home, Handshake, BookOpen,
+  Library, Terminal, GraduationCap,
+} from "lucide-react"
 import { useAuth } from "@/components/(auth)/authContext"
 import SignLogInDialog from "@/app/(auth)/loginSigninDialog"
 import AccountSwitcher from "./(auth)/accountSwitcher"
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog"
+import { useState } from "react"
 
 const navLinks = [
-  { title: "Home",      href: "/"                  },
-  { title: "Partners",  href: "/partners"           },
-  { title: "Blog",      href: "/blog"               },
-  { title: "Resource",  href: "/resource-hub"       },
-  { title: "Hacks",     href: "/announce"           },
-  { title: "HowToHack", href: "/how-to-hackathon"  },
+  { title: "Home",      tab: "home",     icon: Home          },
+  { title: "Partners",  tab: "partners", icon: Handshake     },
+  { title: "Blog",      tab: "blog",     icon: BookOpen      },
+  { title: "Resource",  tab: "resource", icon: Library       },
+  { title: "Hacks",     tab: "hacks",    icon: Terminal      },
+  { title: "HowToHack", tab: "howto",    icon: GraduationCap },
 ]
 
-export default function NavBar() {
+export default function Sidebar({ activeTab, onTabChange = () => {} }) {
   const { loading, isLoggedIn } = useAuth()
-  const pathname = usePathname()
-  const [isOpen, setIsOpen]             = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [scrolled, setScrolled]         = useState(false)
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
-  // Close mobile menu on route change
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setIsOpen(false) }, [pathname])
-
-  const isActive = (href) =>
-    href === "/" ? pathname === "/" : pathname?.startsWith(href)
-
-  const renderAuthSlot = () => {
+  const renderAuthSlot = (mobile = false) => {
     if (loading) {
       return <div className="w-8 h-8 rounded-full bg-fuchsia-400/20 animate-pulse ring-1 ring-fuchsia-400/30" />
     }
@@ -47,14 +32,20 @@ export default function NavBar() {
     return (
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <button className="relative group flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-semibold overflow-hidden transition-all duration-300
-            bg-gradient-to-r from-fuchsia-600 to-purple-600
-            hover:from-fuchsia-500 hover:to-purple-500
-            shadow-md shadow-fuchsia-900/40 hover:shadow-fuchsia-700/50
-            text-white hover:scale-[1.03] active:scale-95">
-            <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
-            <span className="relative">Login</span>
+          <button
+            className={`relative group flex items-center gap-2 rounded-xl text-sm font-semibold overflow-hidden
+              transition-all duration-300 bg-gradient-to-r from-fuchsia-600 to-pink-600
+              hover:from-fuchsia-500 hover:to-pink-500 text-white hover:scale-[1.03] active:scale-95
+              shadow-lg shadow-fuchsia-900/40 hover:shadow-fuchsia-600/40
+              ${mobile
+                ? "px-4 py-2"
+                : "w-full px-3 py-2.5 justify-center xl:justify-start"
+              }`}
+          >
+            <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+            <span className="absolute inset-0 bg-white/8 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
+            <Zap className="relative w-3.5 h-3.5 fill-white shrink-0" />
+            <span className={`relative text-xs font-semibold ${mobile ? "" : "hidden xl:inline"}`}>Login</span>
           </button>
         </DialogTrigger>
         <DialogContent className="bg-transparent border-none shadow-none">
@@ -66,99 +57,111 @@ export default function NavBar() {
 
   return (
     <>
-      {/* Ambient top glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-20 bg-fuchsia-600/10 blur-3xl pointer-events-none z-40 rounded-full" />
+      {/* ── Desktop / Tablet sidebar ── */}
+      <aside className="hidden md:flex fixed left-0 top-0 h-screen z-50 flex-col
+        w-16 xl:w-56
+        bg-black/70 border-r border-white/[0.06]
+        backdrop-blur-2xl
+        px-2 xl:px-3 py-5">
 
-      <div className={`fixed z-50 w-full flex justify-center px-4 sm:px-6 transition-all duration-500 ${scrolled ? "mt-2" : "mt-5"}`}>
-        <nav className={`w-full max-w-5xl rounded-2xl px-4 sm:px-6 transition-all duration-500 ${
-          scrolled
-            ? "py-3 bg-black/65 border border-fuchsia-400/20 shadow-xl shadow-fuchsia-900/25 backdrop-blur-2xl"
-            : "py-4 bg-fuchsia-950/35 border border-fuchsia-400/20 shadow-lg backdrop-blur-xl"
-        }`}>
+        {/* Subtle ambient glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-32 h-48
+          bg-fuchsia-700/10 blur-3xl pointer-events-none rounded-full" />
 
-          <div className="flex items-center justify-between gap-4">
+        {/* Logo — acts as Home tab trigger */}
+        <button
+          onClick={() => onTabChange("home")}
+          className="flex items-center gap-2.5 group mb-7 px-2 xl:px-1 w-full"
+        >
+          <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-br from-fuchsia-500 to-pink-600
+            flex items-center justify-center
+            shadow-md shadow-fuchsia-800/40
+            group-hover:shadow-fuchsia-500/50 group-hover:scale-105 transition-all duration-300">
+            <Zap className="w-3.5 h-3.5 text-white fill-white" />
+          </div>
+          <span className="hidden xl:block text-sm font-bold
+            bg-gradient-to-r from-fuchsia-300 to-pink-300
+            bg-clip-text text-transparent tracking-tight">
+            Byteon
+          </span>
+        </button>
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center shadow-lg shadow-fuchsia-500/30 group-hover:shadow-fuchsia-400/50 group-hover:scale-105 transition-all duration-300">
-                <Zap className="w-3.5 h-3.5 text-white fill-white" />
-              </div>
-              <span className="text-base font-bold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent tracking-tight">
-                Byteon
-              </span>
-            </Link>
-
-            {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
-              {navLinks.map((link) => {
-                const active = isActive(link.href)
-                return (
-                  <Link
-                    key={link.title}
-                    href={link.href}
-                    className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 group ${
-                      active ? "text-fuchsia-100" : "text-fuchsia-300/65 hover:text-fuchsia-100"
-                    }`}
-                  >
-                    {active && (
-                      <span className="absolute inset-0 rounded-lg bg-fuchsia-500/15 ring-1 ring-fuchsia-400/30" />
-                    )}
-                    <span className="absolute inset-0 rounded-lg bg-fuchsia-500/0 group-hover:bg-fuchsia-500/8 transition-colors duration-200" />
-                    <span className="relative">{link.title}</span>
-                    {active && (
-                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-fuchsia-400" />
-                    )}
-                  </Link>
-                )
-              })}
-            </div>
-
-            {/* Desktop auth */}
-            <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-              <div className="h-5 w-px bg-fuchsia-400/20" />
-              {renderAuthSlot()}
-            </div>
-
-            {/* Mobile: auth + burger */}
-            <div className="md:hidden flex items-center gap-2">
-              {renderAuthSlot()}
+        {/* Nav */}
+        <nav className="flex flex-col gap-0.5 flex-1">
+          {navLinks.map(({ title, tab, icon: Icon }) => {
+            const active = activeTab === tab
+            return (
               <button
-                onClick={() => setIsOpen(prev => !prev)}
-                className="w-8 h-8 rounded-lg bg-fuchsia-900/40 border border-fuchsia-400/20 flex items-center justify-center text-fuchsia-300 hover:bg-fuchsia-800/50 hover:text-fuchsia-100 transition-all duration-200"
-                aria-label="Toggle menu"
+                key={tab}
+                onClick={() => onTabChange(tab)}
+                className={`relative group flex items-center gap-3 w-full rounded-lg
+                  px-2 xl:px-3 py-2.5 text-left
+                  transition-all duration-150
+                  ${active
+                    ? "text-fuchsia-100 bg-fuchsia-500/12 ring-1 ring-fuchsia-400/20"
+                    : "text-fuchsia-300/50 hover:text-fuchsia-100 hover:bg-white/[0.04]"
+                  }`}
               >
-                {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                {/* Hover shimmer */}
+                <span className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100
+                  bg-gradient-to-r from-fuchsia-500/5 to-pink-500/5 transition-opacity duration-200" />
+
+                <Icon className={`relative shrink-0 w-[18px] h-[18px]
+                  transition-transform duration-200 group-hover:scale-110
+                  ${active ? "text-fuchsia-300" : ""}`} />
+
+                <span className="relative hidden xl:block text-xs font-medium tracking-wide">
+                  {title}
+                </span>
+
+                {/* Active pip — icon-only mode */}
+                {active && (
+                  <span className="xl:hidden absolute left-0 top-1/2 -translate-y-1/2
+                    w-0.5 h-5 rounded-full bg-fuchsia-400" />
+                )}
               </button>
-            </div>
-          </div>
-
-          {/* Mobile menu — smooth expand */}
-          <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            isOpen ? "max-h-96 opacity-100 mt-3" : "max-h-0 opacity-0 mt-0"
-          }`}>
-            <div className="border-t border-fuchsia-400/15 pt-3 flex flex-col gap-1">
-              {navLinks.map((link) => {
-                const active = isActive(link.href)
-                return (
-                  <Link
-                    key={link.title}
-                    href={link.href}
-                    onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      active
-                        ? "bg-fuchsia-500/15 text-fuchsia-100 ring-1 ring-fuchsia-400/25"
-                        : "text-fuchsia-300/75 hover:bg-fuchsia-800/30 hover:text-fuchsia-100"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${active ? "bg-fuchsia-400" : "bg-fuchsia-600/40"}`} />
-                    {link.title}
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-
+            )
+          })}
         </nav>
+
+        {/* Divider */}
+        <div className="my-3 h-px bg-white/[0.06]" />
+
+        {/* Auth */}
+        <div className="flex justify-center xl:justify-stretch">
+          {renderAuthSlot()}
+        </div>
+      </aside>
+
+      {/* ── Mobile bottom tab bar ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50
+        bg-black/85 border-t border-white/[0.07] backdrop-blur-2xl
+        flex items-center justify-around px-1 py-1.5">
+
+        {navLinks.map(({ title, tab, icon: Icon }) => {
+          const active = activeTab === tab
+          return (
+            <button
+              key={tab}
+              onClick={() => onTabChange(tab)}
+              className={`relative flex flex-col items-center gap-0.5 px-2.5 py-1.5 rounded-xl
+                transition-all duration-150 min-w-[44px]
+                ${active ? "text-fuchsia-200" : "text-fuchsia-400/50 hover:text-fuchsia-200"}`}
+            >
+              {active && (
+                <span className="absolute inset-0 rounded-xl bg-fuchsia-500/12 ring-1 ring-fuchsia-400/20" />
+              )}
+              <Icon className="relative w-[18px] h-[18px]" />
+              <span className="relative text-[9px] font-medium leading-none tracking-wide">
+                {title}
+              </span>
+            </button>
+          )
+        })}
+
+        <div className="flex items-center px-1">
+          {renderAuthSlot(true)}
+        </div>
       </div>
     </>
   )
