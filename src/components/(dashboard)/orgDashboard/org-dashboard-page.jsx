@@ -18,6 +18,7 @@ import {
   ShieldCheck, LogOut, Palette, RotateCcw,
   Menu, X, ChevronRight, LayoutDashboard, Settings,
   ArrowUpRight, Activity,
+  Monitor,
 } from "lucide-react"
 import {
   Pagination, PaginationContent, PaginationItem,
@@ -47,6 +48,7 @@ import NotificationsTab from "@/components/notifications/notification-tab"
 import { useNotifications } from "@/components/notifications/use-notification"
 import { notifyContentDeletedByOrg } from "@/lib/notification"
 import OrgViewableSection from "./org-view-section"
+import WebsitePreviewSection from "@/components/preview/website-preview-section"
 
 const ITEMS_PER_PAGE = 6
 
@@ -527,6 +529,7 @@ export default function OrgDashboardPage() {
     { value: "create",         icon: <Plus             className="w-4 h-4" />, label: "Create"        },
     { value: "posters",        icon: <Sparkles         className="w-4 h-4" />, label: "Poster Maker"  },
     { value: "profile",        icon: <Settings         className="w-4 h-4" />, label: "Settings"      },
+    { value: "website", icon: <Monitor className="w-4 h-4" />, label: "Website" },
     { value: "notifications",  icon: <Bell             className="w-4 h-4" />, label: "Notifications", badge: unreadCount },
   ]
 
@@ -549,6 +552,7 @@ export default function OrgDashboardPage() {
     create:        { title: "Create",        sub: "Publish new announcements, blogs & resources" },
     posters:       { title: "Poster Maker",  sub: "Design promotional materials" },
     profile:       { title: "Settings",      sub: "Manage your organization profile & branding" },
+    website: { title: "Website Preview", sub: "Browse the live site from within the dashboard" },
     notifications: { title: "Notifications", sub: "Approval decisions and account alerts" },
   }
 
@@ -1091,6 +1095,18 @@ export default function OrgDashboardPage() {
                   </div>
                 </motion.div>
               )}
+
+              {activeTab === "website" && (
+                  <motion.div
+                    key="website"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <WebsitePreviewSection />
+                  </motion.div>
+                )}
 
               {/* ════ NOTIFICATIONS ════ */}
               {activeTab === "notifications" && (
