@@ -6,17 +6,16 @@ import Image from "next/image"
 import { useAuth } from "@/components/(auth)/authContext"
 import { getAccounts } from "@/lib/accountManager"
 import { switchAccount, logoutAccount, persistCurrentSession } from "@/lib/restoreSession"
+import { ChevronDown, LogOut, Plus, ExternalLink, Loader2 } from "lucide-react"
 
-const ROLE_STYLES = {
-  super_admin: "bg-yellow-500/20 text-yellow-300 border border-yellow-500/30",
-  org_admin:   "bg-blue-500/20  text-blue-300  border border-blue-500/30",
-  user:        "bg-purple-500/20 text-purple-300 border border-purple-500/30",
-}
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const P = "#c026d3"
+const S = "#a855f7"
 
-const ROLE_LABELS = {
-  super_admin: "Super Admin",
-  org_admin:   "Organization",
-  user:        "User",
+const ROLE_CONFIG = {
+  super_admin: { label: "Super Admin",  accent: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.28)" },
+  org_admin:   { label: "Organization", accent: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.28)" },
+  user:        { label: "Participant",  accent: P,         bg: `${P}18`,               border: `${P}30`                },
 }
 
 const ROLE_DASHBOARDS = {
@@ -25,6 +24,52 @@ const ROLE_DASHBOARDS = {
   user:        "/user-dashboard",
 }
 
+// ── Sub-components ────────────────────────────────────────────────────────────
+function Avatar({ account, size = 36 }) {
+  if (account?.avatarUrl) {
+    return (
+      <Image
+        src={account.avatarUrl} alt={account.displayName ?? "avatar"}
+        width={size} height={size}
+        className="rounded-full object-cover flex-shrink-0"
+        style={{ width: size, height: size, border: `1.5px solid ${P}35` }}
+      />
+    )
+  }
+  const letter = (account?.displayName ?? account?.role ?? "?")[0].toUpperCase()
+  const cfg    = ROLE_CONFIG[account?.role] ?? ROLE_CONFIG.user
+  return (
+    <div
+      className="rounded-full flex items-center justify-center font-bold flex-shrink-0"
+      style={{
+        width: size, height: size, fontSize: size * 0.38,
+        background: `linear-gradient(135deg, ${P}35, ${S}25)`,
+        border: `1.5px solid ${P}40`,
+        color: "#ffffff",
+      }}
+    >
+      {letter}
+    </div>
+  )
+}
+
+function RoleBadge({ role }) {
+  const cfg = ROLE_CONFIG[role] ?? ROLE_CONFIG.user
+  return (
+    <span
+      className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-full font-semibold uppercase tracking-wider mt-0.5"
+      style={{ background: cfg.bg, color: cfg.accent, border: `1px solid ${cfg.border}` }}
+    >
+      {cfg.label}
+    </span>
+  )
+}
+
+function Spinner({ size = "sm" }) {
+  return <Loader2 className={`${size === "sm" ? "w-3 h-3" : "w-4 h-4"} animate-spin flex-shrink-0`} style={{ color: P }} />
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function AccountSwitcher() {
   const { profile, role, session, refreshProfile, logout } = useAuth()
   const router  = useRouter()
@@ -36,22 +81,15 @@ export default function AccountSwitcher() {
   const accounts = getAccounts()
   const activeId = session?.user?.id
 
-  // ✅ If localStorage was wiped (e.g. by a false suspension redirect),
-  // but the session + profile are still valid — rebuild the entry automatically.
-  
   useEffect(() => {
     if (!session || !profile || !role) return
     const exists = getAccounts().find(a => a.userId === session.user.id)
-    if (!exists) {
-      persistCurrentSession(profile, role)
-    }
+    if (!exists) persistCurrentSession(profile, role)
   }, [session, profile, role])
 
   useEffect(() => {
     const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpen(false)
-      }
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setOpen(false)
     }
     if (open) document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
@@ -61,25 +99,18 @@ export default function AccountSwitcher() {
     if (targetUserId === activeId || switching) return
     setSwitching(targetUserId)
     setOpen(false)
-
     const { success, error } = await switchAccount(targetUserId, refreshProfile)
-
     if (success) {
       const target = accounts.find(a => a.userId === targetUserId)
-      const dest   = target ? (ROLE_DASHBOARDS[target.role] ?? "/") : "/"
-      router.push(dest)
+      router.push(target ? (ROLE_DASHBOARDS[target.role] ?? "/") : "/")
     } else {
       alert(error || "Could not switch account. Please sign in again.")
     }
-
     setSwitching(null)
   }
 
   const handleAddAccount = () => {
-    // Rebuild session in storage before navigating away
-    if (session && profile && role) {
-      persistCurrentSession(profile, role)
-    }
+    if (session && profile && role) persistCurrentSession(profile, role)
     window.location.href = "/log-in?add=true"
   }
 
@@ -88,25 +119,15 @@ export default function AccountSwitcher() {
     if (removing) return
     setRemoving(userId)
     setOpen(false)
-
     await logoutAccount(userId, activeId, refreshProfile, logout)
-    
     const remaining = getAccounts()
-    if (remaining.length === 0) {
-      // Hard redirect — forces a full page reload so the middleware
-      // sees the cleared cookie, not the stale one router.push would use
-      window.location.href = "/log-in"
-    } else {
-      router.refresh()
-    }
-
+    if (remaining.length === 0) { window.location.href = "/log-in" }
+    else { router.refresh() }
     setRemoving(null)
   }
 
   if (!session) return null
 
-  // ✅ Fallback: if localStorage is empty, build a temporary activeAccount
-  // from authContext so the navbar never shows "?" or breaks
   const activeAccountFromStorage = accounts.find(a => a.userId === activeId)
   const activeAccount = activeAccountFromStorage ?? (profile ? {
     userId:      activeId,
@@ -118,65 +139,112 @@ export default function AccountSwitcher() {
   const otherAccounts = accounts.filter(a => a.userId !== activeId)
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
 
-      {/* Trigger */}
+      {/* ── Trigger ── */}
       <button
         onClick={() => setOpen(prev => !prev)}
-        className="flex items-center gap-2 rounded-full p-1 pr-3 hover:bg-purple-900/40 transition-colors border border-transparent hover:border-purple-400/30 focus:outline-none"
-        aria-haspopup="true"
-        aria-expanded={open}
+        aria-haspopup="true" aria-expanded={open}
+        className="w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-all duration-200 group"
+        style={{
+          background: open ? `${P}18` : "rgba(255,255,255,0.04)",
+          border: `1px solid ${open ? `${P}40` : "rgba(255,255,255,0.08)"}`,
+        }}
+        onMouseEnter={e => {
+          if (open) return
+          e.currentTarget.style.background = `${P}12`
+          e.currentTarget.style.borderColor = `${P}30`
+        }}
+        onMouseLeave={e => {
+          if (open) return
+          e.currentTarget.style.background = "rgba(255,255,255,0.04)"
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"
+        }}
       >
-        <Avatar account={activeAccount} size={32} />
-        <span className="text-sm text-purple-100 max-w-[120px] truncate cursor-pointer">
-          {activeAccount?.displayName ?? session.user.email ?? "Account"}
-        </span>
-        <ChevronIcon open={open} />
+        <Avatar account={activeAccount} size={28} />
+
+        {/* Name — only visible at xl width (matching sidebar expanded state) */}
+        <div className="hidden xl:flex flex-col flex-1 min-w-0 text-left">
+          <span className="text-xs font-semibold text-white truncate leading-tight">
+            {activeAccount?.displayName ?? session.user.email ?? "Account"}
+          </span>
+          <span className="text-[9px] leading-none mt-0.5" style={{ color: `${P}cc` }}>
+            {ROLE_CONFIG[activeAccount?.role]?.label ?? "User"}
+          </span>
+        </div>
+
+        <ChevronDown
+          className="hidden xl:block w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200"
+          style={{ color: "rgba(255,255,255,0.3)", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
       </button>
 
-      {/* Dropdown */}
+      {/* ── Dropdown ── */}
       {open && (
-        <div className="absolute right-0 mt-2 w-72 z-50 rounded-xl bg-purple-950/90 border border-purple-400/30 backdrop-blur-xl shadow-2xl shadow-purple-900/50 overflow-hidden">
+        <div
+          className="absolute bottom-full left-0 mb-2 w-72 z-50 rounded-2xl overflow-hidden"
+          style={{
+            background: "rgba(5, 0, 18, 0.96)",
+            border: `1px solid ${P}28`,
+            backdropFilter: "blur(24px)",
+            boxShadow: `0 -8px 40px rgba(0,0,0,0.5), 0 0 0 1px ${P}10`,
+          }}
+        >
+          {/* Top gradient accent */}
+          <div className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
+            style={{ background: `linear-gradient(to bottom, ${P}12, transparent)` }} />
 
-          {/* Active account */}
+          {/* ── Active account ── */}
           {activeAccount && (
-            <div className="border-b border-purple-400/20">
+            <div style={{ borderBottom: `1px solid ${P}18` }}>
+              {/* Dashboard link row */}
               <button
-                onClick={() => {
-                  setOpen(false)
-                  const dest = ROLE_DASHBOARDS[activeAccount.role] ?? ROLE_DASHBOARDS[role] ?? "/"
-                  router.push(dest)
-                }}
-                className="cursor-pointer w-full px-4 py-3 flex items-center gap-3 hover:bg-purple-800/30 transition-colors text-left"
+                onClick={() => { setOpen(false); router.push(ROLE_DASHBOARDS[activeAccount.role] ?? ROLE_DASHBOARDS[role] ?? "/") }}
+                className="relative w-full px-4 py-3.5 flex items-center gap-3 text-left transition-all duration-150 group"
+                onMouseEnter={e => e.currentTarget.style.background = `${P}10`}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
               >
                 <Avatar account={activeAccount} size={40} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-purple-50 truncate">
+                  <p className="text-sm font-semibold text-white truncate leading-tight">
                     {activeAccount.displayName}
                   </p>
                   <RoleBadge role={activeAccount.role} />
-                  <p className="text-[10px] text-purple-400 mt-0.5">Go to dashboard →</p>
+                  <p className="text-[10px] mt-1.5 flex items-center gap-1 transition-colors"
+                    style={{ color: `${P}aa` }}>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                    Go to dashboard
+                  </p>
                 </div>
+                {/* Active indicator dot */}
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#22c55e", boxShadow: "0 0 6px #22c55e" }} />
               </button>
 
-              <div className="px-4 pb-2 flex justify-end">
+              {/* Sign out this account */}
+              <div className="px-4 pb-3 flex justify-end">
                 <button
                   onClick={(e) => handleRemove(e, activeAccount.userId)}
-                  title="Sign out of this account"
                   disabled={removing === activeAccount.userId}
-                  className="cursor-pointer flex items-center gap-1.5 text-xs text-purple-400 hover:text-red-400 transition-colors disabled:opacity-50 px-2 py-1 rounded hover:bg-red-500/10"
+                  className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-50"
+                  style={{ color: "rgba(255,255,255,0.35)", border: "1px solid transparent" }}
+                  onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)" }}
+                  onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.35)"; e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent" }}
                 >
-                  {removing === activeAccount.userId ? <Spinner small /> : <SignOutIcon />}
+                  {removing === activeAccount.userId
+                    ? <Spinner size="sm" />
+                    : <LogOut className="w-3 h-3" />
+                  }
                   <span>Sign out</span>
                 </button>
               </div>
             </div>
           )}
 
-          {/* Other accounts */}
+          {/* ── Other accounts ── */}
           {otherAccounts.length > 0 && (
-            <div className="py-1">
-              <p className="px-4 py-1.5 text-xs text-purple-400 uppercase tracking-wider">
+            <div className="py-2" style={{ borderBottom: `1px solid ${P}15` }}>
+              <p className="px-4 pb-1.5 pt-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]"
+                style={{ color: `${P}70` }}>
                 Other accounts
               </p>
               {otherAccounts.map(account => (
@@ -184,11 +252,13 @@ export default function AccountSwitcher() {
                   key={account.userId}
                   onClick={() => handleSwitch(account.userId)}
                   disabled={!!switching}
-                  className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left group disabled:opacity-60"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left group disabled:opacity-60 transition-all duration-150"
+                  onMouseEnter={e => e.currentTarget.style.background = `${P}0e`}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >
-                  <Avatar account={account} size={36} />
+                  <Avatar account={account} size={34} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-purple-100 truncate">{account.displayName}</p>
+                    <p className="text-sm text-white/80 truncate font-medium leading-tight">{account.displayName}</p>
                     <RoleBadge role={account.role} />
                   </div>
                   {switching === account.userId ? (
@@ -196,11 +266,13 @@ export default function AccountSwitcher() {
                   ) : (
                     <button
                       onClick={(e) => handleRemove(e, account.userId)}
-                      title="Remove this account"
                       disabled={removing === account.userId}
-                      className="cursor-pointer opacity-0 group-hover:opacity-100 p-1.5 rounded-md hover:bg-red-500/20 text-purple-400 hover:text-red-400 transition-all disabled:opacity-50"
+                      className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all duration-200 flex-shrink-0 disabled:opacity-50"
+                      style={{ color: "rgba(255,255,255,0.3)" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.stopPropagation = undefined }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.3)"; e.currentTarget.style.background = "transparent" }}
                     >
-                      {removing === account.userId ? <Spinner small /> : <SignOutIcon />}
+                      {removing === account.userId ? <Spinner size="sm" /> : <LogOut className="w-3.5 h-3.5" />}
                     </button>
                   )}
                 </button>
@@ -208,79 +280,31 @@ export default function AccountSwitcher() {
             </div>
           )}
 
-          {/* Add account */}
-          <div className="border-t border-purple-400/20 py-1.5">
+          {/* ── Add account ── */}
+          <div className="p-2">
             <button
-              onClick={handleAddAccount} 
-              className="cursor-pointer w-full flex items-center gap-3 px-4 py-2.5 hover:bg-purple-800/40 transition-colors text-left"
+              onClick={handleAddAccount}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group"
+              style={{ border: `1px dashed ${P}25` }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${P}10`; e.currentTarget.style.borderColor = `${P}50` }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = `${P}25` }}
             >
-              <div className="w-9 h-9 rounded-full bg-purple-700/40 border border-purple-400/30 flex items-center justify-center text-purple-300 text-xl leading-none">
-                +
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-105"
+                style={{ background: `${P}18`, border: `1px solid ${P}35` }}
+              >
+                <Plus className="w-4 h-4" style={{ color: P }} />
               </div>
-              <span className="text-sm text-purple-300">Add another account</span>
+              <span className="text-sm font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                Add another account
+              </span>
             </button>
           </div>
 
+          {/* Bottom gradient accent */}
+          <div className="h-px w-full" style={{ background: `linear-gradient(to right, transparent, ${P}40, ${S}30, transparent)` }} />
         </div>
       )}
     </div>
   )
-}
-
-// ─── Tiny sub-components ──────────────────────────────────────────────────────
-
-function Avatar({ account, size = 36 }) {
-  if (account?.avatarUrl) {
-    return (
-      <Image
-        src={account.avatarUrl}
-        alt={account.displayName ?? "avatar"}
-        width={size}
-        height={size}
-        className="rounded-full object-cover border border-purple-400/30 flex-shrink-0"
-        style={{ width: size, height: size }}
-      />
-    )
-  }
-  const letter = (account?.displayName ?? account?.role ?? "?")[0].toUpperCase()
-  return (
-    <div
-      className="rounded-full bg-purple-700/60 border border-purple-400/30 flex items-center justify-center text-purple-200 font-semibold flex-shrink-0"
-      style={{ width: size, height: size, fontSize: size * 0.4 }}
-    >
-      {letter}
-    </div>
-  )
-}
-
-function RoleBadge({ role }) {
-  return (
-    <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-medium mt-0.5 ${ROLE_STYLES[role] ?? ROLE_STYLES.user}`}>
-      {ROLE_LABELS[role] ?? role}
-    </span>
-  )
-}
-
-function ChevronIcon({ open }) {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      className={`text-purple-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}>
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  )
-}
-
-function SignOutIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-      <polyline points="16 17 21 12 16 7"/>
-      <line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
-  )
-}
-
-function Spinner({ small = false }) {
-  const size = small ? "w-3 h-3" : "w-4 h-4"
-  return <div className={`${size} border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin flex-shrink-0`} />
 }

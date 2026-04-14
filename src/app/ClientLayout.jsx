@@ -47,8 +47,6 @@ export default function ClientLayout({ children }) {
       <DatabaseErrorBlocker isError={dbError} onRetry={checkDbConnection} />
       <ServerErrorBlocker isError={false} />
       <MaintenanceBlocker isActive={false} />
-
-      <ChatWidget />  
     </ThemeProvider>
   )
 }

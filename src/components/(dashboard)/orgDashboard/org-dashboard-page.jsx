@@ -19,6 +19,7 @@ import {
   Menu, X, ChevronRight, LayoutDashboard, Settings,
   ArrowUpRight, Activity,
   Monitor,
+  ChevronDown,
 } from "lucide-react"
 import {
   Pagination, PaginationContent, PaginationItem,
@@ -48,7 +49,7 @@ import NotificationsTab from "@/components/notifications/notification-tab"
 import { useNotifications } from "@/components/notifications/use-notification"
 import { notifyContentDeletedByOrg } from "@/lib/notification"
 import OrgViewableSection from "./org-view-section"
-import WebsitePreviewSection from "@/components/preview/website-preview-section"
+import WebsitePreviewSection, { WEBSITE_PAGES } from "@/components/preview/website-preview-section"
 
 const ITEMS_PER_PAGE = 6
 
@@ -261,6 +262,96 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
   )
 }
 
+
+function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick, onPageClick }) {
+  const P = "#c026d3"
+  const S = "#a855f7"
+  const isActive = activeTab === "website"
+ 
+  return (
+    <div>
+      {/* Parent row */}
+      <button
+        onClick={onParentClick}
+        className="w-full flex cursor-pointer items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
+        style={isActive ? {
+          background: `linear-gradient(135deg, ${P}22, ${S}14)`,
+          color: "#ffffff",
+          border: `1px solid ${P}45`,
+          boxShadow: `0 0 18px ${P}18, inset 0 1px 0 ${P}20`,
+        } : {
+          background: "transparent",
+          color: "rgba(255,255,255,0.45)",
+          border: "1px solid transparent",
+        }}
+      >
+        {isActive && (
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full"
+            style={{ background: `linear-gradient(to bottom, ${P}, ${S})`, boxShadow: `0 0 8px ${P}` }}
+          />
+        )}
+        <span className="flex-shrink-0" style={{ color: isActive ? P : "inherit" }}>
+          <Monitor className="w-4 h-4" />
+        </span>
+        <span className="flex-1 text-left">Website</span>
+        <ChevronDown
+          className="w-3 h-3 transition-transform duration-200 flex-shrink-0"
+          style={{
+            color: isActive ? P : "rgba(255,255,255,0.3)",
+            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+ 
+      {/* Sub-items — smooth expand */}
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isExpanded ? `${WEBSITE_PAGES.length * 44}px` : "0px", opacity: isExpanded ? 1 : 0 }}
+      >
+        <div className="pl-4 pr-1 pt-0.5 pb-1 space-y-0.5">
+          {WEBSITE_PAGES.map(page => {
+            const isSubActive = isActive && websitePage.href === page.href
+            return (
+              <button
+                key={page.href}
+                onClick={() => onPageClick(page)}
+                className="w-full flex cursor-pointer items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200"
+                style={isSubActive ? {
+                  background: `${page.accent}18`,
+                  color: "#ffffff",
+                  border: `1px solid ${page.accent}40`,
+                } : {
+                  background: "transparent",
+                  color: "rgba(255,255,255,0.38)",
+                  border: "1px solid transparent",
+                }}
+              >
+                {/* Color dot */}
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200"
+                  style={{ background: isSubActive ? page.accent : "rgba(255,255,255,0.2)" }}
+                />
+                {page.label}
+                {isSubActive && (
+                  <span
+                    className="ml-auto text-[9px] px-1.5 py-0.5 rounded-md font-semibold"
+                    style={{ background: `${page.accent}25`, color: page.accent }}
+                  >
+                    live
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+ 
+ 
+
 // ── Sidebar Nav Item ─────────────────────────────────────────────────────────
 function SidebarNavItem({ value, icon, label, isActive, onClick, p, s, orgTheme, badge }) {
   return (
@@ -315,7 +406,7 @@ export default function OrgDashboardPage() {
   const [stats, setStats] = useState({
     totalAnnouncements: 0, totalBlogs: 0, totalResources: 0, activeAnnouncements: 0,
   })
-
+  const [websitePage, setWebsitePage] = useState(WEBSITE_PAGES[0])
   const [currentPageAnnouncement, setCurrentPageAnnouncement] = useState(1)
   const [currentPageBlogs, setCurrentPageBlogs]               = useState(1)
   const [currentPageResources, setCurrentPageResources]       = useState(1)
@@ -529,7 +620,6 @@ export default function OrgDashboardPage() {
     { value: "create",         icon: <Plus             className="w-4 h-4" />, label: "Create"        },
     { value: "posters",        icon: <Sparkles         className="w-4 h-4" />, label: "Poster Maker"  },
     { value: "profile",        icon: <Settings         className="w-4 h-4" />, label: "Settings"      },
-    { value: "website", icon: <Monitor className="w-4 h-4" />, label: "Website" },
     { value: "notifications",  icon: <Bell             className="w-4 h-4" />, label: "Notifications", badge: unreadCount },
   ]
 
@@ -552,7 +642,7 @@ export default function OrgDashboardPage() {
     create:        { title: "Create",        sub: "Publish new announcements, blogs & resources" },
     posters:       { title: "Poster Maker",  sub: "Design promotional materials" },
     profile:       { title: "Settings",      sub: "Manage your organization profile & branding" },
-    website: { title: "Website Preview", sub: "Browse the live site from within the dashboard" },
+  website:         { title: "Website Preview", sub: "View-only preview — navigation via sidebar" },
     notifications: { title: "Notifications", sub: "Approval decisions and account alerts" },
   }
 
@@ -616,15 +706,42 @@ export default function OrgDashboardPage() {
         </div>
 
         {/* ── Nav items ── */}
-        <nav className="flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto sidebar-scrollbar">
-          {navItems.map(({ value, icon, label, badge }) => (
-            <SidebarNavItem
-              key={value} value={value} icon={icon} label={label}
-              isActive={activeTab === value}
-              onClick={(v) => { setActiveTab(v); setSidebarOpen(false) }}
-              p={p} s={s} orgTheme={orgTheme} badge={badge}
-            />
-          ))}
+        
+        <nav className="flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto sa-scrollbar cursor-pointer">
+          {navItems.map(({ value, icon, label, badge, pulse }) => (
+              <SidebarNavItem
+                key={value}
+                value={value}
+                icon={icon}
+                label={label}
+                isActive={activeTab === value}
+                badge={badge}
+                pulse={pulse}
+                p={p}
+                s={s}
+                orgTheme={orgTheme}
+                onClick={(v) => {
+                  setActiveTab(v)
+                  setSidebarOpen(false)
+                }}
+              />
+            ))}
+        
+          {/* ── Website group ── */}
+          <SidebarWebsiteGroup
+            isExpanded={activeTab === "website"}
+            activeTab={activeTab}
+            websitePage={websitePage}
+            onParentClick={() => {
+              setActiveTab("website")
+              setSidebarOpen(false)
+            }}
+            onPageClick={(page) => {
+              setWebsitePage(page)
+              setActiveTab("website")
+              setSidebarOpen(false)
+            }}
+          />
         </nav>
 
         {/* ── Sidebar footer ── */}
@@ -1096,17 +1213,33 @@ export default function OrgDashboardPage() {
                 </motion.div>
               )}
 
+                            
               {activeTab === "website" && (
-                  <motion.div
-                    key="website"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <WebsitePreviewSection />
-                  </motion.div>
-                )}
+                <motion.div
+                  key="website"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  {/* Active page label */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ background: websitePage.accent }}
+                    />
+                    <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      Previewing:
+                    </span>
+                    <span className="text-xs font-bold" style={{ color: websitePage.accent }}>
+                      {websitePage.label}
+                    </span>
+                  </div>
+              
+                  <WebsitePreviewSection href={websitePage.href} />
+                </motion.div>
+              )}
+ 
 
               {/* ════ NOTIFICATIONS ════ */}
               {activeTab === "notifications" && (

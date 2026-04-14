@@ -3,123 +3,85 @@
 import { useState } from "react"
 import {
   Home, Handshake, FileText, BookOpen,
-  Zap, HelpCircle, Monitor, ExternalLink,
-  RefreshCw, Maximize2, ChevronRight,
+  Zap, HelpCircle, RefreshCw, Maximize2,
 } from "lucide-react"
+import { AnimatePresence, motion } from "framer-motion"
 
-// ── Design tokens (match your dashboard) ─────────────────────────────────────
-const P  = "#c026d3"
-const S  = "#a855f7"
+// ── Page component imports ────────────────────────────────────────────────────
+import HomePage            from "@/pages/home-page/home"
+import AboutSection        from "@/pages/about-page/about-page"
+import TipPage             from "@/pages/home-page/tipPage"
+import ClientFooterLoader  from "@/components/client-footer-loader"
+import PartnersPage        from "@/pages/partners-page/parnters-page"
+import ResourceHubPage     from "@/pages/resource-hub-page/resource-hub-page"
+import AnnouncePage        from "@/pages/announce-control-page/announce-page"
+import HowToHackathon     from "@/app/(layout)/how-to-hackathon/page" 
+import BlogPage            from "@/pages/blog-page/blog-page"
 
-// ── Nav pages mirroring your NavBar ──────────────────────────────────────────
-const PAGES = [
-  { label: "Home",        href: "/",                  icon: <Home      className="w-4 h-4" />, accent: "#3b82f6" },
-  { label: "Partners",    href: "/partners",           icon: <Handshake className="w-4 h-4" />, accent: "#10b981" },
-  { label: "Blog",        href: "/blog",               icon: <FileText  className="w-4 h-4" />, accent: "#ec4899" },
-  { label: "Resource",    href: "/resource-hub",       icon: <BookOpen  className="w-4 h-4" />, accent: "#f97316" },
-  { label: "Hacks",       href: "/announce",           icon: <Zap       className="w-4 h-4" />, accent: "#a855f7" },
-  { label: "HowToHack",  href: "/how-to-hackathon",   icon: <HelpCircle className="w-4 h-4" />, accent: "#fbbf24" },
-]
+// ── Design tokens ─────────────────────────────────────────────────────────────
+const P = "#c026d3"
+const S = "#a855f7"
 
-// ── Mini nav item ─────────────────────────────────────────────────────────────
-function PreviewNavItem({ page, isActive, onClick }) {
-  return (
-    <button
-      onClick={() => onClick(page)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group text-left cursor-pointer"
-      style={isActive ? {
-        background: `linear-gradient(135deg, ${page.accent}22, ${page.accent}10)`,
-        color: "#ffffff",
-        border: `1px solid ${page.accent}45`,
-        boxShadow: `0 0 14px ${page.accent}14`,
-      } : {
-        background: "transparent",
-        color: "rgba(255,255,255,0.45)",
-        border: "1px solid transparent",
-      }}
-    >
-      {isActive && (
-        <div
-          className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full"
-          style={{ background: page.accent, boxShadow: `0 0 6px ${page.accent}` }}
-        />
-      )}
-      <span style={{ color: isActive ? page.accent : "inherit", flexShrink: 0 }}>
-        {page.icon}
-      </span>
-      <span className="flex-1">{page.label}</span>
-      {isActive && (
-        <ChevronRight className="w-3 h-3 opacity-60" style={{ color: page.accent }} />
-      )}
-    </button>
-  )
+// ── Page registry: maps href → rendered content ───────────────────────────────
+// Each entry is a render function so components only mount when active.
+const PAGE_REGISTRY = {
+  "/": () => (
+    <>
+      <HomePage />
+      <AboutSection />
+      <TipPage />
+      <ClientFooterLoader />
+    </>
+  ),
+  "/partners": () => <PartnersPage />,
+  "/blog":     () => <BlogPage />,
+  "/resource-hub": () => <ResourceHubPage />,
+  "/announce": () => <AnnouncePage />,
+  "/how-to-hackathon": () => <HowToHackathon />,
 }
 
+// ── Exported page list (used by dashboard sidebar) ────────────────────────────
+export const WEBSITE_PAGES = [
+  { label: "Home",       href: "/",                 icon: <Home       className="w-4 h-4" />, accent: "#3b82f6" },
+  { label: "Partners",   href: "/partners",          icon: <Handshake  className="w-4 h-4" />, accent: "#10b981" },
+  { label: "Blog",       href: "/blog",              icon: <FileText   className="w-4 h-4" />, accent: "#ec4899" },
+  { label: "Resource",   href: "/resource-hub",      icon: <BookOpen   className="w-4 h-4" />, accent: "#f97316" },
+  { label: "Hacks",      href: "/announce",          icon: <Zap        className="w-4 h-4" />, accent: "#a855f7" },
+  { label: "HowToHack",  href: "/how-to-hackathon",  icon: <HelpCircle className="w-4 h-4" />, accent: "#fbbf24" },
+]
+
 // ── Main component ────────────────────────────────────────────────────────────
-export default function WebsitePreviewSection() {
-  const [activePage, setActivePage]   = useState(PAGES[0])
-  const [iframeKey, setIframeKey]     = useState(0)
-  const [loading, setLoading]         = useState(true)
-  const [fullscreen, setFullscreen]   = useState(false)
+// Accepts `href` from the dashboard (websitePage.href) and renders the matching
+// page component directly — no iframe, no internal nav.
+export default function WebsitePreviewSection({ href = "/" }) {
+  const [renderKey, setRenderKey] = useState(0)   // force remount on refresh
+  const [fullscreen, setFullscreen] = useState(false)
 
-  const refresh = () => {
-    setLoading(true)
-    setIframeKey(k => k + 1)
-  }
+  const activePage  = WEBSITE_PAGES.find(p => p.href === href) ?? WEBSITE_PAGES[0]
+  const PageContent = PAGE_REGISTRY[href] ?? PAGE_REGISTRY["/"]
 
-  const openExternal = () => window.open(activePage.href, "_blank")
+  const refresh = () => setRenderKey(k => k + 1)
 
   return (
-    <div
-      className={`flex gap-0 rounded-2xl overflow-hidden transition-all duration-300 ${fullscreen ? "fixed inset-4 z-50" : "h-[calc(100vh-220px)] min-h-[500px]"}`}
-      style={{ background: "rgba(5,0,14,0.95)", border: `1px solid ${P}20` }}
-    >
+    <>
+      {/* Fullscreen backdrop */}
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-40 cursor-default"
+          style={{ background: "rgba(0,0,0,0.6)" }}
+          onClick={() => setFullscreen(false)}
+        />
+      )}
 
-      {/* ── Preview sidebar ── */}
-      <aside
-        className="flex-shrink-0 w-48 flex flex-col"
-        style={{ borderRight: `1px solid ${P}18`, background: "rgba(5,0,14,0.80)" }}
+      <div
+        className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-300 ${
+          fullscreen
+            ? "fixed inset-4 z-50"
+            : "h-[calc(100vh-220px)] min-h-[500px]"
+        }`}
+        style={{ background: "rgba(5,0,14,0.95)", border: `1px solid ${P}20` }}
       >
-        {/* Sidebar header */}
-        <div className="px-4 pt-4 pb-3" style={{ borderBottom: `1px solid ${P}14` }}>
-          <div className="flex items-center gap-2 mb-1">
-            <Monitor className="w-3.5 h-3.5" style={{ color: P }} />
-            <span className="text-[10px] uppercase tracking-[0.18em] font-semibold" style={{ color: `${P}90` }}>
-              Site Preview
-            </span>
-          </div>
-          <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.3)" }}>
-            Browse pages live
-          </p>
-        </div>
-
-        {/* Page nav */}
-        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-          {PAGES.map(page => (
-            <PreviewNavItem
-              key={page.href}
-              page={page}
-              isActive={activePage.href === page.href}
-              onClick={(p) => { setActivePage(p); setLoading(true) }}
-            />
-          ))}
-        </nav>
-
-        {/* Current URL pill */}
-        <div className="px-3 pb-4 pt-2" style={{ borderTop: `1px solid ${P}12` }}>
-          <div
-            className="px-2.5 py-1.5 rounded-lg text-[10px] break-all leading-relaxed"
-            style={{ background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.07)" }}
-          >
-            {activePage.href}
-          </div>
-        </div>
-      </aside>
-
-      {/* ── Preview pane ── */}
-      <div className="flex-1 flex flex-col min-w-0">
-
-        {/* Preview toolbar */}
+        {/* ── Browser chrome toolbar ── */}
         <div
           className="flex-shrink-0 flex items-center gap-3 px-4 h-11"
           style={{ borderBottom: `1px solid ${P}14`, background: "rgba(0,0,0,0.25)" }}
@@ -134,7 +96,11 @@ export default function WebsitePreviewSection() {
           {/* URL bar */}
           <div
             className="flex-1 flex items-center gap-2 px-3 py-1 rounded-lg text-xs"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.5)" }}
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              color: "rgba(255,255,255,0.5)",
+            }}
           >
             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#22c55e" }} />
             <span className="truncate">localhost:3000{activePage.href}</span>
@@ -151,14 +117,6 @@ export default function WebsitePreviewSection() {
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
             <button
-              onClick={openExternal}
-              title="Open in new tab"
-              className="p-1.5 rounded-lg transition-all duration-200 hover:bg-white/10 cursor-pointer"
-              style={{ color: "rgba(255,255,255,0.4)" }}
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </button>
-            <button
               onClick={() => setFullscreen(f => !f)}
               title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
               className="p-1.5 rounded-lg transition-all duration-200 hover:bg-white/10 cursor-pointer"
@@ -169,50 +127,40 @@ export default function WebsitePreviewSection() {
           </div>
         </div>
 
-        {/* iframe */}
-        <div className="relative flex-1 min-h-0">
-          {/* Loading shimmer */}
-          {loading && (
-            <div
-              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
-              style={{ background: "rgba(9,5,15,0.85)" }}
+        {/* ── Page content area ── */}
+        <div
+          className="flex-1 min-h-0 overflow-y-auto"
+          style={{
+            background: "#0a0010",
+            // Custom scrollbar
+            scrollbarWidth: "thin",
+            scrollbarColor: `${activePage.accent}40 transparent`,
+          }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${href}-${renderKey}`}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              // Pointer-events none blocks accidental navigation while previewing.
+              // Remove if you want the preview to be fully interactive.
+              style={{ pointerEvents: "none", userSelect: "none" }}
             >
-              <div className="flex gap-1.5">
-                {[0, 1, 2].map(i => (
-                  <div
-                    key={i}
-                    className="w-2 h-2 rounded-full animate-bounce"
-                    style={{ background: P, animationDelay: `${i * 0.15}s` }}
-                  />
-                ))}
-              </div>
-              <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
-                Loading {activePage.label}…
-              </p>
-            </div>
-          )}
-
-          <iframe
-            key={iframeKey}
-            src={activePage.href}
-            title={`Preview — ${activePage.label}`}
-            className="w-full h-full border-0"
-            style={{ display: "block", background: "#ffffff" }}
-            onLoad={() => setLoading(false)}
-            // Allow same-origin scripts; loosen if your pages need more
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-          />
+              <PageContent />
+            </motion.div>
+          </AnimatePresence>
         </div>
-      </div>
 
-      {/* Fullscreen backdrop close */}
-      {fullscreen && (
-        <button
-          className="fixed inset-0 z-40 cursor-default"
-          style={{ background: "rgba(0,0,0,0.6)" }}
-          onClick={() => setFullscreen(false)}
+        {/* ── Bottom accent bar matching active page color ── */}
+        <div
+          className="flex-shrink-0 h-px"
+          style={{
+            background: `linear-gradient(to right, transparent, ${activePage.accent}60, transparent)`,
+          }}
         />
-      )}
-    </div>
+      </div>
+    </>
   )
 }

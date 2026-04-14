@@ -11,7 +11,7 @@ const stats = [
   { icon: <Users className="w-4 h-4" />, label: "Partners" },
 ];
 
-export default function Home() {
+export default function HomePage() {
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden ">
 

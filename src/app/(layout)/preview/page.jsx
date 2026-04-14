@@ -5,17 +5,16 @@ import { AnimatePresence, motion } from "framer-motion"
 
 import Sidebar from "@/components/navbar"
 
+import HomePage from "@/pages/home-page/home" 
 import AboutSection from "@/pages/about-page/about-page"
 import TipPage from "@/pages/home-page/tipPage"
 import ClientFooterLoader from "@/components/client-footer-loader"
 
+import PartnersPage from "@/pages/partners-page/parnters-page" 
 import ResourceHubPage from "@/pages/resource-hub-page/resource-hub-page"
 import AnnouncePage from "@/pages/announce-control-page/announce-page" 
 import HowToHackathon from "../how-to-hackathon/page" 
 import BlogPage from "@/pages/blog-page/blog-page"
-import PartnersPage from "@/pages/partners-page/parnters-page"
-import HomepageLayout from "./layout"
-import HomePage from "@/pages/home-page/home"
 
 const fade = {
   initial: { opacity: 0, y: 10 },
@@ -24,14 +23,12 @@ const fade = {
   transition: { duration: 0.2 },
 }
 
-export default function HomeMain() {
+export default function PreviewPage() {
   const [activeTab, setActiveTab] = useState("home")
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-
-      <main className="flex-1 w-full md:ml-16 xl:ml-60 pb-20 md:pb-0 md:pt-10">
+      <main className="flex-1 w-full">
         <AnimatePresence mode="wait">
 
           {activeTab === "home" && (
