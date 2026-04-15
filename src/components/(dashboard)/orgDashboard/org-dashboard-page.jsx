@@ -50,6 +50,7 @@ import { useNotifications } from "@/components/notifications/use-notification"
 import { notifyContentDeletedByOrg } from "@/lib/notification"
 import OrgViewableSection from "./org-view-section"
 import WebsitePreviewSection, { WEBSITE_PAGES } from "@/components/preview/website-preview-section"
+import OrgPendingApproval from "./org-pending-approval"
 
 const ITEMS_PER_PAGE = 6
 
@@ -612,7 +613,19 @@ export default function OrgDashboardPage() {
     )
   }
   if (!isLoggedIn || role !== "org_admin") return null
-
+  // ── Approval gate ──────────────────────────────────────────────────────────
+  const approvalStatus = profile?.approval_status ?? "pending"
+  if (approvalStatus !== "approved") {
+    return (
+      <OrgPendingApproval
+        profile={profile}
+        onLogout={async () => {
+          await supabase.auth.signOut({ scope: "local" })
+          router.push("/log-in")
+        }}
+      />
+    )
+  }
   // ── Nav items ─────────────────────────────────────────────────────────────
   const navItems = [
     { value: "overview",       icon: <LayoutDashboard className="w-4 h-4" />, label: "Overview"      },

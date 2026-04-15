@@ -146,6 +146,21 @@ export default function HistorySection() {
   const fetchAll = async () => {
     setLoading(true)
     try {
+      // Cutoff: anything older than 3 months is expired
+      const cutoff = new Date()
+      cutoff.setMonth(cutoff.getMonth() - 3)
+      const cutoffISO = cutoff.toISOString()
+
+      // Purge expired rejected submissions (keyed on reviewed_at)
+      await Promise.all([
+        supabase.from("pending_announcements").delete().eq("status", "rejected").lt("reviewed_at", cutoffISO),
+        supabase.from("pending_blogs"        ).delete().eq("status", "rejected").lt("reviewed_at", cutoffISO),
+        supabase.from("pending_resources"    ).delete().eq("status", "rejected").lt("reviewed_at", cutoffISO),
+        // Purge expired deletion records (keyed on deleted_at)
+        supabase.from("content_deletions"    ).delete().lt("deleted_at", cutoffISO),
+      ])
+
+      // Now fetch what remains
       const [
         { data: rAnn  }, { data: rBlog }, { data: rRes  },
         { data: dAll  },
@@ -203,6 +218,112 @@ export default function HistorySection() {
 
   const totalRejected = rejected.announcements.length + rejected.blogs.length + rejected.resources.length
   const totalDeleted  = deleted.announcements.length  + deleted.blogs.length  + deleted.resources.length
+
+  const getExpiry = (dateStr) => {
+    if (!dateStr) return null
+    const expiry = new Date(dateStr)
+    expiry.setMonth(expiry.getMonth() + 3)
+    const diffMs = expiry - Date.now()
+    if (diffMs <= 0) return { expired: true, label: "Expired", pct: 0, tier: "red" }
+
+    const days  = Math.floor(diffMs / 864e5)
+    const hours = Math.floor((diffMs % 864e5) / 36e5)
+    const pct   = Math.min(100, Math.round((diffMs / (90 * 864e5)) * 100))
+
+    let label, tier
+    if (days > 60) { label = `${Math.floor(days / 30)}mo ${days % 30}d left`;  tier = "green"  }
+    else if (days > 30) { label = `${days}d left`;                               tier = "amber"  }
+    else if (days > 7)  { label = `${days}d left`;                               tier = "orange" }
+    else if (days > 0)  { label = `${days}d ${hours}h left`;                     tier = "red"    }
+    else                { label = `${hours}h left`;                               tier = "red"    }
+
+    return { expired: false, label, pct, tier, days }
+  }
+
+  const EXPIRY_STYLES = {
+    green:  { text: "text-emerald-400", bar: "bg-emerald-400", badge: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" },
+    amber:  { text: "text-amber-400",   bar: "bg-amber-400",   badge: "bg-amber-500/10   text-amber-300   border-amber-500/20"   },
+    orange: { text: "text-orange-400",  bar: "bg-orange-400",  badge: "bg-orange-500/10  text-orange-300  border-orange-500/20"  },
+    red:    { text: "text-red-400",     bar: "bg-red-400",     badge: "bg-red-500/10     text-red-300     border-red-500/20"     },
+  }
+
+  function HistoryListRow({ item, mode, ac, isSelected, onClick }) {
+    const eventAt = mode === "rejected" ? item.reviewed_at : item.deleted_at
+    const expiry  = getExpiry(eventAt)
+    const es      = expiry ? EXPIRY_STYLES[expiry.tier] : null
+
+    return (
+      <button
+        onClick={onClick}
+        className={`w-full text-left py-4 px-4 flex items-start gap-3 transition-all duration-150 group border-l-2
+          ${isSelected
+            ? `bg-white/6 ${ac.border}`
+            : `border-l-transparent hover:bg-white/3 hover:${ac.border}`}`}
+      >
+        <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0
+          ${mode === "rejected" ? "bg-red-400" : "bg-slate-400"}
+          ${isSelected ? "opacity-100" : "opacity-40 group-hover:opacity-70"}`}
+        />
+
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className={`text-xs font-semibold leading-snug line-clamp-2
+              ${isSelected ? "text-white" : "text-white/60 group-hover:text-white/85"}`}
+            >
+              {item.title}
+            </p>
+            <span className="text-white/20 text-[10px] shrink-0 mt-0.5">
+              {eventAt
+                ? new Date(eventAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : "—"}
+            </span>
+          </div>
+
+          {(item.organization || item.author) && (
+            <p className={`text-[11px] truncate ${ac.tag} opacity-75`}>
+              {item.organization || item.author}
+            </p>
+          )}
+
+          {mode === "rejected" && item.rejection_reason && (
+            <p className="text-[10px] text-red-400/60 truncate italic">
+              &quot;{item.rejection_reason}&quot;
+            </p>
+          )}
+          {mode === "deleted" && item.deletion_reason && (
+            <p className="text-[10px] text-slate-400/60 truncate italic">
+              &quot;{item.deletion_reason}&quot;
+            </p>
+          )}
+
+          {/* ── Expiry bar ── */}
+          {expiry && (
+            <div className="pt-1 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className={`text-[9px] font-medium flex items-center gap-1 ${expiry.expired ? "text-red-400/70" : es.text}`}>
+                  <Clock className="w-2.5 h-2.5" />
+                  {expiry.label}
+                </span>
+                {!expiry.expired && (
+                  <span className="text-[9px] text-white/18">{expiry.pct}%</span>
+                )}
+              </div>
+              <div className="h-[3px] rounded-full bg-white/6 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${expiry.expired ? "bg-red-500/40" : es.bar}`}
+                  style={{ width: `${expiry.pct}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <ChevronRight className={`w-3.5 h-3.5 shrink-0 mt-0.5 transition-colors
+          ${isSelected ? ac.tag : "text-white/12 group-hover:text-white/25"}`}
+        />
+      </button>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">

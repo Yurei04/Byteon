@@ -26,7 +26,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
 import WebsitePreviewSection, { WEBSITE_PAGES } from "@/components/preview/website-preview-section"
-
+import OrgPendingApproval from "../orgDashboard/org-pending-approval" 
+import OrgRegistrationApprovals from "./org-registration-approval"
 import SuperProfile         from "./super-profile,"
 import AccountManageSection from "./accounts-manage-section"
 import ApprovalSection      from "./approval-section"
@@ -187,6 +188,7 @@ function SuperAdminDashboardPage() {
     totalUsers: 0, totalOrgs: 0, totalAnnouncements: 0,
     totalBlogs: 0, totalResources: 0, activeAnnouncements: 0,
   })
+  const [pendingOrgCount, setPendingOrgCount] = useState(0)
   const [statsLoading, setStatsLoading] = useState(true)
   const [websitePage, setWebsitePage] = useState(WEBSITE_PAGES[0])
   const userId      = session?.user?.id
@@ -208,7 +210,7 @@ function SuperAdminDashboardPage() {
       const [
         { count: uCount }, { count: oCount }, { count: annCount },
         { count: blogCount }, { count: resCount }, { count: activeAnn },
-        { count: pAnn }, { count: pBlog }, { count: pRes },
+        { count: pAnn }, { count: pBlog }, { count: pRes }, { count: pendingOrgCount },
       ] = await Promise.all([
         supabase.from("users").select("id", { count: "exact", head: true }),
         supabase.from("organizations").select("id", { count: "exact", head: true }),
@@ -219,12 +221,14 @@ function SuperAdminDashboardPage() {
         supabase.from("pending_announcements").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("pending_blogs").select("id", { count: "exact", head: true }).eq("status", "pending"),
         supabase.from("pending_resources").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("organizations").select("id", { count: "exact", head: true }).eq("approval_status", "pending"),
       ])
       setStats({
         totalUsers: uCount || 0, totalOrgs: oCount || 0,
         totalAnnouncements: annCount || 0, totalBlogs: blogCount || 0,
         totalResources: resCount || 0, activeAnnouncements: activeAnn || 0,
       })
+      setPendingOrgCount(pendingOrgCount || 0)
       setPendingCount((pAnn || 0) + (pBlog || 0) + (pRes || 0))
     } catch {}
     finally { setStatsLoading(false) }
@@ -241,6 +245,7 @@ function SuperAdminDashboardPage() {
     { value: "history",        icon: <History         className="w-4 h-4" />, label: "Archives"    },
     { value: "profile",        icon: <ShieldCheck     className="w-4 h-4" />, label: "Profile"     },
     { value: "notifications",  icon: <Bell            className="w-4 h-4" />, label: "Notifications",     badge: unreadCount > 0 ? unreadCount : null },
+    { value: "org-approvals",icon: <Building2 className="w-4 h-4" />, label: "Org Approvals", badge: pendingOrgCount > 0 ? pendingOrgCount : null, pulse: pendingOrgCount > 0, },
   ]
 
   const pageTitles = {
@@ -252,7 +257,7 @@ function SuperAdminDashboardPage() {
     profile:       { title: "Profile",        sub: "Your super admin profile and settings"         },
     notifications: { title: "Alerts",         sub: "Platform activity, org deletions, and events"  },
     website:         { title: "Website Preview", sub: "View-only preview — navigation via sidebar" },
-
+    "org-approvals": { title: "Org Approvals", sub: "Review organization registration requests" },
   }
 
   const statCards = [
@@ -703,6 +708,23 @@ function SuperAdminDashboardPage() {
                   </div>
                 </motion.div>
               )}
+
+              {activeTab === "org-approvals" && (
+                  <motion.div
+                    key="org-approvals"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <div
+                      className="rounded-2xl p-5"
+                      style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${P}18` }}
+                    >
+                      <OrgRegistrationApprovals addToast={addToast} />
+                    </div>
+                  </motion.div>
+                )}
 
             </AnimatePresence>
 
