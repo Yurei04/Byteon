@@ -200,16 +200,39 @@ export default function PosterForm({ onGenerate, isLoading }) {
               limit={LIMITS.prize}
             />
           </FieldRow>
-          <FieldRow label="Date">
-            <TextInput
-              icon={CalendarDays}
-              value={form.date}
-              onChange={set("date")}
-              placeholder="e.g. Jan–Mar 2027"
-              maxLength={LIMITS.date}
-              limit={LIMITS.date}
+         <FieldRow label="Date Range">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="relative">
+            <CalendarDays
+              size={13}
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500"
             />
-          </FieldRow>
+            <input
+              type="date"
+              value={form.startDate || ""}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, startDate: e.target.value }))
+              }
+              className={`${baseCls} pl-9`}
+            />
+          </div>
+
+          <div className="relative">
+            <CalendarDays
+              size={13}
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500"
+            />
+            <input
+              type="date"
+              value={form.endDate || ""}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, endDate: e.target.value }))
+              }
+              className={`${baseCls} pl-9`}
+            />
+          </div>
+        </div>
+      </FieldRow>
         </div>
 
         <FieldRow label="Venue (optional)">

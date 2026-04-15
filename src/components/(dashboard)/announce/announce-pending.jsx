@@ -823,7 +823,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
                 onChange={(e) => setField("author", e.target.value)}
                 maxLength={LIMITS.author}
                 style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
-                placeholder="Jane Doe"
+                placeholder="First Name, Last Name"
               />
               <CharCount current={formData.author.length} max={LIMITS.author} />
             </div>

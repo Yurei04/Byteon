@@ -1,4 +1,3 @@
-// components/poster-maker/PosterMaker.jsx
 "use client"
 
 import { useState } from "react"
@@ -8,7 +7,7 @@ import PosterHistory from "./poster-history"
 
 export default function PosterMaker({ embedded = false }) {
   const [activeTab, setActiveTab] = useState("create")
-  const [result, setResult] = useState({ image: null, prompt: null })
+  const [result, setResult] = useState({ images: [], prompt: null })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [aspectRatio, setAspectRatio] = useState("2:3")
@@ -18,15 +17,18 @@ export default function PosterMaker({ embedded = false }) {
     setIsLoading(true)
     setError(null)
     setAspectRatio(formData.aspectRatio)
+
     try {
       const res = await fetch("/api/generate-poster", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       })
+
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Generation failed")
-      setResult({ image: data.image, prompt: data.prompt })
+
+      setResult({ images: data.images || [], prompt: data.prompt })
       setHistoryRefresh((n) => n + 1)
     } catch (err) {
       setError(err.message)
@@ -37,7 +39,6 @@ export default function PosterMaker({ embedded = false }) {
 
   const inner = (
     <div className={embedded ? "p-6" : "max-w-7xl mx-auto px-6 py-8"}>
-      {/* Tab switcher */}
       <div className="flex items-center justify-between mb-6">
         {!embedded && (
           <div>
@@ -45,18 +46,10 @@ export default function PosterMaker({ embedded = false }) {
             <p className="text-sm text-zinc-500 mt-0.5">Free · Pollinations.ai</p>
           </div>
         )}
-        {embedded && (
-          <div>
-            <h2 className="text-lg font-bold text-fuchsia-200 flex items-center gap-2">
-              <span className="text-xl">✦</span> AI Poster Maker
-            </h2>
-            <p className="text-sm text-fuchsia-300/50 mt-0.5">Generate posters and save them to your org — free, no limits</p>
-          </div>
-        )}
 
         <div className="flex items-center gap-1 bg-zinc-900/80 border border-fuchsia-900/40 rounded-xl p-1">
           {[
-            { key: "create",  label: "Create",  icon: "✦" },
+            { key: "create", label: "Create", icon: "✦" },
             { key: "history", label: "History", icon: "◷" },
           ].map((tab) => (
             <button
@@ -65,7 +58,7 @@ export default function PosterMaker({ embedded = false }) {
               className={`
                 flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-150
                 ${activeTab === tab.key
-                  ? "bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white shadow-[0_0_10px_rgba(217,70,239,0.3)]"
+                  ? "bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white"
                   : "text-zinc-500 hover:text-zinc-200"
                 }
               `}
@@ -77,88 +70,51 @@ export default function PosterMaker({ embedded = false }) {
         </div>
       </div>
 
-      {/* Create */}
       {activeTab === "create" && (
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
+        <div className="flex flex-col gap-6">
+          
+          {/* FORM (top) */}
           <div className="bg-zinc-900/50 border border-fuchsia-900/30 rounded-2xl p-6">
             <PosterForm onGenerate={handleGenerate} isLoading={isLoading} />
           </div>
-          <div className="lg:sticky lg:top-24 bg-zinc-900/50 border border-fuchsia-900/30 rounded-2xl p-6">
+
+          {/* PREVIEW (bottom) */}
+          <div className="bg-zinc-900/50 border border-fuchsia-900/30 rounded-2xl p-6">
+            
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-sm font-bold text-zinc-100">Preview</h3>
-              {result.image && (
+
+              {result.images.length > 0 && (
                 <span className="text-[10px] text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-1 rounded-full">
-                  Saved to history ✓
+                  3 posters saved ✓
                 </span>
               )}
             </div>
+
             {error && (
               <div className="mb-4 p-3 bg-red-950/40 border border-red-800/40 rounded-xl">
                 <p className="text-xs text-red-400">{error}</p>
               </div>
             )}
+
             <PosterPreview
-              image={result.image}
+              images={result.images}
               isLoading={isLoading}
               prompt={result.prompt}
               aspectRatio={aspectRatio}
             />
           </div>
+
         </div>
       )}
 
-      {/* History */}
       {activeTab === "history" && (
         <div className="bg-zinc-900/50 border border-fuchsia-900/30 rounded-2xl p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-zinc-100">Poster History</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">All posters generated by your organization</p>
-            </div>
-            <button
-              onClick={() => setHistoryRefresh((n) => n + 1)}
-              className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 px-3 py-1.5 rounded-lg border border-zinc-700/50 hover:border-zinc-500 transition-all"
-            >
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M10.5 6A4.5 4.5 0 116 1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-                <path d="M10.5 1.5v3h-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Refresh
-            </button>
-          </div>
           <PosterHistory refreshTrigger={historyRefresh} />
         </div>
       )}
     </div>
   )
-
-  // Standalone page — keep full header
-  if (!embedded) {
-    return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100">
-        <div className="border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-fuchsia-600 to-pink-600 flex items-center justify-center shadow-[0_0_12px_rgba(217,70,239,0.4)]">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M8 1l1.5 4.5L14 7l-4.5 1.5L8 13l-1.5-4.5L2 7l4.5-1.5L8 1Z" fill="white"/>
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-base font-bold text-zinc-100 leading-none">PosterGen</h1>
-                <p className="text-[10px] text-zinc-500 mt-0.5">AI Poster Maker · Free</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-zinc-500">Pollinations.ai · Free</span>
-            </div>
-          </div>
-        </div>
-        {inner}
-      </div>
-    )
-  }
 
   return inner
 }
