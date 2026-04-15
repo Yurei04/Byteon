@@ -93,7 +93,7 @@ export default function PosterPreview({ images = [], isLoading, prompt, aspectRa
 
       {/* DOWNLOAD BUTTONS */}
       {images.length > 0 && !isLoading && (
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="flex flex-wrap gap-2 justify-between">
           {images.map((image, index) => (
             <button
               key={index}

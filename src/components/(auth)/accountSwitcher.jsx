@@ -70,7 +70,7 @@ function Spinner({ size = "sm" }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function AccountSwitcher() {
+export default function AccountSwitcher( isCollapsed = false ) {
   const { profile, role, session, refreshProfile, logout } = useAuth()
   const router  = useRouter()
   const [open, setOpen]           = useState(false)
@@ -140,15 +140,15 @@ export default function AccountSwitcher() {
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
-
       {/* ── Trigger ── */}
       <button
         onClick={() => setOpen(prev => !prev)}
-        aria-haspopup="true" aria-expanded={open}
-        className="w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-all duration-200 group"
+        aria-haspopup="true"
+        aria-expanded={open}
+        className="w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition-all duration-200 group cursor-pointer"
         style={{
           background: open ? `${P}18` : "rgba(255,255,255,0.04)",
-          border: `1px solid ${open ? `${P}40` : "rgba(255,255,255,0.08)"}`,
+          border: `1px solid ${open ? `${P}80` : "rgba(255,255,255,0.08)"}`,
         }}
         onMouseEnter={e => {
           if (open) return
@@ -161,24 +161,26 @@ export default function AccountSwitcher() {
           e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"
         }}
       >
+
+        {/* Avatar ALWAYS visible */}
         <Avatar account={activeAccount} size={28} />
 
-        {/* Name — only visible at xl width (matching sidebar expanded state) */}
-        <div className="hidden xl:flex flex-col flex-1 min-w-0 text-left">
+        <div className="flex flex-col min-w-0 text-left  ">
+  
           <span className="text-xs font-semibold text-white truncate leading-tight">
             {activeAccount?.displayName ?? session.user.email ?? "Account"}
           </span>
-          <span className="text-[9px] leading-none mt-0.5" style={{ color: `${P}cc` }}>
-            {ROLE_CONFIG[activeAccount?.role]?.label ?? "User"}
-          </span>
+
+          {!isCollapsed && (
+            <span className="text-[10px] leading-none mt-0.5 text-fuchsia-300/80">
+              {ROLE_CONFIG?.[activeAccount?.role]?.label ?? "User"}
+            </span>
+          )}
+
         </div>
-
         <ChevronDown
-          className="hidden xl:block w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200"
-          style={{ color: "rgba(255,255,255,0.3)", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
-        />
+        className={`${isCollapsed ? "hidden" : "block"} w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200`}/>
       </button>
-
       {/* ── Dropdown ── */}
       {open && (
         <div
