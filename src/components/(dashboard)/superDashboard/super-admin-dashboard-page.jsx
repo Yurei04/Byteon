@@ -16,6 +16,8 @@ import {
   AlertCircle, Loader2, LogOut, History, Bell,
   Menu, X, ChevronRight, LayoutDashboard, ArrowUpRight,
   Activity, Sparkles,
+  Monitor,
+  ChevronDown,
 } from "lucide-react"
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -23,6 +25,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from "next/navigation"
+import WebsitePreviewSection, { WEBSITE_PAGES } from "@/components/preview/website-preview-section"
 
 import SuperProfile         from "./super-profile,"
 import AccountManageSection from "./accounts-manage-section"
@@ -41,6 +44,96 @@ import { useToast }         from "@/components/use-toast"
 const P  = "#c026d3"   // primary   (fuchsia)
 const S  = "#a855f7"   // secondary (purple)
 const BG = "#09050f"   // page bg
+
+
+
+
+function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick, onPageClick }) {
+  const P = "#c026d3"
+  const S = "#a855f7"
+  const isActive = activeTab === "website"
+ 
+  return (
+    <div>
+      {/* Parent row */}
+      <button
+        onClick={onParentClick}
+        className="w-full flex cursor-pointer items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
+        style={isActive ? {
+          background: `linear-gradient(135deg, ${P}22, ${S}14)`,
+          color: "#ffffff",
+          border: `1px solid ${P}45`,
+          boxShadow: `0 0 18px ${P}18, inset 0 1px 0 ${P}20`,
+        } : {
+          background: "transparent",
+          color: "rgba(255,255,255,0.45)",
+          border: "1px solid transparent",
+        }}
+      >
+        {isActive && (
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full"
+            style={{ background: `linear-gradient(to bottom, ${P}, ${S})`, boxShadow: `0 0 8px ${P}` }}
+          />
+        )}
+        <span className="flex-shrink-0" style={{ color: isActive ? P : "inherit" }}>
+          <Monitor className="w-4 h-4" />
+        </span>
+        <span className="flex-1 text-left">Website</span>
+        <ChevronDown
+          className="w-3 h-3 transition-transform duration-200 flex-shrink-0"
+          style={{
+            color: isActive ? P : "rgba(255,255,255,0.3)",
+            transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+          }}
+        />
+      </button>
+ 
+      {/* Sub-items — smooth expand */}
+      <div
+        className="overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ maxHeight: isExpanded ? `${WEBSITE_PAGES.length * 44}px` : "0px", opacity: isExpanded ? 1 : 0 }}
+      >
+        <div className="pl-4 pr-1 pt-0.5 pb-1 space-y-0.5">
+          {WEBSITE_PAGES.map(page => {
+            const isSubActive = isActive && websitePage.href === page.href
+            return (
+              <button
+                key={page.href}
+                onClick={() => onPageClick(page)}
+                className="w-full flex cursor-pointer items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200"
+                style={isSubActive ? {
+                  background: `${page.accent}18`,
+                  color: "#ffffff",
+                  border: `1px solid ${page.accent}40`,
+                } : {
+                  background: "transparent",
+                  color: "rgba(255,255,255,0.38)",
+                  border: "1px solid transparent",
+                }}
+              >
+                {/* Color dot */}
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200"
+                  style={{ background: isSubActive ? page.accent : "rgba(255,255,255,0.2)" }}
+                />
+                {page.label}
+                {isSubActive && (
+                  <span
+                    className="ml-auto text-[9px] px-1.5 py-0.5 rounded-md font-semibold"
+                    style={{ background: `${page.accent}25`, color: page.accent }}
+                  >
+                    live
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 // ── Sidebar nav item ──────────────────────────────────────────────────────────
 function SidebarNavItem({ value, icon, label, isActive, onClick, badge, pulse }) {
@@ -95,7 +188,7 @@ function SuperAdminDashboardPage() {
     totalBlogs: 0, totalResources: 0, activeAnnouncements: 0,
   })
   const [statsLoading, setStatsLoading] = useState(true)
-
+  const [websitePage, setWebsitePage] = useState(WEBSITE_PAGES[0])
   const userId      = session?.user?.id
   const platformOrg = profile?.linkedOrg
 
@@ -158,6 +251,8 @@ function SuperAdminDashboardPage() {
     history:       { title: "Archives",       sub: "Historical records"                            },
     profile:       { title: "Profile",        sub: "Your super admin profile and settings"         },
     notifications: { title: "Alerts",         sub: "Platform activity, org deletions, and events"  },
+    website:         { title: "Website Preview", sub: "View-only preview — navigation via sidebar" },
+
   }
 
   const statCards = [
@@ -253,14 +348,30 @@ function SuperAdminDashboardPage() {
               onClick={(v) => { setActiveTab(v); setSidebarOpen(false) }}
             />
           ))}
+
+            {/* ── Website group ── */}
+            <SidebarWebsiteGroup
+              isExpanded={activeTab === "website"}
+              activeTab={activeTab}
+              websitePage={websitePage}
+              onParentClick={() => {
+                setActiveTab("website")
+                setSidebarOpen(false)
+              }}
+              onPageClick={(page) => {
+                setWebsitePage(page)
+                setActiveTab("website")
+                setSidebarOpen(false)
+              }}
+            />
         </nav>
 
         {/* Sidebar footer */}
         <div className="p-3 space-y-1" style={{ borderTop: `1px solid ${P}15` }}>
-          <ReturnButton />
+          <ReturnButton className="mb-2" />
           <button
             onClick={() => setShowSignOutDialog(true)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-red-500/10 mt-1"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-red-500/10 mt-1"
             style={{ color: "#f87171", border: "1px solid transparent" }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "transparent"}
@@ -550,6 +661,33 @@ function SuperAdminDashboardPage() {
                   </div>
                 </motion.div>
               )}
+               {activeTab === "website" && (
+                  <motion.div
+                    key="website"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    {/* Active page label */}
+                    <div className="flex items-center gap-2 mb-4">
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: websitePage.accent }}
+                      />
+                      <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
+                        Previewing:
+                      </span>
+                      <span className="text-xs font-bold" style={{ color: websitePage.accent }}>
+                        {websitePage.label}
+                      </span>
+                    </div>
+                
+                    <WebsitePreviewSection href={websitePage.href} />
+                  </motion.div>
+                )}
+    
+              
 
               {/* ════ NOTIFICATIONS ════ */}
               {activeTab === "notifications" && (

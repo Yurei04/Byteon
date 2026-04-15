@@ -642,7 +642,7 @@ export default function OrgDashboardPage() {
     create:        { title: "Create",        sub: "Publish new announcements, blogs & resources" },
     posters:       { title: "Poster Maker",  sub: "Design promotional materials" },
     profile:       { title: "Settings",      sub: "Manage your organization profile & branding" },
-  website:         { title: "Website Preview", sub: "View-only preview — navigation via sidebar" },
+    website:         { title: "Website Preview", sub: "View-only preview — navigation via sidebar" },
     notifications: { title: "Notifications", sub: "Approval decisions and account alerts" },
   }
 

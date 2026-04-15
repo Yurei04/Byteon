@@ -15,6 +15,7 @@ import ResourceHubPage from "@/pages/resource-hub-page/resource-hub-page"
 import AnnouncePage from "@/pages/announce-control-page/announce-page" 
 import HowToHackathon from "../how-to-hackathon/page" 
 import BlogPage from "@/pages/blog-page/blog-page"
+import Partners from "../partners/page"
 
 const fade = {
   initial: { opacity: 0, y: 10 },
@@ -28,7 +29,7 @@ export default function PreviewPage() {
 
   return (
     <div className="flex min-h-screen">
-      <main className="flex-1 w-full">
+      <main className="flex-1 w-full md:ml-16 xl:ml-60 pb-20 md:pb-0 md:pt-10">
         <AnimatePresence mode="wait">
 
           {activeTab === "home" && (

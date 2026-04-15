@@ -53,6 +53,9 @@ const data = [
 export default function PartnersPage() {
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-center gap-8 p-8">
+            <div class="absolute inset-0">
+                <div class="absolute top-0 z-[-2] h-full w-full bg-[#000000] bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px]"></div>
+            </div>
             <div className="text-center mt-24">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4">
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-500">

@@ -13,20 +13,11 @@ const stats = [
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden ">
+    <div className="relative h-screen w-full overflow-hidden ">
 
-      {/* Layered gradient background */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(168,85,247,0.25),transparent)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_80%_60%,rgba(217,70,239,0.12),transparent)]" />
-
-      {/* Dot grid */}
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(217,70,239,0.5) 1px, transparent 1px)",
-          backgroundSize: "36px 36px",
-        }}
-      />
+      <div class="absolute inset-0">
+        <div class="absolute top-0 z-[-2] h-full w-full bg-[#000000] bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px]"></div>
+      </div>
 
       {/* Animated glow orbs */}
       <motion.div

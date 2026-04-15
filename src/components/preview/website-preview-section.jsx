@@ -65,21 +65,15 @@ export default function WebsitePreviewSection({ href = "/" }) {
   return (
     <>
       {/* Fullscreen backdrop */}
-      {fullscreen && (
-        <div
-          className="fixed inset-0 z-40 cursor-default"
-          style={{ background: "rgba(0,0,0,0.6)" }}
-          onClick={() => setFullscreen(false)}
-        />
-      )}
+
 
       <div
-        className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-300 ${
+        className={`flex flex-col rounded-2xl overflow-hidden transition-all duration-300 bg-[#000000] bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px] ${
           fullscreen
             ? "fixed inset-4 z-50"
             : "h-[calc(100vh-220px)] min-h-[500px]"
         }`}
-        style={{ background: "rgba(5,0,14,0.95)", border: `1px solid ${P}20` }}
+        style={{border: `1px solid ${P}20` }}
       >
         {/* ── Browser chrome toolbar ── */}
         <div
@@ -131,7 +125,6 @@ export default function WebsitePreviewSection({ href = "/" }) {
         <div
           className="flex-1 min-h-0 overflow-y-auto"
           style={{
-            background: "#0a0010",
             // Custom scrollbar
             scrollbarWidth: "thin",
             scrollbarColor: `${activePage.accent}40 transparent`,
@@ -144,9 +137,7 @@ export default function WebsitePreviewSection({ href = "/" }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2 }}
-              // Pointer-events none blocks accidental navigation while previewing.
-              // Remove if you want the preview to be fully interactive.
-              style={{ pointerEvents: "none", userSelect: "none" }}
+              style={{ pointerEvents: "auto" }}
             >
               <PageContent />
             </motion.div>
