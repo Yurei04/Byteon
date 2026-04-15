@@ -41,6 +41,7 @@ import {
 import Link from "next/link"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
 import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
+import OrgPendingApproval from "@/components/(dashboard)/orgDashboard/org-pending-approval"
 
 // ─── Theme palettes ───────────────────────────────────────────────────────────
 const USER_THEMES = [
@@ -292,7 +293,8 @@ export function SignupForm() {
           author_name: orgName.trim(),
           description: orgDescription.trim(),
           profile_photo_url: profilePhotoUrl,
-          // Maps to existing primary_color, secondary_color, color_scheme columns
+          approval_status: "pending",
+          rejection_reason: null, 
           ...(orgPalette
             ? {
                 primary_color: orgPalette.primary,
@@ -306,7 +308,7 @@ export function SignupForm() {
 
       setLoading(false)
       try { await supabase.auth.signOut({ scope: "local" }) } catch {}
-      router.push("/log-in?registered=true")
+      router.push("/log-in?registered=true&pending=true")
     } catch (err) {
       console.error("Signup error:", err)
       setError(err.message || "An unexpected error occurred")
