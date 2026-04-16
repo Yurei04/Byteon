@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 
 import Sidebar from "@/components/navbar"
@@ -24,8 +24,16 @@ const fade = {
 }
 
 export default function HomeMain() {
-  const [activeTab, setActiveTab] = useState("home")
+  const [activeTab, setActiveTab] = useState("hacks")
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  // Read ?tab= query param on first mount and jump to that tab
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tab = params.get("tab")
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (tab) setActiveTab(tab)
+  }, [])
 
   // Sidebar is 64px (4rem) collapsed, 224px (14rem) expanded
   const mainMargin = sidebarCollapsed ? "4.5rem" : "16rem"
@@ -43,10 +51,8 @@ export default function HomeMain() {
         className="flex-1 w-full pb-20 md:pb-0 md:pt-10"
         style={{
           marginLeft: 0,
-          // Only apply dynamic margin on md+ (sidebar is hidden on mobile)
           transition: "margin-left 0.3s cubic-bezier(0.4,0,0.2,1)",
         }}
-        // Use a wrapper trick so CSS handles responsive margin
       >
         {/* Responsive margin shim — invisible, pushes content on md+ */}
         <style>{`

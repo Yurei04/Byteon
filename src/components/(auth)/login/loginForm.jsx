@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card"
 import {
   Field,
-  FieldDescription,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
@@ -52,6 +51,7 @@ export function LoginForm() {
       const user = data?.user
       if (!user) { setError("Login failed. Please try again."); setLoading(false); return }
 
+      // ── Super admin check ─────────────────────────────────────────────────
       const { data: superData, error: superError } = await supabase
         .from("super_admins")
         .select("user_id, id, name, organization_id, created_at")
@@ -71,6 +71,7 @@ export function LoginForm() {
         return
       }
 
+      // ── Organization check ────────────────────────────────────────────────
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
         .select("user_id, id, name, author_name, description, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
@@ -96,6 +97,7 @@ export function LoginForm() {
         return
       }
 
+      // ── Regular user check ────────────────────────────────────────────────
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("user_id, id, name, age, affiliation, country, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
@@ -117,10 +119,11 @@ export function LoginForm() {
         }
         await persistCurrentSession({ ...userData, role: "user", table: "users" }, "user")
         try { sessionStorage.clear() } catch {}
-        window.location.href = "/user-dashboard"
+        window.location.href = "/"
         return
       }
 
+      // ── No profile found — treat as deleted ───────────────────────────────
       await supabase.auth.signOut()
       window.location.href = "/account-suspended?reason=deleted"
 

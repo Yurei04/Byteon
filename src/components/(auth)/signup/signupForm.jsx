@@ -41,7 +41,6 @@ import {
 import Link from "next/link"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
 import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
-import OrgPendingApproval from "@/components/(dashboard)/orgDashboard/org-pending-approval"
 
 // ─── Theme palettes ───────────────────────────────────────────────────────────
 const USER_THEMES = [
@@ -125,7 +124,6 @@ function OrgPalettePicker({ value, onChange }) {
                   : "border-purple-500/20 bg-purple-900/20 hover:border-purple-500/40"
               }`}
             >
-              {/* Split-color swatch */}
               <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0">
                 <div className="absolute inset-0 left-0 w-1/2" style={{ backgroundColor: p.primary }} />
                 <div className="absolute inset-0 left-1/2 w-1/2" style={{ backgroundColor: p.secondary }} />
@@ -141,7 +139,6 @@ function OrgPalettePicker({ value, onChange }) {
         })}
       </div>
 
-      {/* Live preview strip */}
       {value && (() => {
         const pal = ORG_PALETTES.find((p) => p.id === value)
         if (!pal) return null
@@ -196,6 +193,9 @@ export function SignupForm() {
   const [photoPreview, setPhotoPreview] = useState(null)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
+  // Step 1 terms gate — must agree before typing credentials
+  const [termsGated, setTermsGated] = useState(false)
+
   // Personalization
   const [userTheme, setUserTheme] = useState("")
   const [orgPalette, setOrgPalette] = useState(null)
@@ -225,6 +225,7 @@ export function SignupForm() {
 
   const handleNext = () => {
     setError(null)
+    if (!termsGated) { setError("Please agree to the Terms of Service and Privacy Policy first."); return }
     if (mode === "organization" && !orgName.trim()) { setError("Organization name is required"); return }
     if (!email.trim()) { setError("Email is required"); return }
     if (!password) { setError("Password is required"); return }
@@ -280,7 +281,6 @@ export function SignupForm() {
           country: country.trim(),
           affiliation: occupation.trim(),
           profile_photo_url: profilePhotoUrl,
-          // Requires: ALTER TABLE public.users ADD COLUMN IF NOT EXISTS accent_color text null;
           ...(accentColor ? { accent_color: accentColor } : {}),
         })
         if (userError) { setError(`Failed to create user profile: ${userError.message}`); setLoading(false); return }
@@ -294,7 +294,7 @@ export function SignupForm() {
           description: orgDescription.trim(),
           profile_photo_url: profilePhotoUrl,
           approval_status: "pending",
-          rejection_reason: null, 
+          rejection_reason: null,
           ...(orgPalette
             ? {
                 primary_color: orgPalette.primary,
@@ -333,6 +333,7 @@ export function SignupForm() {
             setMode(value); setStep(1); setError(null)
             setProfilePhoto(null); setPhotoPreview(null); setAgreedToTerms(false)
             setUserTheme(""); setOrgPalette(null)
+            setTermsGated(false)
           }}
         >
           {/* Tab switcher */}
@@ -396,60 +397,112 @@ export function SignupForm() {
 
                 <CardContent className="px-5 pb-5 pt-1">
                   {step === 1 ? (
-                    // ── Step 1: credentials ───────────────────────────────────
+                    // ── Step 1: terms gate + credentials ─────────────────────
                     <div onKeyDown={handleKeyDown}>
                       <FieldGroup className="space-y-2.5">
-                        {type === "organization" && (
-                          <Field>
-                            <FieldLabel className={labelCls}>Organization Name</FieldLabel>
-                            <Input
-                              placeholder="My Organization"
-                              value={orgName}
-                              onChange={(e) => setOrgName(e.target.value)}
-                              className={inputCls}
-                            />
-                          </Field>
-                        )}
 
-                        <Field>
-                          <FieldLabel className={labelCls}>Email</FieldLabel>
-                          <Input
-                            type="email"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className={inputCls}
-                            required
+                        {/* ── Terms gate checkbox (must check before typing) ── */}
+                        <div className={`flex items-start gap-2.5 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
+                          termsGated
+                            ? "bg-emerald-500/10 border-emerald-500/30"
+                            : "bg-purple-900/20 border-purple-500/30"
+                        }`}>
+                          <Checkbox
+                            id={`terms-gate-${type}`}
+                            checked={termsGated}
+                            onCheckedChange={(checked) => {
+                              setTermsGated(!!checked)
+                              setError(null)
+                            }}
+                            className="mt-0.5 shrink-0 border-purple-400/50 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
                           />
-                          <FieldDescription className="text-purple-400/60 text-xs mt-0.5">
-                            Each email can only be used once.
-                          </FieldDescription>
-                        </Field>
+                          <label
+                            htmlFor={`terms-gate-${type}`}
+                            className="text-xs text-purple-300/80 leading-relaxed cursor-pointer"
+                          >
+                            I have read and agree to Byteon&apos;s{" "}
+                            <TermsDialog
+                              trigger={
+                                <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">
+                                  Terms of Service
+                                </button>
+                              }
+                            />{" "}and{" "}
+                            <PrivacyDialog
+                              trigger={
+                                <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">
+                                  Privacy Policy
+                                </button>
+                              }
+                            />{" "}
+                            before continuing.
+                            {termsGated && (
+                              <span className="ml-1.5 inline-flex items-center gap-0.5 text-emerald-400 font-medium">
+                                <Check className="size-3" /> Agreed
+                              </span>
+                            )}
+                          </label>
+                        </div>
 
-                        <Field>
-                          <FieldLabel className={labelCls}>Password</FieldLabel>
-                          <div className="grid grid-cols-2 gap-2">
+                        {/* ── Form fields — locked until terms are accepted ── */}
+                        <fieldset
+                          disabled={!termsGated}
+                          className={`space-y-2.5 transition-opacity duration-300 ${
+                            !termsGated ? "opacity-40 pointer-events-none select-none" : "opacity-100"
+                          }`}
+                        >
+                          {type === "organization" && (
+                            <Field>
+                              <FieldLabel className={labelCls}>Organization Name</FieldLabel>
+                              <Input
+                                placeholder="My Organization"
+                                value={orgName}
+                                onChange={(e) => setOrgName(e.target.value)}
+                                className={inputCls}
+                              />
+                            </Field>
+                          )}
+
+                          <Field>
+                            <FieldLabel className={labelCls}>Email</FieldLabel>
                             <Input
-                              type="password"
-                              placeholder="Password"
-                              value={password}
-                              onChange={(e) => setPassword(e.target.value)}
+                              type="email"
+                              placeholder="you@example.com"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
                               className={inputCls}
                               required
                             />
-                            <Input
-                              type="password"
-                              placeholder="Confirm password"
-                              value={confirmPass}
-                              onChange={(e) => setConfirmPass(e.target.value)}
-                              className={inputCls}
-                              required
-                            />
-                          </div>
-                          <FieldDescription className="text-purple-400/60 text-xs mt-0.5">
-                            Must be at least 8 characters.
-                          </FieldDescription>
-                        </Field>
+                            <FieldDescription className="text-purple-400/60 text-xs mt-0.5">
+                              Each email can only be used once.
+                            </FieldDescription>
+                          </Field>
+
+                          <Field>
+                            <FieldLabel className={labelCls}>Password</FieldLabel>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className={inputCls}
+                                required
+                              />
+                              <Input
+                                type="password"
+                                placeholder="Confirm password"
+                                value={confirmPass}
+                                onChange={(e) => setConfirmPass(e.target.value)}
+                                className={inputCls}
+                                required
+                              />
+                            </div>
+                            <FieldDescription className="text-purple-400/60 text-xs mt-0.5">
+                              Must be at least 8 characters.
+                            </FieldDescription>
+                          </Field>
+                        </fieldset>
 
                         {error && <ErrorBanner message={error} />}
 
@@ -585,7 +638,7 @@ export function SignupForm() {
                           </>
                         )}
 
-                        {/* Terms */}
+                        {/* Step 2 terms confirmation */}
                         <div className="flex items-start gap-2.5 bg-purple-900/20 border border-purple-500/20 rounded-lg px-3 py-2">
                           <Checkbox
                             id="terms"

@@ -5,17 +5,23 @@ import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
 import AnnounceEmpty from "@/components/(dashboard)/announce/announce-empty"
 import { motion } from "framer-motion"
-import { Search, Zap, CalendarDays } from "lucide-react"
+import { Search, Zap, CalendarDays, Radio, Clock, CheckCircle2, ChevronRight } from "lucide-react"
 import AnnouncementPublicCard from "@/components/(dashboard)/announce/announce-public-card"
 
-const COLOR_CACHE      = new Map()
-const DEFAULT_PRIMARY   = "#c026d3"
-const DEFAULT_SECONDARY = "#a855f7"
+/* ─── Color Tokens ─── */
+const COLOR_CACHE       = new Map()
+const DEFAULT_PRIMARY   = "#a21caf"
+const DEFAULT_SECONDARY = "#7c3aed"
 
+const P  = "#d946ef"   // fuchsia-500
+const P2 = "#a855f7"   // purple-500
+const P3 = "#e9d5ff"   // purple-200
+
+/* ─── Status Config ─── */
 const STATUS_META = [
-  { value: "active",   label: "Active",   dot: "#22c55e", bg: "rgba(34,197,94,0.12)",  border: "rgba(34,197,94,0.28)"  },
-  { value: "upcoming", label: "Upcoming", dot: "#38bdf8", bg: "rgba(56,189,248,0.12)", border: "rgba(56,189,248,0.28)" },
-  { value: "finished", label: "Finished", dot: "#71717a", bg: "rgba(113,113,122,0.1)", border: "rgba(113,113,122,0.2)" },
+  { value: "active",   label: "Active",   icon: Radio,        dot: "#22c55e",  bg: "rgba(34,197,94,0.08)",   border: "rgba(34,197,94,0.2)",    pulse: true  },
+  { value: "upcoming", label: "Upcoming", icon: Clock,        dot: "#d946ef",  bg: "rgba(217,70,239,0.08)",  border: "rgba(217,70,239,0.22)",  pulse: false },
+  { value: "finished", label: "Finished", icon: CheckCircle2, dot: "#a1a1aa",  bg: "rgba(161,161,170,0.08)", border: "rgba(161,161,170,0.18)", pulse: false },
 ]
 
 function getStatus(item) {
@@ -28,6 +34,91 @@ function getStatus(item) {
   return "finished"
 }
 
+function formatDate(d) {
+  if (!d) return "—"
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+}
+
+/* ─── Featured Card ─── */
+function FeaturedCard({ item }) {
+  if (!item) return (
+    <div className="w-full rounded-2xl flex items-center justify-center"
+      style={{
+        background: "rgba(168,85,247,0.04)",
+        border: "1px solid rgba(168,85,247,0.12)",
+        minHeight: 260,
+      }}>
+      <p className="text-sm" style={{ color: "rgba(233,213,255,0.3)" }}>No active events right now</p>
+    </div>
+  )
+
+  return (
+    <div className="relative w-full rounded-2xl overflow-hidden cursor-pointer"
+      style={{
+        background: "linear-gradient(135deg, rgba(217,70,239,0.07) 0%, rgba(168,85,247,0.06) 100%)",
+        border: "1px solid rgba(168,85,247,0.2)",
+        minHeight: 260,
+      }}>
+      {/* Live badge */}
+      <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold"
+        style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.25)", color: "#4ade80" }}>
+        <span className="relative flex w-1.5 h-1.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+          <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-green-400" />
+        </span>
+        Live
+      </div>
+
+      <div className="p-6 flex flex-col gap-3 h-full">
+        {item.organization && (
+          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: P2 }}>
+            {item.organization}
+          </p>
+        )}
+        <h2 className="text-xl font-black leading-snug" style={{ color: "rgba(255,255,255,0.9)" }}>
+          {item.title || "Untitled Event"}
+        </h2>
+        {item.des && (
+          <p className="text-sm leading-relaxed line-clamp-3" style={{ color: "rgba(233,213,255,0.45)" }}>
+            {item.des}
+          </p>
+        )}
+        <div className="mt-auto flex items-center justify-between pt-3"
+          style={{ borderTop: "1px solid rgba(168,85,247,0.12)" }}>
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: "rgba(233,213,255,0.35)" }}>
+            <CalendarDays className="w-3.5 h-3.5" />
+            <span>{formatDate(item.date_begin)} – {formatDate(item.date_end)}</span>
+          </div>
+          <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: P2 }}>
+            View <ChevronRight className="w-3.5 h-3.5" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Stat Pill ─── */
+function StatPill({ icon: Icon, label, count, dot, bg, border, pulse }) {
+  return (
+    <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl"
+      style={{ background: bg, border: `1px solid ${border}` }}>
+      <div className="relative flex items-center justify-center">
+        {pulse && (
+          <span className="absolute inline-flex w-4 h-4 rounded-full animate-ping opacity-25"
+            style={{ background: dot }} />
+        )}
+        <Icon className="w-3.5 h-3.5 relative" style={{ color: dot }} />
+      </div>
+      <div>
+        <p className="text-base font-black leading-none" style={{ color: dot }}>{count}</p>
+        <p className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: `${dot}88` }}>{label}</p>
+      </div>
+    </div>
+  )
+}
+
+/* ─── Main Page ─── */
 export default function AnnouncePage() {
   const [announcements, setAnnouncements] = useState([])
   const [searchTerm, setSearchTerm]       = useState("")
@@ -72,161 +163,225 @@ export default function AnnouncePage() {
       return matchesSearch && (filter === "all" || getStatus(item) === filter)
     }), [announcements, searchTerm, filter])
 
-  // accent for this page: electric blue/cyan
-  const A  = "#0ea5e9"  // sky-500
-  const A2 = "#38bdf8"  // sky-400
+  const featuredItem  = useMemo(() =>
+    announcements.find(a => getStatus(a) === "active") || null, [announcements])
+
+  const counts = useMemo(() =>
+    STATUS_META.reduce((acc, { value }) => ({
+      ...acc,
+      [value]: announcements.filter(a => getStatus(a) === value).length,
+    }), {}), [announcements])
 
   return (
-    <div className="w-full min-h-screen relative overflow-x-hidden">
-      <div class="absolute inset-0">
-        <div class="absolute top-0 z-[-2] h-full w-full bg-[#000000] bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px]"></div>
-      </div>
-      {/* ══════════════════════════════════════
-          CONTENT
-      ══════════════════════════════════════ */}
-      <div className="relative z-10 w-full flex flex-col items-center px-4 sm:px-6 pb-20">
+    <div className="w-full min-h-screen relative bg-[#0a0015] bg-[radial-gradient(#ffffff22_1px,#0a0015_1px)] bg-[size:20px_20px]">
 
-        {/* ── Hero ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: "easeOut" }}
-          className="w-full max-w-5xl mt-28 mb-12 text-center relative"
-        >
-          {/* Label badge */}
+      <div className="relative z-10 w-full flex flex-col items-center">
+
+        {/* ══════════════════════════════
+            TOP NAV / WORDMARK
+        ══════════════════════════════ */}
+        <div className="w-full max-w-7xl px-4 sm:px-8 pt-8 pb-0 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Wordmark */}
+            <span className="text-lg font-black tracking-tighter" style={{ color: "#fff" }}>
+              byte<span style={{ color: P2 }}>on</span>
+            </span>
+            {/* Divider */}
+            <span className="text-xs mx-1" style={{ color: "rgba(219,39,119,0.25)" }}>/</span>
+            <span className="text-xs font-medium" style={{ color: "rgba(251,207,232,0.3)" }}>
+              Events
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
+            style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.2)", color: P2 }}>
+            <Zap className="w-3 h-3" />
+            Hackathon Hub
+          </div>
+        </div>
+
+        {/* ══════════════════════════════
+            HERO — SPLIT LAYOUT
+        ══════════════════════════════ */}
+        <section className="w-full max-w-7xl px-4 sm:px-8 pt-16 pb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+
+            {/* Left */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col"
+            >
+              <h1 className="font-black leading-[0.93] tracking-tight mb-5"
+                style={{ fontSize: "clamp(2.8rem, 5.5vw, 5rem)" }}>
+                <span className="block" style={{ color: "rgba(255,255,255,0.9)" }}>Find Your</span>
+                <span className="block" style={{ color: "rgba(255,255,255,0.9)" }}>Next Big</span>
+                <span className="block"
+                  style={{
+                    backgroundImage: `linear-gradient(90deg, ${P} 0%, ${P2} 55%, #c084fc 100%)`,
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}>
+                  Hackathon.
+                </span>
+              </h1>
+
+              <p className="text-sm leading-relaxed mb-8 max-w-sm"
+                style={{ color: "rgba(233,213,255,0.35)" }}>
+                Competitions and events posted by organizations on byteon — one hub, every opportunity.
+              </p>
+
+              {/* Stat pills */}
+              <div className="flex flex-wrap gap-2">
+                {STATUS_META.map(({ value, label, icon, dot, bg, border, pulse }) => (
+                  <StatPill key={value} icon={icon} label={label}
+                    count={loading ? "–" : counts[value] ?? 0}
+                    dot={dot} bg={bg} border={border} pulse={pulse} />
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Right: Spotlight */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: "rgba(168,85,247,0.5)" }}>
+                  Spotlight
+                </span>
+                <div className="flex-1 h-px" style={{ background: "rgba(168,85,247,0.12)" }} />
+              </div>
+              {loading ? (
+                <div className="w-full rounded-2xl h-64 animate-pulse"
+                  style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.1)" }} />
+              ) : (
+                <FeaturedCard item={featuredItem} />
+              )}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Thin divider */}
+        <div className="w-full max-w-7xl px-4 sm:px-8 mb-10">
+          <div className="w-full h-px" style={{ background: "rgba(168,85,247,0.12)" }} />
+        </div>
+
+        {/* ══════════════════════════════
+            BROWSE SECTION
+        ══════════════════════════════ */}
+        <section className="w-full max-w-7xl px-4 sm:px-8 pb-24">
+
+          {/* Header + Search */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-6 text-xs font-semibold uppercase tracking-widest"
-            style={{
-              background: `rgba(14,165,233,0.1)`,
-              border: `1px solid rgba(14,165,233,0.35)`,
-              color: A2,
-              boxShadow: `0 0 20px rgba(14,165,233,0.12)`,
-            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.4 }}
+            className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-5"
           >
-            <CalendarDays className="w-3 h-3" />
-            Hackathon Events
+            <div className="flex-1">
+              <h2 className="text-base font-black tracking-tight" style={{ color: "rgba(255,255,255,0.8)" }}>
+                All Events
+              </h2>
+              <p className="text-[11px] mt-0.5" style={{ color: "rgba(233,213,255,0.25)" }}>
+                {loading ? "Loading…" : `${filteredData.length} event${filteredData.length !== 1 ? "s" : ""} found`}
+              </p>
+            </div>
+
+            {/* Search */}
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
+                style={{ color: "rgba(168,85,247,0.45)" }} />
+              <input
+                type="text"
+                placeholder="Search events…"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none"
+                style={{
+                  background: "rgba(168,85,247,0.06)",
+                  border: "1px solid rgba(168,85,247,0.18)",
+                  color: "rgba(255,255,255,0.8)",
+                  transition: "border-color 0.15s, box-shadow 0.15s",
+                }}
+                onFocus={e => {
+                  e.target.style.borderColor = "rgba(168,85,247,0.4)"
+                  e.target.style.boxShadow = "0 0 0 3px rgba(168,85,247,0.07)"
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = "rgba(168,85,247,0.18)"
+                  e.target.style.boxShadow = "none"
+                }}
+              />
+            </div>
           </motion.div>
 
-          <h1 className="text-5xl sm:text-7xl font-black mb-5 leading-none tracking-tight">
-            <span className="text-transparent bg-clip-text"
-              style={{ backgroundImage: `linear-gradient(135deg, #bae6fd 0%, ${A} 40%, #6366f1 80%, #c026d3 100%)` }}>
-              Announcements
-            </span>
-          </h1>
-          <p className="text-base sm:text-lg max-w-xl mx-auto" style={{ color: `rgba(186,230,253,0.45)` }}>
-            Discover hackathons and competitions from organizations worldwide.
-          </p>
+          {/* Filter tabs */}
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="flex gap-1 p-1 rounded-xl w-fit mb-8"
+            style={{ background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.14)" }}
+          >
+            {[{ value: "all", label: "All", dot: null }, ...STATUS_META].map(({ value, label, dot }) => {
+              const active = filter === value
+              return (
+                <button
+                  key={value}
+                  onClick={() => setFilter(value)}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150"
+                  style={active ? {
+                    background: `linear-gradient(135deg, ${P} 0%, ${P2} 100%)`,
+                    color: "#fff",
+                  } : {
+                    color: "rgba(233,213,255,0.35)",
+                    background: "transparent",
+                  }}
+                >
+                  {dot && <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />}
+                  {label}
+                </button>
+              )
+            })}
+          </motion.div>
 
-          {/* Decorative corner accents */}
-          <div className="absolute -left-4 top-8 hidden lg:block">
-            <div className="w-px h-16" style={{ background: `linear-gradient(to bottom, transparent, ${A}60, transparent)` }} />
-          </div>
-          <div className="absolute -right-4 top-8 hidden lg:block">
-            <div className="w-px h-16" style={{ background: `linear-gradient(to bottom, transparent, #6366f160, transparent)` }} />
-          </div>
-        </motion.div>
-
-        {/* ── Status count strip ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="flex items-center gap-6 mb-8"
-        >
-          {STATUS_META.map(({ value, label, dot, bg, border }) => {
-            const count = announcements.filter(a => getStatus(a) === value).length
-            return (
-              <div key={value} className="flex items-center gap-2 text-xs">
-                <div className="w-2 h-2 rounded-full" style={{ background: dot, boxShadow: `0 0 6px ${dot}` }} />
-                <span style={{ color: "rgba(255,255,255,0.4)" }}>{label}</span>
-                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
-                  style={{ background: bg, color: dot, border: `1px solid ${border}` }}>
-                  {count}
-                </span>
+          {/* Cards grid */}
+          <motion.div
+            key={filter + searchTerm}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.25 }}
+          >
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="rounded-2xl h-56 animate-pulse"
+                    style={{ background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.1)" }} />
+                ))}
               </div>
-            )
-          })}
-        </motion.div>
-
-        {/* ── Search ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.5 }}
-          className="w-full max-w-2xl mb-5"
-        >
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: `${A}60` }} />
-            <input
-              type="text" placeholder="Search hackathons, organizations…"
-              value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-11 pr-5 py-3.5 rounded-2xl text-sm outline-none transition-all duration-200"
-              style={{
-                background: `rgba(14,165,233,0.07)`,
-                border: `1px solid rgba(14,165,233,0.22)`,
-                color: "rgba(255,255,255,0.85)",
-              }}
-              onFocus={e => { e.target.style.background = `rgba(14,165,233,0.12)`; e.target.style.borderColor = `${A}55`; e.target.style.boxShadow = `0 0 0 3px rgba(14,165,233,0.1)` }}
-              onBlur={e => { e.target.style.background = `rgba(14,165,233,0.07)`; e.target.style.borderColor = `rgba(14,165,233,0.22)`; e.target.style.boxShadow = "none" }}
-            />
-          </div>
-        </motion.div>
-
-        {/* ── Filter chips ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.5 }}
-          className="flex flex-wrap justify-center gap-2 mb-12"
-        >
-          {[{ value: "all", label: "All Events", dot: null }, ...STATUS_META].map(({ value, label, dot }) => {
-            const active = filter === value
-            return (
-              <button
-                key={value}
-                onClick={() => setFilter(value)}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-200"
-                style={active ? {
-                  background: `linear-gradient(135deg, ${A}, #6366f1)`,
-                  color: "#ffffff",
-                  border: `1px solid ${A}60`,
-                  boxShadow: `0 0 20px rgba(14,165,233,0.3), 0 2px 8px rgba(0,0,0,0.3)`,
-                  transform: "translateY(-1px)",
-                } : {
-                  background: `rgba(14,165,233,0.06)`,
-                  color: `rgba(186,230,253,0.55)`,
-                  border: `1px solid rgba(14,165,233,0.18)`,
-                }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = `rgba(14,165,233,0.12)`; e.currentTarget.style.color = A2; e.currentTarget.style.borderColor = `rgba(14,165,233,0.35)` }}}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = `rgba(14,165,233,0.06)`; e.currentTarget.style.color = `rgba(186,230,253,0.55)`; e.currentTarget.style.borderColor = `rgba(14,165,233,0.18)` }}}
-              >
-                {dot && <span className="w-1.5 h-1.5 rounded-full" style={{ background: dot }} />}
-                {label}
-              </button>
-            )
-          })}
-        </motion.div>
-
-        {/* ── Grid ── */}
-        <motion.div
-          key={filter + searchTerm}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
-          className="w-full max-w-6xl"
-        >
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="rounded-2xl h-72 animate-pulse"
-                  style={{ background: `rgba(14,165,233,0.06)`, border: `1px solid rgba(14,165,233,0.1)` }} />
-              ))}
-            </div>
-          ) : filteredData.length === 0 ? (
-            <div className="flex justify-center mt-16"><AnnounceEmpty /></div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredData.map((item, i) => (
-                <motion.div key={item.id}
-                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06, duration: 0.4 }}>
-                  <AnnouncementPublicCard item={item} theme={item._theme} />
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
+            ) : filteredData.length === 0 ? (
+              <div className="flex justify-center mt-16"><AnnounceEmpty /></div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredData.map((item, i) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04, duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className={i === 0 && filteredData.length >= 3 ? "lg:col-span-2" : ""}
+                  >
+                    <AnnouncementPublicCard item={item} theme={item._theme} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </section>
       </div>
     </div>
   )
