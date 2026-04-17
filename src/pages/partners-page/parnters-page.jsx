@@ -14,15 +14,6 @@ const data = [
         colorTheme: "purple"
     },
     {
-        name: "Maximally",
-        image: "/images/Maximallyc.png",
-        location: "India",
-        des: "A global innovation league that hosts high-stakes hackathons for ambitious builders. Built by hackers, for hackers.",
-        websiteLink: "https://maximally.in/",
-        tags: ["Innovation", "Hackathon"],
-        colorTheme: "red"
-    },
-    {
         name: "CS Base",
         image: "/images/CSBase_logo.png",
         location: "US",
@@ -48,6 +39,15 @@ const data = [
         websiteLink: null,
         tags: ["Innovation", "Tech"],
         colorTheme: "cyan"
+    },
+    {
+        name: "Maximally",
+        image: "/images/Maximallyc.png",
+        location: "India",
+        des: "A global innovation league that hosts high-stakes hackathons for ambitious builders. Built by hackers, for hackers.",
+        websiteLink: null,
+        tags: ["Innovation", "Hackathon"],
+        colorTheme: "red"
     },
 ]
 
