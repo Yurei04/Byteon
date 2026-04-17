@@ -3,209 +3,192 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
 import Link from "next/link";
-import { SelectSeparator } from "../ui/select";
 import { motion } from "framer-motion";
 import { ExternalLink, MapPin } from "lucide-react";
 
 const colorThemes = {
     red: {
-        card: "bg-red-950/40 border-red-400/40",
-        cardHover: "hover:border-red-400/70 hover:shadow-red-500/20",
-        header: "bg-gradient-to-br from-red-500/50 to-red-600/50 border-red-300/50",
-        badge: "bg-red-950/60 border-red-400/50 text-red-50",
-        button: "bg-red-600/80 hover:bg-red-500 border-red-400/50 text-white",
-        separator: "bg-gradient-to-r from-transparent via-red-500/70 to-transparent",
-        text: "text-red-50",
+        card: "bg-red-950/30 border-red-500/20",
+        cardHover: "hover:border-red-400/50 hover:shadow-red-500/10",
+        header: "bg-red-950/50 border-red-500/20",
+        badge: "bg-red-950/60 border-red-500/30 text-red-200",
+        button: "bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-200",
+        separator: "bg-gradient-to-r from-transparent via-red-500/30 to-transparent",
+        text: "text-white",
         accent: "text-red-300",
-        glow: "shadow-red-500/30"
+        glow: "hover:shadow-red-500/10"
     },
     purple: {
-        card: "bg-purple-950/40 border-purple-400/40",
-        cardHover: "hover:border-purple-400/70 hover:shadow-purple-500/20",
-        header: "bg-gradient-to-br from-purple-500/50 to-purple-600/50 border-purple-300/50",
-        badge: "bg-purple-950/60 border-purple-400/50 text-purple-50",
-        button: "bg-purple-600/80 hover:bg-purple-500 border-purple-400/50 text-white",
-        separator: "bg-gradient-to-r from-transparent via-purple-500/70 to-transparent",
-        text: "text-purple-50",
+        card: "bg-purple-950/30 border-purple-500/20",
+        cardHover: "hover:border-purple-400/50 hover:shadow-purple-500/10",
+        header: "bg-purple-950/50 border-purple-500/20",
+        badge: "bg-purple-950/60 border-purple-500/30 text-purple-200",
+        button: "bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/30 text-purple-200",
+        separator: "bg-gradient-to-r from-transparent via-purple-500/30 to-transparent",
+        text: "text-white",
         accent: "text-purple-300",
-        glow: "shadow-purple-500/30"
+        glow: "hover:shadow-purple-500/10"
     },
     blue: {
-        card: "bg-blue-950/40 border-blue-400/40",
-        cardHover: "hover:border-blue-400/70 hover:shadow-blue-500/20",
-        header: "bg-gradient-to-br from-blue-500/50 to-blue-600/50 border-blue-300/50",
-        badge: "bg-blue-950/60 border-blue-400/50 text-blue-50",
-        button: "bg-blue-600/80 hover:bg-blue-500 border-blue-400/50 text-white",
-        separator: "bg-gradient-to-r from-transparent via-blue-500/70 to-transparent",
-        text: "text-blue-50",
+        card: "bg-blue-950/30 border-blue-500/20",
+        cardHover: "hover:border-blue-400/50 hover:shadow-blue-500/10",
+        header: "bg-blue-950/50 border-blue-500/20",
+        badge: "bg-blue-950/60 border-blue-500/30 text-blue-200",
+        button: "bg-blue-500/10 hover:bg-blue-500/20 border-blue-500/30 text-blue-200",
+        separator: "bg-gradient-to-r from-transparent via-blue-500/30 to-transparent",
+        text: "text-white",
         accent: "text-blue-300",
-        glow: "shadow-blue-500/30"
+        glow: "hover:shadow-blue-500/10"
     },
     pink: {
-        card: "bg-pink-950/40 border-pink-400/40",
-        cardHover: "hover:border-pink-400/70 hover:shadow-pink-500/20",
-        header: "bg-gradient-to-br from-pink-500/50 to-pink-600/50 border-pink-300/50",
-        badge: "bg-pink-950/60 border-pink-400/50 text-pink-50",
-        button: "bg-pink-600/80 hover:bg-pink-500 border-pink-400/50 text-white",
-        separator: "bg-gradient-to-r from-transparent via-pink-500/70 to-transparent",
-        text: "text-pink-50",
+        card: "bg-pink-950/30 border-pink-500/20",
+        cardHover: "hover:border-pink-400/50 hover:shadow-pink-500/10",
+        header: "bg-pink-950/50 border-pink-500/20",
+        badge: "bg-pink-950/60 border-pink-500/30 text-pink-200",
+        button: "bg-pink-500/10 hover:bg-pink-500/20 border-pink-500/30 text-pink-200",
+        separator: "bg-gradient-to-r from-transparent via-pink-500/30 to-transparent",
+        text: "text-white",
         accent: "text-pink-300",
-        glow: "shadow-pink-500/30"
+        glow: "hover:shadow-pink-500/10"
     },
     cyan: {
-        card: "bg-cyan-950/40 border-cyan-400/40",
-        cardHover: "hover:border-cyan-400/70 hover:shadow-cyan-500/20",
-        header: "bg-gradient-to-br from-cyan-500/50 to-cyan-600/50 border-cyan-300/50",
-        badge: "bg-cyan-950/60 border-cyan-400/50 text-cyan-50",
-        button: "bg-cyan-600/80 hover:bg-cyan-500 border-cyan-400/50 text-white",
-        separator: "bg-gradient-to-r from-transparent via-cyan-500/70 to-transparent",
-        text: "text-cyan-50",
+        card: "bg-cyan-950/30 border-cyan-500/20",
+        cardHover: "hover:border-cyan-400/50 hover:shadow-cyan-500/10",
+        header: "bg-cyan-950/50 border-cyan-500/20",
+        badge: "bg-cyan-950/60 border-cyan-500/30 text-cyan-200",
+        button: "bg-cyan-500/10 hover:bg-cyan-500/20 border-cyan-500/30 text-cyan-200",
+        separator: "bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent",
+        text: "text-white",
         accent: "text-cyan-300",
-        glow: "shadow-cyan-500/30"
+        glow: "hover:shadow-cyan-500/10"
     }
 };
 
 export function PartnersCard({
-    name, 
-    image, 
-    location, 
-    des, 
-    websiteLink, 
-    tags, 
+    name,
+    image,
+    location,
+    des,
+    websiteLink,
+    tags,
     colorTheme = "purple"
 }) {
     const theme = colorThemes[colorTheme];
-    
+
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            whileHover={{ y: -5 }}
+            transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+            whileHover={{ y: -3 }}
             className="w-full"
         >
-            <Card className={`w-full max-w-4xl mx-auto flex flex-col lg:flex-row items-start justify-between p-4 sm:p-5 gap-4 sm:gap-5 ${theme.card} ${theme.cardHover} shadow-2xl backdrop-blur-xl border-2 ${theme.text} transition-all duration-500 hover:shadow-2xl ${theme.glow} relative overflow-hidden group`}>
-                
-                {/* Animated gradient overlay */}
-                <motion.div 
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-                    style={{
-                        background: `radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), ${colorTheme === 'red' ? 'rgba(239, 68, 68, 0.15)' : colorTheme === 'purple' ? 'rgba(168, 85, 247, 0.15)' : colorTheme === 'blue' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(236, 72, 153, 0.15)'}, transparent 50%)`
-                    }}
-                />
+            <Card
+                className={`
+                    w-full max-w-4xl mx-auto flex flex-col lg:flex-row items-start
+                    p-5 gap-5
+                    ${theme.card} ${theme.cardHover}
+                    border backdrop-blur-xl
+                    transition-all duration-500
+                    hover:shadow-xl ${theme.glow}
+                    relative overflow-hidden group
+                    rounded-2xl
+                `}
+            >
+                {/* Subtle inner top shimmer on hover */}
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-400/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
+                {/* Logo block */}
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.92, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.5 }}
-                    className="w-full lg:w-auto"
+                    transition={{ delay: 0.15, duration: 0.4 }}
+                    className="w-full lg:w-auto flex-shrink-0"
                 >
-                    <CardHeader className={`shrink-0 w-full lg:w-44 h-36 sm:h-40 overflow-hidden rounded-xl flex items-center justify-center ${theme.header} border-2 p-3 sm:p-4 relative group/image shadow-lg`}>
-                        <motion.div
-                            whileHover={{ scale: 1.05 }}
-                            transition={{ duration: 0.3 }}
-                            className="w-full h-full flex items-center justify-center"
-                        >
-                            <Image
-                                src={image}
-                                alt={name}
-                                width={200}
-                                height={200}
-                                className="object-contain w-auto h-full max-h-full transition-transform duration-300"
-                            />
-                        </motion.div>
-                        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300" />
+                    <CardHeader
+                        className={`
+                            w-full lg:w-44 h-36 sm:h-40
+                            flex items-center justify-center
+                            ${theme.header} border rounded-xl
+                            p-4 relative overflow-hidden
+                        `}
+                    >
+                        <Image
+                            src={image}
+                            alt={name}
+                            width={180}
+                            height={180}
+                            className="object-contain w-auto h-full max-h-full transition-transform duration-500 group-hover:scale-105"
+                        />
                     </CardHeader>
                 </motion.div>
 
-                <CardContent className="flex flex-col flex-1 gap-3 sm:gap-4 p-0 relative z-10 w-full">
-                    <motion.div 
-                        className="flex flex-col justify-start"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3, duration: 0.5 }}
-                    >
-                        <h1 className="text-xl sm:text-2xl font-bold mb-2 tracking-tight drop-shadow-lg">
+                {/* Main content */}
+                <CardContent className="flex flex-col flex-1 gap-3 p-0 relative z-10 w-full">
+
+                    {/* Name + location */}
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-1.5">
                             {name}
-                        </h1>
-                        
-                        <motion.div 
-                            className="flex items-center gap-2 mb-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.4 }}
-                        >
-                            <MapPin className={`w-3 h-3 sm:w-4 sm:h-4 ${theme.accent} flex-shrink-0`} />
-                            <h2 className={`text-xs sm:text-sm font-medium ${theme.accent}`}>
+                        </h2>
+                        <div className="flex items-center gap-1.5">
+                            <MapPin className={`w-3.5 h-3.5 flex-shrink-0 ${theme.accent}`} />
+                            <span className={`text-xs font-medium tracking-wide uppercase ${theme.accent}`}>
                                 {location}
-                            </h2>
-                        </motion.div>
+                            </span>
+                        </div>
+                    </div>
 
-                        <motion.div 
-                            className="flex flex-wrap gap-1.5 sm:gap-2 mb-2"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.5 }}
-                        >
-                            {tags.map((tag, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: 0.6 + idx * 0.1 }}
-                                    whileHover={{ scale: 1.05 }}
-                                >
-                                    <Badge className={`${theme.badge} border font-medium px-2 py-0.5 text-xs shadow-md backdrop-blur-sm`}>
-                                        {tag}
-                                    </Badge>
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    </motion.div>
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                        {tags.map((tag, idx) => (
+                            <Badge
+                                key={idx}
+                                className={`${theme.badge} border text-xs font-medium px-2.5 py-0.5 rounded-full backdrop-blur-sm`}
+                            >
+                                {tag}
+                            </Badge>
+                        ))}
+                    </div>
 
-                    <SelectSeparator className={`${theme.separator} h-[2px] my-1`} />
-                    
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.7 }}
-                        className="space-y-2"
-                    >
-                        <p 
-                            className="text-sm sm:text-base leading-relaxed font-light line-clamp-3 sm:line-clamp-none mb-2"
-                            style={{ color: 'rgba(255, 255, 255, 0.95)' }}
-                        >
-                            {des}
-                        </p>
-                    </motion.div>
+                    {/* Separator */}
+                    <div className={`h-px w-full ${theme.separator}`} />
+
+                    {/* Description */}
+                    <p className="text-sm sm:text-base leading-relaxed font-light text-white/80 line-clamp-3 sm:line-clamp-none">
+                        {des}
+                    </p>
                 </CardContent>
 
-                {websiteLink && (
-                    <CardFooter className="w-full sm:w-auto flex flex-col items-end justify-center mt-4 sm:mt-0 relative z-10">
-                        <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.8 }}
-                        >
-                        <Link 
-                            href={websiteLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2"
-                        >
-                            <Button 
-                            size="lg" 
-                            className={`w-32 py-5 ${theme.button} shadow-xl backdrop-blur-lg border-2 cursor-pointer transition-all duration-300 font-semibold text-base hover:shadow-2xl ${theme.glow} flex items-center gap-2`}
-                            >
-                            Website
-                            <ExternalLink className="w-4 h-4" />
-                            </Button>
-                        </Link>
+                {/* CTA */}
+                <CardFooter className="w-full lg:w-auto flex items-center lg:items-end justify-start lg:justify-center p-0 mt-2 lg:mt-0 relative z-10 lg:self-center">
+                    {websiteLink ? (
+                        <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
+                            <Link href={websiteLink} target="_blank" rel="noopener noreferrer">
+                                <Button
+                                    size="lg"
+                                    className={`
+                                        px-5 py-2.5 h-auto
+                                        ${theme.button}
+                                        border rounded-xl
+                                        font-semibold text-sm
+                                        backdrop-blur-lg
+                                        transition-all duration-300
+                                        flex items-center gap-2
+                                        cursor-pointer
+                                    `}
+                                >
+                                    Visit Site
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                </Button>
+                            </Link>
                         </motion.div>
-                    </CardFooter>
-                )}
+                    ) : (
+                        <span className="text-xs text-white/25 font-medium tracking-widest uppercase border border-white/10 rounded-xl px-4 py-2.5">
+                            Coming Soon
+                        </span>
+                    )}
+                </CardFooter>
             </Card>
         </motion.div>
     );
