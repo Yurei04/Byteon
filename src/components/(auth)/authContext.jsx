@@ -108,7 +108,9 @@ export function AuthProvider({ children }) {
         total_resources,
         profile_completed,
         created_at,
-        updated_at
+        updated_at,
+        approval_status,
+        rejection_reason
       `)
       .eq("user_id", userId)
       .maybeSingle()
