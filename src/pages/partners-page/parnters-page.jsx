@@ -14,6 +14,15 @@ const data = [
         colorTheme: "purple"
     },
     {
+        name: "Gift of Computation",
+        image: "/images/GOC_gift_of_computation.png",
+        location: "Qatar & Kuwait",
+        des: "Gift of Computation brings them together—giving builders a shared community to learn, grow, and create impact, regardless of where they study.",
+        websiteLink: "https://discord.gg/byyMky7Y",
+        tags: ["Tech", "Community", "Education"],
+        colorTheme: "lightgray"
+    },
+    {
         name: "CS Base",
         image: "/images/CSBase_logo.png",
         location: "US",
@@ -30,15 +39,6 @@ const data = [
         websiteLink: "https://medihacks.org/",
         tags: ["Health", "Tech"],
         colorTheme: "pink"
-    },
-    {
-        name: "KairoSync",
-        image: "/images/KAIROSYNC.png",
-        location: "Online",
-        des: "Student Innovation & Enrichment Community.",
-        websiteLink: null,
-        tags: ["Innovation", "Tech"],
-        colorTheme: "cyan"
     },
     {
         name: "Maximally",
@@ -148,7 +148,7 @@ export default function PartnersPage() {
                 >
                     {[
                         { num: "5", label: "Partners" },
-                        { num: "3", label: "Countries" },
+                        { num: "4", label: "Countries" },
                         { num: "∞", label: "Opportunities" },
                     ].map((stat, i) => (
                         <div key={i} className="text-center">

@@ -61,6 +61,17 @@ const colorThemes = {
         text: "text-white",
         accent: "text-cyan-300",
         glow: "hover:shadow-cyan-500/10"
+    },
+    lightgray: {
+        card: "bg-slate-700/20 border-slate-400/25",
+        cardHover: "hover:border-slate-300/60 hover:shadow-slate-300/10",
+        header: "bg-slate-600/20 border-slate-400/25",
+        badge: "bg-slate-600/30 border-slate-400/35 text-slate-100",
+        button: "bg-slate-300/10 hover:bg-slate-300/20 border-slate-300/40 text-slate-100",
+        separator: "bg-gradient-to-r from-transparent via-slate-400/40 to-transparent",
+        text: "text-white",
+        accent: "text-slate-300",
+        glow: "hover:shadow-slate-300/10"
     }
 };
 
