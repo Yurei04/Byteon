@@ -26,10 +26,9 @@ function buildPrompt(body) {
   if (date) lines.push(`Date: ${date}.`)
   if (venue) lines.push(`Venue: ${venue}.`)
   lines.push(`High quality graphic design, no faces.`)
-
+  lines.push(`STRICT RULE: Only include text and details explicitly listed above. Do NOT invent, add, or assume any names, dates, logos, sponsors, prizes, or other information not provided.`)
   return lines.join(" ")
 }
-
 async function generateWithVertex(prompt, aspectRatio) {
   const PROJECT_ID = process.env.GCP_PROJECT_ID
   const mappedRatio = ASPECT_RATIO_MAP[aspectRatio] ?? "3:4"
