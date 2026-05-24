@@ -3,7 +3,7 @@
     {
       "id": "chapter2",
       "title": "Building the Team",
-      "background": "your_room_morning.jpg",
+      "background": "your_room_morning.png",
       "music": "gentle_morning_theme.mp3",
       "events": [
         {
@@ -68,7 +68,7 @@
         },
         {
           "id": "scene2",
-          "background": "collaboration_hub.jpg",
+          "background": "collaboration_hub.png",
           "music": "lively_virtual_space.mp3",
           "dialogs": [
             {
