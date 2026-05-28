@@ -1,8 +1,13 @@
+// app/org-dashboard/layout.jsx
 
-export default function AdminDashboardLayout({ children }) {
+"use client"
+
+import ProtectedRoute from "@/app/protected/protectedRoute"
+
+export default function OrgDashboardLayout({ children }) {
   return (
-      <div>
-        {children}
-      </div>
-  );
+    <ProtectedRoute allowOrg>
+      {children}
+    </ProtectedRoute>
+  )
 }

@@ -1,8 +1,13 @@
+// app/user-dashboard/layout.jsx
 
-export default function DashboardLayout({ children }) {
+"use client"
+
+import ProtectedRoute from "@/app/protected/protectedRoute"
+
+export default function UserDashboardLayout({ children }) {
   return (
-      <div>
-        {children}
-      </div>
-  );
+    <ProtectedRoute allowUser>
+      {children}
+    </ProtectedRoute>
+  )
 }
