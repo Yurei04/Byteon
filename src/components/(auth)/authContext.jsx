@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react"
 import { supabase } from "@/lib/supabase"
-import { updateAccountTokens, getActiveAccountId } from "@/lib/accountManager" 
+import { updateAccountTokens } from "@/lib/accountManager"
 
 const AuthContext = createContext(null)
 const CACHE_KEY = "auth_cache"
@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   const [role, setRole]         = useState(null)      // "user" | "org_admin" | "super_admin"
   const [loading, setLoading]   = useState(true)
   const currentUserIdRef        = useRef(null)
+  const isSwitchingRef          = useRef(false)       // guard against double-hydrate during switch
 
   const hydrateUser = useCallback(async (supabaseSession) => {
     if (!supabaseSession?.user) {
@@ -50,7 +51,6 @@ export function AuthProvider({ children }) {
       .maybeSingle()
 
     if (!superError && superData) {
-      // Fetch linked platform org so Create tab works
       let linkedOrg = null
       if (superData.organization_id) {
         const { data: orgData } = await supabase
@@ -197,16 +197,12 @@ export function AuthProvider({ children }) {
     await hydrateUser(s)
   }, [hydrateUser])
 
+  // ✅ scope:"local" — clears only this tab's sessionStorage session.
+  // Does NOT revoke the refresh token server-side, so other tabs stay logged in.
+  // No manual localStorage wipe — that was nuking every other tab.
   const logout = useCallback(async () => {
     try {
-      const lsKeys = Object.keys(localStorage).filter(k => k.startsWith("sb-"))
-      lsKeys.forEach(k => localStorage.removeItem(k))
-    } catch {}
-    try {
-      // ✅ Remove scope:"local" — we need the cookie cleared too.
-      // scope:"local" only wipes localStorage, the auth cookie stays alive.
-      // Middleware reads cookies, so the old code sent users back to dashboard.
-      await supabase.auth.signOut()
+      await supabase.auth.signOut({ scope: "local" })
     } catch {}
     clearAuth()
   }, [clearAuth])
@@ -216,12 +212,26 @@ export function AuthProvider({ children }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (event === "SIGNED_IN") {
+        // ✅ If a switch is in progress, onAuthStateChange will fire from setSession()
+        // inside restoreSession.js — that's the intended hydration path, so let it through.
+        // The isSwitchingRef guard is no longer needed since we removed the redundant
+        // refreshProfile() call from switchAccount(). Any SIGNED_IN with a new userId hydrates.
         if (newSession?.user?.id !== currentUserIdRef.current) {
           hydrateUser(newSession)
         }
       }
-      if (event === "SIGNED_OUT")      clearAuth()
-      if (event === "TOKEN_REFRESHED") setSession(newSession)
+
+      if (event === "SIGNED_OUT") clearAuth()
+
+      // ✅ Keep the accounts token vault in sync whenever Supabase silently rotates tokens
+      if (event === "TOKEN_REFRESHED" && newSession?.user?.id) {
+        setSession(newSession)
+        updateAccountTokens(
+          newSession.user.id,
+          newSession.access_token,
+          newSession.refresh_token,
+        )
+      }
     })
 
     const handleVisibility = () => {
@@ -229,8 +239,10 @@ export function AuthProvider({ children }) {
       supabase.auth.getSession().then(({ data }) => {
         const newId = data.session?.user?.id ?? null
         if (newId !== currentUserIdRef.current) {
+          // ✅ Different user in this tab's session (e.g. after switchAccount) — re-hydrate
           hydrateUser(data.session)
         } else if (data.session?.access_token !== session?.access_token) {
+          // ✅ Same user, token was silently refreshed — just update session object
           setSession(data.session)
         }
       })

@@ -70,7 +70,7 @@ function Spinner({ size = "sm" }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function AccountSwitcher( isCollapsed = false ) {
+export default function AccountSwitcher({ isCollapsed = false }) {
   const { profile, role, session, refreshProfile, logout } = useAuth()
   const router  = useRouter()
   const [open, setOpen]           = useState(false)
