@@ -5,32 +5,15 @@
 
 export const tabStorage = {
   getItem(key) {
-    // ── 1. Tab-local hit ───────────────────────────────────────────────────
-    try {
-      const tabValue = sessionStorage.getItem(key)
-      if (tabValue !== null) return tabValue
-    } catch {}
-
-    // ── 2. First-open: inherit from shared localStorage, then go independent ─
-    try {
-      const sharedValue = localStorage.getItem(key)
-      if (sharedValue !== null) {
-        // Copy once into this tab's sessionStorage; after this the tab is isolated
-        try { sessionStorage.setItem(key, sharedValue) } catch {}
-        return sharedValue
-      }
-    } catch {}
-
-    return null
+    try { return sessionStorage.getItem(key) }
+    catch { return null }
   },
-
   setItem(key, value) {
-    // Writes are sessionStorage-only — never pollute other tabs
-    try { sessionStorage.setItem(key, value) } catch {}
+    try { sessionStorage.setItem(key, value) }
+    catch {}
   },
-
   removeItem(key) {
-    // Removal is sessionStorage-only — other tabs keep their own copy
-    try { sessionStorage.removeItem(key) } catch {}
+    try { sessionStorage.removeItem(key) }
+    catch {}
   },
 }
