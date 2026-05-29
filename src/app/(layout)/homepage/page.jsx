@@ -35,6 +35,13 @@ export default function HomeMain() {
     if (tab) setActiveTab(tab)
   }, [])
 
+  // Write tab to URL whenever it changes
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    url.searchParams.set("tab", activeTab)
+    window.history.replaceState(null, "", url.toString())
+  }, [activeTab])
+
   // Sidebar is 64px (4rem) collapsed, 224px (14rem) expanded
   const mainMargin = sidebarCollapsed ? "4.5rem" : "16rem"
 
