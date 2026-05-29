@@ -1,7 +1,6 @@
 // lib/tabStorage.js
-// A Supabase-compatible storage adapter that isolates each browser tab.
-// - Reads inherit from localStorage once (so opening a new tab picks up your login)
-// - All writes are sessionStorage-only (so sign-out in Tab B never touches Tab A)
+// Pure sessionStorage adapter — each tab is fully isolated.
+// sessionStorage survives page refresh but NOT tab duplication or new tabs.
 
 export const tabStorage = {
   getItem(key) {

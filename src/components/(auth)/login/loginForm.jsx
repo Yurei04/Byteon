@@ -2,29 +2,24 @@
 
 import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card"
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { persistCurrentSession } from "@/lib/restoreSession"
 import { ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react"
 import Link from "next/link"
 import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
 
+const AUTH_CACHE_KEY = "auth_cache"
+function clearProfileCache() {
+  try { sessionStorage.removeItem(AUTH_CACHE_KEY) } catch {}
+}
+
 export function LoginForm() {
-  const router = useRouter()
   const searchParams = typeof window !== "undefined"
     ? new URLSearchParams(window.location.search)
     : null
@@ -42,6 +37,7 @@ export function LoginForm() {
 
     setLoading(true)
     try {
+      // Step 1: Sign in — writes session to THIS tab's sessionStorage via tabStorage
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -51,7 +47,10 @@ export function LoginForm() {
       const user = data?.user
       if (!user) { setError("Login failed. Please try again."); setLoading(false); return }
 
-      // ── Super admin check ─────────────────────────────────────────────────
+      // Step 2: Determine role via DB — session token is now in sessionStorage
+      // so authenticated queries work correctly in this tab
+
+      // ── Super admin ──────────────────────────────────────────────────────
       const { data: superData, error: superError } = await supabase
         .from("super_admins")
         .select("user_id, id, name, organization_id, created_at")
@@ -60,75 +59,100 @@ export function LoginForm() {
 
       if (superError) {
         setError(`Login error: ${superError.message}`)
-        await supabase.auth.signOut()
+        await supabase.auth.signOut({ scope: "local" })
         setLoading(false)
         return
       }
       if (superData) {
-        await persistCurrentSession({ ...superData, role: "super_admin", table: "super_admins" }, "super_admin")
-        try { sessionStorage.clear() } catch {}
+        await persistCurrentSession(
+          { ...superData, role: "super_admin", table: "super_admins" },
+          "super_admin"
+        )
+        clearProfileCache() // ✅ only wipe profile cache, NOT the auth token
         window.location.href = "/super-admin-dashboard"
         return
       }
 
-      // ── Organization check ────────────────────────────────────────────────
+      // ── Organization ─────────────────────────────────────────────────────
       const { data: orgData, error: orgError } = await supabase
         .from("organizations")
-        .select("user_id, id, name, author_name, description, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
+        .select(`
+          user_id, id, name, author_name, description, profile_photo_url,
+          profile_completed, active, suspension_reason,
+          approval_status, rejection_reason, created_at, updated_at
+        `)
         .eq("user_id", user.id)
         .maybeSingle()
 
       if (orgError) {
         setError(`Login error: ${orgError.message}`)
-        await supabase.auth.signOut()
+        await supabase.auth.signOut({ scope: "local" })
         setLoading(false)
         return
       }
       if (orgData) {
         if (orgData.active === false) {
-          await supabase.auth.signOut()
-          const url = `/account-suspended?reason=suspended${orgData.suspension_reason ? `&detail=${encodeURIComponent(orgData.suspension_reason)}` : ""}`
+          await supabase.auth.signOut({ scope: "local" })
+          const url = `/account-suspended?reason=suspended${
+            orgData.suspension_reason
+              ? `&detail=${encodeURIComponent(orgData.suspension_reason)}`
+              : ""
+          }`
           window.location.href = url
           return
         }
-        await persistCurrentSession({ ...orgData, role: "org_admin", table: "organizations" }, "org_admin")
-        try { sessionStorage.clear() } catch {}
+        await persistCurrentSession(
+          { ...orgData, role: "org_admin", table: "organizations" },
+          "org_admin"
+        )
+        clearProfileCache() // ✅
         window.location.href = "/org-dashboard"
         return
       }
 
-      // ── Regular user check ────────────────────────────────────────────────
+      // ── Regular user ─────────────────────────────────────────────────────
       const { data: userData, error: userError } = await supabase
         .from("users")
-        .select("user_id, id, name, age, affiliation, country, profile_photo_url, profile_completed, active, suspension_reason, created_at, updated_at")
+        .select(`
+          user_id, id, name, age, affiliation, country,
+          profile_photo_url, profile_completed, active,
+          suspension_reason, created_at, updated_at
+        `)
         .eq("user_id", user.id)
         .maybeSingle()
 
       if (userError) {
         setError(`Login error: ${userError.message}`)
-        await supabase.auth.signOut()
+        await supabase.auth.signOut({ scope: "local" })
         setLoading(false)
         return
       }
       if (userData) {
         if (userData.active === false) {
-          await supabase.auth.signOut()
-          const url = `/account-suspended?reason=suspended${userData.suspension_reason ? `&detail=${encodeURIComponent(userData.suspension_reason)}` : ""}`
+          await supabase.auth.signOut({ scope: "local" })
+          const url = `/account-suspended?reason=suspended${
+            userData.suspension_reason
+              ? `&detail=${encodeURIComponent(userData.suspension_reason)}`
+              : ""
+          }`
           window.location.href = url
           return
         }
-        await persistCurrentSession({ ...userData, role: "user", table: "users" }, "user")
-        try { sessionStorage.clear() } catch {}
-        window.location.href = "/"
+        await persistCurrentSession(
+          { ...userData, role: "user", table: "users" },
+          "user"
+        )
+        clearProfileCache() // ✅
+        window.location.href = "/user-dashboard"
         return
       }
 
-      // ── No profile found — treat as deleted ───────────────────────────────
-      await supabase.auth.signOut()
+      // ── No profile found ──────────────────────────────────────────────────
+      await supabase.auth.signOut({ scope: "local" })
       window.location.href = "/account-suspended?reason=deleted"
 
     } catch (err) {
-      console.error("Login error:", err)
+      console.error("[LoginForm] Unexpected error:", err)
       setError(err.message || "Unexpected error occurred")
       setLoading(false)
     }
@@ -145,7 +169,6 @@ export function LoginForm() {
     <div className="h-full w-full flex items-center justify-center overflow-hidden py-2">
       <div className="w-full max-w-md">
         <Card className="relative overflow-hidden bg-purple-950/50 border border-purple-500/30 text-purple-50 backdrop-blur-xl shadow-2xl shadow-purple-900/40 rounded-2xl">
-          {/* Top accent line */}
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
 
           <CardHeader className="px-5 pt-4 pb-2 space-y-2">
