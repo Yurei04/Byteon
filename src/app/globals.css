@@ -45,128 +45,290 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* ── Expose brand tokens to Tailwind's theme engine ── */
+  --color-brand-50:  rgb(var(--brand-50));
+  --color-brand-100: rgb(var(--brand-100));
+  --color-brand-200: rgb(var(--brand-200));
+  --color-brand-300: rgb(var(--brand-300));
+  --color-brand-400: rgb(var(--brand-400));
+  --color-brand-500: rgb(var(--brand-500));
+  --color-brand-600: rgb(var(--brand-600));
+  --color-brand-700: rgb(var(--brand-700));
+  --color-brand-800: rgb(var(--brand-800));
+  --color-brand-900: rgb(var(--brand-900));
+  --color-accent-400: rgb(var(--accent-400));
+  --color-accent-500: rgb(var(--accent-500));
+  --color-accent-600: rgb(var(--accent-600));
+  --color-bg-base:    rgb(var(--bg-base));
+  --color-bg-subtle:  rgb(var(--bg-subtle));
+  --color-bg-muted:   rgb(var(--bg-muted));
+  --color-text-primary:   rgb(var(--text-primary));
+  --color-text-secondary: rgb(var(--text-secondary));
+  --color-text-muted:     rgb(var(--text-muted));
+  --color-text-faint:     rgb(var(--text-faint));
+  --color-surface:        rgb(var(--surface));
+  --color-surface-raised: rgb(var(--surface-raised));
+  --color-surface-border: rgb(var(--surface-border));
 }
 
+/* ════════════════════════════════════════
+   LIGHT MODE
+   ════════════════════════════════════════ */
 :root {
-  --radius: 0.625rem;
+  --radius: 0.75rem;
+
+  /* ── Brand Fuchsia Pink Scale ── */
+  --brand-50:  253 244 255;
+  --brand-100: 250 232 255;
+  --brand-200: 245 208 254;
+  --brand-300: 239 171 252;
+  --brand-400: 231 120 250;
+  --brand-500: 216  69 240;
+  --brand-600: 197  43 218;
+  --brand-700: 161  27 176;
+  --brand-800: 134  24 144;
+  --brand-900: 112  25 118;
+
+  /*
+   * Accent = violet/purple, distinct from brand fuchsia.
+   * This gives the gradient on "Hackathon." real contrast:
+   *   accent-500 (violet) → brand-500 (fuchsia) → brand-400 (light fuchsia)
+   */
+  --accent-400: 167 139 250;   /* violet-400  */
+  --accent-500: 139 92  246;   /* violet-500  */
+  --accent-600: 124 58  237;   /* violet-600  */
+
+  /* ── Semantic Backgrounds ── */
+  --bg-base:    255 255 255;   /* pure white page bg          */
+  --bg-subtle:  253 244 255;   /* lightest fuchsia tint       */
+  --bg-muted:   250 232 255;   /* slightly deeper tint        */
+  --bg-overlay: 245 208 254;
+
+  /* ── Surfaces ── */
+  --surface:        255 255 255;
+  --surface-raised: 253 240 255;   /* card / input bg             */
+  --surface-border: 220 150 240;   /* ↑ slightly more visible than brand-300
+                                       so borders/dots show on white        */
+
+  /* ── Text ──
+   *  primary   = near-black for headings & body
+   *  secondary = dark purple — supporting text, descriptions
+   *  muted     = medium purple — labels, org names
+   *  faint     = softer purple — icons, placeholders, inactive tabs
+   *              Was brand-500 (full fuchsia) which is far too vivid on white.
+   *              Now brand-700 so inactive UI elements feel truly subdued.
+   */
+  --text-primary:   50  10  55;    /* #320a37 near-black           */
+  --text-secondary: 112  25 118;   /* #701976 dark purple          */
+  --text-muted:     161  27 176;   /* #a11bb0 medium purple        */
+  --text-faint:     161  27 176;   /* same as muted — sidebar icons,
+                                       inactive nav, placeholders   */
+
+  /* ── On-brand foreground (text on gradient buttons) ── */
+  --fg-on-brand: 255 255 255;
+
+  /* ── shadcn/ui ── */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.18 0.05 335);
+
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.18 0.05 335);
+
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.18 0.05 335);
+
+  --primary: oklch(0.66 0.28 335);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.97 0.02 335);
+  --secondary-foreground: oklch(0.18 0.05 335);
+
+  --muted: oklch(0.97 0.02 335);
+  --muted-foreground: oklch(0.55 0.08 335);
+
+  --accent: oklch(0.72 0.24 340);
+  --accent-foreground: oklch(1 0 0);
+
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  --border: oklch(0.90 0.05 335);
+  --input:  oklch(0.90 0.05 335);
+  --ring:   oklch(0.66 0.28 335);
+
+  /* ── Charts ── */
+  --chart-1: oklch(0.66 0.28 335);
+  --chart-2: oklch(0.72 0.24 340);
+  --chart-3: oklch(0.60 0.20 320);
+  --chart-4: oklch(0.78 0.18 335);
+  --chart-5: oklch(0.82 0.14 345);
+
+  /* ── Sidebar ── */
+  --sidebar: oklch(0.985 0.01 335);
+  --sidebar-foreground: oklch(0.18 0.05 335);
+
+  --sidebar-primary: oklch(0.66 0.28 335);
+  --sidebar-primary-foreground: oklch(1 0 0);
+
+  --sidebar-accent: oklch(0.97 0.02 335);
+  --sidebar-accent-foreground: oklch(0.18 0.05 335);
+
+  --sidebar-border: oklch(0.90 0.05 335);
+  --sidebar-ring: oklch(0.66 0.28 335);
+
+  /* ── Gradients ── */
+  --gradient-primary:
+    linear-gradient(135deg, #8b5cf6 0%, #d845f0 50%, #c52bda 100%);
+
+  --gradient-surface:
+    linear-gradient(180deg,
+      rgba(253, 244, 255, 0.95),
+      rgba(250, 232, 255, 0.85)
+    );
 }
 
+/* ════════════════════════════════════════
+   DARK MODE
+   ════════════════════════════════════════ */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* ── Brand scale unchanged (same fuchsia) ── */
+
+  /*
+   * Accent in dark = keep violet, slightly lighter for legibility on dark bg.
+   */
+  --accent-400: 196 181 253;   /* violet-300  */
+  --accent-500: 167 139 250;   /* violet-400  */
+  --accent-600: 139  92 246;   /* violet-500  */
+
+  /* ── Semantic Backgrounds ── */
+  --bg-base:    15   2  20;
+  --bg-subtle:  25   5  35;
+  --bg-muted:   40  10  50;
+  --bg-overlay: 70  15  80;
+
+  /* ── Surfaces ── */
+  --surface:        25   5  35;
+  --surface-raised: 40  10  50;
+  --surface-border: 112  25 118;   /* brand-900 — subtle on dark  */
+
+  /* ── Text ──
+   *  In dark mode fuchsia/purple reads fine on near-black,
+   *  so the original values are appropriate here.
+   */
+  --text-primary:   250 232 255;   /* brand-100 — near-white      */
+  --text-secondary: 239 171 252;   /* brand-300 — light purple    */
+  --text-muted:     231 120 250;   /* brand-400 — mid fuchsia     */
+  --text-faint:     197  43 218;   /* brand-600 — muted fuchsia   */
+
+  /* ── On-brand foreground ── */
+  --fg-on-brand: 255 255 255;
+
+  /* ── shadcn/ui ── */
+  --background: oklch(0.12 0.03 335);
+  --foreground: oklch(0.96 0.02 335);
+
+  --card: oklch(0.16 0.03 335);
+  --card-foreground: oklch(0.96 0.02 335);
+
+  --popover: oklch(0.16 0.03 335);
+  --popover-foreground: oklch(0.96 0.02 335);
+
+  --primary: oklch(0.66 0.28 335);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.24 0.04 335);
+  --secondary-foreground: oklch(0.96 0.02 335);
+
+  --muted: oklch(0.24 0.04 335);
+  --muted-foreground: oklch(0.65 0.06 335);
+
+  --accent: oklch(0.72 0.24 340);
+  --accent-foreground: oklch(1 0 0);
+
+  --destructive: oklch(0.65 0.22 27);
+
+  --border: oklch(0.30 0.06 335);
+  --input:  oklch(0.30 0.06 335);
+  --ring:   oklch(0.66 0.28 335);
+
+  /* ── Charts ── */
+  --chart-1: oklch(0.70 0.28 335);
+  --chart-2: oklch(0.76 0.24 340);
+  --chart-3: oklch(0.65 0.20 320);
+  --chart-4: oklch(0.82 0.18 335);
+  --chart-5: oklch(0.86 0.14 345);
+
+  /* ── Sidebar ── */
+  --sidebar: oklch(0.16 0.03 335);
+  --sidebar-foreground: oklch(0.96 0.02 335);
+
+  --sidebar-primary: oklch(0.66 0.28 335);
+  --sidebar-primary-foreground: oklch(1 0 0);
+
+  --sidebar-accent: oklch(0.24 0.04 335);
+  --sidebar-accent-foreground: oklch(0.96 0.02 335);
+
+  --sidebar-border: oklch(0.30 0.06 335);
+  --sidebar-ring: oklch(0.66 0.28 335);
+
+  /* ── Dark Gradients ── */
+  --gradient-primary:
+    linear-gradient(135deg, #a78bfa 0%, #d845f0 50%, #a11bb0 100%);
+
+  --gradient-surface:
+    linear-gradient(180deg,
+      rgba(25, 5, 35, 0.95),
+      rgba(40, 10, 50, 0.85)
+    );
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
+/* ════════════════════════════════════════
+   NOVA RICH TEXT
+   ════════════════════════════════════════ */
+.nova-rich-text strong {
+  font-weight: 600;
+  color: #f5d0fe;
 }
 
-
-/* Nova chatbot markdown styles */
-.nova-rich-text p { margin: 0 0 8px; }
-.nova-rich-text p:last-child { margin-bottom: 0; }
-.nova-rich-text strong { font-weight: 600; color: #f0abfc; }
-.nova-rich-text em { color: #a1a1aa; font-style: italic; }
-.nova-rich-text ul { padding-left: 16px; margin: 6px 0; list-style: disc; }
-.nova-rich-text li { margin-bottom: 3px; font-size: 0.8125rem; }
-.nova-h2 { font-weight: 600; color: #e879f9; margin: 10px 0 4px; font-size: 0.875rem; }
-.nova-h3 { font-weight: 600; color: #e879f9; margin: 8px 0 4px; font-size: 0.8125rem; }
+.nova-h2,
+.nova-h3 {
+  font-weight: 600;
+  color: #e778fa;
+}
 
 .nova-inline-code {
-  font-family: 'SF Mono', ui-monospace, monospace;
+  font-family: "SF Mono", ui-monospace, monospace;
   font-size: 0.75rem;
-  background: rgba(168, 85, 247, 0.12);
-  color: #d8b4fe;
+  background: rgba(216, 69, 240, 0.12);
+  color: #f5d0fe;
   padding: 1px 5px;
   border-radius: 4px;
-  border: 1px solid rgba(168, 85, 247, 0.2);
+  border: 1px solid rgba(216, 69, 240, 0.2);
 }
+
 .nova-code-block {
-  background: #09090b;
-  border: 1px solid rgba(217, 70, 239, 0.2);
+  background: #120814;
+  border: 1px solid rgba(216, 69, 240, 0.25);
   border-radius: 10px;
   overflow: hidden;
   margin: 8px 0;
 }
+
 .nova-code-lang {
   font-size: 0.625rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #c026d3;
+  color: #e778fa;
   padding: 5px 10px;
-  border-bottom: 1px solid rgba(217, 70, 239, 0.15);
-  background: rgba(217, 70, 239, 0.06);
+  border-bottom: 1px solid rgba(216, 69, 240, 0.15);
+  background: rgba(216, 69, 240, 0.08);
   font-family: ui-monospace, monospace;
 }
-.nova-code-block pre { margin: 0; padding: 10px; overflow-x: auto; }
+
 .nova-code-block code {
-  font-family: 'SF Mono', ui-monospace, monospace;
+  font-family: "SF Mono", ui-monospace, monospace;
   font-size: 0.75rem;
-  color: #e9d5ff;
+  color: #fae8ff;
   line-height: 1.55;
   white-space: pre;
 }

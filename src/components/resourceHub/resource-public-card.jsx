@@ -34,7 +34,7 @@ export default function ResourcePublicCard({ item, theme }) {
       {/* Top shimmer on hover */}
       <div
         className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(232,121,249,0.4), transparent)" }}
+        style={{ background: `linear-gradient(90deg, transparent, rgb(var(--brand-400) / 0.4), transparent)` }}
       />
 
       {/* Hover overlay */}
@@ -91,7 +91,10 @@ export default function ResourcePublicCard({ item, theme }) {
 
         {/* Description */}
         {item.des && (
-          <p className="text-sm leading-relaxed line-clamp-2 mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
+          <p
+            className="text-sm leading-relaxed line-clamp-2 mb-4"
+            style={{ color: "rgb(var(--text-secondary))" }}
+          >
             {item.des}
           </p>
         )}
@@ -118,10 +121,14 @@ export default function ResourcePublicCard({ item, theme }) {
           <a href={item.link} target="_blank" rel="noopener noreferrer">
             <Button
               size="sm"
-              className="text-white border-0 transition-all duration-300 cursor-pointer group/btn rounded-xl text-xs font-semibold"
-              style={{ background: t.buttonGradient, boxShadow: t.buttonShadow }}
-              onMouseEnter={e => e.currentTarget.style.background = t.buttonHoverGradient}
-              onMouseLeave={e => e.currentTarget.style.background = t.buttonGradient}
+              className="border-0 transition-all duration-300 cursor-pointer group/btn rounded-xl text-xs font-semibold"
+              style={{
+                background: t.buttonGradient,
+                boxShadow:  t.buttonShadow,
+                color:      "rgb(var(--fg-on-brand, 255 255 255))",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = t.buttonHoverGradient)}
+              onMouseLeave={e => (e.currentTarget.style.background = t.buttonGradient)}
             >
               <ExternalLink className="w-3.5 h-3.5 mr-1.5 group-hover/btn:rotate-12 transition-transform duration-300" />
               Visit Resource

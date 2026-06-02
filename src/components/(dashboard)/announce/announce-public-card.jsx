@@ -54,53 +54,63 @@ const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
 
 const getPrizeColorScheme = (prizeName) => {
   const name = prizeName.toLowerCase()
+
   if (name.includes("1st") || name.includes("first") || name.includes("gold"))
     return {
-      gradient: "from-yellow-500/15 to-amber-600/10",
-      border: "border-yellow-500/25",
+      gradient:
+        "from-yellow-500/40 via-yellow-400/15 to-transparent dark:from-yellow-500/15 dark:to-yellow-500/5",
+      border: "border-yellow-500/20 dark:border-yellow-500/30",
       glow: "shadow-yellow-500/10",
-      icon: "text-yellow-400",
-      value: "text-yellow-100",
-      label: "text-yellow-400/80",
+      icon: "text-yellow-500 dark:text-yellow-400",
+      value: "text-foreground",
+      label: "text-muted-foreground",
       rank: "🥇",
     }
+
   if (name.includes("2nd") || name.includes("second") || name.includes("silver"))
     return {
-      gradient: "from-slate-400/15 to-gray-500/10",
-      border: "border-slate-400/25",
+      gradient:
+        "from-slate-400/40 via-slate-300/15 to-transparent dark:from-slate-400/15 dark:to-slate-400/5",
+      border: "border-slate-400/20 dark:border-slate-400/30",
       glow: "shadow-slate-400/10",
-      icon: "text-slate-300",
-      value: "text-slate-100",
-      label: "text-slate-400/80",
+      icon: "text-slate-500 dark:text-slate-300",
+      value: "text-foreground",
+      label: "text-muted-foreground",
       rank: "🥈",
     }
+
   if (name.includes("3rd") || name.includes("third") || name.includes("bronze"))
     return {
-      gradient: "from-orange-600/15 to-amber-700/10",
-      border: "border-orange-600/25",
-      glow: "shadow-orange-600/10",
-      icon: "text-orange-500",
-      value: "text-orange-100",
-      label: "text-orange-400/80",
+      gradient:
+        "from-orange-500/40 via-amber-500/15 to-transparent dark:from-orange-500/15 dark:to-orange-500/5",
+      border: "border-orange-500/20 dark:border-orange-500/30",
+      glow: "shadow-orange-500/10",
+      icon: "text-orange-500 dark:text-orange-400",
+      value: "text-foreground",
+      label: "text-muted-foreground",
       rank: "🥉",
     }
+
   if (name.includes("participation"))
     return {
-      gradient: "from-violet-500/15 to-purple-600/10",
-      border: "border-violet-500/25",
+      gradient:
+        "from-violet-500/10 via-purple-500/5 to-transparent dark:from-violet-500/15 dark:to-violet-500/5",
+      border: "border-violet-500/20 dark:border-violet-500/30",
       glow: "shadow-violet-500/10",
-      icon: "text-violet-400",
-      value: "text-violet-100",
-      label: "text-violet-400/80",
+      icon: "text-violet-500 dark:text-violet-400",
+      value: "text-foreground",
+      label: "text-muted-foreground",
       rank: "🎖️",
     }
+
   return {
-    gradient: "from-sky-500/15 to-blue-600/10",
-    border: "border-sky-500/25",
+    gradient:
+      "from-sky-500/10 via-blue-500/5 to-transparent dark:from-sky-500/15 dark:to-sky-500/5",
+    border: "border-sky-500/20 dark:border-sky-500/30",
     glow: "shadow-sky-500/10",
-    icon: "text-sky-400",
-    value: "text-sky-100",
-    label: "text-sky-400/80",
+    icon: "text-sky-500 dark:text-sky-400",
+    value: "text-foreground",
+    label: "text-muted-foreground",
     rank: "🏆",
   }
 }
@@ -133,8 +143,10 @@ function DetailRow({ icon, label, value, iconColor }) {
     <div className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0">
       <div className="mt-0.5 shrink-0" style={{ color: iconColor }}>{icon}</div>
       <div className="min-w-0">
-        <p className="text-[11px] uppercase tracking-wider font-semibold text-white/30 mb-0.5">{label}</p>
-        <p className="text-sm text-white/80 leading-relaxed">{value}</p>
+        <p className="text-[11px] uppercase tracking-wider font-semibold mb-0.5" style={{ color: "rgb(var(--text-muted))" }}>{label}</p>
+        <p className="text-sm  leading-relaxed"
+          style={{ color: "rgb(var(--text-secondary))" }}
+        >{value}</p>
       </div>
     </div>
   )
@@ -181,20 +193,14 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
       <Card
         className="group relative overflow-hidden cursor-pointer transition-all duration-300"
         style={{
-          background:  t.cardBg,
-          border:      t.borderColor,
-          boxShadow:   "none",
+          background: "rgb(var(--surface-raised))",
+          border: "1px solid rgb(var(--surface-border) / 0.60)",
           borderRadius: "16px",
-          ...t.cssVars,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow = t.cardShadow
-          e.currentTarget.style.border    = t.borderColorStrong
           e.currentTarget.style.transform = "translateY(-2px)"
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = "none"
-          e.currentTarget.style.border    = t.borderColor
           e.currentTarget.style.transform = "translateY(0)"
         }}
         onClick={() => setIsDialogOpen(true)}
@@ -217,11 +223,11 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {item.organization && (
-                <p className="text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: t.primaryText }}>
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgb(var(--text-faint))" }}>
                   {item.organization}
                 </p>
               )}
-              <h3 className="text-lg font-bold leading-snug line-clamp-2 text-white">
+              <h3 className="text-lg font-bold leading-snug line-clamp-2" style={{ color: "rgb(var(--text-primary))" }}>
                 {item.title}
               </h3>
             </div>
@@ -233,28 +239,31 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
             className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm"
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
           >
-            <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: t.primaryText }} />
-            <span className="text-white/50 text-xs">{formatUTCDateShort(item.date_begin)}</span>
-            <ChevronRight className="w-3 h-3 text-white/20 shrink-0" />
-            <span className="text-white/70 text-xs font-medium">{formatUTCDateShort(item.date_end)}</span>
+            <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: "rgb(var(--text-secondary))" }} />
+            <span className=" text-xs font-medium" style={{ color: "rgb(var(--text-secondary))" }}>{formatUTCDateShort(item.date_begin)}</span>
+            <ChevronRight className="w-3 h-3 shrink-0"  style={{ color: "rgb(var(--text-secondary))" }}/>
+            <span className="text-xs font-medium" style={{ color: "rgb(var(--text-secondary))" }}>{formatUTCDateShort(item.date_end)}</span>
           </div>
 
           {/* ── Meta chips ── */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             {item.open_to && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/8 text-white/55">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md" 
+              style={{ color: "rgb(var(--text-faint))", border: "rgb(var(--bg-muted:   250 232 255; ))" }}>
                 <Users className="w-3 h-3" />
                 {item.open_to}
               </span>
             )}
             {item.countries && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/5 border border-white/8 text-white/55">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md"
+              style={{ color: "rgb(var(--text-faint))"}}
+              >
                 <MapPin className="w-3 h-3" />
                 {item.countries}
               </span>
             )}
             {prizes.length > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400/80">
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-100/90 border-amber-500/50 text-amber-600 dark:bg-amber-500/10 border dark:border-amber-500/20 dark:text-amber-400/80">
                 <Trophy className="w-3 h-3" />
                 {prizes.length} Prize{prizes.length !== 1 ? "s" : ""}
               </span>
@@ -272,12 +281,14 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
 
           {/* ── Author + tracking ── */}
           <div className="flex items-center justify-between text-xs text-white/35">
-            <span>By <span className="text-white/55 font-medium">{item.author}</span></span>
+            <span style={{ color: "rgb(var(--text-faint))"}}>By <span className="text-white/55 font-medium"
+              style={{ color: "rgb(var(--text-faint))"}}
+            >{item.author}</span></span>
             {trackingStats && (
-              <span className="flex items-center gap-1" style={{ color: t.primaryText }}>
+              <span className="flex items-center gap-1" style={{ color: "rgb(var(--text-faint))"}}>
                 {trackingStats.icon}
-                <span className="font-semibold text-white/60">{trackingStats.count}</span>
-                <span className="text-white/30">{trackingStats.label.toLowerCase()}</span>
+                <span className="font-semibold" style={{ color: "rgb(var(--text-primary))"}}>{trackingStats.count}</span>
+                <span style={{ color: "rgb(var(--text-muted))"}}>{trackingStats.label.toLowerCase()}</span>
               </span>
             )}
           </div>
@@ -291,10 +302,19 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   className="flex-1" onClick={handleWebsiteLinkClick}
                 >
                   <button
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition-all duration-200"
-                    style={{ background: t.buttonGradient, boxShadow: t.buttonShadow }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = t.buttonHoverGradient}
-                    onMouseLeave={(e) => e.currentTarget.style.background = t.buttonGradient}
+                    className="
+                      w-full cursor-pointer flex items-center justify-center gap-1.5
+                      px-3 py-2 rounded-lg text-xs font-semibold
+                      transition-all duration-200
+
+                      text-text-primary
+                      bg-[rgb(var(--bg-overlay))]
+                      border border-surface-border
+
+                      hover:text-text-secondary
+                      hover:border-surface-border
+                      hover:bg-[rgb(var(--bg-overlay))]
+                    "
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     {item.tracking_method === "manual" ? "Register" : "Website"}
@@ -307,13 +327,14 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   className="flex-1" onClick={(e) => e.stopPropagation()}
                 >
                   <button
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white/80 transition-all duration-200"
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
                     style={{
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.10)",
+                      color: "rgb(var(--text-primary))",
+                      background: "rgb(var(--bg-overlay))",
+                      border: "1px solid rgb(var(--bg-surface-border))",
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.10)" }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgb(var(--bg-overlay) / 0.15)"}}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "rgb(var(--bg-overlay))" }}
                   >
                     <ExternalLink className="w-3.5 h-3.5" />DevPost
                   </button>
@@ -329,44 +350,51 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
       ══════════════════════════════════════════ */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent
-          className="max-w-3xl max-h-[92vh] overflow-y-auto p-0 text-white"
+          className="max-w-3xl max-h-[92vh] overflow-y-auto p-0"
           style={{
-            background: "linear-gradient(160deg, #0a0a0f 0%, #0d0d18 100%)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            color: "rgb(var(--text-primary))",
+            background: "rgb(var(--bg-muted))",
+            border: "rgb(var(--surface-raised))",
             borderRadius: "20px",
-            ...t.cssVars,
           }}
         >
           {/* ── Dialog Header ── */}
           <div
             className="sticky top-0 z-10 px-7 pt-7 pb-5"
             style={{
-              background: "linear-gradient(to bottom, #0a0a0f 70%, transparent)",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              color: "rgb(var(--text-primary))",
+              background: "rgb(var(--bg-muted))",
+              borderBottom: "rgb(var(--surface-raised))",
             }}
           >
             <DialogHeader>
               {item.organization && (
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-3.5 h-3.5" style={{ color: t.primaryText }} />
+                  <Sparkles className="w-3.5 h-3.5" style={{ color: "rgb(var(--text-primary))" }} />
                   <span className="text-xs font-bold uppercase tracking-widest" style={{ color: t.primaryText }}>
                     {item.organization}
                   </span>
                 </div>
               )}
-              <DialogTitle className="text-2xl font-bold text-white leading-tight">
+              <DialogTitle className="text-2xl font-bold tleading-tight" style={{ color: "rgb(var(--text-primary))" }}>
                 {item.title}
               </DialogTitle>
               <div className="flex flex-wrap items-center gap-2 mt-3">
-                <StatusPill isExpired={isExpired} daysRemaining={daysRemaining} t={t} />
+                <StatusPill style={{ color: "rgb(var(--text-muted))" }} isExpired={isExpired} daysRemaining={daysRemaining} t={t} />
                 {prizes.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/15 border border-amber-500/25 text-amber-400">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100/90 border-amber-500/50 text-amber-600 dark:bg-amber-500/10 border dark:border-amber-500/20 dark:text-amber-400/80">
                     <Trophy className="w-3 h-3" />
                     {prizes.length} Prize{prizes.length !== 1 ? "s" : ""} Available
                   </span>
                 )}
                 {trackingStats && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/5 border border-white/10 text-white/50">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold" 
+                    style={{
+                      background: "rgb(var(--surface-raised))",
+                      border: "1px solid rgb(var(--surface-border) / 0.15)",
+                      color: "rgb(var(--text-faint))"
+                    }}
+                  >
                     {trackingStats.icon}
                     {trackingStats.count} {trackingStats.label}
                   </span>
@@ -379,14 +407,14 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
 
             {/* ── Description ── */}
             <div>
-              <p className="text-[11px] uppercase tracking-wider font-semibold text-white/25 mb-3">About</p>
-              <p className="text-sm text-white/65 leading-relaxed whitespace-pre-line">{item.des}</p>
+              <p className="text-[11px] uppercase tracking-wider font-semibold  mb-3" style={{ color: "rgb(var(--text-muted))" }}>About</p>
+              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "rgb(var(--text-secondary))" }}>{item.des}</p>
             </div>
 
             {/* ── Prizes ── */}
             {prizes.length > 0 && (
               <div>
-                <p className="text-[11px] uppercase tracking-wider font-semibold text-white/25 mb-3">Prize Pool</p>
+                <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>Prize Pool</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {prizes.map((prize, index) => {
                     const cs = getPrizeColorScheme(prize.name)
@@ -429,7 +457,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   icon={<Calendar className="w-4 h-4" />}
                   label="Starts"
                   value={formatUTCDateTime(item.date_begin)}
-                  iconColor={t.primaryText}
+                  iconColor={"rgb(var(--text-muted))"}
                 />
                 <DetailRow
                   icon={<Clock className="w-4 h-4" />}
@@ -483,10 +511,19 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                     onClick={(e) => { e.stopPropagation(); handleWebsiteLinkClick(e) }}
                   >
                     <button
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-white transition-all duration-200"
-                      style={{ background: t.buttonGradient, boxShadow: t.buttonShadow }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = t.buttonHoverGradient}
-                      onMouseLeave={(e) => e.currentTarget.style.background = t.buttonGradient}
+                      className="
+                        w-full cursor-pointer flex items-center justify-center gap-1.5
+                        px-3 py-2 rounded-lg text-xs font-semibold
+                        transition-all duration-200
+
+                        text-text-primary
+                        bg-[rgb(var(--bg-overlay))]
+                        border border-surface-border
+
+                        hover:text-text-secondary
+                        hover:border-surface-border
+                        hover:bg-[rgb(var(--bg-overlay))]
+                      "
                     >
                       <ExternalLink className="w-4 h-4" />
                       {item.tracking_method === "manual" ? "Register Now" : "Visit Website"}

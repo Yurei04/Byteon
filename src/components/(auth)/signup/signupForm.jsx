@@ -2,47 +2,27 @@
 
 import { Button } from "@/components/ui/button"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card"
 import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
+  Field, FieldDescription, FieldGroup, FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { supabase } from "@/lib/supabase"
 import { useState } from "react"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
-  ArrowLeft,
-  Building2,
-  User,
-  Upload,
-  AlertCircle,
-  ChevronRight,
-  ChevronLeft,
-  Palette,
-  Check,
+  ArrowLeft, Building2, User, Upload, AlertCircle,
+  ChevronRight, ChevronLeft, Palette, Check,
 } from "lucide-react"
 import Link from "next/link"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
 import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
 
-// ─── Theme palettes ───────────────────────────────────────────────────────────
 const USER_THEMES = [
   { id: "violet",  label: "Violet",  accent: "#8b5cf6" },
   { id: "sky",     label: "Sky",     accent: "#0ea5e9" },
@@ -65,13 +45,15 @@ const ORG_PALETTES = [
   { id: "slate",    label: "Slate",    primary: "#64748b", secondary: "#94a3b8", scheme: "slate"    },
 ]
 
-// ─── User accent color picker ─────────────────────────────────────────────────
 function UserThemePicker({ value, onChange }) {
   return (
     <Field>
-      <FieldLabel className="text-purple-200 text-xs font-medium flex items-center gap-1.5">
+      <FieldLabel
+        className="text-xs font-medium flex items-center gap-1.5"
+        style={{ color: "rgb(var(--text-secondary))" }}
+      >
         <Palette className="size-3" /> Accent Color
-        <span className="text-purple-500/60 font-normal">(optional)</span>
+        <span className="font-normal" style={{ color: "rgb(var(--text-faint))" }}>(optional)</span>
       </FieldLabel>
       <div className="grid grid-cols-8 gap-1.5 mt-1">
         {USER_THEMES.map((t) => (
@@ -94,7 +76,7 @@ function UserThemePicker({ value, onChange }) {
         ))}
       </div>
       {value && (
-        <p className="text-purple-400/60 text-xs mt-1">
+        <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint))" }}>
           {USER_THEMES.find((t) => t.id === value)?.label} accent selected
         </p>
       )}
@@ -102,13 +84,15 @@ function UserThemePicker({ value, onChange }) {
   )
 }
 
-// ─── Org brand palette picker ─────────────────────────────────────────────────
 function OrgPalettePicker({ value, onChange }) {
   return (
     <Field>
-      <FieldLabel className="text-purple-200 text-xs font-medium flex items-center gap-1.5">
+      <FieldLabel
+        className="text-xs font-medium flex items-center gap-1.5"
+        style={{ color: "rgb(var(--text-secondary))" }}
+      >
         <Palette className="size-3" /> Brand Color Scheme
-        <span className="text-purple-500/60 font-normal">(optional)</span>
+        <span className="font-normal" style={{ color: "rgb(var(--text-faint))" }}>(optional)</span>
       </FieldLabel>
       <div className="grid grid-cols-4 gap-2 mt-1">
         {ORG_PALETTES.map((p) => {
@@ -118,11 +102,12 @@ function OrgPalettePicker({ value, onChange }) {
               key={p.id}
               type="button"
               onClick={() => onChange(p)}
-              className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border transition-all duration-200 hover:scale-105 focus:outline-none ${
-                isSelected
-                  ? "border-white/40 bg-white/10 scale-105"
-                  : "border-purple-500/20 bg-purple-900/20 hover:border-purple-500/40"
-              }`}
+              className="relative flex flex-col items-center gap-1 p-2 rounded-xl border transition-all duration-200 hover:scale-105 focus:outline-none"
+              style={{
+                borderColor: isSelected ? "rgb(var(--brand-400) / 0.6)" : "rgb(var(--surface-border) / 0.3)",
+                background: isSelected ? "rgb(var(--brand-500) / 0.08)" : "rgb(var(--surface-raised))",
+                transform: isSelected ? "scale(1.05)" : undefined,
+              }}
             >
               <div className="w-8 h-8 rounded-full overflow-hidden relative shrink-0">
                 <div className="absolute inset-0 left-0 w-1/2" style={{ backgroundColor: p.primary }} />
@@ -133,12 +118,16 @@ function OrgPalettePicker({ value, onChange }) {
                   </div>
                 )}
               </div>
-              <span className="text-[10px] text-purple-200/80 font-medium leading-none">{p.label}</span>
+              <span
+                className="text-[10px] font-medium leading-none"
+                style={{ color: "rgb(var(--text-secondary))" }}
+              >
+                {p.label}
+              </span>
             </button>
           )
         })}
       </div>
-
       {value && (() => {
         const pal = ORG_PALETTES.find((p) => p.id === value)
         if (!pal) return null
@@ -155,7 +144,7 @@ function OrgPalettePicker({ value, onChange }) {
               style={{ background: `linear-gradient(135deg, ${pal.primary}, ${pal.secondary})` }}
             />
             <span style={{ color: pal.primary }}>{pal.label}</span>
-            <span className="text-purple-400/60">palette applied to your org page</span>
+            <span style={{ color: "rgb(var(--text-faint))" }}>palette applied to your org page</span>
           </div>
         )
       })()}
@@ -163,7 +152,6 @@ function OrgPalettePicker({ value, onChange }) {
   )
 }
 
-// ─── Shared error banner ──────────────────────────────────────────────────────
 function ErrorBanner({ message }) {
   return (
     <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
@@ -173,7 +161,6 @@ function ErrorBanner({ message }) {
   )
 }
 
-// ─── Main form ────────────────────────────────────────────────────────────────
 export function SignupForm() {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -192,11 +179,7 @@ export function SignupForm() {
   const [profilePhoto, setProfilePhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-
-  // Step 1 terms gate — must agree before typing credentials
   const [termsGated, setTermsGated] = useState(false)
-
-  // Personalization
   const [userTheme, setUserTheme] = useState("")
   const [orgPalette, setOrgPalette] = useState(null)
 
@@ -270,16 +253,10 @@ export function SignupForm() {
       }
 
       if (mode === "user") {
-        const accentColor = userTheme
-          ? USER_THEMES.find((t) => t.id === userTheme)?.accent ?? null
-          : null
-
+        const accentColor = userTheme ? USER_THEMES.find((t) => t.id === userTheme)?.accent ?? null : null
         const { error: userError } = await supabase.from("users").insert({
-          user_id: data.user.id,
-          name: userName.trim(),
-          age: parseInt(age),
-          country: country.trim(),
-          affiliation: occupation.trim(),
+          user_id: data.user.id, name: userName.trim(), age: parseInt(age),
+          country: country.trim(), affiliation: occupation.trim(),
           profile_photo_url: profilePhotoUrl,
           ...(accentColor ? { accent_color: accentColor } : {}),
         })
@@ -288,20 +265,14 @@ export function SignupForm() {
 
       if (mode === "organization") {
         const { error: orgError } = await supabase.from("organizations").insert({
-          user_id: data.user.id,
-          name: orgName.trim(),
-          author_name: orgName.trim(),
-          description: orgDescription.trim(),
-          profile_photo_url: profilePhotoUrl,
-          approval_status: "pending",
-          rejection_reason: null,
-          ...(orgPalette
-            ? {
-                primary_color: orgPalette.primary,
-                secondary_color: orgPalette.secondary,
-                color_scheme: orgPalette.scheme,
-              }
-            : {}),
+          user_id: data.user.id, name: orgName.trim(), author_name: orgName.trim(),
+          description: orgDescription.trim(), profile_photo_url: profilePhotoUrl,
+          approval_status: "pending", rejection_reason: null,
+          ...(orgPalette ? {
+            primary_color: orgPalette.primary,
+            secondary_color: orgPalette.secondary,
+            color_scheme: orgPalette.scheme,
+          } : {}),
         })
         if (orgError) { setError(`Failed to create organization profile: ${orgError.message}`); setLoading(false); return }
       }
@@ -310,7 +281,6 @@ export function SignupForm() {
       try { await supabase.auth.signOut({ scope: "local" }) } catch {}
       router.push("/log-in?registered=true&pending=true")
     } catch (err) {
-      console.error("Signup error:", err)
       setError(err.message || "An unexpected error occurred")
       setLoading(false)
     }
@@ -320,9 +290,14 @@ export function SignupForm() {
     if (e.key === "Enter") { e.preventDefault(); step === 1 ? handleNext() : handleSignUp() }
   }
 
-  const inputCls =
-    "h-8 text-sm bg-purple-900/30 border-purple-500/40 focus:border-purple-400 placeholder:text-purple-500/60 text-purple-50 rounded-lg"
-  const labelCls = "text-purple-200 text-xs font-medium"
+  // Shared input/label styles using tokens
+  const inputCls = "h-8 text-sm rounded-lg"
+  const inputStyle = {
+    background: "rgb(var(--surface-raised))",
+    borderColor: "rgb(var(--surface-border) / 0.5)",
+    color: "rgb(var(--text-primary))",
+  }
+  const labelStyle = { color: "rgb(var(--text-secondary))", fontSize: "0.75rem", fontWeight: 500 }
 
   return (
     <div className="h-full w-full flex items-center justify-center overflow-hidden py-2">
@@ -332,175 +307,160 @@ export function SignupForm() {
           onValueChange={(value) => {
             setMode(value); setStep(1); setError(null)
             setProfilePhoto(null); setPhotoPreview(null); setAgreedToTerms(false)
-            setUserTheme(""); setOrgPalette(null)
-            setTermsGated(false)
+            setUserTheme(""); setOrgPalette(null); setTermsGated(false)
           }}
         >
           {/* Tab switcher */}
           <div className="flex justify-center mb-3">
-            <TabsList className="bg-purple-950/60 border border-purple-500/30 p-1 rounded-xl gap-1">
-              <TabsTrigger
-                value="user"
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-purple-300 data-[state=inactive]:hover:text-purple-100"
-              >
-                <User className="size-3" /> User
-              </TabsTrigger>
-              <TabsTrigger
-                value="organization"
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:bg-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-purple-300 data-[state=inactive]:hover:text-purple-100"
-              >
-                <Building2 className="size-3" /> Organization
-              </TabsTrigger>
+            <TabsList
+              className="p-1 rounded-xl gap-1"
+              style={{
+                background: "rgb(var(--surface-raised))",
+                border: "1px solid rgb(var(--surface-border) / 0.3)",
+              }}
+            >
+              {[
+                { value: "user", label: "User", icon: User },
+                { value: "organization", label: "Organization", icon: Building2 },
+              ].map(({ value, label, icon: Icon }) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:shadow-md"
+                  style={{
+                    color: "rgb(var(--text-muted))",
+                  }}
+                >
+                  <Icon className="size-3" /> {label}
+                </TabsTrigger>
+              ))}
             </TabsList>
           </div>
 
           {["user", "organization"].map((type) => (
             <TabsContent key={type} value={type} className="mt-0">
-              <Card className="relative overflow-hidden bg-purple-950/50 border border-purple-500/30 text-purple-50 backdrop-blur-xl shadow-2xl shadow-purple-900/40 rounded-2xl">
+              <Card
+                className="relative overflow-hidden backdrop-blur-xl shadow-2xl rounded-2xl"
+                style={{
+                  background: "rgb(var(--surface-raised))",
+                  border: "1px solid rgb(var(--surface-border) / 0.3)",
+                  color: "rgb(var(--text-primary))",
+                }}
+              >
                 {/* Top accent line */}
-                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-purple-400/60 to-transparent" />
+                <div
+                  className="absolute top-0 left-0 right-0 h-px"
+                  style={{
+                    background: `linear-gradient(to right, transparent, rgb(var(--brand-400) / 0.5), transparent)`,
+                  }}
+                />
 
                 <CardHeader className="px-5 pt-4 pb-2 space-y-2">
                   <div className="flex items-center justify-between">
                     <Link
                       href="/"
-                      className="inline-flex items-center gap-1 text-xs text-purple-400/80 hover:text-purple-200 transition-colors group cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs transition-colors group"
+                      style={{ color: "rgb(var(--text-faint))" }}
+                      onMouseEnter={e => (e.currentTarget.style.color = "rgb(var(--text-primary))")}
+                      onMouseLeave={e => (e.currentTarget.style.color = "rgb(var(--text-faint))")}
                     >
                       <ArrowLeft className="size-3 group-hover:-translate-x-0.5 transition-transform" />
                       Back to home
                     </Link>
-                    {/* Step pills */}
                     <div className="flex items-center gap-1.5">
-                      <div className={`h-1 rounded-full transition-all duration-300 ${step === 1 ? "w-6 bg-purple-400" : "w-3 bg-purple-700"}`} />
-                      <div className={`h-1 rounded-full transition-all duration-300 ${step === 2 ? "w-6 bg-purple-400" : "w-3 bg-purple-700"}`} />
-                      <span className="text-[10px] text-purple-400/60 ml-0.5">{step}/2</span>
+                      {[1, 2].map(s => (
+                        <div
+                          key={s}
+                          className="h-1 rounded-full transition-all duration-300"
+                          style={{
+                            width: step === s ? "24px" : "12px",
+                            background: step === s ? "rgb(var(--brand-400))" : "rgb(var(--surface-border))",
+                          }}
+                        />
+                      ))}
+                      <span className="text-[10px] ml-0.5" style={{ color: "rgb(var(--text-faint))" }}>{step}/2</span>
                     </div>
                   </div>
 
                   <div>
-                    <CardTitle className="text-base font-semibold tracking-tight">
+                    <CardTitle className="text-base font-semibold tracking-tight" style={{ color: "rgb(var(--text-primary))" }}>
                       {step === 1
                         ? (type === "user" ? "Create your account" : "Create organization account")
                         : (type === "user" ? "Complete your profile" : "Organization details")}
                     </CardTitle>
-                    <CardDescription className="text-purple-300/70 text-xs mt-0.5">
+                    <CardDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
                       {step === 1
-                        ? (type === "user"
-                            ? "Enter your login credentials to get started"
-                            : "Set up your organization's name and credentials")
-                        : (type === "user"
-                            ? "Tell us about yourself and personalize your look"
-                            : "Add details and choose your brand colors")}
+                        ? (type === "user" ? "Enter your login credentials to get started" : "Set up your organization's name and credentials")
+                        : (type === "user" ? "Tell us about yourself and personalize your look" : "Add details and choose your brand colors")}
                     </CardDescription>
                   </div>
                 </CardHeader>
 
                 <CardContent className="px-5 pb-5 pt-1">
                   {step === 1 ? (
-                    // ── Step 1: terms gate + credentials ─────────────────────
                     <div onKeyDown={handleKeyDown}>
                       <FieldGroup className="space-y-2.5">
-
-                        {/* ── Terms gate checkbox (must check before typing) ── */}
-                        <div className={`flex items-start gap-2.5 rounded-lg px-3 py-2.5 border transition-all duration-200 ${
-                          termsGated
-                            ? "bg-emerald-500/10 border-emerald-500/30"
-                            : "bg-purple-900/20 border-purple-500/30"
-                        }`}>
+                        {/* Terms gate */}
+                        <div
+                          className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 border transition-all duration-200"
+                          style={{
+                            background: termsGated ? "rgba(16,185,129,0.08)" : "rgb(var(--surface-raised))",
+                            borderColor: termsGated ? "rgba(16,185,129,0.3)" : "rgb(var(--surface-border) / 0.3)",
+                          }}
+                        >
                           <Checkbox
                             id={`terms-gate-${type}`}
                             checked={termsGated}
-                            onCheckedChange={(checked) => {
-                              setTermsGated(!!checked)
-                              setError(null)
-                            }}
-                            className="mt-0.5 shrink-0 border-purple-400/50 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                            onCheckedChange={(checked) => { setTermsGated(!!checked); setError(null) }}
+                            className="mt-0.5 shrink-0"
                           />
                           <label
                             htmlFor={`terms-gate-${type}`}
-                            className="text-xs text-purple-300/80 leading-relaxed cursor-pointer"
+                            className="text-xs leading-relaxed cursor-pointer"
+                            style={{ color: "rgb(var(--text-secondary))" }}
                           >
                             I have read and agree to Byteon&apos;s{" "}
-                            <TermsDialog
-                              trigger={
-                                <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">
-                                  Terms of Service
-                                </button>
-                              }
-                            />{" "}and{" "}
-                            <PrivacyDialog
-                              trigger={
-                                <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">
-                                  Privacy Policy
-                                </button>
-                              }
-                            />{" "}
-                            before continuing.
+                            <TermsDialog trigger={
+                              <button type="button" className="underline underline-offset-2 transition-colors" style={{ color: "rgb(var(--text-primary))" }}>
+                                Terms of Service
+                              </button>
+                            } />{" "}and{" "}
+                            <PrivacyDialog trigger={
+                              <button type="button" className="underline underline-offset-2 transition-colors" style={{ color: "rgb(var(--text-primary))" }}>
+                                Privacy Policy
+                              </button>
+                            } />{" "}before continuing.
                             {termsGated && (
-                              <span className="ml-1.5 inline-flex items-center gap-0.5 text-emerald-400 font-medium">
+                              <span className="ml-1.5 inline-flex items-center gap-0.5 text-emerald-500 font-medium">
                                 <Check className="size-3" /> Agreed
                               </span>
                             )}
                           </label>
                         </div>
 
-                        {/* ── Form fields — locked until terms are accepted ── */}
+                        {/* Form fields — locked until terms accepted */}
                         <fieldset
                           disabled={!termsGated}
-                          className={`space-y-2.5 transition-opacity duration-300 ${
-                            !termsGated ? "opacity-40 pointer-events-none select-none" : "opacity-100"
-                          }`}
+                          className={`space-y-2.5 transition-opacity duration-300 ${!termsGated ? "opacity-40 pointer-events-none select-none" : "opacity-100"}`}
                         >
                           {type === "organization" && (
                             <Field>
-                              <FieldLabel className={labelCls}>Organization Name</FieldLabel>
-                              <Input
-                                placeholder="My Organization"
-                                value={orgName}
-                                onChange={(e) => setOrgName(e.target.value)}
-                                className={inputCls}
-                              />
+                              <FieldLabel style={labelStyle}>Organization Name</FieldLabel>
+                              <Input placeholder="My Organization" value={orgName} onChange={(e) => setOrgName(e.target.value)} className={inputCls} style={inputStyle} />
                             </Field>
                           )}
-
                           <Field>
-                            <FieldLabel className={labelCls}>Email</FieldLabel>
-                            <Input
-                              type="email"
-                              placeholder="you@example.com"
-                              value={email}
-                              onChange={(e) => setEmail(e.target.value)}
-                              className={inputCls}
-                              required
-                            />
-                            <FieldDescription className="text-purple-400/60 text-xs mt-0.5">
-                              Each email can only be used once.
-                            </FieldDescription>
+                            <FieldLabel style={labelStyle}>Email</FieldLabel>
+                            <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} style={inputStyle} required />
+                            <FieldDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>Each email can only be used once.</FieldDescription>
                           </Field>
-
                           <Field>
-                            <FieldLabel className={labelCls}>Password</FieldLabel>
+                            <FieldLabel style={labelStyle}>Password</FieldLabel>
                             <div className="grid grid-cols-2 gap-2">
-                              <Input
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className={inputCls}
-                                required
-                              />
-                              <Input
-                                type="password"
-                                placeholder="Confirm password"
-                                value={confirmPass}
-                                onChange={(e) => setConfirmPass(e.target.value)}
-                                className={inputCls}
-                                required
-                              />
+                              <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} style={inputStyle} required />
+                              <Input type="password" placeholder="Confirm password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className={inputCls} style={inputStyle} required />
                             </div>
-                            <FieldDescription className="text-purple-400/60 text-xs mt-0.5">
-                              Must be at least 8 characters.
-                            </FieldDescription>
+                            <FieldDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>Must be at least 8 characters.</FieldDescription>
                           </Field>
                         </fieldset>
 
@@ -508,51 +468,54 @@ export function SignupForm() {
 
                         <Button
                           onClick={handleNext}
-                          className="cursor-pointer w-full h-9 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all duration-200 shadow-lg shadow-purple-900/50"
+                          className="cursor-pointer w-full h-9 text-sm font-medium rounded-lg flex items-center justify-center gap-1.5 transition-all duration-200"
+                          style={{
+                            background: `linear-gradient(135deg, rgb(var(--brand-600)), rgb(var(--accent-600)))`,
+                            color: "rgb(var(--fg-on-brand, 255 255 255))",
+                          }}
                         >
                           Continue <ChevronRight className="size-3.5" />
                         </Button>
 
-                        <p className="text-center text-purple-400/70 text-xs">
+                        <p className="text-center text-xs" style={{ color: "rgb(var(--text-faint))" }}>
                           Already have an account?{" "}
-                          <a href="/log-in" className="text-purple-300 hover:text-white underline underline-offset-2 transition-colors">
+                          <a href="/log-in" className="underline underline-offset-2 transition-colors" style={{ color: "rgb(var(--text-secondary))" }}>
                             Sign in
                           </a>
                         </p>
                       </FieldGroup>
                     </div>
                   ) : (
-                    // ── Step 2: profile + personalization ─────────────────────
                     <div onKeyDown={handleKeyDown}>
                       <FieldGroup className="space-y-2.5">
                         {/* Profile Photo */}
                         <Field>
-                          <FieldLabel className={labelCls}>
-                            Profile Photo <span className="text-purple-500/60 font-normal">(optional)</span>
+                          <FieldLabel style={labelStyle}>
+                            Profile Photo <span className="font-normal" style={{ color: "rgb(var(--text-faint))" }}>(optional)</span>
                           </FieldLabel>
                           <label className="flex items-center gap-3 cursor-pointer group">
                             <div className="shrink-0">
                               {photoPreview ? (
-                                <Image
-                                  width={40} height={40}
-                                  src={photoPreview}
-                                  alt="Preview"
-                                  className="w-10 h-10 rounded-full object-cover border-2 border-purple-400/60"
+                                <Image width={40} height={40} src={photoPreview} alt="Preview"
+                                  className="w-10 h-10 rounded-full object-cover border-2"
+                                  style={{ borderColor: "rgb(var(--brand-400) / 0.5)" }}
                                 />
                               ) : (
-                                <div className="w-10 h-10 rounded-full border-2 border-dashed border-purple-500/50 bg-purple-900/20 flex items-center justify-center group-hover:border-purple-400/80 transition-colors">
-                                  <Upload className="size-3.5 text-purple-500/60 group-hover:text-purple-400 transition-colors" />
+                                <div
+                                  className="w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center transition-colors"
+                                  style={{ borderColor: "rgb(var(--surface-border) / 0.5)", background: "rgb(var(--surface-raised))" }}
+                                >
+                                  <Upload className="size-3.5" style={{ color: "rgb(var(--text-faint))" }} />
                                 </div>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={handlePhotoChange}
-                                className="cursor-pointer h-8 text-xs bg-purple-900/30 border-purple-500/40 text-purple-300 rounded-lg file:bg-purple-800/60 file:border-0 file:text-purple-200 file:text-[11px] file:mr-2 file:px-2 file:py-1 file:rounded file:cursor-pointer"
+                                type="file" accept="image/*" onChange={handlePhotoChange}
+                                className="cursor-pointer h-8 text-xs rounded-lg"
+                                style={{ background: "rgb(var(--surface-raised))", borderColor: "rgb(var(--surface-border) / 0.4)", color: "rgb(var(--text-secondary))" }}
                               />
-                              <p className="text-purple-400/50 text-xs mt-0.5">JPG, PNG, GIF · Max 5MB</p>
+                              <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>JPG, PNG, GIF · Max 5MB</p>
                             </div>
                           </label>
                         </Field>
@@ -560,112 +523,62 @@ export function SignupForm() {
                         {type === "user" ? (
                           <>
                             <Field>
-                              <FieldLabel className={labelCls}>Full Name</FieldLabel>
-                              <Input
-                                type="text"
-                                placeholder="John Doe"
-                                value={userName}
-                                onChange={(e) => setUserName(e.target.value)}
-                                className={inputCls}
-                                required
-                              />
+                              <FieldLabel style={labelStyle}>Full Name</FieldLabel>
+                              <Input type="text" placeholder="John Doe" value={userName} onChange={(e) => setUserName(e.target.value)} className={inputCls} style={inputStyle} required />
                             </Field>
-
                             <div className="grid grid-cols-2 gap-2">
                               <Field>
-                                <FieldLabel className={labelCls}>Age</FieldLabel>
-                                <Input
-                                  type="number"
-                                  placeholder="25"
-                                  min="18"
-                                  max="120"
-                                  value={age}
-                                  onChange={(e) => setAge(e.target.value)}
-                                  className={inputCls}
-                                  required
-                                />
+                                <FieldLabel style={labelStyle}>Age</FieldLabel>
+                                <Input type="number" placeholder="25" min="18" max="120" value={age} onChange={(e) => setAge(e.target.value)} className={inputCls} style={inputStyle} required />
                               </Field>
                               <Field>
-                                <FieldLabel className={labelCls}>Country</FieldLabel>
-                                <Input
-                                  type="text"
-                                  placeholder="Philippines"
-                                  value={country}
-                                  onChange={(e) => setCountry(e.target.value)}
-                                  className={inputCls}
-                                  required
-                                />
+                                <FieldLabel style={labelStyle}>Country</FieldLabel>
+                                <Input type="text" placeholder="Philippines" value={country} onChange={(e) => setCountry(e.target.value)} className={inputCls} style={inputStyle} required />
                               </Field>
                             </div>
-
                             <Field>
-                              <FieldLabel className={labelCls}>Occupation</FieldLabel>
-                              <Input
-                                type="text"
-                                placeholder="Software Developer"
-                                value={occupation}
-                                onChange={(e) => setOccupation(e.target.value)}
-                                className={inputCls}
-                                required
-                              />
+                              <FieldLabel style={labelStyle}>Occupation</FieldLabel>
+                              <Input type="text" placeholder="Software Developer" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={inputCls} style={inputStyle} required />
                             </Field>
-
-                            {/* ── User accent color ── */}
-                            <div className="border-t border-purple-500/20 pt-2.5">
+                            <div className="border-t pt-2.5" style={{ borderColor: "rgb(var(--surface-border) / 0.2)" }}>
                               <UserThemePicker value={userTheme} onChange={setUserTheme} />
                             </div>
                           </>
                         ) : (
                           <>
                             <Field>
-                              <FieldLabel className={labelCls}>Organization Description</FieldLabel>
+                              <FieldLabel style={labelStyle}>Organization Description</FieldLabel>
                               <Textarea
-                                placeholder="Tell us about your organization — your mission, what you do, who you serve…"
+                                placeholder="Tell us about your organization…"
                                 value={orgDescription}
                                 onChange={(e) => setOrgDescription(e.target.value)}
                                 required
-                                className="min-h-[72px] text-sm bg-purple-900/30 border-purple-500/40 focus:border-purple-400 placeholder:text-purple-500/60 text-purple-50 rounded-lg resize-none"
+                                className="min-h-[72px] text-sm rounded-lg resize-none"
+                                style={{ background: "rgb(var(--surface-raised))", borderColor: "rgb(var(--surface-border) / 0.5)", color: "rgb(var(--text-primary))" }}
                               />
                             </Field>
-
-                            {/* ── Org palette ── */}
-                            <div className="border-t border-purple-500/20 pt-2.5">
-                              <OrgPalettePicker
-                                value={orgPalette?.id ?? ""}
-                                onChange={setOrgPalette}
-                              />
+                            <div className="border-t pt-2.5" style={{ borderColor: "rgb(var(--surface-border) / 0.2)" }}>
+                              <OrgPalettePicker value={orgPalette?.id ?? ""} onChange={setOrgPalette} />
                             </div>
                           </>
                         )}
 
                         {/* Step 2 terms confirmation */}
-                        <div className="flex items-start gap-2.5 bg-purple-900/20 border border-purple-500/20 rounded-lg px-3 py-2">
+                        <div
+                          className="flex items-start gap-2.5 rounded-lg px-3 py-2 border"
+                          style={{ background: "rgb(var(--surface-raised))", borderColor: "rgb(var(--surface-border) / 0.25)" }}
+                        >
                           <Checkbox
-                            id="terms"
-                            checked={agreedToTerms}
-                            onCheckedChange={(checked) => {
-                              setAgreedToTerms(checked)
-                              if (checked) setError(null)
-                            }}
-                            className="mt-0.5 shrink-0 border-purple-400/50 data-[state=checked]:bg-purple-600 data-[state=checked]:border-purple-600"
+                            id="terms" checked={agreedToTerms}
+                            onCheckedChange={(checked) => { setAgreedToTerms(checked); if (checked) setError(null) }}
+                            className="mt-0.5 shrink-0"
                           />
-                          <label htmlFor="terms" className="text-xs text-purple-300/80 leading-relaxed cursor-pointer">
+                          <label htmlFor="terms" className="text-xs leading-relaxed cursor-pointer" style={{ color: "rgb(var(--text-secondary))" }}>
                             I agree to Byteon&apos;s{" "}
-                            <TermsDialog
-                              trigger={
-                                <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">
-                                  Terms of Service
-                                </button>
-                              }
-                            />{" "}and{" "}
-                            <PrivacyDialog
-                              trigger={
-                                <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-200 hover:text-white transition-colors">
-                                  Privacy Policy
-                                </button>
-                              }
-                            />
-                            , and confirm I am at least 18 years of age.
+                            <TermsDialog trigger={<button type="button" className="underline underline-offset-2" style={{ color: "rgb(var(--text-primary))" }}>Terms of Service</button>} />{" "}
+                            and{" "}
+                            <PrivacyDialog trigger={<button type="button" className="underline underline-offset-2" style={{ color: "rgb(var(--text-primary))" }}>Privacy Policy</button>} />,
+                            and confirm I am at least 18 years of age.
                           </label>
                         </div>
 
@@ -676,14 +589,23 @@ export function SignupForm() {
                             type="button"
                             variant="outline"
                             onClick={handleBack}
-                            className="cursor-pointer h-9 border-purple-500/40 bg-purple-900/20 hover:bg-purple-900/40 text-purple-300 hover:text-purple-100 rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-200"
+                            className="cursor-pointer h-9 rounded-lg text-sm flex items-center justify-center gap-1 transition-all duration-200"
+                            style={{
+                              borderColor: "rgb(var(--surface-border) / 0.4)",
+                              background: "rgb(var(--surface-raised))",
+                              color: "rgb(var(--text-secondary))",
+                            }}
                           >
                             <ChevronLeft className="size-3.5" /> Back
                           </Button>
                           <Button
                             onClick={handleSignUp}
                             disabled={loading}
-                            className="h-9 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-lg shadow-purple-900/50"
+                            className="h-9 rounded-lg text-sm font-medium transition-all duration-200"
+                            style={{
+                              background: `linear-gradient(135deg, rgb(var(--brand-600)), rgb(var(--accent-600)))`,
+                              color: "rgb(var(--fg-on-brand, 255 255 255))",
+                            }}
                           >
                             {loading ? (
                               <span className="flex items-center gap-2">

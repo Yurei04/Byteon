@@ -59,12 +59,14 @@ export default function TipPage() {
   return (
     <section
       className="relative w-full overflow-hidden py-24 px-6"
-      style={{ background: "#05010f" }}
+      style={{ background: "rgb(var(--bg-base))" }}
     >
       {/* Top separator */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(to right, transparent, rgba(217,70,239,0.3), transparent)" }}
+        style={{
+          background: `linear-gradient(to right, transparent, rgb(var(--brand-500) / 0.3), transparent)`,
+        }}
       />
 
       {/* Ambient glow */}
@@ -72,7 +74,7 @@ export default function TipPage() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 100%, rgba(168,85,247,0.1) 0%, transparent 70%)",
+            "radial-gradient(ellipse 60% 40% at 50% 100%, rgb(var(--accent-500) / 0.08) 0%, transparent 70%)",
         }}
       />
 
@@ -86,14 +88,20 @@ export default function TipPage() {
           transition={{ duration: 0.5 }}
           className="flex items-center justify-center gap-3 mb-14"
         >
-          <div className="h-px w-12" style={{ background: "rgba(217,70,239,0.3)" }} />
+          <div
+            className="h-px w-12"
+            style={{ background: "rgb(var(--brand-500) / 0.3)" }}
+          />
           <span
             className="text-xs font-semibold uppercase tracking-[0.2em]"
-            style={{ color: "rgba(240,171,252,0.5)" }}
+            style={{ color: "rgb(var(--text-faint))" }}
           >
             From the community
           </span>
-          <div className="h-px w-12" style={{ background: "rgba(217,70,239,0.3)" }} />
+          <div
+            className="h-px w-12"
+            style={{ background: "rgb(var(--brand-500) / 0.3)" }}
+          />
         </motion.div>
 
         {/* Large quote */}
@@ -119,7 +127,7 @@ export default function TipPage() {
                 style={{
                   fontSize: "5rem",
                   lineHeight: 1,
-                  background: "linear-gradient(135deg, #e879f9, #a855f7)",
+                  backgroundImage: `linear-gradient(135deg, rgb(var(--brand-400)), rgb(var(--accent-500)))`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   marginTop: "-1rem",
@@ -131,7 +139,7 @@ export default function TipPage() {
               <p
                 className="text-xl sm:text-2xl lg:text-3xl font-medium leading-snug"
                 style={{
-                  color: "rgba(255,255,255,0.88)",
+                  color: "rgb(var(--text-primary))",
                   letterSpacing: "-0.02em",
                   lineHeight: 1.45,
                 }}
@@ -159,16 +167,24 @@ export default function TipPage() {
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                 style={{
-                  background: "linear-gradient(135deg, rgba(217,70,239,0.25), rgba(124,58,237,0.25))",
-                  border: "1px solid rgba(217,70,239,0.35)",
-                  color: "#f0abfc",
+                  background: `linear-gradient(135deg, rgb(var(--brand-500) / 0.2), rgb(var(--accent-600) / 0.2))`,
+                  border: "1px solid rgb(var(--brand-500) / 0.35)",
+                  color: "rgb(var(--text-muted))",
                 }}
               >
                 {tip.initials}
               </div>
               <div>
-                <p className="text-sm font-semibold text-white leading-tight">{tip.author}</p>
-                <p className="text-xs leading-tight" style={{ color: "rgba(240,171,252,0.45)" }}>
+                <p
+                  className="text-sm font-semibold leading-tight"
+                  style={{ color: "rgb(var(--text-primary))" }}
+                >
+                  {tip.author}
+                </p>
+                <p
+                  className="text-xs leading-tight"
+                  style={{ color: "rgb(var(--text-faint))" }}
+                >
                   {tip.title}
                 </p>
               </div>
@@ -191,8 +207,8 @@ export default function TipPage() {
                     height: "6px",
                     background:
                       i === current
-                        ? "linear-gradient(to right, #e879f9, #a855f7)"
-                        : "rgba(217,70,239,0.25)",
+                        ? `linear-gradient(to right, rgb(var(--brand-400)), rgb(var(--accent-500)))`
+                        : "rgb(var(--brand-500) / 0.25)",
                   }}
                 />
               ))}
@@ -200,51 +216,33 @@ export default function TipPage() {
 
             {/* Prev / Next */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={prev}
-                aria-label="Previous"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
-                style={{
-                  border: "1px solid rgba(217,70,239,0.25)",
-                  background: "rgba(217,70,239,0.05)",
-                  color: "rgba(240,171,252,0.6)",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(217,70,239,0.12)"
-                  e.currentTarget.style.borderColor = "rgba(217,70,239,0.5)"
-                  e.currentTarget.style.color = "#f0abfc"
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = "rgba(217,70,239,0.05)"
-                  e.currentTarget.style.borderColor = "rgba(217,70,239,0.25)"
-                  e.currentTarget.style.color = "rgba(240,171,252,0.6)"
-                }}
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                onClick={next}
-                aria-label="Next"
-                className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
-                style={{
-                  border: "1px solid rgba(217,70,239,0.25)",
-                  background: "rgba(217,70,239,0.05)",
-                  color: "rgba(240,171,252,0.6)",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = "rgba(217,70,239,0.12)"
-                  e.currentTarget.style.borderColor = "rgba(217,70,239,0.5)"
-                  e.currentTarget.style.color = "#f0abfc"
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = "rgba(217,70,239,0.05)"
-                  e.currentTarget.style.borderColor = "rgba(217,70,239,0.25)"
-                  e.currentTarget.style.color = "rgba(240,171,252,0.6)"
-                }}
-              >
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              {[{ label: "Previous", icon: ArrowLeft, fn: prev }, { label: "Next", icon: ArrowRight, fn: next }].map(
+                ({ label, icon: Icon, fn }) => (
+                  <button
+                    key={label}
+                    onClick={fn}
+                    aria-label={label}
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+                    style={{
+                      border: "1px solid rgb(var(--surface-border) / 0.4)",
+                      background: "rgb(var(--surface-raised))",
+                      color: "rgb(var(--text-faint))",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "rgb(var(--brand-500) / 0.1)"
+                      e.currentTarget.style.borderColor = "rgb(var(--brand-500) / 0.5)"
+                      e.currentTarget.style.color = "rgb(var(--text-muted))"
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "rgb(var(--surface-raised))"
+                      e.currentTarget.style.borderColor = "rgb(var(--surface-border) / 0.4)"
+                      e.currentTarget.style.color = "rgb(var(--text-faint))"
+                    }}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                  </button>
+                )
+              )}
             </div>
           </div>
         </div>
@@ -253,7 +251,7 @@ export default function TipPage() {
         {auto && (
           <motion.div
             className="mt-6 h-px rounded-full overflow-hidden"
-            style={{ background: "rgba(217,70,239,0.12)" }}
+            style={{ background: "rgb(var(--surface-border) / 0.2)" }}
           >
             <motion.div
               key={current}
@@ -262,7 +260,7 @@ export default function TipPage() {
               transition={{ duration: 6, ease: "linear" }}
               style={{
                 height: "100%",
-                background: "linear-gradient(to right, #e879f9, #a855f7)",
+                background: `linear-gradient(to right, rgb(var(--brand-400)), rgb(var(--accent-500)))`,
               }}
             />
           </motion.div>
