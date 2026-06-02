@@ -175,24 +175,28 @@ export function PartnersCard({
                 <CardFooter className="w-full lg:w-auto flex items-center lg:items-end justify-start lg:justify-center p-0 mt-2 lg:mt-0 relative z-10 lg:self-center">
                     {websiteLink ? (
                         <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                            <Link href={websiteLink} target="_blank" rel="noopener noreferrer">
+                            <a
+                                href={websiteLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
                                 <Button
-                                    size="lg"
-                                    className={`
-                                        px-5 py-2.5 h-auto
-                                        ${theme.button}
-                                        border rounded-xl
-                                        font-semibold text-sm
-                                        backdrop-blur-lg
-                                        transition-all duration-300
-                                        flex items-center gap-2
-                                        cursor-pointer
-                                    `}
+                                size="lg"
+                                className={`
+                                    px-5 py-2.5 h-auto
+                                    ${theme.button}
+                                    border rounded-xl
+                                    font-semibold text-sm
+                                    backdrop-blur-lg
+                                    transition-all duration-300
+                                    flex items-center gap-2
+                                    cursor-pointer
+                                `}
                                 >
-                                    Visit Site
-                                    <ExternalLink className="w-3.5 h-3.5" />
+                                Visit Site
+                                <ExternalLink className="w-3.5 h-3.5" />
                                 </Button>
-                            </Link>
+                            </a>
                         </motion.div>
                     ) : (
                         <span className="text-xs text-white/25 font-medium tracking-widest uppercase border border-white/10 rounded-xl px-4 py-2.5">

@@ -3,7 +3,16 @@ import { GalleryVerticalEnd } from "lucide-react"
 
 export default function SignupPage() {
   return (
-    <div className="relative bg-[#000000] bg-[radial-gradient(#ffffff33_1px,#00091d_1px)] bg-[size:20px_20px] flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+    <div className="flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
+        {/* Dot grid */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          backgroundImage: "radial-gradient(circle, rgb(var(--surface-border) / 0.3) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+      
       <div className="flex w-full max-w-md flex-col items-center gap-2">
 
         {/* Brand header */}

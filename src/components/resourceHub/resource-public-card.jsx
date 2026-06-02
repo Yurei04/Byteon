@@ -1,147 +1,214 @@
 "use client"
 
-import { ExternalLink, BookOpen, Sparkles } from "lucide-react"
-import { Button } from "../ui/button"
-import { Card, CardContent } from "../ui/card"
+import { ExternalLink, BookOpen } from "lucide-react"
 import { buildTheme } from "@/lib/blog-color"
 
-// Fuchsia/pink fallback theme
 const FALLBACK_THEME = buildTheme("#d946ef", "#f472b6")
+
+function initials(name) {
+  return (name || "??")
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+}
 
 export default function ResourcePublicCard({ item, theme }) {
   const t = theme || FALLBACK_THEME
 
   return (
-    <Card
-      className="group relative backdrop-blur-xl overflow-hidden transition-all duration-300 w-full rounded-2xl"
-      style={{
-        background: t.cardBg,
-        border:     t.borderColor,
-        boxShadow:  "none",
-        ...t.cssVars,
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.boxShadow = t.cardShadow
-        e.currentTarget.style.border    = t.borderColorStrong
-        e.currentTarget.style.transform = "translateY(-3px)"
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.boxShadow = "none"
-        e.currentTarget.style.border    = t.borderColor
-        e.currentTarget.style.transform = "translateY(0)"
-      }}
-    >
-      {/* Top shimmer on hover */}
+    <>
+      {/* Scoped hover styles — avoids any JS event handlers on anchor */}
+      <style>{`
+        .resource-card {
+          border-radius: 20px;
+          overflow: hidden;
+          border: 1.5px solid rgb(var(--surface-border) / 0.35);
+          background: rgb(var(--surface-raised));
+          transition: transform 0.25s cubic-bezier(0.22,1,0.36,1),
+                      box-shadow 0.25s cubic-bezier(0.22,1,0.36,1),
+                      border-color 0.25s;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+        }
+        .resource-card:hover {
+          transform: translateY(-5px);
+          border-color: rgb(var(--brand-400) / 0.45);
+        }
+        .resource-card .bottom-bar {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: transform 0.3s ease;
+        }
+        .resource-card:hover .bottom-bar {
+          transform: scaleX(1);
+        }
+        .resource-card .icon-box {
+          transition: transform 0.3s ease;
+        }
+        .resource-card:hover .icon-box {
+          transform: scale(1.1);
+        }
+        .resource-visit-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #fff;
+          flex-shrink: 0;
+          transition: opacity 0.18s ease, transform 0.18s ease;
+          text-decoration: none;
+        }
+        .resource-visit-btn:hover {
+          opacity: 0.85;
+          transform: translateY(-1px);
+        }
+      `}</style>
+
       <div
-        className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: `linear-gradient(90deg, transparent, rgb(var(--brand-400) / 0.4), transparent)` }}
-      />
+        className="resource-card"
+        style={{ ...t.cssVars }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow =
+            `0 20px 52px rgb(var(--brand-700) / 0.15), 0 4px 14px rgb(var(--brand-700) / 0.08)`
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = "none"
+        }}
+      >
+        {/* Top gradient bar */}
+        <div
+          className="h-[3px] w-full flex-shrink-0"
+          style={{ background: t.bottomBarGradient }}
+        />
 
-      {/* Hover overlay */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: t.overlayGradient }}
-      />
-
-      {/* Corner accent */}
-      <div
-        className="absolute top-0 right-0 w-28 h-28 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: t.cornerGradient }}
-      />
-
-      <CardContent className="relative p-6">
-        {/* Header row */}
-        <div className="flex items-start gap-3 mb-4">
-          {/* Icon */}
-          <div
-            className="p-2 rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-300"
-            style={{
-              background: t.badgeBgPrimary,
-              border:     t.borderColorLight,
-              boxShadow:  t.glowShadow,
-            }}
-          >
-            <BookOpen className="w-4 h-4" style={{ color: t.primaryText }} />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            {/* Org name */}
-            {item.organization && (
-              <span
-                className="text-xs font-semibold uppercase tracking-wider"
-                style={{ color: t.primaryText }}
-              >
-                {item.organization}
-              </span>
-            )}
-
-            {/* Title */}
-            <h3
-              className="text-lg font-bold mt-0.5 leading-snug"
+        <div className="flex flex-col flex-1 p-5">
+          {/* Header: icon + org + title */}
+          <div className="flex items-start gap-3 mb-3">
+            <div
+              className="icon-box flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center"
               style={{
-                backgroundImage:      t.textGradient,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor:  "transparent",
+                background: "rgb(var(--bg-muted))",
+                border: `1px solid ${t.primary30}`,
               }}
             >
-              {item.title}
-            </h3>
+              <BookOpen
+                className="w-4 h-4"
+                style={{ color: t.primaryText }}
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              {item.organization && (
+                <span
+                  className="inline-flex items-center gap-1.5 mb-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full"
+                  style={{
+                    background: "rgb(var(--bg-muted))",
+                    color: t.primaryText,
+                    border: `1px solid ${t.primary30}`,
+                  }}
+                >
+                  <span
+                    className="w-[4px] h-[4px] rounded-full flex-shrink-0"
+                    style={{ background: t.primaryText }}
+                  />
+                  {item.organization}
+                </span>
+              )}
+
+              <h3
+                className="text-[15px] font-bold leading-snug tracking-tight line-clamp-2"
+                style={{ color: "rgb(var(--text-primary))" }}
+              >
+                {item.title}
+              </h3>
+            </div>
+          </div>
+
+          {/* Description */}
+          {item.des && (
+            <p
+              className="text-[12px] leading-relaxed line-clamp-3 flex-1 mb-4"
+              style={{ color: "rgb(var(--text-secondary))" }}
+            >
+              {item.des}
+            </p>
+          )}
+
+          {/* Category tag */}
+          {item.category && (
+            <span
+              className="inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-full text-[11px] font-semibold mb-4"
+              style={{
+                background: "rgb(var(--bg-muted))",
+                color: t.secondaryText,
+                border: `1px solid ${t.secondary30}`,
+              }}
+            >
+              <span style={{ fontSize: 10, opacity: 0.8 }}>◈</span>
+              {item.category}
+            </span>
+          )}
+
+          {/* Divider */}
+          <div
+            className="h-px mb-4"
+            style={{ background: "rgb(var(--surface-border) / 0.3)" }}
+          />
+
+          {/* Footer */}
+          <div className="flex items-center justify-between gap-2">
+            {item.organization ? (
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+                  style={{ background: t.bottomBarGradient }}
+                >
+                  {initials(item.organization)}
+                </div>
+                <p
+                  className="text-[11px] font-semibold truncate"
+                  style={{ color: "rgb(var(--text-primary))" }}
+                >
+                  {item.organization}
+                </p>
+              </div>
+            ) : (
+              <div />
+            )}
+
+            {item.link && (
+              <a
+                href={item.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="resource-visit-btn"
+                style={{ background: t.bottomBarGradient }}
+              >
+                <ExternalLink className="w-3 h-3" />
+                Visit
+              </a>
+            )}
           </div>
         </div>
 
-        {/* Description */}
-        {item.des && (
-          <p
-            className="text-sm leading-relaxed line-clamp-2 mb-4"
-            style={{ color: "rgb(var(--text-secondary))" }}
-          >
-            {item.des}
-          </p>
-        )}
-
-        {/* Category badge */}
-        {item.category && (
-          <div className="mb-5">
-            <span
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
-              style={{
-                background: t.badgeBgSecondary,
-                border:     `1px solid ${t.secondary30}`,
-                color:      t.secondaryText,
-              }}
-            >
-              <Sparkles className="w-3 h-3" />
-              {item.category}
-            </span>
-          </div>
-        )}
-
-        {/* CTA */}
-        {item.link && (
-          <a href={item.link} target="_blank" rel="noopener noreferrer">
-            <Button
-              size="sm"
-              className="border-0 transition-all duration-300 cursor-pointer group/btn rounded-xl text-xs font-semibold"
-              style={{
-                background: t.buttonGradient,
-                boxShadow:  t.buttonShadow,
-                color:      "rgb(var(--fg-on-brand, 255 255 255))",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = t.buttonHoverGradient)}
-              onMouseLeave={e => (e.currentTarget.style.background = t.buttonGradient)}
-            >
-              <ExternalLink className="w-3.5 h-3.5 mr-1.5 group-hover/btn:rotate-12 transition-transform duration-300" />
-              Visit Resource
-            </Button>
-          </a>
-        )}
-
-        {/* Bottom accent bar */}
+        {/* Bottom accent line */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-[2px] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
+          className="bottom-bar"
           style={{ background: t.bottomBarGradient }}
         />
-      </CardContent>
-    </Card>
+      </div>
+    </>
   )
 }

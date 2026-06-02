@@ -1,58 +1,60 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 
-export function ReturnButton({ primaryC = "#c026d3", secondaryC = "#db2777" }) {
+export function ReturnButton() {
   return (
     <div className="w-full max-w-5xl mx-auto px-4">
       <Link href="/" className="block w-full group">
         <button
-          style={{
-            background: `linear-gradient(135deg, ${primaryC}20, ${secondaryC}15)`,
-            borderColor: `${primaryC}50`,
-            color: "#ffffff",
-            boxShadow: `0 0 16px ${primaryC}30`
-          }}
           className="
             relative w-full flex items-center gap-3 px-5 py-3
-            rounded-xl
-            text-sm font-medium tracking-wide
+            rounded-xl text-sm font-medium tracking-wide
             transition-all duration-300 ease-out
-            overflow-hidden cursor-pointer
-            backdrop-blur-md border
+            overflow-hidden cursor-pointer backdrop-blur-md border
           "
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = `linear-gradient(135deg, ${primaryC}50, ${secondaryC}40)`
-            e.currentTarget.style.borderColor = `${primaryC}`
-            e.currentTarget.style.boxShadow = `0 0 28px ${primaryC}60`
+          style={{
+            background:  "rgb(var(--brand-500) / 0.08)",
+            borderColor: "rgb(var(--brand-500) / 0.3)",
+            color:       "rgb(var(--text-primary))",
+            boxShadow:   "0 0 16px rgb(var(--brand-500) / 0.1)",
           }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = `linear-gradient(135deg, ${primaryC}20, ${secondaryC}15)`
-            e.currentTarget.style.borderColor = `${primaryC}50`
-            e.currentTarget.style.boxShadow = `0 0 16px ${primaryC}30`
+          onMouseEnter={e => {
+            e.currentTarget.style.background   = "rgb(var(--brand-500) / 0.14)"
+            e.currentTarget.style.borderColor  = "rgb(var(--brand-500) / 0.6)"
+            e.currentTarget.style.boxShadow    = "0 0 28px rgb(var(--brand-500) / 0.25)"
+            e.currentTarget.style.color        = "rgb(var(--text-primary))"
+            const shimmer = e.currentTarget.querySelector("[data-shimmer]")
+            if (shimmer) shimmer.style.transform = "translateX(200%)"
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background   = "rgb(var(--brand-500) / 0.08)"
+            e.currentTarget.style.borderColor  = "rgb(var(--brand-500) / 0.3)"
+            e.currentTarget.style.boxShadow    = "0 0 16px rgb(var(--brand-500) / 0.1)"
+            const shimmer = e.currentTarget.querySelector("[data-shimmer]")
+            if (shimmer) shimmer.style.transform = "translateX(-200%)"
           }}
         >
-          {/* shimmer effect */}
+          {/* Shimmer sweep */}
           <span
+            data-shimmer
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: `linear-gradient(90deg, transparent, ${primaryC}30, transparent)`,
-              transform: "translateX(-200%)",
-              transition: "transform 0.7s ease"
+              background:  "linear-gradient(90deg, transparent, rgb(var(--brand-500) / 0.15), transparent)",
+              transform:   "translateX(-200%)",
+              transition:  "transform 0.7s ease",
             }}
           />
 
           <ArrowLeft
             size={18}
-            className="transition-transform duration-300 group-hover:-translate-x-1"
+            className="transition-transform duration-300 group-hover:-translate-x-1 relative z-10 flex-shrink-0"
             strokeWidth={2.5}
+            style={{ color: "rgb(var(--brand-500))" }}
           />
 
-          {/* ALWAYS visible label */}
-          <span className="opacity-100">
-            Back to Home
-          </span>
+          <span className="relative z-10">Back to Home</span>
         </button>
       </Link>
     </div>
-  );
+  )
 }

@@ -138,7 +138,7 @@ export default function AccountSwitcher({ isCollapsed = false }) {
 
   return (
     <div className="relative w-full" ref={dropdownRef}>
-      {/* ── Trigger ── */}
+      {/* Trigger */}
       <button
         onClick={() => setOpen(prev => !prev)}
         aria-haspopup="true"
@@ -160,31 +160,23 @@ export default function AccountSwitcher({ isCollapsed = false }) {
         }}
       >
         <Avatar account={activeAccount} size={28} />
-
         <div className="flex flex-col min-w-0 text-left">
-          <span
-            className="text-xs font-semibold truncate leading-tight"
-            style={{ color: "rgb(var(--text-primary))" }}
-          >
+          <span className="text-xs font-semibold truncate leading-tight" style={{ color: "rgb(var(--text-primary))" }}>
             {activeAccount?.displayName ?? session.user.email ?? "Account"}
           </span>
           {!isCollapsed && (
-            <span
-              className="text-[10px] leading-none mt-0.5"
-              style={{ color: "rgb(var(--text-faint))" }}
-            >
+            <span className="text-[10px] leading-none mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
               {ROLE_CONFIG?.[activeAccount?.role]?.label ?? "User"}
             </span>
           )}
         </div>
-
         <ChevronDown
-          className={`${isCollapsed ? "hidden" : "block"} w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200`}
+          className={`${isCollapsed ? "hidden" : "block"} w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ml-auto`}
           style={{ color: "rgb(var(--text-faint))" }}
         />
       </button>
 
-      {/* ── Dropdown ── */}
+      {/* Dropdown */}
       {open && (
         <div
           className="absolute bottom-full left-0 mb-2 w-72 z-50 rounded-2xl overflow-hidden"
@@ -192,16 +184,14 @@ export default function AccountSwitcher({ isCollapsed = false }) {
             background: "rgb(var(--surface-raised))",
             border: "1px solid rgb(var(--brand-500) / 0.2)",
             backdropFilter: "blur(24px)",
-            boxShadow: `0 -8px 40px rgb(0 0 0 / 0.15), 0 0 0 1px rgb(var(--brand-500) / 0.06)`,
+            boxShadow: "0 -8px 40px rgb(0 0 0 / 0.12), 0 0 0 1px rgb(var(--brand-500) / 0.06)",
           }}
         >
-          {/* Top gradient accent */}
           <div
             className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
             style={{ background: "linear-gradient(to bottom, rgb(var(--brand-500) / 0.08), transparent)" }}
           />
 
-          {/* ── Active account ── */}
           {activeAccount && (
             <div style={{ borderBottom: "1px solid rgb(var(--surface-border) / 0.25)" }}>
               <button
@@ -212,44 +202,25 @@ export default function AccountSwitcher({ isCollapsed = false }) {
               >
                 <Avatar account={activeAccount} size={40} />
                 <div className="flex-1 min-w-0">
-                  <p
-                    className="text-sm font-semibold truncate leading-tight"
-                    style={{ color: "rgb(var(--text-primary))" }}
-                  >
+                  <p className="text-sm font-semibold truncate leading-tight" style={{ color: "rgb(var(--text-primary))" }}>
                     {activeAccount.displayName}
                   </p>
                   <RoleBadge role={activeAccount.role} />
-                  <p
-                    className="text-[10px] mt-1.5 flex items-center gap-1"
-                    style={{ color: "rgb(var(--brand-500) / 0.7)" }}
-                  >
+                  <p className="text-[10px] mt-1.5 flex items-center gap-1" style={{ color: "rgb(var(--brand-500) / 0.7)" }}>
                     <ExternalLink className="w-2.5 h-2.5" />
                     Go to dashboard
                   </p>
                 </div>
-                <div
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ background: "#22c55e", boxShadow: "0 0 6px #22c55e" }}
-                />
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: "#22c55e", boxShadow: "0 0 6px #22c55e" }} />
               </button>
-
-              {/* Sign out this account */}
               <div className="px-4 pb-3 flex justify-end">
                 <button
                   onClick={(e) => handleRemove(e, activeAccount.userId)}
                   disabled={removing === activeAccount.userId}
                   className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-all duration-200 disabled:opacity-50"
                   style={{ color: "rgb(var(--text-faint))", border: "1px solid transparent" }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.color = "#f87171"
-                    e.currentTarget.style.background = "rgba(239,68,68,0.1)"
-                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.color = "rgb(var(--text-faint))"
-                    e.currentTarget.style.background = "transparent"
-                    e.currentTarget.style.borderColor = "transparent"
-                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)" }}
+                  onMouseLeave={e => { e.currentTarget.style.color = "rgb(var(--text-faint))"; e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "transparent" }}
                 >
                   {removing === activeAccount.userId ? <Spinner size="sm" /> : <LogOut className="w-3 h-3" />}
                   <span>Sign out</span>
@@ -258,13 +229,9 @@ export default function AccountSwitcher({ isCollapsed = false }) {
             </div>
           )}
 
-          {/* ── Other accounts ── */}
           {otherAccounts.length > 0 && (
             <div className="py-2" style={{ borderBottom: "1px solid rgb(var(--surface-border) / 0.2)" }}>
-              <p
-                className="px-4 pb-1.5 pt-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]"
-                style={{ color: "rgb(var(--text-faint))" }}
-              >
+              <p className="px-4 pb-1.5 pt-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]" style={{ color: "rgb(var(--text-faint))" }}>
                 Other accounts
               </p>
               {otherAccounts.map(account => (
@@ -278,10 +245,7 @@ export default function AccountSwitcher({ isCollapsed = false }) {
                 >
                   <Avatar account={account} size={34} />
                   <div className="flex-1 min-w-0">
-                    <p
-                      className="text-sm truncate font-medium leading-tight"
-                      style={{ color: "rgb(var(--text-secondary))" }}
-                    >
+                    <p className="text-sm truncate font-medium leading-tight" style={{ color: "rgb(var(--text-secondary))" }}>
                       {account.displayName}
                     </p>
                     <RoleBadge role={account.role} />
@@ -294,14 +258,8 @@ export default function AccountSwitcher({ isCollapsed = false }) {
                       disabled={removing === account.userId}
                       className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg transition-all duration-200 flex-shrink-0 disabled:opacity-50"
                       style={{ color: "rgb(var(--text-faint))" }}
-                      onMouseEnter={e => {
-                        e.currentTarget.style.color = "#f87171"
-                        e.currentTarget.style.background = "rgba(239,68,68,0.12)"
-                      }}
-                      onMouseLeave={e => {
-                        e.currentTarget.style.color = "rgb(var(--text-faint))"
-                        e.currentTarget.style.background = "transparent"
-                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "#f87171"; e.currentTarget.style.background = "rgba(239,68,68,0.12)" }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "rgb(var(--text-faint))"; e.currentTarget.style.background = "transparent" }}
                     >
                       {removing === account.userId ? <Spinner size="sm" /> : <LogOut className="w-3.5 h-3.5" />}
                     </button>
@@ -311,45 +269,29 @@ export default function AccountSwitcher({ isCollapsed = false }) {
             </div>
           )}
 
-          {/* ── Add account ── */}
           <div className="p-2">
             <button
               onClick={handleAddAccount}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 group"
               style={{ border: "1px dashed rgb(var(--brand-500) / 0.25)" }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "rgb(var(--brand-500) / 0.06)"
-                e.currentTarget.style.borderColor = "rgb(var(--brand-500) / 0.5)"
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "transparent"
-                e.currentTarget.style.borderColor = "rgb(var(--brand-500) / 0.25)"
-              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgb(var(--brand-500) / 0.06)"; e.currentTarget.style.borderColor = "rgb(var(--brand-500) / 0.5)" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgb(var(--brand-500) / 0.25)" }}
             >
               <div
                 className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-200 group-hover:scale-105"
-                style={{
-                  background: "rgb(var(--brand-500) / 0.1)",
-                  border: "1px solid rgb(var(--brand-500) / 0.3)",
-                }}
+                style={{ background: "rgb(var(--brand-500) / 0.1)", border: "1px solid rgb(var(--brand-500) / 0.3)" }}
               >
                 <Plus className="w-4 h-4" style={{ color: "rgb(var(--brand-500))" }} />
               </div>
-              <span
-                className="text-sm font-medium"
-                style={{ color: "rgb(var(--text-faint))" }}
-              >
+              <span className="text-sm font-medium" style={{ color: "rgb(var(--text-faint))" }}>
                 Add another account
               </span>
             </button>
           </div>
 
-          {/* Bottom gradient accent */}
           <div
             className="h-px w-full"
-            style={{
-              background: `linear-gradient(to right, transparent, rgb(var(--brand-500) / 0.35), rgb(var(--accent-500) / 0.25), transparent)`,
-            }}
+            style={{ background: "linear-gradient(to right, transparent, rgb(var(--brand-500) / 0.35), rgb(var(--accent-500) / 0.25), transparent)" }}
           />
         </div>
       )}
