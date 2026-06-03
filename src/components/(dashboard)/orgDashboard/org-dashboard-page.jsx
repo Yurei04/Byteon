@@ -20,6 +20,8 @@ import {
   ArrowUpRight, Activity,
   Monitor,
   ChevronDown,
+  Sun,
+  Moon,
 } from "lucide-react"
 import {
   Pagination, PaginationContent, PaginationItem,
@@ -129,8 +131,67 @@ const COLOR_GROUPS = [
   { label: "Feedback", icon: "🚦", fields: [{ key: "success_color", label: "Success" }, { key: "warning_color", label: "Warning" }, { key: "error_color", label: "Error" }] },
 ]
 
+// ── UI Theme tokens ────────────────────────────────────────────────────────
+// Provides all background/surface/text/border values that adapt to light or dark mode.
+// These are separate from the org's brand colors (primary, secondary, accent).
+function buildUiTheme(isDark) {
+  if (isDark) {
+    return {
+      pageBg:          "#0b0f1a",
+      sidebarBg:       "rgba(5,5,15,0.92)",
+      headerBg:        "rgba(5,5,15,0.75)",
+      surfaceBg:       "rgba(255,255,255,0.02)",
+      surfaceBg2:      "rgba(255,255,255,0.03)",
+      cardBg:          "rgba(0,0,0,0.25)",
+      cardBg2:         "rgba(0,0,0,0.20)",
+      inlineBg:        "rgba(0,0,0,0.30)",
+      inputBg:         "rgba(0,0,0,0.30)",
+      overlayBg:       "rgba(0,0,0,0.25)",
+      // Borders: expressed as alpha strings so we can compose with primary color
+      borderBase:      "rgba(255,255,255,0.05)",
+      borderSubtle:    "rgba(255,255,255,0.08)",
+      borderMid:       "rgba(255,255,255,0.10)",
+      // Text
+      headingText:     "#ffffff",
+      bodyText:        "#ffffff90",
+      mutedText:       "rgba(255,255,255,0.38)",
+      placeholderText: "#6b7280",
+      // Misc
+      dotPattern:      "#ffffff18",
+      dangerBg:        "rgba(127,17,17,0.12)",
+      dangerBorder:    "rgba(239,68,68,0.25)",
+      // Sidebar gradient cap
+      sidebarGradient: "linear-gradient(to bottom, rgba(255,255,255,0.08), transparent)",
+    }
+  }
+  // Light mode
+  return {
+    pageBg:          "#f1f5f9",
+    sidebarBg:       "rgba(255,255,255,0.96)",
+    headerBg:        "rgba(255,255,255,0.85)",
+    surfaceBg:       "rgba(0,0,0,0.02)",
+    surfaceBg2:      "rgba(0,0,0,0.025)",
+    cardBg:          "rgba(255,255,255,0.80)",
+    cardBg2:         "rgba(255,255,255,0.70)",
+    inlineBg:        "rgba(0,0,0,0.04)",
+    inputBg:         "rgba(255,255,255,0.90)",
+    overlayBg:       "rgba(255,255,255,0.70)",
+    borderBase:      "rgba(0,0,0,0.06)",
+    borderSubtle:    "rgba(0,0,0,0.08)",
+    borderMid:       "rgba(0,0,0,0.10)",
+    headingText:     "#0f172a",
+    bodyText:        "#1e293b",
+    mutedText:       "#64748b",
+    placeholderText: "#94a3b8",
+    dotPattern:      "rgba(0,0,0,0.06)",
+    dangerBg:        "rgba(254,226,226,0.60)",
+    dangerBorder:    "rgba(239,68,68,0.30)",
+    sidebarGradient: "linear-gradient(to bottom, rgba(0,0,0,0.03), transparent)",
+  }
+}
+
 // ── ColorCustomizationSection ─────────────────────────────────────────────
-function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, onResetDefaults, onApplyScheme }) {
+function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, onResetDefaults, onApplyScheme, uiT }) {
   const [openGroup, setOpenGroup] = useState("Brand")
   const [activeSchemeId, setActiveSchemeId] = useState(null)
   const [pickerMode, setPickerMode] = useState("schemes")
@@ -141,6 +202,7 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
       s.colors.secondary_color === formData.secondary_color &&
       s.colors.background_color === formData.background_color
     )
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSchemeId(match ? match.id : null)
   }, [formData.primary_color, formData.secondary_color, formData.background_color])
 
@@ -150,12 +212,12 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
 
   return (
     <div className="rounded-2xl p-6 relative overflow-hidden"
-      style={{ background: "rgba(0,0,0,0.25)", border: `1px solid ${p}30`, boxShadow: `0 0 0 1px ${p}10, inset 0 1px 0 rgba(255,255,255,0.05)` }}>
+      style={{ background: uiT.cardBg, border: `1px solid ${p}30`, boxShadow: `0 0 0 1px ${p}10, inset 0 1px 0 ${uiT.borderBase}` }}>
       <div className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
         style={{ background: `radial-gradient(circle at top right, ${p}15, transparent 70%)` }} />
 
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-lg font-semibold flex items-center gap-2.5" style={{ color: orgTheme.primaryText }}>
+        <h3 className="text-lg font-semibold flex items-center gap-2.5" style={{ color: uiT.headingText }}>
           <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: `${p}20`, border: `1px solid ${p}40` }}>
             <Palette className="w-4 h-4" style={{ color: p }} />
           </span>
@@ -164,26 +226,26 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
         {isEditing && (
           <button type="button" onClick={onResetDefaults}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
-            style={{ background: "rgba(255,255,255,0.05)", color: orgTheme.mutedText, border: "1px solid rgba(255,255,255,0.1)" }}>
+            style={{ background: uiT.inlineBg, color: uiT.mutedText, border: `1px solid ${uiT.borderMid}` }}>
             <RotateCcw className="w-3 h-3" /> Reset Defaults
           </button>
         )}
       </div>
 
       <div className="mb-5">
-        <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: orgTheme.mutedText }}>Current Palette</p>
-        <div className="flex gap-1.5 h-9 rounded-xl overflow-hidden p-0.5" style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${p}25` }}>
+        <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: uiT.mutedText }}>Current Palette</p>
+        <div className="flex gap-1.5 h-9 rounded-xl overflow-hidden p-0.5" style={{ background: uiT.inlineBg, border: `1px solid ${p}25` }}>
           {[formData.primary_color, formData.secondary_color, formData.accent_color, formData.background_color, formData.card_background_color, formData.success_color, formData.warning_color, formData.error_color].map((c, i) => (
             <div key={i} title={c} className="flex-1 rounded-lg transition-transform duration-200 hover:scale-y-110 cursor-default" style={{ background: c }} />
           ))}
         </div>
       </div>
 
-      <div className="flex gap-1 p-1 rounded-xl mb-5 w-fit" style={{ background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.06)" }}>
+      <div className="flex gap-1 p-1 rounded-xl mb-5 w-fit" style={{ background: uiT.inlineBg, border: `1px solid ${uiT.borderSubtle}` }}>
         {[{ id: "schemes", label: "🎨 Presets" }, { id: "custom", label: "🛠 Custom" }].map(({ id, label }) => (
           <button key={id} type="button" onClick={() => setPickerMode(id)}
             className="text-xs px-4 py-1.5 rounded-lg font-medium transition-all duration-200"
-            style={pickerMode === id ? { background: `linear-gradient(135deg, ${p}, ${s})`, color: "#fff", boxShadow: `0 2px 12px ${p}50` } : { background: "transparent", color: orgTheme.mutedText }}>
+            style={pickerMode === id ? { background: `linear-gradient(135deg, ${p}, ${s})`, color: "#fff", boxShadow: `0 2px 12px ${p}50` } : { background: "transparent", color: uiT.mutedText }}>
             {label}
           </button>
         ))}
@@ -198,7 +260,7 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
             return (
               <button key={scheme.id} type="button" disabled={!isEditing} onClick={() => handleApplyScheme(scheme)}
                 className="relative flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-250 group"
-                style={{ background: isActive ? `linear-gradient(135deg, ${sp}18, ${ss}12)` : "rgba(255,255,255,0.03)", border: isActive ? `1.5px solid ${sp}80` : "1.5px solid rgba(255,255,255,0.07)", boxShadow: isActive ? `0 0 20px ${sp}30, inset 0 1px 0 ${sp}20` : "none", transform: isActive ? "translateY(-1px)" : "translateY(0)", opacity: !isEditing ? 0.55 : 1, cursor: !isEditing ? "default" : "pointer" }}>
+                style={{ background: isActive ? `linear-gradient(135deg, ${sp}18, ${ss}12)` : uiT.surfaceBg2, border: isActive ? `1.5px solid ${sp}80` : `1.5px solid ${uiT.borderSubtle}`, boxShadow: isActive ? `0 0 20px ${sp}30, inset 0 1px 0 ${sp}20` : "none", transform: isActive ? "translateY(-1px)" : "translateY(0)", opacity: !isEditing ? 0.55 : 1, cursor: !isEditing ? "default" : "pointer" }}>
                 {isActive && (
                   <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-lg"
                     style={{ background: `linear-gradient(135deg, ${sp}, ${ss})` }}>✓</div>
@@ -207,7 +269,7 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
                   {scheme.preview.map((color, i) => <div key={i} className="flex-1" style={{ background: color }} />)}
                 </div>
                 <span className="text-lg leading-none">{scheme.emoji}</span>
-                <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: isActive ? sp : orgTheme.mutedText }}>{scheme.name}</span>
+                <span className="text-[10px] font-semibold text-center leading-tight" style={{ color: isActive ? sp : uiT.mutedText }}>{scheme.name}</span>
               </button>
             )
           })}
@@ -220,7 +282,7 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
             {COLOR_GROUPS.map(({ label, icon }) => (
               <button key={label} type="button" onClick={() => setOpenGroup(label)}
                 className="cursor-pointer text-xs px-3 py-1.5 rounded-full font-medium transition-all duration-200 hover:scale-105 active:scale-95"
-                style={openGroup === label ? { background: `linear-gradient(135deg, ${p}, ${s})`, color: "#fff", boxShadow: `0 2px 10px ${p}40` } : { background: "rgba(255,255,255,0.05)", color: orgTheme.mutedText, border: "1px solid rgba(255,255,255,0.08)" }}>
+                style={openGroup === label ? { background: `linear-gradient(135deg, ${p}, ${s})`, color: "#fff", boxShadow: `0 2px 10px ${p}40` } : { background: uiT.inlineBg, color: uiT.mutedText, border: `1px solid ${uiT.borderSubtle}` }}>
                 {icon} {label}
               </button>
             ))}
@@ -229,9 +291,9 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
             <div key={openGroup} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {fields.map(({ key, label }) => (
                 <div key={key} className="flex flex-col gap-1.5">
-                  <Label className="text-xs" style={{ color: orgTheme.mutedText }}>{label}</Label>
+                  <Label className="text-xs" style={{ color: uiT.mutedText }}>{label}</Label>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden ring-1 ring-white/10 shadow-md" title={formData[key]}>
+                    <div className="w-8 h-8 rounded-lg flex-shrink-0 overflow-hidden ring-1 ring-black/10 shadow-md" title={formData[key]}>
                       {isEditing ? (
                         <input type="color" name={key} value={formData[key] || DEFAULT_COLORS[key]} onChange={onChange}
                           className="w-10 h-10 -m-1 cursor-pointer" style={{ border: "none", padding: 0 }} />
@@ -241,14 +303,14 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
                     </div>
                     {isEditing ? (
                       <input type="text" name={key} value={formData[key] || DEFAULT_COLORS[key]} onChange={onChange} maxLength={7}
-                        className="flex-1 text-xs font-mono rounded-lg px-2.5 py-1.5 bg-black/30 text-white outline-none transition-all duration-200"
-                        style={{ border: `1px solid ${p}35` }}
+                        className="flex-1 text-xs font-mono rounded-lg px-2.5 py-1.5 outline-none transition-all duration-200"
+                        style={{ background: uiT.inputBg, color: uiT.headingText, border: `1px solid ${p}35` }}
                         onFocus={e => e.target.style.boxShadow = `0 0 0 2px ${p}40`}
                         onBlur={e => e.target.style.boxShadow = "none"}
                         placeholder="#000000" />
                     ) : (
-                      <span className="flex-1 text-xs font-mono px-2.5 py-1.5 rounded-lg cursor-pointer "
-                        style={{ background: "rgba(0,0,0,0.2)", color: orgTheme.mutedText }}>
+                      <span className="flex-1 text-xs font-mono px-2.5 py-1.5 rounded-lg"
+                        style={{ background: uiT.inlineBg, color: uiT.mutedText }}>
                         {formData[key] || DEFAULT_COLORS[key]}
                       </span>
                     )}
@@ -264,48 +326,44 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
 }
 
 
-function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick, onPageClick }) {
-  const P = "#c026d3"
-  const S = "#a855f7"
+function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick, onPageClick, p, s, uiT }) {
   const isActive = activeTab === "website"
  
   return (
     <div>
-      {/* Parent row */}
       <button
         onClick={onParentClick}
         className="w-full flex cursor-pointer items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
         style={isActive ? {
-          background: `linear-gradient(135deg, ${P}22, ${S}14)`,
-          color: "#ffffff",
-          border: `1px solid ${P}45`,
-          boxShadow: `0 0 18px ${P}18, inset 0 1px 0 ${P}20`,
+          background: `linear-gradient(135deg, ${p}22, ${s}14)`,
+          color: uiT.headingText,
+          border: `1px solid ${p}45`,
+          boxShadow: `0 0 18px ${p}18, inset 0 1px 0 ${p}20`,
         } : {
           background: "transparent",
-          color: "rgba(255,255,255,0.45)",
+          color: uiT.mutedText,
           border: "1px solid transparent",
         }}
       >
         {isActive && (
           <div
             className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full"
-            style={{ background: `linear-gradient(to bottom, ${P}, ${S})`, boxShadow: `0 0 8px ${P}` }}
+            style={{ background: `linear-gradient(to bottom, ${p}, ${s})`, boxShadow: `0 0 8px ${p}` }}
           />
         )}
-        <span className="flex-shrink-0" style={{ color: isActive ? P : "inherit" }}>
+        <span className="flex-shrink-0" style={{ color: isActive ? p : "inherit" }}>
           <Monitor className="w-4 h-4" />
         </span>
         <span className="flex-1 text-left">Website</span>
         <ChevronDown
           className="w-3 h-3 transition-transform duration-200 flex-shrink-0"
           style={{
-            color: isActive ? P : "rgba(255,255,255,0.3)",
+            color: isActive ? p : uiT.mutedText,
             transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
           }}
         />
       </button>
  
-      {/* Sub-items — smooth expand */}
       <div
         className="overflow-hidden transition-all duration-300 ease-in-out"
         style={{ maxHeight: isExpanded ? `${WEBSITE_PAGES.length * 44}px` : "0px", opacity: isExpanded ? 1 : 0 }}
@@ -320,18 +378,17 @@ function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick
                 className="w-full flex cursor-pointer items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200"
                 style={isSubActive ? {
                   background: `${page.accent}18`,
-                  color: "#ffffff",
+                  color: uiT.headingText,
                   border: `1px solid ${page.accent}40`,
                 } : {
                   background: "transparent",
-                  color: "rgba(255,255,255,0.38)",
+                  color: uiT.mutedText,
                   border: "1px solid transparent",
                 }}
               >
-                {/* Color dot */}
                 <span
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200"
-                  style={{ background: isSubActive ? page.accent : "rgba(255,255,255,0.2)" }}
+                  style={{ background: isSubActive ? page.accent : uiT.mutedText }}
                 />
                 {page.label}
                 {isSubActive && (
@@ -351,26 +408,24 @@ function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick
   )
 }
  
- 
 
 // ── Sidebar Nav Item ─────────────────────────────────────────────────────────
-function SidebarNavItem({ value, icon, label, isActive, onClick, p, s, orgTheme, badge }) {
+function SidebarNavItem({ value, icon, label, isActive, onClick, p, s, uiT, badge }) {
   return (
     <button
       onClick={() => onClick(value)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative cursor-pointer "
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative cursor-pointer"
       style={isActive ? {
         background: `linear-gradient(135deg, ${p}22, ${s}14)`,
-        color: "#ffffff",
+        color: uiT.headingText,
         border: `1px solid ${p}45`,
         boxShadow: `0 0 18px ${p}18, inset 0 1px 0 ${p}20`,
       } : {
         background: "transparent",
-        color: orgTheme.mutedText,
+        color: uiT.mutedText,
         border: "1px solid transparent",
       }}
     >
-      {/* Active indicator bar */}
       {isActive && (
         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full"
           style={{ background: `linear-gradient(to bottom, ${p}, ${s})`, boxShadow: `0 0 8px ${p}` }} />
@@ -394,6 +449,24 @@ function SidebarNavItem({ value, icon, label, isActive, onClick, p, s, orgTheme,
 export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
+
+  // ── Theme mode ─────────────────────────────────────────────────────────────
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") return true
+    const stored = localStorage.getItem("orgDashboardTheme")
+    return stored === null ? true : stored === "dark"
+  })
+
+  const toggleTheme = () => {
+    setIsDark(prev => {
+      const next = !prev
+      try { localStorage.setItem("orgDashboardTheme", next ? "dark" : "light") } catch {}
+      return next
+    })
+  }
+
+  // uiT = UI theme tokens (backgrounds, borders, text colors)
+  const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
 
   const [activeTab, setActiveTab]             = useState("overview")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
@@ -443,24 +516,25 @@ export default function OrgDashboardPage() {
       border: none !important;
       box-shadow: 0 2px 12px ${p}50, 0 0 0 1px ${p}30 !important;
     }
-    .org-tab { transition: all 0.2s ease !important; }
-    .org-tab:hover:not([data-state=active]) { background: ${p}15 !important; color: #fff !important; }
+    .org-tab { transition: all 0.2s ease !important; color: ${uiT.mutedText} !important; }
+    .org-tab:hover:not([data-state=active]) { background: ${p}15 !important; color: ${uiT.headingText} !important; }
     .org-page-link[data-active=true] {
-      background: ${p}25 !important; color: #fff !important;
+      background: ${p}25 !important; color: ${uiT.headingText} !important;
       border-color: ${p}50 !important; box-shadow: 0 0 10px ${p}30 !important;
     }
     .org-card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important; will-change: transform; }
     .org-card-hover:hover { transform: translateY(-3px) !important; border-color: ${p} !important; box-shadow: 0 12px 32px ${p}25, 0 0 0 1px ${p}20 !important; }
     .org-section-divider { height: 1px; background: linear-gradient(to right, ${p}60, ${s}40, transparent); }
     .org-input:focus { outline: none !important; border-color: ${p}60 !important; box-shadow: 0 0 0 3px ${p}20 !important; }
-    .org-sub-tabs { background: rgba(0,0,0,0.25) !important; border: 1px solid ${p}20 !important; }
+    .org-sub-tabs { background: ${uiT.inlineBg} !important; border: 1px solid ${p}20 !important; }
     .sidebar-scrollbar::-webkit-scrollbar { width: 3px; }
     .sidebar-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .sidebar-scrollbar::-webkit-scrollbar-thumb { background: ${p}40; border-radius: 10px; }
     .content-scrollbar::-webkit-scrollbar { width: 5px; }
     .content-scrollbar::-webkit-scrollbar-track { background: transparent; }
     .content-scrollbar::-webkit-scrollbar-thumb { background: ${p}30; border-radius: 10px; }
-  `, [p, s])
+    .org-input-text { background: ${uiT.inputBg} !important; color: ${uiT.headingText} !important; }
+  `, [p, s, uiT])
 
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -584,15 +658,15 @@ export default function OrgDashboardPage() {
 
   const generatePaginationItems = (totalPages, currentPage, onPageChange) => {
     const items = []; const maxVisible = 5
-    items.push(<PaginationItem key="prev"><PaginationPrevious onClick={() => currentPage > 1 && onPageChange(currentPage - 1)} className={currentPage > 1 ? "cursor-pointer" : "pointer-events-none opacity-50"} style={{ color: orgTheme.primaryText }} /></PaginationItem>)
+    items.push(<PaginationItem key="prev"><PaginationPrevious onClick={() => currentPage > 1 && onPageChange(currentPage - 1)} className={currentPage > 1 ? "cursor-pointer" : "pointer-events-none opacity-50"} style={{ color: uiT.headingText }} /></PaginationItem>)
     let start = Math.max(1, currentPage - Math.floor(maxVisible / 2)); let end = Math.min(totalPages, start + maxVisible - 1)
     if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1)
     if (start > 1) { items.push(<PaginationItem key={1}><PaginationLink onClick={() => onPageChange(1)} className="cursor-pointer">1</PaginationLink></PaginationItem>); if (start > 2) items.push(<PaginationItem key="e1"><PaginationEllipsis /></PaginationItem>) }
     for (let pg = start; pg <= end; pg++) {
-      items.push(<PaginationItem key={pg}><PaginationLink onClick={() => onPageChange(pg)} isActive={pg === currentPage} className="cursor-pointer org-page-link" data-active={pg === currentPage} style={pg === currentPage ? { background: `${p}22`, color: orgTheme.primaryText, borderColor: `${p}45`, boxShadow: `0 0 10px ${p}25` } : { color: orgTheme.mutedText }}>{pg}</PaginationLink></PaginationItem>)
+      items.push(<PaginationItem key={pg}><PaginationLink onClick={() => onPageChange(pg)} isActive={pg === currentPage} className="cursor-pointer org-page-link" data-active={pg === currentPage} style={pg === currentPage ? { background: `${p}22`, color: uiT.headingText, borderColor: `${p}45`, boxShadow: `0 0 10px ${p}25` } : { color: uiT.mutedText }}>{pg}</PaginationLink></PaginationItem>)
     }
     if (end < totalPages) { if (end < totalPages - 1) items.push(<PaginationItem key="e2"><PaginationEllipsis /></PaginationItem>); items.push(<PaginationItem key={totalPages}><PaginationLink onClick={() => onPageChange(totalPages)} className="cursor-pointer">{totalPages}</PaginationLink></PaginationItem>) }
-    items.push(<PaginationItem key="next"><PaginationNext onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)} className={currentPage < totalPages ? "cursor-pointer" : "pointer-events-none opacity-50"} style={{ color: orgTheme.primaryText }} /></PaginationItem>)
+    items.push(<PaginationItem key="next"><PaginationNext onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)} className={currentPage < totalPages ? "cursor-pointer" : "pointer-events-none opacity-50"} style={{ color: uiT.headingText }} /></PaginationItem>)
     return items
   }
 
@@ -602,18 +676,18 @@ export default function OrgDashboardPage() {
 
   if (authLoading || (isLoggedIn && role === null)) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center" style={{ backgroundColor: "#0b0f1a" }}>
+      <div className="w-full min-h-screen flex items-center justify-center" style={{ backgroundColor: uiT.pageBg }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${p}30, ${s}20)`, border: `1px solid ${p}50` }}>
             <Loader2 className="w-6 h-6 animate-spin" style={{ color: p }} />
           </div>
-          <p className="text-sm" style={{ color: "#ffffff60" }}>Loading dashboard…</p>
+          <p className="text-sm" style={{ color: uiT.mutedText }}>Loading dashboard…</p>
         </div>
       </div>
     )
   }
   if (!isLoggedIn || role !== "org_admin") return null
-  // ── Approval gate ──────────────────────────────────────────────────────────
+
   const approvalStatus = profile?.approval_status ?? "pending"
   if (approvalStatus !== "approved") {
     return (
@@ -626,6 +700,7 @@ export default function OrgDashboardPage() {
       />
     )
   }
+
   // ── Nav items ─────────────────────────────────────────────────────────────
   const navItems = [
     { value: "overview",       icon: <LayoutDashboard className="w-4 h-4" />, label: "Overview"      },
@@ -650,17 +725,17 @@ export default function OrgDashboardPage() {
   ]
 
   const pageTitles = {
-    overview:      { title: "Overview",      sub: "Your organization at a glance" },
-    view:          { title: "All Content",   sub: "Browse and manage published content" },
-    create:        { title: "Create",        sub: "Publish new announcements, blogs & resources" },
-    posters:       { title: "Poster Maker",  sub: "Design promotional materials" },
-    profile:       { title: "Settings",      sub: "Manage your organization profile & branding" },
-    website:         { title: "Website Preview", sub: "View-only preview — navigation via sidebar" },
-    notifications: { title: "Notifications", sub: "Approval decisions and account alerts" },
+    overview:      { title: "Overview",          sub: "Your organization at a glance" },
+    view:          { title: "All Content",        sub: "Browse and manage published content" },
+    create:        { title: "Create",             sub: "Publish new announcements, blogs & resources" },
+    posters:       { title: "Poster Maker",       sub: "Design promotional materials" },
+    profile:       { title: "Settings",           sub: "Manage your organization profile & branding" },
+    website:       { title: "Website Preview",    sub: "View-only preview — navigation via sidebar" },
+    notifications: { title: "Notifications",      sub: "Approval decisions and account alerts" },
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: "#0b0f1a", ...orgTheme.cssVars }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: uiT.pageBg, ...orgTheme.cssVars }}>
       <style>{dynamicStyles}</style>
       <Toast toasts={toasts} onRemove={removeToast} />
 
@@ -680,14 +755,16 @@ export default function OrgDashboardPage() {
         initial={false}
         className={`fixed lg:static inset-y-0 left-0 z-30 flex flex-col w-60 xl:w-64 flex-shrink-0 transition-transform duration-300 ease-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{
-          background: "rgba(5,5,15,0.92)",
+          background: uiT.sidebarBg,
           borderRight: `1px solid ${p}18`,
           backdropFilter: "blur(24px)",
+          // Smooth color transitions when toggling theme
+          transition: "background 0.25s ease, border-color 0.25s ease",
         }}
       >
         {/* Sidebar top gradient accent */}
         <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none"
-          style={{ background: `linear-gradient(to bottom, ${p}12, transparent)` }} />
+          style={{ background: uiT.sidebarGradient }} />
 
         {/* ── Org brand ── */}
         <div className="relative flex items-center gap-3 p-5 pb-4"
@@ -697,16 +774,16 @@ export default function OrgDashboardPage() {
             <Building2 className="w-4.5 h-4.5 text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold truncate leading-tight" style={{ color: "#ffffff" }}>
+            <p className="text-sm font-bold truncate leading-tight" style={{ color: uiT.headingText }}>
               {profile?.name || "Organization"}
             </p>
             <div className="flex items-center gap-1 mt-0.5">
               <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#22c55e" }} />
-              <p className="text-[10px]" style={{ color: orgTheme.mutedText }}>Active</p>
+              <p className="text-[10px]" style={{ color: uiT.mutedText }}>Active</p>
             </div>
           </div>
           <button className="lg:hidden p-1.5 rounded-lg flex-shrink-0" onClick={() => setSidebarOpen(false)}
-            style={{ color: orgTheme.mutedText }}>
+            style={{ color: uiT.mutedText }}>
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -719,47 +796,76 @@ export default function OrgDashboardPage() {
         </div>
 
         {/* ── Nav items ── */}
-        
-        <nav className="flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto sa-scrollbar cursor-pointer">
-          {navItems.map(({ value, icon, label, badge, pulse }) => (
-              <SidebarNavItem
-                key={value}
-                value={value}
-                icon={icon}
-                label={label}
-                isActive={activeTab === value}
-                badge={badge}
-                pulse={pulse}
-                p={p}
-                s={s}
-                orgTheme={orgTheme}
-                onClick={(v) => {
-                  setActiveTab(v)
-                  setSidebarOpen(false)
-                }}
-              />
-            ))}
-        
+        <nav className="flex-1 px-3 pb-3 space-y-0.5 overflow-y-auto sidebar-scrollbar cursor-pointer">
+          {navItems.map(({ value, icon, label, badge }) => (
+            <SidebarNavItem
+              key={value}
+              value={value}
+              icon={icon}
+              label={label}
+              isActive={activeTab === value}
+              badge={badge}
+              p={p}
+              s={s}
+              uiT={uiT}
+              onClick={(v) => { setActiveTab(v); setSidebarOpen(false) }}
+            />
+          ))}
+
           {/* ── Website group ── */}
           <SidebarWebsiteGroup
             isExpanded={activeTab === "website"}
             activeTab={activeTab}
             websitePage={websitePage}
-            onParentClick={() => {
-              setActiveTab("website")
-              setSidebarOpen(false)
-            }}
-            onPageClick={(page) => {
-              setWebsitePage(page)
-              setActiveTab("website")
-              setSidebarOpen(false)
-            }}
+            p={p}
+            s={s}
+            uiT={uiT}
+            onParentClick={() => { setActiveTab("website"); setSidebarOpen(false) }}
+            onPageClick={(page) => { setWebsitePage(page); setActiveTab("website"); setSidebarOpen(false) }}
           />
         </nav>
 
         {/* ── Sidebar footer ── */}
         <div className="p-3 space-y-1" style={{ borderTop: `1px solid ${p}15` }}>
           <ReturnButton primaryC={p} secondaryC={s} />
+
+          {/* ── Light / Dark toggle ── */}
+          <button
+            onClick={toggleTheme}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+            style={{
+              background: uiT.inlineBg,
+              color: uiT.mutedText,
+              border: `1px solid ${uiT.borderSubtle}`,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = `${p}15`
+              e.currentTarget.style.color = uiT.headingText
+              e.currentTarget.style.borderColor = `${p}30`
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = uiT.inlineBg
+              e.currentTarget.style.color = uiT.mutedText
+              e.currentTarget.style.borderColor = uiT.borderSubtle
+            }}
+          >
+            {isDark
+              ? <><Sun  className="w-4 h-4 flex-shrink-0" style={{ color: "#f59e0b" }} /><span>Light Mode</span></>
+              : <><Moon className="w-4 h-4 flex-shrink-0" style={{ color: p }} /><span>Dark Mode</span></>
+            }
+            {/* Visual pill showing current mode */}
+            <span
+              className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold"
+              style={{
+                background: isDark ? "rgba(245,158,11,0.15)" : `${p}18`,
+                color:       isDark ? "#f59e0b"               : p,
+                border:      isDark ? "1px solid rgba(245,158,11,0.3)" : `1px solid ${p}30`,
+              }}
+            >
+              {isDark ? "dark" : "light"}
+            </span>
+          </button>
+
           <button
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-red-500/10 mt-1"
             style={{ color: "#f87171", border: "1px solid transparent" }}
@@ -772,14 +878,15 @@ export default function OrgDashboardPage() {
       </motion.aside>
 
       {/* ════════════════════ MAIN AREA ════════════════════ */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden" style={{ transition: "background 0.25s ease" }}>
 
         {/* ── Top header bar ── */}
         <header className="flex-shrink-0 flex items-center justify-between px-5 sm:px-7 h-[60px]"
           style={{
-            background: "rgba(5,5,15,0.75)",
+            background: uiT.headerBg,
             borderBottom: `1px solid ${p}18`,
             backdropFilter: "blur(16px)",
+            transition: "background 0.25s ease, border-color 0.25s ease",
           }}>
 
           {/* Left: mobile toggle + breadcrumb */}
@@ -793,13 +900,13 @@ export default function OrgDashboardPage() {
             </button>
 
             {/* Breadcrumb */}
-            <div className="hidden sm:flex items-center gap-2 text-xs" style={{ color: orgTheme.mutedText }}>
+            <div className="hidden sm:flex items-center gap-2 text-xs" style={{ color: uiT.mutedText }}>
               <span style={{ color: p, fontWeight: 600 }}>{profile?.name || "Org"}</span>
               <ChevronRight className="w-3 h-3" />
-              <span style={{ color: "#ffffff90" }}>{pageTitles[activeTab]?.title}</span>
+              <span style={{ color: uiT.bodyText }}>{pageTitles[activeTab]?.title}</span>
             </div>
             <div className="sm:hidden">
-              <span className="text-sm font-semibold" style={{ color: "#ffffff" }}>
+              <span className="text-sm font-semibold" style={{ color: uiT.headingText }}>
                 {pageTitles[activeTab]?.title}
               </span>
             </div>
@@ -812,9 +919,9 @@ export default function OrgDashboardPage() {
               onClick={() => setActiveTab("notifications")}
               className="relative p-2 rounded-xl transition-all duration-200"
               style={{
-                background: activeTab === "notifications" ? `${p}20` : "rgba(255,255,255,0.04)",
-                border: `1px solid ${activeTab === "notifications" ? `${p}40` : "rgba(255,255,255,0.08)"}`,
-                color: activeTab === "notifications" ? p : orgTheme.mutedText,
+                background: activeTab === "notifications" ? `${p}20` : uiT.surfaceBg2,
+                border: `1px solid ${activeTab === "notifications" ? `${p}40` : uiT.borderSubtle}`,
+                color: activeTab === "notifications" ? p : uiT.mutedText,
               }}
             >
               <Bell className="w-4 h-4" />
@@ -837,10 +944,26 @@ export default function OrgDashboardPage() {
 
             {/* Admin badge */}
             <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
-              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${p}25` }}>
+              style={{ background: uiT.surfaceBg2, border: `1px solid ${p}25` }}>
               <ShieldCheck className="w-3.5 h-3.5" style={{ color: p }} />
-              <span className="text-xs font-medium" style={{ color: orgTheme.primaryText }}>Admin</span>
+              <span className="text-xs font-medium" style={{ color: uiT.headingText }}>Admin</span>
             </div>
+
+            {/* Theme toggle shortcut (header, desktop only) */}
+            <button
+              onClick={toggleTheme}
+              className="hidden md:flex p-2 rounded-xl transition-all duration-200"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              style={{
+                background: uiT.surfaceBg2,
+                border: `1px solid ${uiT.borderSubtle}`,
+                color: uiT.mutedText,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = `${p}15`; e.currentTarget.style.color = isDark ? "#f59e0b" : p }}
+              onMouseLeave={e => { e.currentTarget.style.background = uiT.surfaceBg2; e.currentTarget.style.color = uiT.mutedText }}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
         </header>
 
@@ -849,12 +972,13 @@ export default function OrgDashboardPage() {
           className="flex-1 overflow-y-auto content-scrollbar"
           style={{
             backgroundImage: `
-              radial-gradient(#ffffff18 1px, transparent 1px),
-              radial-gradient(circle at 15% 0%, ${p}30 0%, transparent 40%),
-              radial-gradient(circle at 85% 100%, ${s}22 0%, transparent 45%)
+              radial-gradient(${uiT.dotPattern} 1px, transparent 1px),
+              radial-gradient(circle at 15% 0%, ${p}${isDark ? "30" : "18"} 0%, transparent 40%),
+              radial-gradient(circle at 85% 100%, ${s}${isDark ? "22" : "14"} 0%, transparent 45%)
             `,
             backgroundSize: "24px 24px, auto, auto",
-            backgroundColor: "#0b0f1a",
+            backgroundColor: uiT.pageBg,
+            transition: "background-color 0.25s ease",
           }}
         >
           <div className="p-5 sm:p-7 max-w-7xl mx-auto w-full">
@@ -868,18 +992,17 @@ export default function OrgDashboardPage() {
               className="mb-6 flex items-center justify-between"
             >
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: "#ffffff" }}>
+                <h1 className="text-xl sm:text-2xl font-bold" style={{ color: uiT.headingText }}>
                   {pageTitles[activeTab]?.title}
                 </h1>
-                <p className="text-xs sm:text-sm mt-0.5" style={{ color: orgTheme.mutedText }}>
+                <p className="text-xs sm:text-sm mt-0.5" style={{ color: uiT.mutedText }}>
                   {pageTitles[activeTab]?.sub}
                 </p>
               </div>
-              {/* Page-level accent line */}
               <div className="hidden sm:block h-8 w-px" style={{ background: `linear-gradient(to bottom, transparent, ${p}70, transparent)` }} />
             </motion.div>
 
-            {/* ══ OVERVIEW / STATS (shown on overview tab, or as a compact strip on others) ══ */}
+            {/* ══ OVERVIEW ══ */}
             <AnimatePresence mode="wait">
               {activeTab === "overview" && (
                 <motion.div
@@ -897,20 +1020,20 @@ export default function OrgDashboardPage() {
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
                         className="rounded-2xl p-5 relative overflow-hidden group cursor-default"
                         style={{
-                          background: "rgba(255,255,255,0.03)",
+                          background: uiT.surfaceBg2,
                           border: `1px solid ${p}25`,
-                          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
+                          boxShadow: `inset 0 1px 0 ${uiT.borderBase}`,
                           transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
                         }}
                         onMouseEnter={e => {
                           e.currentTarget.style.borderColor = `${p}60`
                           e.currentTarget.style.transform = "translateY(-2px)"
-                          e.currentTarget.style.boxShadow = `0 8px 28px ${p}20, inset 0 1px 0 rgba(255,255,255,0.06)`
+                          e.currentTarget.style.boxShadow = `0 8px 28px ${p}20, inset 0 1px 0 ${uiT.borderBase}`
                         }}
                         onMouseLeave={e => {
                           e.currentTarget.style.borderColor = `${p}25`
                           e.currentTarget.style.transform = "translateY(0)"
-                          e.currentTarget.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.05)`
+                          e.currentTarget.style.boxShadow = `inset 0 1px 0 ${uiT.borderBase}`
                         }}
                       >
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
@@ -925,15 +1048,15 @@ export default function OrgDashboardPage() {
                           </div>
                         </div>
                         <div className="flex items-end justify-between">
-                          <span className="text-3xl sm:text-4xl font-bold leading-none text-transparent bg-clip-text"
-                            style={{ backgroundImage: `linear-gradient(135deg, #ffffff, ${p})` }}>
+                          <span className="text-3xl sm:text-4xl font-bold leading-none"
+                            style={{ color: uiT.headingText }}>
                             {count}
                           </span>
                           <span className="text-[10px] flex items-center gap-1 mb-1" style={{ color: "#22c55e" }}>
                             <ArrowUpRight className="w-3 h-3" />{trend}
                           </span>
                         </div>
-                        <p className="text-[10px] mt-2" style={{ color: `${orgTheme.mutedText}80` }}>{desc}</p>
+                        <p className="text-[10px] mt-2" style={{ color: uiT.mutedText }}>{desc}</p>
                         <div className="absolute bottom-0 left-0 right-0 h-px"
                           style={{ background: `linear-gradient(to right, transparent, ${p}50, transparent)` }} />
                       </motion.div>
@@ -955,7 +1078,7 @@ export default function OrgDashboardPage() {
                         <button key={label}
                           onClick={() => { setActiveTab(tab); if (sub) setActiveCreateTab(sub) }}
                           className="flex flex-col items-center gap-3 p-4 rounded-2xl text-sm font-medium transition-all duration-200 group"
-                          style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${p}20` }}
+                          style={{ background: uiT.surfaceBg2, border: `1px solid ${p}20` }}
                           onMouseEnter={e => {
                             e.currentTarget.style.background = `linear-gradient(135deg, ${p}18, ${s}10)`
                             e.currentTarget.style.borderColor = `${p}50`
@@ -963,14 +1086,14 @@ export default function OrgDashboardPage() {
                             e.currentTarget.style.boxShadow = `0 8px 24px ${p}18`
                           }}
                           onMouseLeave={e => {
-                            e.currentTarget.style.background = "rgba(255,255,255,0.03)"
+                            e.currentTarget.style.background = uiT.surfaceBg2
                             e.currentTarget.style.borderColor = `${p}20`
                             e.currentTarget.style.transform = "translateY(0)"
                             e.currentTarget.style.boxShadow = "none"
                           }}
                         >
                           <span style={{ color: p }}>{icon}</span>
-                          <span className="text-xs text-center leading-tight" style={{ color: "#ffffff90" }}>{label}</span>
+                          <span className="text-xs text-center leading-tight" style={{ color: uiT.bodyText }}>{label}</span>
                         </button>
                       ))}
                     </div>
@@ -978,9 +1101,9 @@ export default function OrgDashboardPage() {
 
                   {/* ── Recent activity strip ── */}
                   <div className="rounded-2xl p-5"
-                    style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${p}18` }}>
+                    style={{ background: uiT.surfaceBg, border: `1px solid ${p}18` }}>
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-sm font-semibold" style={{ color: "#ffffff" }}>Recent Content</p>
+                      <p className="text-sm font-semibold" style={{ color: uiT.headingText }}>Recent Content</p>
                       <button onClick={() => setActiveTab("view")} className="text-xs flex items-center gap-1 transition-colors duration-200"
                         style={{ color: p }}
                         onMouseEnter={e => e.currentTarget.style.opacity = "0.7"}
@@ -999,9 +1122,9 @@ export default function OrgDashboardPage() {
                           ...resources.slice(0,1).map(r => ({ ...r, _type: "Resource" })),
                         ].sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,5).map((item) => (
                           <div key={item.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
-                            style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" }}
+                            style={{ background: uiT.surfaceBg2, border: `1px solid ${uiT.borderBase}` }}
                             onMouseEnter={e => e.currentTarget.style.borderColor = `${p}30`}
-                            onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = uiT.borderBase}
                           >
                             <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                               style={{ background: `${p}18`, border: `1px solid ${p}30` }}>
@@ -1010,7 +1133,7 @@ export default function OrgDashboardPage() {
                                :                               <BookOpen  className="w-3.5 h-3.5" style={{ color: p }} />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium truncate" style={{ color: "#ffffff90" }}>{item.title || "Untitled"}</p>
+                              <p className="text-xs font-medium truncate" style={{ color: uiT.bodyText }}>{item.title || "Untitled"}</p>
                             </div>
                             <span className="text-[10px] px-2 py-0.5 rounded-full flex-shrink-0"
                               style={{ background: `${p}15`, color: p, border: `1px solid ${p}30` }}>
@@ -1019,7 +1142,7 @@ export default function OrgDashboardPage() {
                           </div>
                         ))}
                         {(announcements.length + blogs.length + resources.length) === 0 && (
-                          <p className="text-center text-sm py-6" style={{ color: orgTheme.mutedText }}>No content yet. Start by creating something!</p>
+                          <p className="text-center text-sm py-6" style={{ color: uiT.mutedText }}>No content yet. Start by creating something!</p>
                         )}
                       </div>
                     )}
@@ -1030,20 +1153,19 @@ export default function OrgDashboardPage() {
               {/* ════ VIEW ALL ════ */}
               {activeTab === "view" && (
                 <motion.div key="view" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-                  {/* Compact stat strip */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     {statCards.map(({ label, count, Icon }) => (
                       <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl"
-                        style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${p}20` }}>
+                        style={{ background: uiT.surfaceBg2, border: `1px solid ${p}20` }}>
                         <Icon className="w-4 h-4 flex-shrink-0" style={{ color: p }} />
                         <div>
-                          <p className="text-base font-bold leading-none" style={{ color: "#ffffff" }}>{count}</p>
-                          <p className="text-[10px] mt-0.5" style={{ color: orgTheme.mutedText }}>{label}</p>
+                          <p className="text-base font-bold leading-none" style={{ color: uiT.headingText }}>{count}</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: uiT.mutedText }}>{label}</p>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${p}18` }}>
+                  <div className="rounded-2xl p-5" style={{ background: uiT.surfaceBg, border: `1px solid ${p}18` }}>
                     <OrgViewableSection currentOrg={profile} authUserId={profile?.user_id} primaryColor={p} secondaryColor={s} addToast={addToast} />
                   </div>
                 </motion.div>
@@ -1052,14 +1174,13 @@ export default function OrgDashboardPage() {
               {/* ════ CREATE ════ */}
               {activeTab === "create" && (
                 <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-                  <div className="rounded-2xl overflow-hidden" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${p}18` }}>
+                  <div className="rounded-2xl overflow-hidden" style={{ background: uiT.surfaceBg, border: `1px solid ${p}18` }}>
                     <div className="p-5">
                       <Tabs value={activeCreateTab} onValueChange={setActiveCreateTab}>
                         <TabsList className="grid w-full grid-cols-3 mb-6 p-1 rounded-xl org-sub-tabs h-auto gap-1">
                           {createSubTabs.map(({ tab, icon, label }) => (
                             <TabsTrigger key={tab} value={tab}
-                              className="org-tab flex items-center rounded-lg transition-all py-2 text-xs sm:text-sm"
-                              style={{ color: orgTheme.mutedText }}>
+                              className="org-tab flex items-center rounded-lg transition-all py-2 text-xs sm:text-sm">
                               {icon}{label}
                             </TabsTrigger>
                           ))}
@@ -1101,29 +1222,31 @@ export default function OrgDashboardPage() {
 
                         {/* Account info */}
                         <div className="rounded-2xl p-6 relative overflow-hidden"
-                          style={{ background: "rgba(0,0,0,0.2)", border: `1px solid ${p}25`, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04)` }}>
+                          style={{ background: uiT.cardBg2, border: `1px solid ${p}25`, boxShadow: `inset 0 1px 0 ${uiT.borderBase}` }}>
                           <div className="flex items-center gap-2.5 mb-1">
                             <span className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: `${p}18`, border: `1px solid ${p}35` }}>
                               <AtSign className="w-3.5 h-3.5" style={{ color: p }} />
                             </span>
-                            <h3 className="text-base font-semibold" style={{ color: orgTheme.primaryText }}>Account Information</h3>
+                            <h3 className="text-base font-semibold" style={{ color: uiT.headingText }}>Account Information</h3>
                           </div>
                           <div className="org-section-divider mb-5 mt-3" />
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <Label className="mb-2 text-xs flex items-center gap-1.5" style={{ color: orgTheme.mutedText }}>
+                              <Label className="mb-2 text-xs flex items-center gap-1.5" style={{ color: uiT.mutedText }}>
                                 <AtSign className="w-3.5 h-3.5" />Username (Author Name)
                               </Label>
                               {isEditing
-                                ? <Input name="author_name" value={formData.author_name} onChange={handleProfileChange} className="org-input bg-black/30 text-white rounded-xl h-10" style={{ border: `1px solid ${p}35` }} placeholder="johndoe" />
-                                : <p className="text-sm px-3 py-2.5 rounded-xl" style={{ background: "rgba(0,0,0,0.25)", color: orgTheme.primaryText, border: `1px solid ${p}15` }}>{formData.author_name || <span style={{ color: orgTheme.mutedText }}>Not set</span>}</p>
+                                ? <Input name="author_name" value={formData.author_name} onChange={handleProfileChange}
+                                    className="org-input org-input-text rounded-xl h-10"
+                                    style={{ border: `1px solid ${p}35`, background: uiT.inputBg, color: uiT.headingText }} placeholder="johndoe" />
+                                : <p className="text-sm px-3 py-2.5 rounded-xl" style={{ background: uiT.inlineBg, color: uiT.headingText, border: `1px solid ${p}15` }}>{formData.author_name || <span style={{ color: uiT.mutedText }}>Not set</span>}</p>
                               }
                             </div>
                             <div>
-                              <Label className="mb-2 text-xs flex items-center gap-1.5" style={{ color: orgTheme.mutedText }}>
+                              <Label className="mb-2 text-xs flex items-center gap-1.5" style={{ color: uiT.mutedText }}>
                                 <Mail className="w-3.5 h-3.5" />Email (Login)
                               </Label>
-                              <p className="text-sm px-3 py-2.5 rounded-xl" style={{ background: "rgba(0,0,0,0.25)", color: orgTheme.mutedText, border: `1px solid ${p}15` }}>{session?.user?.email}</p>
+                              <p className="text-sm px-3 py-2.5 rounded-xl" style={{ background: uiT.inlineBg, color: uiT.mutedText, border: `1px solid ${p}15` }}>{session?.user?.email}</p>
                             </div>
                           </div>
                         </div>
@@ -1134,57 +1257,31 @@ export default function OrgDashboardPage() {
                             isEditing={isEditing}
                             onChange={handleProfileChange}
                             orgTheme={orgTheme}
+                            uiT={uiT}
                             onResetDefaults={handleResetColors}
                             onApplyScheme={handleApplyScheme}
                           />
                         ) : (
                           <div
                             className="rounded-2xl p-6"
-                            style={{
-                              background: "rgba(0,0,0,0.25)",
-                              border: `1px solid ${p}30`,
-                            }}
+                            style={{ background: uiT.cardBg, border: `1px solid ${p}30` }}
                           >
-                            <h3
-                              className="text-lg font-semibold flex items-center gap-2.5 mb-5"
-                              style={{ color: orgTheme.primaryText }}
-                            >
-                              <span
-                                className="flex items-center justify-center w-8 h-8 rounded-lg"
-                                style={{ background: `${p}20`, border: `1px solid ${p}40` }}
-                              >
+                            <h3 className="text-lg font-semibold flex items-center gap-2.5 mb-5" style={{ color: uiT.headingText }}>
+                              <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: `${p}20`, border: `1px solid ${p}40` }}>
                                 <Palette className="w-4 h-4" style={{ color: p }} />
                               </span>
                               Color Customization
                             </h3>
-
-                            <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: orgTheme.mutedText }}>
+                            <p className="text-[10px] uppercase tracking-widest mb-2" style={{ color: uiT.mutedText }}>
                               Current Palette
                             </p>
-                            <div
-                              className="flex gap-1.5 h-9 rounded-xl overflow-hidden p-0.5"
-                              style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${p}25` }}
-                            >
-                              {[
-                                formData.primary_color,
-                                formData.secondary_color,
-                                formData.accent_color,
-                                formData.background_color,
-                                formData.card_background_color,
-                                formData.success_color,
-                                formData.warning_color,
-                                formData.error_color,
-                              ].map((c, i) => (
-                                <div
-                                  key={i}
-                                  title={c}
-                                  className="flex-1 rounded-lg"
-                                  style={{ background: c }}
-                                />
+                            <div className="flex gap-1.5 h-9 rounded-xl overflow-hidden p-0.5"
+                              style={{ background: uiT.inlineBg, border: `1px solid ${p}25` }}>
+                              {[formData.primary_color, formData.secondary_color, formData.accent_color, formData.background_color, formData.card_background_color, formData.success_color, formData.warning_color, formData.error_color].map((c, i) => (
+                                <div key={i} title={c} className="flex-1 rounded-lg" style={{ background: c }} />
                               ))}
                             </div>
-
-                            <p className="text-[10px] mt-3 flex items-center gap-1.5" style={{ color: orgTheme.mutedText }}>
+                            <p className="text-[10px] mt-3 flex items-center gap-1.5" style={{ color: uiT.mutedText }}>
                               <Palette className="w-3 h-3" />
                               Enable edit mode to customize colors
                             </p>
@@ -1192,7 +1289,7 @@ export default function OrgDashboardPage() {
                         )}
                         {isEditing && (
                           <button type="button" onClick={handleProfileSubmit}
-                            style={{ borderColor: `${p}80`, color: "#ffffff", background: `linear-gradient(135deg, ${p}30, ${s}25)`, boxShadow: `0 0 0 1px ${p}30, 0 8px 20px ${p}20` }}
+                            style={{ borderColor: `${p}80`, color: uiT.headingText, background: `linear-gradient(135deg, ${p}30, ${s}25)`, boxShadow: `0 0 0 1px ${p}30, 0 8px 20px ${p}20` }}
                             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border text-sm font-medium transition-all duration-200 backdrop-blur-md"
                             onMouseEnter={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${p}55, ${s}45)`; e.currentTarget.style.borderColor = p; e.currentTarget.style.boxShadow = `0 0 0 1px ${p}, 0 10px 30px ${p}40`; e.currentTarget.style.transform = "translateY(-1px)" }}
                             onMouseLeave={e => { e.currentTarget.style.background = `linear-gradient(135deg, ${p}30, ${s}25)`; e.currentTarget.style.borderColor = `${p}80`; e.currentTarget.style.boxShadow = `0 0 0 1px ${p}30, 0 8px 20px ${p}20`; e.currentTarget.style.transform = "translateY(0)" }}>
@@ -1204,14 +1301,14 @@ export default function OrgDashboardPage() {
                       {/* Danger zone */}
                       <div className="space-y-6">
                         <div className="rounded-2xl p-6 relative overflow-hidden"
-                          style={{ background: "rgba(127,17,17,0.12)", border: "1px solid rgba(239,68,68,0.25)", boxShadow: "inset 0 1px 0 rgba(239,68,68,0.08)" }}>
+                          style={{ background: uiT.dangerBg, border: uiT.dangerBorder, boxShadow: "inset 0 1px 0 rgba(239,68,68,0.08)" }}>
                           <div className="absolute top-0 right-0 w-24 h-24 pointer-events-none"
                             style={{ background: "radial-gradient(circle at top right, rgba(239,68,68,0.1), transparent 70%)" }} />
-                          <h3 className="text-base font-semibold text-red-300 mb-1 flex items-center gap-2">
+                          <h3 className="text-base font-semibold text-red-400 mb-1 flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" />Danger Zone
                           </h3>
                           <div className="h-px mb-4" style={{ background: "linear-gradient(to right, rgba(239,68,68,0.5), transparent)" }} />
-                          <p className="text-xs text-red-400/70 mb-4">Permanently delete this organization and all its data. This cannot be undone.</p>
+                          <p className="text-xs mb-4" style={{ color: isDark ? "rgba(252,165,165,0.7)" : "rgba(185,28,28,0.8)" }}>Permanently delete this organization and all its data. This cannot be undone.</p>
                           <Button onClick={() => setShowDeleteModal(true)}
                             className="w-full h-9 rounded-xl text-sm font-medium transition-all duration-200 hover:scale-[1.02] active:scale-95"
                             style={{ background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.4)", color: "#fca5a5", boxShadow: "none" }}
@@ -1226,41 +1323,25 @@ export default function OrgDashboardPage() {
                 </motion.div>
               )}
 
-                            
+              {/* ════ WEBSITE PREVIEW ════ */}
               {activeTab === "website" && (
-                <motion.div
-                  key="website"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.25 }}
-                >
-                  {/* Active page label */}
+                <motion.div key="website" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
                   <div className="flex items-center gap-2 mb-4">
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ background: websitePage.accent }}
-                    />
-                    <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.5)" }}>
-                      Previewing:
-                    </span>
-                    <span className="text-xs font-bold" style={{ color: websitePage.accent }}>
-                      {websitePage.label}
-                    </span>
+                    <span className="w-2 h-2 rounded-full" style={{ background: websitePage.accent }} />
+                    <span className="text-xs font-semibold" style={{ color: uiT.mutedText }}>Previewing:</span>
+                    <span className="text-xs font-bold" style={{ color: websitePage.accent }}>{websitePage.label}</span>
                   </div>
-              
                   <WebsitePreviewSection href={websitePage.href} />
                 </motion.div>
               )}
- 
 
               {/* ════ NOTIFICATIONS ════ */}
               {activeTab === "notifications" && (
                 <motion.div key="notifications" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-                  <div className="rounded-2xl p-5" style={{ background: "rgba(255,255,255,0.02)", border: `1px solid ${p}18` }}>
+                  <div className="rounded-2xl p-5" style={{ background: uiT.surfaceBg, border: `1px solid ${p}18` }}>
                     <div className="mb-5">
-                      <h3 className="text-base font-bold" style={{ color: "#ffffff" }}>All Notifications</h3>
-                      <p className="text-xs mt-1" style={{ color: orgTheme.mutedText }}>Approval decisions, content alerts, and account status updates.</p>
+                      <h3 className="text-base font-bold" style={{ color: uiT.headingText }}>All Notifications</h3>
+                      <p className="text-xs mt-1" style={{ color: uiT.mutedText }}>Approval decisions, content alerts, and account status updates.</p>
                       <div className="org-section-divider mt-4" />
                     </div>
                     <NotificationsTab userId={session?.user?.id} role="org_admin" />
@@ -1269,7 +1350,6 @@ export default function OrgDashboardPage() {
               )}
             </AnimatePresence>
 
-            {/* Bottom padding */}
             <div className="h-8" />
           </div>
         </main>
