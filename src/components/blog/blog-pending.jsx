@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { buildTheme } from "@/lib/blog-color" 
+import { buildTheme } from "@/lib/blog-color"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -19,25 +19,26 @@ const THEME_OPTIONS = [
   "Gaming","Finance","Environment","Personal Development","Other"
 ]
 
-export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, addToast }) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [alert, setAlert]         = useState(null)
+const LIMITS = {
+  title:   80,
+  des:     1000,
+  author:  60,
+  content: 2000,
+  theme:   200,
+}
+
+// uiT is the UI theme token object passed down from the parent dashboard.
+// It is optional — the component falls back to the org's buildTheme styles when absent.
+export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, addToast, uiT }) {
+  const [isLoading, setIsLoading]   = useState(false)
+  const [alert, setAlert]           = useState(null)
   const [imageError, setImageError] = useState(false)
-  const [formData, setFormData]   = useState({
+  const [formData, setFormData]     = useState({
     title: "", des: "", content: "", author: "",
     image: "", hackathon: "", place: "", theme: ""
   })
 
-  const LIMITS = {
-    title:       80,
-    des:         1000,
-    author:      60,
-    Content:     2000,
-    theme:   200,
-  }
-
-
-  // ── Derive theme from org colors ─────────────────────────────────────────
+  // Derive org brand theme (for gradients, primary color accents, button styles)
   const theme = buildTheme(currentOrg?.primary_color, currentOrg?.secondary_color)
 
   const handleSubmit = async () => {
@@ -48,12 +49,11 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
       addToast("error", "Please add a Title and Content"); return
     }
     if (!formData.author) {
-      addToast("error", "Please add a author"); return
+      addToast("error", "Please add an author"); return
     }
     if (!formData.theme) {
       addToast("error", "Please add a theme"); return
     }
-
 
     setIsLoading(true)
     setAlert(null)
@@ -61,13 +61,13 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
     try {
       const payload = {
         title:           formData.title.trim(),
-        des:             formData.des.trim() || null,
+        des:             formData.des.trim()       || null,
         content:         formData.content.trim(),
-        author:          formData.author.trim() || currentOrg.name,
-        image:           formData.image.trim() || null,
+        author:          formData.author.trim()    || currentOrg.name,
+        image:           formData.image.trim()     || null,
         hackathon:       formData.hackathon.trim() ? [formData.hackathon.trim()] : null,
-        place:           formData.place.trim() || null,
-        theme:           formData.theme || null,
+        place:           formData.place.trim()     || null,
+        theme:           formData.theme            || null,
         organization_id: currentOrg.id,
         organization:    currentOrg.name,
         user_id:         null,
@@ -77,7 +77,8 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
 
       const { error } = await supabase.from("pending_blogs").insert([payload])
       if (error) throw error
-      addToast("success", "Submitted for approval! The super admin will review your announcement.")
+
+      addToast("success", "Submitted for approval! The super admin will review your blog.")
       setAlert({ type: "success", message: "Blog submitted for approval! ✅ The super admin will review it." })
       setFormData({ title: "", des: "", content: "", author: "", image: "", hackathon: "", place: "", theme: "" })
       setImageError(false)
@@ -91,38 +92,41 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
 
   if (!currentOrg) {
     return (
-      <Card style={{ background: "rgba(2,6,23,0.6)", border: "1px solid rgba(217,70,239,0.3)" }}
-        className="backdrop-blur-xl">
-        <CardContent className="p-12 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: theme.primaryText }} />
-          <p style={{ color: theme.mutedText }}>Loading organization information…</p>
-        </CardContent>
-      </Card>
+      <div
+        className="rounded-xl p-12 text-center"
+        style={{
+          background: uiT?.surfaceBg2 ?? "rgba(2,6,23,0.6)",
+          border: `1px solid ${uiT?.borderSubtle ?? "rgba(217,70,239,0.3)"}`,
+        }}
+      >
+        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: theme.primaryText }} />
+        <p style={{ color: uiT?.mutedText ?? theme.mutedText }}>Loading organization information…</p>
+      </div>
     )
   }
 
-  // ── Shared input style ───────────────────────────────────────────────────
+  // ── Shared input style — uses uiT when available, else org theme ─────────
   const inputStyle = {
-    background: theme.inputBg,
-    border: theme.borderColor,
-    color: "#fff",
+    background:  uiT?.inputBg     ?? theme.inputBg,
+    borderColor: uiT?.borderSubtle ?? theme.borderColor,
+    color:       uiT?.headingText  ?? "#fff",
   }
-  const labelStyle = { color: theme.labelText }
+  const labelColor  = uiT?.mutedText  ?? theme.labelText
+  const headingColor = uiT?.headingText ?? "#ffffff"
 
   return (
     <div className="w-full max-w-4xl mx-auto" style={theme.cssVars}>
       <Card
-        className="backdrop-blur-xl"
         style={{
-          background: theme.cardBg,
-          border: theme.borderColor,
-          boxShadow: theme.cardShadow,
+          background: uiT?.cardBg   ?? theme.cardBg,
+          border:     `1px solid ${uiT?.borderSubtle ?? theme.borderColor}`,
+          boxShadow:  theme.cardShadow,
         }}
       >
-        {/* ── Header ─────────────────────────────────────────────────────── */}
+        {/* ── Header ── */}
         <CardHeader
           className="pb-6"
-          style={{ borderBottom: theme.borderColorLight }}
+          style={{ borderBottom: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.08)"}` }}
         >
           <div className="flex items-center justify-between">
             <div>
@@ -137,7 +141,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               >
                 Create New Blog Post
               </CardTitle>
-              <CardDescription className="text-base mt-2" style={{ color: theme.mutedText }}>
+              <CardDescription className="text-base mt-2" style={{ color: uiT?.mutedText ?? theme.mutedText }}>
                 Your post will be reviewed before going live
               </CardDescription>
             </div>
@@ -145,10 +149,13 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
             {/* Org badge */}
             <div
               className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg"
-              style={{ background: theme.badgeBgPrimary, border: theme.borderColor }}
+              style={{
+                background:  uiT?.surfaceBg2 ?? theme.badgeBgPrimary,
+                border:      `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
+              }}
             >
               <Building2 className="w-4 h-4" style={{ color: theme.primaryText }} />
-              <span className="text-sm font-medium" style={{ color: theme.labelText }}>
+              <span className="text-sm font-medium" style={{ color: labelColor }}>
                 {currentOrg.name}
               </span>
             </div>
@@ -156,10 +163,10 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
         </CardHeader>
 
         <CardContent className="p-6">
-          {/* ── Pending notice ─────────────────────────────────────────── */}
+          {/* ── Pending notice ── */}
           <div
             className="flex items-center gap-2 mb-5 p-3 rounded-xl"
-            style={{ background: theme.noticeBg, border: "1px solid rgba(245,158,11,0.2)" }}
+            style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.20)" }}
           >
             <Clock className="w-4 h-4 text-amber-400 shrink-0" />
             <p className="text-amber-200 text-sm">
@@ -167,7 +174,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
             </p>
           </div>
 
-          {/* ── Alert ──────────────────────────────────────────────────── */}
+          {/* ── Alert ── */}
           {alert && (
             <Alert
               className="mb-6"
@@ -177,34 +184,35 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
                   : { border: "1px solid #22c55e", background: "rgba(34,197,94,0.10)",  color: "#bbf7d0" }
               }
             >
-              {alert.type === "error"
-                ? <AlertCircle className="h-5 w-5" />
-                : <CheckCircle className="h-5 w-5" />}
+              {alert.type === "error" ? <AlertCircle className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
               <AlertDescription>{alert.message}</AlertDescription>
             </Alert>
           )}
 
           <div className="space-y-6">
-            {/* ── Org banner ───────────────────────────────────────────── */}
+            {/* ── Org banner ── */}
             <div
               className="flex items-center gap-3 p-4 rounded-lg"
-              style={{ background: theme.sectionBg, border: theme.borderColorLight }}
+              style={{
+                background: uiT?.surfaceBg ?? theme.sectionBg,
+                border:     `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.08)"}`,
+              }}
             >
               <Building2 className="w-5 h-5" style={{ color: theme.secondaryText }} />
               <div>
-                <p className="text-sm" style={{ color: theme.mutedText }}>Submitting as</p>
-                <p className="font-semibold text-white">{currentOrg.name}</p>
+                <p className="text-sm" style={{ color: uiT?.mutedText ?? theme.mutedText }}>Submitting as</p>
+                <p className="font-semibold" style={{ color: headingColor }}>{currentOrg.name}</p>
               </div>
             </div>
 
-            {/* ── Title ────────────────────────────────────────────────── */}
+            {/* ── Title ── */}
             <div className="space-y-3">
-              <Label className="text-lg font-semibold flex items-center gap-2" style={labelStyle}>
+              <Label className="text-lg font-semibold flex items-center gap-2" style={{ color: labelColor }}>
                 <FileText className="w-5 h-5" />Blog Title *
               </Label>
               <Input
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value.slice(0, LIMITS.title) })}
                 className="h-12 text-lg placeholder:opacity-40"
                 style={inputStyle}
                 maxLength={LIMITS.title}
@@ -212,12 +220,12 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               />
             </div>
 
-            {/* ── Description ──────────────────────────────────────────── */}
+            {/* ── Description ── */}
             <div className="space-y-3">
-              <Label className="text-lg font-semibold" style={labelStyle}>Short Description</Label>
+              <Label className="text-lg font-semibold" style={{ color: labelColor }}>Short Description</Label>
               <Textarea
                 value={formData.des}
-                onChange={(e) => setFormData({ ...formData, des: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, des: e.target.value.slice(0, LIMITS.des) })}
                 className="resize-none placeholder:opacity-40"
                 style={inputStyle}
                 rows={3}
@@ -226,14 +234,14 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               />
             </div>
 
-            {/* ── Content ──────────────────────────────────────────────── */}
+            {/* ── Content ── */}
             <div className="space-y-3">
-              <Label className="text-lg font-semibold flex items-center gap-2" style={labelStyle}>
+              <Label className="text-lg font-semibold flex items-center gap-2" style={{ color: labelColor }}>
                 <FileText className="w-5 h-5" />Blog Content *
               </Label>
               <Textarea
                 value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value.slice(0, LIMITS.content) })}
                 className="resize-none placeholder:opacity-40"
                 style={inputStyle}
                 rows={10}
@@ -242,13 +250,13 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               />
             </div>
 
-            {/* ── Author + Place ────────────────────────────────────────── */}
+            {/* ── Author + Place ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <Label className="font-semibold" style={labelStyle}>Author Name</Label>
+                <Label className="font-semibold" style={{ color: labelColor }}>Author Name</Label>
                 <Input
                   value={formData.author}
-                  onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, author: e.target.value.slice(0, LIMITS.author) })}
                   className="placeholder:opacity-40"
                   style={inputStyle}
                   maxLength={LIMITS.author}
@@ -256,7 +264,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
                 />
               </div>
               <div className="space-y-3">
-                <Label className="font-semibold" style={labelStyle}>Location / Place</Label>
+                <Label className="font-semibold" style={{ color: labelColor }}>Location / Place</Label>
                 <Input
                   value={formData.place}
                   onChange={(e) => setFormData({ ...formData, place: e.target.value })}
@@ -267,9 +275,9 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               </div>
             </div>
 
-            {/* ── Hackathon ─────────────────────────────────────────────── */}
+            {/* ── Hackathon ── */}
             <div className="space-y-3">
-              <Label className="font-semibold" style={labelStyle}>Related Hackathon / Event</Label>
+              <Label className="font-semibold" style={{ color: labelColor }}>Related Hackathon / Event</Label>
               <Input
                 value={formData.hackathon}
                 onChange={(e) => setFormData({ ...formData, hackathon: e.target.value })}
@@ -279,33 +287,36 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               />
             </div>
 
-            {/* ── Theme select ──────────────────────────────────────────── */}
+            {/* ── Theme select ── */}
             <div className="space-y-3">
-              <Label className="font-semibold flex items-center gap-2" style={labelStyle}>
-                <Tag className="w-4 h-4" />Theme / Category
+              <Label className="font-semibold flex items-center gap-2" style={{ color: labelColor }}>
+                <Tag className="w-4 h-4" />Theme / Category *
               </Label>
               <Select value={formData.theme} onValueChange={(v) => setFormData({ ...formData, theme: v })}>
                 <SelectTrigger style={inputStyle}>
                   <SelectValue placeholder="Select a theme…" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-950" style={{ border: theme.borderColor }}>
-                  {THEME_OPTIONS.map((t) => (
+                <SelectContent
+                  style={{
+                    background: uiT?.cardBg ?? "rgb(2,6,23)",
+                    border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
+                  }}
+                >
+                  {THEME_OPTIONS.map((opt) => (
                     <SelectItem
-                      key={t}
-                      value={t}
-                      className="text-white"
-                      style={{ "--hover-bg": theme.badgeBgPrimary }}
+                      key={opt} value={opt}
+                      style={{ color: uiT?.headingText ?? "#ffffff" }}
                     >
-                      {t}
+                      {opt}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* ── Image URL ─────────────────────────────────────────────── */}
+            {/* ── Image URL ── */}
             <div className="space-y-3">
-              <Label className="font-semibold flex items-center gap-2" style={labelStyle}>
+              <Label className="font-semibold flex items-center gap-2" style={{ color: labelColor }}>
                 <Camera className="w-4 h-4" />Featured Image URL
               </Label>
               <Input
@@ -319,12 +330,10 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               {formData.image && !imageError && (
                 <div
                   className="mt-4 rounded-lg overflow-hidden relative w-full h-48"
-                  style={{ border: theme.borderColor }}
+                  style={{ border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.1)"}` }}
                 >
                   <Image
-                    src={formData.image}
-                    alt="Preview"
-                    fill
+                    src={formData.image} alt="Preview" fill
                     className="object-cover"
                     onError={() => setImageError(true)}
                   />
@@ -332,23 +341,23 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
               )}
             </div>
 
-            {/* ── Submit button ─────────────────────────────────────────── */}
-            <div className="pt-6" style={{ borderTop: theme.borderColorLight }}>
+            {/* ── Submit ── */}
+            <div className="pt-6" style={{ borderTop: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.08)"}` }}>
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
                 className="w-full h-14 text-lg font-semibold text-white transition-opacity duration-200 hover:opacity-90"
                 style={{
-                  background: theme.buttonGradient,
-                  boxShadow: theme.buttonShadow,
-                  border: "none",
+                  background:  theme.buttonGradient,
+                  boxShadow:   theme.buttonShadow,
+                  border:      "none",
+                  opacity:     isLoading ? 0.7 : 1,
                 }}
               >
-                {isLoading ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Submitting…</>
-                ) : (
-                  <><Clock className="mr-2 h-5 w-5" />Submit for Approval</>
-                )}
+                {isLoading
+                  ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Submitting…</>
+                  : <><Clock  className="mr-2 h-5 w-5" />Submit for Approval</>
+                }
               </Button>
             </div>
           </div>

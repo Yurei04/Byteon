@@ -202,7 +202,6 @@ function ColorCustomizationSection({ formData, isEditing, onChange, orgTheme, on
       s.colors.secondary_color === formData.secondary_color &&
       s.colors.background_color === formData.background_color
     )
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveSchemeId(match ? match.id : null)
   }, [formData.primary_color, formData.secondary_color, formData.background_color])
 
@@ -712,9 +711,9 @@ export default function OrgDashboardPage() {
   ]
 
   const createSubTabs = [
-    { tab: "createAnnouncement", icon: <Megaphone className="w-4 h-4 mr-2" />, label: "Announcement", content: <PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} /> },
-    { tab: "createBlogs",        icon: <FileText   className="w-4 h-4 mr-2" />, label: "Blog",         content: <PendingBlogOrgForm   onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} /> },
-    { tab: "createResources",    icon: <BookOpen   className="w-4 h-4 mr-2" />, label: "Resource",     content: <PendingResourceForm  onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} /> },
+    { tab: "createAnnouncement", icon: <Megaphone className="w-4 h-4 mr-2" />, label: "Announcement", content: <PendingAnnounceForm onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} uiT={uiT} /> },
+    { tab: "createBlogs",        icon: <FileText   className="w-4 h-4 mr-2" />, label: "Blog",         content: <PendingBlogOrgForm   onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} uiT={uiT} /> },
+    { tab: "createResources",    icon: <BookOpen   className="w-4 h-4 mr-2" />, label: "Resource",     content: <PendingResourceForm  onSuccess={refreshAll} currentOrg={profile} authUserId={profile?.user_id} addToast={addToast} uiT={uiT} /> },
   ]
 
   const statCards = [

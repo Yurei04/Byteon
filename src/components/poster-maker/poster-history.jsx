@@ -1,4 +1,3 @@
-// components/poster-maker/PosterHistory.jsx
 "use client"
 
 import { useEffect, useState } from "react"
@@ -6,13 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 function timeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime()
+  const diff  = Date.now() - new Date(dateStr).getTime()
   const mins  = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days  = Math.floor(diff / 86400000)
-  if (mins < 1)    return "just now"
-  if (mins < 60)   return `${mins}m ago`
-  if (hours < 24)  return `${hours}h ago`
+  if (mins < 1)   return "just now"
+  if (mins < 60)  return `${mins}m ago`
+  if (hours < 24) return `${hours}h ago`
   return `${days}d ago`
 }
 
@@ -26,15 +25,15 @@ const RATIO_CLASS = {
 }
 
 export default function PosterHistory({ refreshTrigger }) {
-  const [posters, setPosters] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [posters,  setPosters]  = useState([])
+  const [loading,  setLoading]  = useState(true)
   const [deleting, setDeleting] = useState(null)
   const [selected, setSelected] = useState(null)
 
   const fetchPosters = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/poster-history")
+      const res  = await fetch("/api/poster-history")
       const data = await res.json()
       setPosters(data.posters ?? [])
     } catch (e) {
@@ -74,7 +73,11 @@ export default function PosterHistory({ refreshTrigger }) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="aspect-[2/3] rounded-xl bg-zinc-800/50 animate-pulse" />
+          <div
+            key={i}
+            className="aspect-[2/3] rounded-xl animate-pulse"
+            style={{ background: "rgb(var(--surface-raised))" }}
+          />
         ))}
       </div>
     )
@@ -83,16 +86,26 @@ export default function PosterHistory({ refreshTrigger }) {
   if (posters.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-800/60 border border-zinc-700/50 flex items-center justify-center">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{
+            background: "rgb(var(--surface-raised))",
+            border: "1px solid rgb(var(--surface-border) / 0.5)",
+          }}
+        >
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <rect x="3" y="3" width="22" height="22" rx="4" stroke="#52525b" strokeWidth="1.5"/>
-            <circle cx="10" cy="10" r="2.5" stroke="#71717a" strokeWidth="1.5"/>
-            <path d="M3 19l6-5 4 4 4-4 8 7" stroke="#71717a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <rect x="3" y="3" width="22" height="22" rx="4" stroke="rgb(var(--text-faint))" strokeWidth="1.5"/>
+            <circle cx="10" cy="10" r="2.5" stroke="rgb(var(--text-muted))" strokeWidth="1.5"/>
+            <path d="M3 19l6-5 4 4 4-4 8 7" stroke="rgb(var(--text-muted))" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
         <div>
-          <p className="text-sm font-medium text-zinc-400">No posters yet</p>
-          <p className="text-xs text-zinc-600 mt-1">Generate your first poster to see it here</p>
+          <p className="text-sm font-medium" style={{ color: "rgb(var(--text-muted))" }}>
+            No posters yet
+          </p>
+          <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint))" }}>
+            Generate your first poster to see it here
+          </p>
         </div>
       </div>
     )
@@ -106,7 +119,19 @@ export default function PosterHistory({ refreshTrigger }) {
           <div
             key={poster.id}
             onClick={() => setSelected(poster)}
-            className="group relative cursor-pointer rounded-xl overflow-hidden border border-zinc-800/60 hover:border-fuchsia-600/40 transition-all duration-200 hover:shadow-[0_0_16px_rgba(217,70,239,0.15)] bg-zinc-900"
+            className="group relative cursor-pointer rounded-xl overflow-hidden transition-all duration-200"
+            style={{
+              border: "1px solid rgb(var(--surface-border) / 0.4)",
+              background: "rgb(var(--surface))",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = "rgb(var(--brand-500) / 0.4)"
+              e.currentTarget.style.boxShadow   = "0 0 16px rgb(var(--brand-500) / 0.15)"
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = "rgb(var(--surface-border) / 0.4)"
+              e.currentTarget.style.boxShadow   = "none"
+            }}
           >
             <div className={`${RATIO_CLASS[poster.aspect_ratio] ?? "aspect-[2/3]"} relative`}>
               <img
@@ -116,18 +141,29 @@ export default function PosterHistory({ refreshTrigger }) {
                 loading="lazy"
               />
               {/* Hover overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <div className="absolute bottom-0 left-0 right-0 p-2.5 flex items-end justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     {poster.title && (
-                      <p className="text-xs font-semibold text-white truncate leading-tight">{poster.title}</p>
+                      <p className="text-xs font-semibold text-white truncate leading-tight">
+                        {poster.title}
+                      </p>
                     )}
-                    <p className="text-[10px] text-zinc-400 mt-0.5">{timeAgo(poster.created_at)}</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: "rgb(var(--text-muted))" }}>
+                      {timeAgo(poster.created_at)}
+                    </p>
                   </div>
                   <button
                     onClick={(e) => handleDelete(poster.id, e)}
                     disabled={deleting === poster.id}
-                    className="flex-shrink-0 w-6 h-6 rounded-lg bg-red-950/80 border border-red-800/50 flex items-center justify-center text-red-400 hover:bg-red-900 transition-colors"
+                    className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
+                    style={{
+                      background: "rgba(239,68,68,0.15)",
+                      border: "1px solid rgba(239,68,68,0.3)",
+                      color: "#f87171",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.3)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.15)"}
                   >
                     {deleting === poster.id
                       ? <span className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" />
@@ -141,7 +177,14 @@ export default function PosterHistory({ refreshTrigger }) {
             {/* Style badge */}
             <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               {poster.style && (
-                <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-zinc-950/80 border border-zinc-700/60 text-zinc-400 capitalize">
+                <span
+                  className="text-[9px] font-medium px-1.5 py-0.5 rounded-md capitalize"
+                  style={{
+                    background: "rgb(var(--bg-base) / 0.85)",
+                    border: "1px solid rgb(var(--surface-border) / 0.6)",
+                    color: "rgb(var(--text-muted))",
+                  }}
+                >
                   {poster.style}
                 </span>
               )}
@@ -150,18 +193,27 @@ export default function PosterHistory({ refreshTrigger }) {
         ))}
       </div>
 
-      {/* Lightbox modal */}
+      {/* Lightbox */}
       {selected && (
         <div
-          className="fixed inset-0 z-[9998] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9998] flex items-center justify-center p-4 backdrop-blur-sm"
+          style={{ background: "rgba(0,0,0,0.75)" }}
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-zinc-950 border border-zinc-800 rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col lg:flex-row shadow-[0_32px_64px_rgba(0,0,0,0.8)]"
+            className="rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col lg:flex-row"
+            style={{
+              background: "rgb(var(--bg-base))",
+              border: "1px solid rgb(var(--surface-border) / 0.5)",
+              boxShadow: "0 32px 64px rgba(0,0,0,0.6)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Image */}
-            <div className="lg:flex-1 bg-zinc-900 flex items-center justify-center p-4 min-h-[300px]">
+            {/* Image panel */}
+            <div
+              className="lg:flex-1 flex items-center justify-center p-4 min-h-[300px]"
+              style={{ background: "rgb(var(--surface))" }}
+            >
               <img
                 src={selected.image_url}
                 alt={selected.title || "Poster"}
@@ -170,15 +222,39 @@ export default function PosterHistory({ refreshTrigger }) {
             </div>
 
             {/* Info panel */}
-            <div className="w-full lg:w-72 p-5 flex flex-col gap-4 border-t lg:border-t-0 lg:border-l border-zinc-800">
+            <div
+              className="w-full lg:w-72 p-5 flex flex-col gap-4"
+              style={{ borderTop: "1px solid rgb(var(--surface-border) / 0.3)" }}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-bold text-zinc-100">{selected.title || "Untitled Poster"}</h3>
-                  {selected.subtitle && <p className="text-xs text-zinc-500 mt-0.5">{selected.subtitle}</p>}
+                  <h3
+                    className="text-sm font-bold"
+                    style={{ color: "rgb(var(--text-primary))" }}
+                  >
+                    {selected.title || "Untitled Poster"}
+                  </h3>
+                  {selected.subtitle && (
+                    <p
+                      className="text-xs mt-0.5"
+                      style={{ color: "rgb(var(--text-faint))" }}
+                    >
+                      {selected.subtitle}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => setSelected(null)}
-                  className="p-1.5 rounded-lg text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors flex-shrink-0"
+                  className="p-1.5 rounded-lg flex-shrink-0 transition-colors"
+                  style={{ color: "rgb(var(--text-faint))" }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.color = "rgb(var(--text-primary))"
+                    e.currentTarget.style.background = "rgb(var(--surface-raised))"
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.color = "rgb(var(--text-faint))"
+                    e.currentTarget.style.background = "transparent"
+                  }}
                 >
                   <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                     <path d="M10 3L3 10M3 3l7 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -186,28 +262,91 @@ export default function PosterHistory({ refreshTrigger }) {
                 </button>
               </div>
 
+              {/* Badges */}
               <div className="flex flex-wrap gap-1.5">
-                {selected.style && <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-400 capitalize">{selected.style}</Badge>}
-                {selected.aspect_ratio && <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-400">{selected.aspect_ratio}</Badge>}
-                {selected.color_scheme && <Badge variant="outline" className="text-[10px] border-fuchsia-800/50 text-fuchsia-400 bg-fuchsia-950/30 max-w-[140px] truncate">{selected.color_scheme}</Badge>}
+                {selected.style && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] capitalize"
+                    style={{
+                      borderColor: "rgb(var(--surface-border))",
+                      color: "rgb(var(--text-muted))",
+                    }}
+                  >
+                    {selected.style}
+                  </Badge>
+                )}
+                {selected.aspect_ratio && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px]"
+                    style={{
+                      borderColor: "rgb(var(--surface-border))",
+                      color: "rgb(var(--text-muted))",
+                    }}
+                  >
+                    {selected.aspect_ratio}
+                  </Badge>
+                )}
+                {selected.color_scheme && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] max-w-[140px] truncate"
+                    style={{
+                      borderColor: "rgb(var(--brand-500) / 0.4)",
+                      color: "rgb(var(--brand-400))",
+                      background: "rgb(var(--brand-500) / 0.08)",
+                    }}
+                  >
+                    {selected.color_scheme}
+                  </Badge>
+                )}
               </div>
 
-              <div className="text-xs text-zinc-500">
-                <p className="text-zinc-600 mb-1 uppercase tracking-wide text-[10px]">Generated</p>
-                <p>{new Date(selected.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+              {/* Date */}
+              <div className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>
+                <p
+                  className="uppercase tracking-wide text-[10px] mb-1"
+                  style={{ color: "rgb(var(--text-faint))" }}
+                >
+                  Generated
+                </p>
+                <p style={{ color: "rgb(var(--text-muted))" }}>
+                  {new Date(selected.created_at).toLocaleDateString("en-US", {
+                    year: "numeric", month: "long", day: "numeric",
+                    hour: "2-digit", minute: "2-digit",
+                  })}
+                </p>
               </div>
 
+              {/* Prompt */}
               {selected.prompt && (
                 <div className="flex-1 min-h-0">
-                  <p className="text-zinc-600 uppercase tracking-wide text-[10px] mb-1">AI Prompt</p>
-                  <p className="text-xs text-zinc-500 leading-relaxed line-clamp-6">{selected.prompt}</p>
+                  <p
+                    className="uppercase tracking-wide text-[10px] mb-1"
+                    style={{ color: "rgb(var(--text-faint))" }}
+                  >
+                    AI Prompt
+                  </p>
+                  <p
+                    className="text-xs leading-relaxed line-clamp-6"
+                    style={{ color: "rgb(var(--text-muted))" }}
+                  >
+                    {selected.prompt}
+                  </p>
                 </div>
               )}
 
+              {/* Actions */}
               <div className="flex gap-2 mt-auto">
                 <Button
                   onClick={() => download(selected.image_url, selected.title)}
-                  className="flex-1 h-9 bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-xs font-medium rounded-lg shadow-[0_0_12px_rgba(217,70,239,0.3)]"
+                  className="flex-1 h-9 text-xs font-medium rounded-lg text-white"
+                  style={{
+                    background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))",
+                    boxShadow: "0 0 12px rgb(var(--accent-500) / 0.3)",
+                    border: "none",
+                  }}
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="mr-1.5">
                     <path d="M6 1v7M3 5.5L6 8.5l3-3M1 10h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -217,7 +356,14 @@ export default function PosterHistory({ refreshTrigger }) {
                 <Button
                   variant="outline"
                   onClick={() => handleDelete(selected.id, { stopPropagation: () => {} })}
-                  className="h-9 px-3 border-red-800/40 text-red-500 hover:bg-red-950/40 hover:text-red-400 rounded-lg"
+                  className="h-9 px-3 rounded-lg"
+                  style={{
+                    borderColor: "rgba(239,68,68,0.3)",
+                    color: "#f87171",
+                    background: "transparent",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >
                   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path d="M1.5 3h9M4.5 3V2.5A.5.5 0 015 2h2a.5.5 0 01.5.5V3M5 5.5v3M7 5.5v3M2.5 3l.5 7.5a.5.5 0 00.5.5h5a.5.5 0 00.5-.5L9.5 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>

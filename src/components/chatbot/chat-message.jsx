@@ -34,8 +34,17 @@ export default function ChatMessage({ role, content, time, isError }) {
 
   return (
     <div className={`flex gap-2 items-end ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+
+      {/* AI avatar */}
       {!isUser && (
-        <div className="w-6 h-6 rounded-lg flex-shrink-0 mb-0.5 bg-gradient-to-br from-fuchsia-700 to-pink-800 border border-fuchsia-600/40 flex items-center justify-center shadow-[0_0_8px_rgba(217,70,239,0.3)]">
+        <div
+          className="w-6 h-6 rounded-lg flex-shrink-0 mb-0.5 flex items-center justify-center"
+          style={{
+            background: "linear-gradient(135deg, rgb(var(--brand-700)), rgb(var(--accent-600)))",
+            border: "1px solid rgb(var(--brand-500) / 0.4)",
+            boxShadow: "0 0 8px rgb(var(--accent-500) / 0.3)",
+          }}
+        >
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
             <path d="M5 1L9 3.25V6.75L5 9L1 6.75V3.25L5 1Z" fill="url(#cmG)" />
             <defs>
@@ -48,13 +57,31 @@ export default function ChatMessage({ role, content, time, isError }) {
       )}
 
       <div className={`group max-w-[82%] flex flex-col gap-1 ${isUser ? "items-end" : "items-start"}`}>
-        <div className={`px-3 py-2.5 rounded-2xl text-sm leading-relaxed ${
-          isUser
-            ? "bg-gradient-to-br from-fuchsia-700 to-pink-700 text-fuchsia-50 rounded-br-sm border border-fuchsia-600/30"
-            : isError
-              ? "bg-red-950/60 border border-red-700/30 text-red-300 rounded-bl-sm"
-              : "bg-zinc-800/90 border border-zinc-700/40 text-zinc-100 rounded-bl-sm"
-        }`}>
+        <div
+          className="px-3 py-2.5 rounded-2xl text-sm leading-relaxed"
+          style={
+            isUser
+              ? {
+                  background: "linear-gradient(135deg, rgb(var(--brand-700)), rgb(var(--accent-600)))",
+                  color: "rgb(var(--brand-100))",
+                  border: "1px solid rgb(var(--brand-600) / 0.3)",
+                  borderRadius: "1rem 1rem 0.25rem 1rem",
+                }
+              : isError
+                ? {
+                    background: "rgba(239,68,68,0.08)",
+                    border: "1px solid rgba(239,68,68,0.25)",
+                    color: "#fca5a5",
+                    borderRadius: "1rem 1rem 1rem 0.25rem",
+                  }
+                : {
+                    background: "rgb(var(--surface))",
+                    border: "1px solid rgb(var(--surface-border) / 0.5)",
+                    color: "rgb(var(--text-primary))",
+                    borderRadius: "1rem 1rem 1rem 0.25rem",
+                  }
+          }
+        >
           {isUser
             ? <p className="whitespace-pre-wrap">{content}</p>
             : <div className="nova-rich-text" dangerouslySetInnerHTML={{ __html: `<p>${md(content)}</p>` }} />
@@ -62,23 +89,58 @@ export default function ChatMessage({ role, content, time, isError }) {
         </div>
 
         <div className={`flex items-center gap-2 px-1 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
-          {time && <span className="text-[10px] text-zinc-600">{time}</span>}
+          {time && (
+            <span
+              className="text-[10px]"
+              style={{ color: "rgb(var(--text-faint))" }}
+            >
+              {time}
+            </span>
+          )}
           {!isUser && !isError && (
             <button
               onClick={copy}
-              className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[10px] text-zinc-600 hover:text-fuchsia-400 px-1.5 py-0.5 rounded hover:bg-fuchsia-950/50"
+              className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded"
+              style={{ color: "rgb(var(--text-faint))" }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = "rgb(var(--accent-500))"
+                e.currentTarget.style.background = "rgb(var(--brand-500) / 0.08)"
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = "rgb(var(--text-faint))"
+                e.currentTarget.style.background = "transparent"
+              }}
             >
               {copied
-                ? <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 5l3 3 5-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>Copied</>
-                : <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="3" y="3" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2"/><path d="M1 7V2.5A1.5 1.5 0 012.5 1H7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>Copy</>
+                ? <>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M1 5l3 3 5-5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Copied
+                  </>
+                : <>
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <rect x="3" y="3" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.2"/>
+                      <path d="M1 7V2.5A1.5 1.5 0 012.5 1H7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                    </svg>
+                    Copy
+                  </>
               }
             </button>
           )}
         </div>
       </div>
 
+      {/* User avatar */}
       {isUser && (
-        <div className="w-6 h-6 rounded-lg flex-shrink-0 mb-0.5 bg-zinc-700 border border-zinc-600/50 flex items-center justify-center text-[10px] font-semibold text-zinc-400">
+        <div
+          className="w-6 h-6 rounded-lg flex-shrink-0 mb-0.5 flex items-center justify-center text-[10px] font-semibold"
+          style={{
+            background: "rgb(var(--surface-raised))",
+            border: "1px solid rgb(var(--surface-border) / 0.5)",
+            color: "rgb(var(--text-muted))",
+          }}
+        >
           U
         </div>
       )}

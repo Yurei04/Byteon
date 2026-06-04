@@ -130,19 +130,19 @@ const createUTCISOString = (dateObj, time24) => {
 }
 
 // ─── CharCount ────────────────────────────────────────────────────────────────
-function CharCount({ current, max }) {
+function CharCount({ current, max, uiT }) {
   const pct  = current / max
   const near = pct >= 0.85
   const over = current > max
   return (
     <div className="flex items-center justify-end gap-1.5 mt-1">
-      <div className="h-0.5 w-12 rounded-full overflow-hidden bg-white/8">
+      <div className="h-0.5 w-12 rounded-full overflow-hidden" style={{ background: uiT?.borderBase ?? "rgba(255,255,255,0.08)" }}>
         <div
           className="h-full rounded-full transition-all duration-200"
-          style={{ width: `${Math.min(pct * 100, 100)}%`, background: over ? "#f87171" : near ? "#fbbf24" : "rgba(255,255,255,0.25)" }}
+          style={{ width: `${Math.min(pct * 100, 100)}%`, background: over ? "#f87171" : near ? "#fbbf24" : (uiT?.mutedText ?? "rgba(255,255,255,0.25)") }}
         />
       </div>
-      <span className="text-[10px] tabular-nums transition-colors" style={{ color: over ? "#f87171" : near ? "#fbbf24" : "rgba(255,255,255,0.22)" }}>
+      <span className="text-[10px] tabular-nums transition-colors" style={{ color: over ? "#f87171" : near ? "#fbbf24" : (uiT?.mutedText ?? "rgba(255,255,255,0.22)") }}>
         {current}/{max}
       </span>
     </div>
@@ -150,35 +150,44 @@ function CharCount({ current, max }) {
 }
 
 // ─── CalendarInput ────────────────────────────────────────────────────────────
-const CalendarInput = forwardRef(({ value, onClick }, ref) => (
+const CalendarInput = forwardRef(({ value, onClick, uiT }, ref) => (
   <div
     onClick={onClick} ref={ref}
-    className="w-full flex items-center justify-between text-white px-3 py-2.5 rounded-xl cursor-pointer transition-all hover:bg-white/[0.07]"
-    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}
+    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all"
+    style={{
+      background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+      border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+      color: uiT?.headingText ?? "#ffffff",
+    }}
   >
-    <span className={value ? "text-white text-sm" : "text-white/30 text-sm"}>{value || "Select date"}</span>
-    <Calendar className="w-4 h-4 text-white/40" />
+    <span className="text-sm" style={{ color: value ? (uiT?.headingText ?? "#ffffff") : (uiT?.mutedText ?? "rgba(255,255,255,0.3)") }}>
+      {value || "Select date"}
+    </span>
+    <Calendar className="w-4 h-4" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.4)" }} />
   </div>
 ))
 CalendarInput.displayName = "CalendarInput"
 
 // ─── TimeSelect ───────────────────────────────────────────────────────────────
-function TimeSelect({ hour, minute, period, onHour, onMinute, onPeriod }) {
+function TimeSelect({ hour, minute, period, onHour, onMinute, onPeriod, uiT }) {
   const hourOpts   = ["01","02","03","04","05","06","07","08","09","10","11","12"]
   const minuteOpts = ["00","05","10","15","20","25","30","35","40","45","50","55"]
   const sel = {
-    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)",
-    color: "#fff", borderRadius: "0.6rem", padding: "0.4rem 0.5rem",
-    fontSize: "0.8rem", outline: "none", cursor: "pointer", backdropFilter: "blur(6px)",
+    background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+    border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+    color: uiT?.headingText ?? "#fff",
+    borderRadius: "0.6rem", padding: "0.4rem 0.5rem",
+    fontSize: "0.8rem", outline: "none", cursor: "pointer",
   }
+  const optBg = uiT?.inputBg ?? "#1a1a2e"
   return (
     <div className="flex items-center gap-1.5 mt-2">
-      <select value={hour}   onChange={(e) => onHour(e.target.value)}   style={sel}>{hourOpts.map(h   => <option key={h}   style={{ background: "#1a1a2e" }}>{h}</option>)}</select>
-      <span className="text-white/30 text-sm font-light">:</span>
-      <select value={minute} onChange={(e) => onMinute(e.target.value)} style={sel}>{minuteOpts.map(m => <option key={m}   style={{ background: "#1a1a2e" }}>{m}</option>)}</select>
+      <select value={hour}   onChange={(e) => onHour(e.target.value)}   style={sel}>{hourOpts.map(h   => <option key={h}   style={{ background: optBg }}>{h}</option>)}</select>
+      <span className="text-sm font-light" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.3)" }}>:</span>
+      <select value={minute} onChange={(e) => onMinute(e.target.value)} style={sel}>{minuteOpts.map(m => <option key={m}   style={{ background: optBg }}>{m}</option>)}</select>
       <select value={period} onChange={(e) => onPeriod(e.target.value)} style={sel}>
-        <option style={{ background: "#1a1a2e" }}>AM</option>
-        <option style={{ background: "#1a1a2e" }}>PM</option>
+        <option style={{ background: optBg }}>AM</option>
+        <option style={{ background: optBg }}>PM</option>
       </select>
     </div>
   )
@@ -191,26 +200,22 @@ const COUNTRY_MODE_CONFIG = {
   excluded: { label: "Exclude countries",sub: "All except listed countries",      icon: X,        accent: "text-rose-400",   ring: "ring-rose-400/50",   activeBg: "bg-rose-400/10"   },
 }
 
-// ── COUNTRIES_PER_PAGE controls how many items render in the dropdown at once.
-// All countries are still searchable; this just avoids rendering 195 DOM nodes
-// when the list is unfiltered. Increase if you want more visible without scrolling.
 const COUNTRIES_PER_PAGE = 120
 
-function CountrySelector({ value, onChange, hasError }) {
+function CountrySelector({ value, onChange, hasError, uiT }) {
   const { mode, list } = value
-  const [search, setSearch]     = useState("")
-  const [open, setOpen]         = useState(false)
+  const [search, setSearch] = useState("")
+  const [open, setOpen]     = useState(false)
   const dropRef = useRef(null)
 
-  // Show all countries when searching, page-limit only when browsing the full list
   const filtered = ALL_COUNTRIES.filter(c =>
     c.toLowerCase().includes(search.toLowerCase()) && !list.includes(c)
   )
   const visible = search.trim() ? filtered : filtered.slice(0, COUNTRIES_PER_PAGE)
 
-  const setMode = (m) => onChange({ mode: m, list: m === "global" ? [] : list })
-  const addCountry = (c) => { onChange({ mode, list: [...list, c] }); setSearch("") }
-  const removeCountry = (c) => onChange({ mode, list: list.filter(x => x !== c) })
+  const setMode      = (m) => onChange({ mode: m, list: m === "global" ? [] : list })
+  const addCountry   = (c) => { onChange({ mode, list: [...list, c] }); setSearch("") }
+  const removeCountry= (c) => onChange({ mode, list: list.filter(x => x !== c) })
 
   useEffect(() => {
     const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false) }
@@ -235,26 +240,29 @@ function CountrySelector({ value, onChange, hasError }) {
               className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border text-center transition-all ${
                 active
                   ? `${cfg.activeBg} ring-1 ${cfg.ring} border-transparent`
-                  : "bg-white/[0.03] border-white/8 hover:bg-white/[0.06]"
+                  : "border-transparent"
               }`}
+              style={!active ? { background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)", borderColor: uiT?.borderSubtle ?? "rgba(255,255,255,0.08)" } : {}}
             >
-              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${active ? cfg.accent : "text-white/30"}`}
-                style={{ background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)" }}>
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold transition-colors ${active ? cfg.accent : ""}`}
+                style={{ color: active ? undefined : uiT?.mutedText, background: active ? "rgba(255,255,255,0.08)" : uiT?.inlineBg ?? "rgba(255,255,255,0.04)" }}>
                 <Icon className="w-3.5 h-3.5" />
               </span>
-              <span className={`text-[11px] font-semibold leading-tight transition-colors ${active ? "text-white" : "text-white/40"}`}>{cfg.label}</span>
-              <span className={`text-[9px] leading-tight transition-colors ${active ? "text-white/50" : "text-white/20"}`}>{cfg.sub}</span>
+              <span className={`text-[11px] font-semibold leading-tight transition-colors ${active ? "text-white" : ""}`}
+                style={{ color: active ? undefined : uiT?.mutedText }}>{cfg.label}</span>
+              <span className={`text-[9px] leading-tight transition-colors ${active ? "text-white/50" : ""}`}
+                style={{ color: active ? undefined : uiT?.mutedText, opacity: active ? 0.5 : 0.6 }}>{cfg.sub}</span>
             </button>
           )
         })}
       </div>
 
-      {/* Country picker — only shown when not global */}
+      {/* Country picker */}
       {needsCountries && (
         <div className="space-y-2">
-          {/* Selected tags */}
           {list.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl"
+              style={{ background: uiT?.surfaceBg ?? "rgba(255,255,255,0.03)", border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}` }}>
               {list.map(c => (
                 <span key={c} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border transition-all ${
                   mode === "included"
@@ -270,51 +278,56 @@ function CountrySelector({ value, onChange, hasError }) {
             </div>
           )}
 
-          {/* Searchable dropdown */}
           <div ref={dropRef} className="relative">
             <div
               onClick={() => setOpen(p => !p)}
               className={`flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${isError ? "ring-1 ring-red-400/50" : ""}`}
               style={{
-                background: "rgba(255,255,255,0.06)",
-                border: `1px solid ${isError ? "rgba(239,68,68,0.4)" : "rgba(255,255,255,0.12)"}`,
-                backdropFilter: "blur(6px)",
+                background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+                border: `1px solid ${isError ? "rgba(239,68,68,0.4)" : (uiT?.borderSubtle ?? "rgba(255,255,255,0.12)")}`,
               }}
             >
-              <Search className="w-4 h-4 text-white/30 shrink-0" />
+              <Search className="w-4 h-4 shrink-0" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.3)" }} />
               <input
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setOpen(true) }}
                 onFocus={() => setOpen(true)}
                 placeholder={`Search and add ${mode === "included" ? "allowed" : "excluded"} countries…`}
-                className="flex-1 bg-transparent text-white text-sm placeholder:text-white/25 outline-none"
+                className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-40"
+                style={{ color: uiT?.headingText ?? "#ffffff" }}
               />
-              {open ? <ChevronUp className="w-3.5 h-3.5 text-white/30 shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-white/30 shrink-0" />}
+              {open
+                ? <ChevronUp  className="w-3.5 h-3.5 shrink-0" style={{ color: uiT?.mutedText }} />
+                : <ChevronDown className="w-3.5 h-3.5 shrink-0" style={{ color: uiT?.mutedText }} />
+              }
             </div>
 
             {open && visible.length > 0 && (
               <div
                 className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-xl overflow-hidden max-h-48 overflow-y-auto"
-                style={{ background: "rgba(15,15,25,0.97)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(16px)", boxShadow: "0 16px 40px rgba(0,0,0,0.5)" }}
+                style={{
+                  background: uiT?.cardBg ?? "rgba(15,15,25,0.97)",
+                  border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+                  boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
+                }}
               >
                 {visible.map(c => (
                   <button
                     key={c} type="button"
                     onClick={() => { addCountry(c); setOpen(false) }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left text-white/70 hover:bg-white/5 hover:text-white transition-all"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-all"
+                    style={{ color: uiT?.bodyText ?? "rgba(255,255,255,0.7)" }}
+                    onMouseEnter={e => e.currentTarget.style.background = uiT?.surfaceBg2 ?? "rgba(255,255,255,0.05)"}
+                    onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                   >
-                    <Globe className="w-3 h-3 text-white/20 shrink-0" />
+                    <Globe className="w-3 h-3 shrink-0" style={{ color: uiT?.mutedText }} />
                     {c}
                   </button>
                 ))}
-                {/* Hint when browsing unfiltered and more countries exist beyond the page limit */}
                 {!search.trim() && filtered.length > COUNTRIES_PER_PAGE && (
-                  <p className="px-3 py-2 text-[11px] text-white/25 text-center border-t border-white/5">
+                  <p className="px-3 py-2 text-[11px] text-center" style={{ color: uiT?.mutedText, borderTop: `1px solid ${uiT?.borderBase}` }}>
                     Type to search all {filtered.length} remaining countries
                   </p>
-                )}
-                {filtered.length === 0 && (
-                  <p className="px-3 py-3 text-sm text-white/25 text-center">No countries match</p>
                 )}
               </div>
             )}
@@ -328,7 +341,7 @@ function CountrySelector({ value, onChange, hasError }) {
           )}
 
           {list.length > 0 && (
-            <p className="text-[11px] text-white/30">
+            <p className="text-[11px]" style={{ color: uiT?.mutedText }}>
               {mode === "included"
                 ? `${list.length} countr${list.length === 1 ? "y" : "ies"} allowed`
                 : `${list.length} countr${list.length === 1 ? "y" : "ies"} excluded · all others can join`}
@@ -341,7 +354,7 @@ function CountrySelector({ value, onChange, hasError }) {
 }
 
 // ─── LinksSection ─────────────────────────────────────────────────────────────
-function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded }) {
+function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded, uiT }) {
   const [showDropdown, setShowDropdown] = useState(false)
   const addLink    = (e, typeKey) => { e.preventDefault(); setLinks(prev => [...prev, { id: Date.now(), typeKey, value: "" }]); setShowDropdown(false); if (onLinkAdded) onLinkAdded() }
   const removeLink = (e, id)      => { e.preventDefault(); setLinks(prev => prev.filter(l => l.id !== id)) }
@@ -351,10 +364,15 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link2 className="w-4 h-4 text-white/50" />
-          <Label className="text-white font-semibold">Links <span className="text-red-400">*</span></Label>
+          <Link2 className="w-4 h-4" style={{ color: uiT?.mutedText }} />
+          <Label style={{ color: uiT?.headingText }} className="font-semibold">
+            Links <span className="text-red-400">*</span>
+          </Label>
           {links.length > 0 && (
-            <span className="text-xs text-white/30 bg-white/8 border border-white/10 px-1.5 py-0.5 rounded-full">{links.length}</span>
+            <span className="text-xs px-1.5 py-0.5 rounded-full"
+              style={{ color: uiT?.mutedText, background: uiT?.inlineBg, border: `1px solid ${uiT?.borderSubtle}` }}>
+              {links.length}
+            </span>
           )}
         </div>
         <div className="relative">
@@ -362,7 +380,7 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
             type="button"
             onClick={(e) => { e.preventDefault(); setShowDropdown(p => !p) }}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all"
-            style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)" }}
+            style={{ background: uiT?.inlineBg, borderColor: uiT?.borderSubtle, color: uiT?.mutedText }}
           >
             <Plus className="w-3.5 h-3.5" />
             Add Link
@@ -371,7 +389,11 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
           {showDropdown && (
             <div
               className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden min-w-[180px]"
-              style={{ background: "rgba(15,15,25,0.95)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(16px)", boxShadow: "0 16px 40px rgba(0,0,0,0.5)" }}
+              style={{
+                background: uiT?.cardBg ?? "rgba(15,15,25,0.95)",
+                border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+                boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
+              }}
             >
               {LINK_TYPES.map((lt) => {
                 const Icon = lt.icon
@@ -380,7 +402,7 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
                     className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left transition-all hover:bg-white/5 ${lt.color}`}
                   >
                     <span className={`w-6 h-6 rounded-md flex items-center justify-center ${lt.bg}`}><Icon className="w-3.5 h-3.5" /></span>
-                    <span className="text-white/80">{lt.label}</span>
+                    <span style={{ color: uiT?.bodyText ?? "rgba(255,255,255,0.8)" }}>{lt.label}</span>
                   </button>
                 )
               })}
@@ -391,11 +413,14 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
 
       {links.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-6 rounded-xl border border-dashed text-center transition-all"
-          style={{ background: hasError ? "rgba(239,68,68,0.04)" : "rgba(255,255,255,0.02)", borderColor: hasError ? "rgba(239,68,68,0.35)" : "rgba(255,255,255,0.10)" }}
+          className="flex flex-col items-center justify-center py-6 rounded-xl border-dashed border text-center transition-all"
+          style={{
+            background: hasError ? "rgba(239,68,68,0.04)" : uiT?.surfaceBg ?? "rgba(255,255,255,0.02)",
+            borderColor: hasError ? "rgba(239,68,68,0.35)" : uiT?.borderSubtle ?? "rgba(255,255,255,0.10)",
+          }}
         >
-          <Link2 className={`w-5 h-5 mb-2 ${hasError ? "text-red-400/40" : "text-white/20"}`} />
-          <p className={`text-xs ${hasError ? "text-red-400/70" : "text-white/25"}`}>
+          <Link2 className="w-5 h-5 mb-2" style={{ color: hasError ? "rgba(248,113,113,0.4)" : uiT?.mutedText }} />
+          <p className="text-xs" style={{ color: hasError ? "rgba(248,113,113,0.7)" : uiT?.mutedText }}>
             {hasError ? "At least one link is required." : 'No links added yet. Click "Add Link" to get started.'}
           </p>
         </div>
@@ -405,7 +430,9 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
             const cfg = LINK_TYPES.find(lt => lt.key === link.typeKey) || LINK_TYPES[0]
             const Icon = cfg.icon
             return (
-              <div key={link.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${cfg.border} transition-all`} style={{ background: "rgba(255,255,255,0.03)" }}>
+              <div key={link.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${cfg.border} transition-all`}
+                style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)" }}>
                 <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}><Icon className={`w-3.5 h-3.5 ${cfg.color}`} /></span>
                 <div className="flex-1 min-w-0">
                   <p className={`text-[10px] font-medium mb-0.5 ${cfg.color}`}>{cfg.label}</p>
@@ -413,11 +440,13 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
                     onFocus={onFocus} onBlur={onBlur} type="url"
                     value={link.value} onChange={(e) => updateLink(link.id, e.target.value)}
                     placeholder={cfg.placeholder}
-                    className="h-7 text-xs text-white placeholder:text-white/25 border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    style={{ boxShadow: "none" }}
+                    className="h-7 text-xs placeholder:text-white/25 border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    style={{ color: uiT?.headingText ?? "#ffffff", boxShadow: "none" }}
                   />
                 </div>
-                <button type="button" onClick={(e) => removeLink(e, link.id)} className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all">
+                <button type="button" onClick={(e) => removeLink(e, link.id)}
+                  className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:text-red-400 hover:bg-red-400/10"
+                  style={{ color: uiT?.mutedText }}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -430,7 +459,7 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded 
 }
 
 // ─── PrizePool ────────────────────────────────────────────────────────────────
-function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
+function PrizePool({ prizes, setPrizes, onFocus, onBlur, uiT }) {
   const addPrize      = (e)              => { e.preventDefault(); setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "" }]) }
   const removePrize   = (e, id)          => { e.preventDefault(); prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id)) }
   const updatePrize   = (id, field, val) => setPrizes(prev => prev.map(p => p.id === id ? { ...p, [field]: val } : p))
@@ -452,23 +481,27 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
           <Trophy className="w-3.5 h-3.5 text-amber-400" />
         </div>
         <div>
-          <Label className="text-white font-semibold leading-none">Prize Pool <span className="text-red-400">*</span></Label>
+          <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>
+            Prize Pool <span className="text-red-400">*</span>
+          </Label>
           {total > 0 && <p className="text-xs text-amber-400/70 mt-0.5">≈ ${total.toLocaleString()} total</p>}
         </div>
       </div>
 
-      <div className="p-3 rounded-xl" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+      <div className="p-3 rounded-xl"
+        style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)", border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}` }}>
         <div className="flex items-center gap-1.5 mb-2">
           <Sparkles className="w-3 h-3 text-amber-400/60" />
-          <span className="text-[10px] font-medium text-white/30 uppercase tracking-widest">Quick templates</span>
+          <span className="text-[10px] font-medium uppercase tracking-widest" style={{ color: uiT?.mutedText }}>Quick templates</span>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {PRIZE_TEMPLATES.map((tmpl) => (
             <button key={tmpl.name} type="button" onClick={(e) => applyTemplate(e, tmpl)}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] text-white/50 border border-white/8 bg-white/[0.03] hover:bg-amber-400/10 hover:text-amber-300 hover:border-amber-400/25 transition-all"
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-all hover:bg-amber-400/10 hover:text-amber-300 hover:border-amber-400/25"
+              style={{ color: uiT?.mutedText, background: uiT?.inlineBg, borderColor: uiT?.borderBase }}
             >
               {tmpl.name}
-              <span className="text-white/25 text-[10px]">{tmpl.value}</span>
+              <span className="text-[10px]" style={{ color: uiT?.mutedText, opacity: 0.6 }}>{tmpl.value}</span>
             </button>
           ))}
         </div>
@@ -486,34 +519,34 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
                   </span>
                   <div className="flex-1 grid grid-cols-2 gap-2">
                     <div>
-                      <p className="text-[9px] text-white/25 font-medium uppercase tracking-widest mb-1">Prize Name</p>
+                      <p className="text-[9px] font-medium uppercase tracking-widest mb-1" style={{ color: uiT?.mutedText }}>Prize Name</p>
                       <Input
                         onFocus={onFocus} onBlur={onBlur}
                         value={prize.name}
                         onChange={(e) => updatePrize(prize.id, "name", e.target.value.slice(0, LIMITS.prize_name))}
                         placeholder="e.g. 1st Place"
                         maxLength={LIMITS.prize_name}
-                        className="h-8 text-sm text-white placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
-                        style={{ borderRadius: "0.5rem" }}
+                        className="h-8 text-sm placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
+                        style={{ borderRadius: "0.5rem", color: uiT?.headingText }}
                       />
-                      <CharCount current={prize.name.length} max={LIMITS.prize_name} />
+                      <CharCount current={prize.name.length} max={LIMITS.prize_name} uiT={uiT} />
                     </div>
                     <div>
-                      <p className="text-[9px] text-white/25 font-medium uppercase tracking-widest mb-1">Value</p>
+                      <p className="text-[9px] font-medium uppercase tracking-widest mb-1" style={{ color: uiT?.mutedText }}>Value</p>
                       <Input
                         onFocus={onFocus} onBlur={onBlur}
                         value={prize.value}
                         onChange={(e) => updatePrize(prize.id, "value", e.target.value)}
                         placeholder="$5,000"
-                        className="h-8 text-sm text-white placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
-                        style={{ borderRadius: "0.5rem" }}
+                        className="h-8 text-sm placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
+                        style={{ borderRadius: "0.5rem", color: uiT?.headingText }}
                       />
                     </div>
                   </div>
                   {prizes.length > 1 && (
                     <button type="button" onClick={(e) => removePrize(e, prize.id)}
-                      className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-all mt-0.5"
-                    >
+                      className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:text-red-400 hover:bg-red-400/10 mt-0.5"
+                      style={{ color: uiT?.mutedText }}>
                       <X className="w-3.5 h-3.5" />
                     </button>
                   )}
@@ -525,8 +558,7 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
       </div>
 
       <button type="button" onClick={addPrize}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-amber-500/25 text-amber-400/60 hover:text-amber-300 hover:bg-amber-500/8 hover:border-amber-500/40 text-sm transition-all"
-      >
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-amber-500/25 text-amber-400/60 hover:text-amber-300 hover:bg-amber-500/8 hover:border-amber-500/40 text-sm transition-all">
         <Plus className="w-4 h-4" /> Add Prize
       </button>
     </div>
@@ -534,16 +566,22 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur }) {
 }
 
 // ─── TermsCheckbox ────────────────────────────────────────────────────────────
-function TermsCheckbox({ checked, onChange, hasError, addToast }) {
+function TermsCheckbox({ checked, onChange, hasError, addToast, uiT }) {
   return (
     <div
-      className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer select-none ${
-        hasError
-          ? "bg-red-400/5 border-red-400/30"
+      className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer select-none`}
+      style={{
+        background: hasError
+          ? "rgba(239,68,68,0.05)"
           : checked
-            ? "bg-white/[0.04] border-white/15"
-            : "bg-white/[0.025] border-white/8 hover:bg-white/[0.04] hover:border-white/12"
-      }`}
+            ? (uiT?.surfaceBg2 ?? "rgba(255,255,255,0.04)")
+            : (uiT?.surfaceBg ?? "rgba(255,255,255,0.025)"),
+        borderColor: hasError
+          ? "rgba(239,68,68,0.30)"
+          : checked
+            ? (uiT?.borderMid ?? "rgba(255,255,255,0.15)")
+            : (uiT?.borderBase ?? "rgba(255,255,255,0.08)"),
+      }}
       onClick={() => onChange(!checked)}
     >
       <div className={`w-5 h-5 rounded-md shrink-0 mt-0.5 flex items-center justify-center border transition-all ${
@@ -551,18 +589,20 @@ function TermsCheckbox({ checked, onChange, hasError, addToast }) {
           ? "bg-fuchsia-500 border-fuchsia-500"
           : hasError
             ? "bg-red-400/10 border-red-400/50"
-            : "bg-white/5 border-white/20"
-      }`}>
+            : ""
+      }`}
+        style={!checked && !hasError ? { background: uiT?.inlineBg, borderColor: uiT?.borderMid } : {}}>
         {checked && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
       </div>
       <div className="flex-1">
-        <p className={`text-sm leading-relaxed transition-colors ${checked ? "text-white/80" : "text-white/50"}`}>
+        <p className="text-sm leading-relaxed transition-colors"
+          style={{ color: checked ? (uiT?.bodyText ?? "rgba(255,255,255,0.8)") : (uiT?.mutedText ?? "rgba(255,255,255,0.5)") }}>
           I confirm that the information provided is accurate and I agree to the{" "}
-
           <PostingTermsDialog trigger={
-            <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">Submission Guidelines </button>
-          } />
-          .
+            <button type="button" className="cursor-pointer underline underline-offset-2 text-purple-400/70 hover:text-purple-200 transition-colors">
+              Submission Guidelines
+            </button>
+          } />.
         </p>
         {hasError && (
           <p className="text-xs text-red-400/80 mt-1.5 flex items-center gap-1.5">
@@ -576,16 +616,24 @@ function TermsCheckbox({ checked, onChange, hasError, addToast }) {
 }
 
 // ─── Section ──────────────────────────────────────────────────────────────────
-function Section({ children, className = "" }) {
+function Section({ children, className = "", uiT }) {
   return (
-    <div className={`rounded-2xl p-5 ${className}`} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+    <div
+      className={`rounded-2xl p-5 ${className}`}
+      style={{
+        background: uiT?.surfaceBg ?? "rgba(255,255,255,0.03)",
+        border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}`,
+      }}
+    >
       {children}
     </div>
   )
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
-export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId, addToast }) {
+// uiT is the UI theme token object from the parent dashboard (buildUiTheme(isDark)).
+// It is optional — when omitted the component falls back to original dark-mode styling.
+export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId, addToast, uiT }) {
   const [isLoading, setIsLoading]           = useState(false)
   const [retryCount, setRetryCount]         = useState(0)
   const [hasDraft, setHasDraft]             = useState(false)
@@ -608,7 +656,6 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   const [endMinute,   setEndMinute]   = useState("00")
   const [endPeriod,   setEndPeriod]   = useState("AM")
 
-  // ── Draft persistence ────────────────────────────────────────────────────
   useEffect(() => {
     saveDraft(formData)
     setHasDraft(Object.entries(formData).some(([k, v]) => v && v !== EMPTY_FORM[k]))
@@ -633,20 +680,22 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
     setFormData(prev => ({ ...prev, [field]: limit ? raw.slice(0, limit) : raw }))
   }
 
+  // Input style — adapts to uiT when provided
   const inputStyle = {
-    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)",
-    color: "#fff", backdropFilter: "blur(6px)", transition: "all 0.2s ease",
+    background:  uiT?.inputBg    ?? "rgba(255,255,255,0.06)",
+    borderColor: uiT?.borderSubtle ?? "rgba(255,255,255,0.12)",
+    color:       uiT?.headingText  ?? "#ffffff",
   }
+
   const handleFocus = (e) => {
     e.target.style.borderColor = t.primaryFull
     e.target.style.boxShadow   = `0 0 0 2px ${t.primaryFull}35, 0 4px 18px ${t.primaryFull}20`
   }
   const handleBlur = (e) => {
-    e.target.style.borderColor = "rgba(255,255,255,0.10)"
+    e.target.style.borderColor = uiT?.borderSubtle ?? "rgba(255,255,255,0.10)"
     e.target.style.boxShadow   = "none"
   }
 
-  // ── Serialize countries for payload ─────────────────────────────────────
   const serializeCountries = () => {
     if (countries.mode === "global") return "Global"
     if (countries.list.length === 0)  return null
@@ -654,7 +703,6 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
     return prefix + countries.list.join(", ")
   }
 
-  // ── Submit ───────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     let hasErrors = false
 
@@ -743,20 +791,25 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
     setIsLoading(false); setRetryCount(0)
   }
 
-  // ── Loading org ──────────────────────────────────────────────────────────
   if (!currentOrg) {
     return (
-      <div className="rounded-xl p-12 text-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }}>
+      <div className="rounded-xl p-12 text-center"
+        style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.05)", border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.10)"}` }}>
         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: t.primaryText }} />
-        <p style={{ color: t.mutedText }}>Loading organization…</p>
+        <p style={{ color: uiT?.mutedText ?? t.mutedText }}>Loading organization…</p>
       </div>
     )
   }
 
+  const labelColor = uiT?.mutedText ?? "rgba(255,255,255,0.6)"
+  const headingColor = uiT?.headingText ?? "#ffffff"
+
   return (
     <div style={t.cssVars} className="space-y-4">
+
       {/* ── Pending notice ── */}
-      <div className="flex items-start gap-2.5 p-3.5 rounded-xl" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
+      <div className="flex items-start gap-2.5 p-3.5 rounded-xl"
+        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
         <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <p className="text-amber-200/80 text-sm leading-relaxed">
           This submission will be <span className="text-amber-300 font-medium">reviewed by the super admin</span> before going live.
@@ -765,7 +818,8 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
 
       {/* ── Auto-save draft indicator ── */}
       {hasDraft && !draftDismissed && (
-        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl" style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)" }}>
+        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl"
+          style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)" }}>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
             <span className="text-amber-200/70 text-xs">Draft auto-saved</span>
@@ -778,120 +832,127 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       )}
 
       {/* ── Submitting as ── */}
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl" style={{ background: t.badgeBgPrimary, border: t.borderColorLight }}>
+      <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl"
+        style={{ background: uiT?.surfaceBg2 ?? t.badgeBgPrimary, border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.1)"}` }}>
         <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: t.primaryFull }} />
-        <span className="text-white/40 text-sm">Submitting as</span>
+        <span className="text-sm" style={{ color: uiT?.mutedText }}>Submitting as</span>
         <span className="font-semibold text-sm" style={{ color: t.primaryText }}>{currentOrg.name}</span>
       </div>
 
       {/* ── Basic Info ── */}
-      <Section>
-        <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-4">Basic Info</p>
+      <Section uiT={uiT}>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: labelColor }}>Basic Info</p>
         <div className="space-y-4">
+
           <div className="space-y-1.5">
-            <Label className="text-white/80 text-sm">Title <span className="text-red-400">*</span></Label>
+            <Label className="text-sm" style={{ color: labelColor }}>Title <span className="text-red-400">*</span></Label>
             <Input
               onFocus={handleFocus} onBlur={handleBlur}
-              value={formData.title}
-              onChange={(e) => setField("title", e.target.value)}
-              maxLength={LIMITS.title}
-              style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+              value={formData.title} onChange={(e) => setField("title", e.target.value)}
+              maxLength={LIMITS.title} style={inputStyle}
+              className="rounded-xl placeholder:opacity-30"
               placeholder="AI Hackathon 2025"
             />
-            <CharCount current={formData.title.length} max={LIMITS.title} />
+            <CharCount current={formData.title.length} max={LIMITS.title} uiT={uiT} />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-white/80 text-sm">Description <span className="text-red-400">*</span></Label>
+            <Label className="text-sm" style={{ color: labelColor }}>Description <span className="text-red-400">*</span></Label>
             <Textarea
               onFocus={handleFocus} onBlur={handleBlur}
-              value={formData.des}
-              onChange={(e) => setField("des", e.target.value)}
-              maxLength={LIMITS.des}
-              style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl resize-none"
+              value={formData.des} onChange={(e) => setField("des", e.target.value)}
+              maxLength={LIMITS.des} style={inputStyle}
+              className="rounded-xl resize-none placeholder:opacity-30"
               rows={4} placeholder="Describe your competition…"
             />
-            <CharCount current={formData.des.length} max={LIMITS.des} />
+            <CharCount current={formData.des.length} max={LIMITS.des} uiT={uiT} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-white/80 text-sm">Author <span className="text-red-400">*</span></Label>
+              <Label className="text-sm" style={{ color: labelColor }}>Author <span className="text-red-400">*</span></Label>
               <Input
                 onFocus={handleFocus} onBlur={handleBlur}
-                value={formData.author}
-                onChange={(e) => setField("author", e.target.value)}
-                maxLength={LIMITS.author}
-                style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+                value={formData.author} onChange={(e) => setField("author", e.target.value)}
+                maxLength={LIMITS.author} style={inputStyle}
+                className="rounded-xl placeholder:opacity-30"
                 placeholder="First Name, Last Name"
               />
-              <CharCount current={formData.author.length} max={LIMITS.author} />
+              <CharCount current={formData.author.length} max={LIMITS.author} uiT={uiT} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-white/80 text-sm">Open To <span className="text-red-400">*</span></Label>
+              <Label className="text-sm" style={{ color: labelColor }}>Open To <span className="text-red-400">*</span></Label>
               <Input
                 onFocus={handleFocus} onBlur={handleBlur}
-                value={formData.open_to}
-                onChange={(e) => setField("open_to", e.target.value)}
-                maxLength={LIMITS.open_to}
-                style={inputStyle} className="text-white placeholder:text-white/20 rounded-xl"
+                value={formData.open_to} onChange={(e) => setField("open_to", e.target.value)}
+                maxLength={LIMITS.open_to} style={inputStyle}
+                className="rounded-xl placeholder:opacity-30"
                 placeholder="Students, Everyone, 18+"
               />
-              <CharCount current={formData.open_to.length} max={LIMITS.open_to} />
+              <CharCount current={formData.open_to.length} max={LIMITS.open_to} uiT={uiT} />
             </div>
           </div>
 
-          {/* Countries */}
           <div className="space-y-2">
-            <Label className="text-white/80 text-sm">
+            <Label className="text-sm" style={{ color: labelColor }}>
               Countries <span className="text-red-400">*</span>
             </Label>
-            <CountrySelector value={countries} onChange={setCountries} hasError={countriesError} />
+            <CountrySelector value={countries} onChange={setCountries} hasError={countriesError} uiT={uiT} />
           </div>
+
         </div>
       </Section>
 
       {/* ── Date & Time ── */}
-      <Section>
-        <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-4">Date & Time</p>
+      <Section uiT={uiT}>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: labelColor }}>Date & Time</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <Label className="text-white/80 text-sm block mb-1.5">Start Date <span className="text-red-400">*</span></Label>
-            <DatePicker selected={startDate} onChange={setStartDate} dateFormat="yyyy/MM/dd" customInput={<CalendarInput />} />
-            <TimeSelect hour={startHour12} minute={startMinute} period={startPeriod} onHour={setStartHour12} onMinute={setStartMinute} onPeriod={setStartPeriod} />
+            <Label className="text-sm block mb-1.5" style={{ color: labelColor }}>Start Date <span className="text-red-400">*</span></Label>
+            <DatePicker
+              selected={startDate} onChange={setStartDate} dateFormat="yyyy/MM/dd"
+              customInput={<CalendarInput uiT={uiT} />}
+            />
+            <TimeSelect hour={startHour12} minute={startMinute} period={startPeriod}
+              onHour={setStartHour12} onMinute={setStartMinute} onPeriod={setStartPeriod} uiT={uiT} />
           </div>
           <div>
-            <Label className="text-white/80 text-sm block mb-1.5">End Date <span className="text-red-400">*</span></Label>
-            <DatePicker selected={endDate} onChange={setEndDate} dateFormat="yyyy/MM/dd" customInput={<CalendarInput />} />
-            <TimeSelect hour={endHour12} minute={endMinute} period={endPeriod} onHour={setEndHour12} onMinute={setEndMinute} onPeriod={setEndPeriod} />
+            <Label className="text-sm block mb-1.5" style={{ color: labelColor }}>End Date <span className="text-red-400">*</span></Label>
+            <DatePicker
+              selected={endDate} onChange={setEndDate} dateFormat="yyyy/MM/dd"
+              customInput={<CalendarInput uiT={uiT} />}
+            />
+            <TimeSelect hour={endHour12} minute={endMinute} period={endPeriod}
+              onHour={setEndHour12} onMinute={setEndMinute} onPeriod={setEndPeriod} uiT={uiT} />
           </div>
         </div>
       </Section>
 
       {/* ── Prize Pool ── */}
-      <Section>
-        <PrizePool prizes={prizes} setPrizes={setPrizes} onFocus={handleFocus} onBlur={handleBlur} />
+      <Section uiT={uiT}>
+        <PrizePool prizes={prizes} setPrizes={setPrizes} onFocus={handleFocus} onBlur={handleBlur} uiT={uiT} />
       </Section>
 
       {/* ── Links ── */}
-      <Section>
-        <LinksSection links={links} setLinks={setLinks} onFocus={handleFocus} onBlur={handleBlur} hasError={linkError} onLinkAdded={() => setLinkError(false)} />
+      <Section uiT={uiT}>
+        <LinksSection links={links} setLinks={setLinks} onFocus={handleFocus} onBlur={handleBlur}
+          hasError={linkError} onLinkAdded={() => setLinkError(false)} uiT={uiT} />
       </Section>
 
-      {/* ── Terms & Conditions ── */}
+      {/* ── Terms ── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1">
-          <ShieldCheck className="w-4 h-4 text-white/30" />
-          <Label className="text-white/50 text-xs uppercase tracking-widest font-semibold">Agreement</Label>
+          <ShieldCheck className="w-4 h-4" style={{ color: labelColor }} />
+          <Label className="text-xs uppercase tracking-widest font-semibold" style={{ color: labelColor }}>Agreement</Label>
         </div>
-        <TermsCheckbox addToast={addToast} checked={termsAccepted} onChange={(v) => { setTermsAccepted(v); if (v) setTermsError(false) }} hasError={termsError} />
+        <TermsCheckbox addToast={addToast} checked={termsAccepted}
+          onChange={(v) => { setTermsAccepted(v); if (v) setTermsError(false) }}
+          hasError={termsError} uiT={uiT} />
       </div>
 
       {/* ── Submit ── */}
       <Button
-        type="button"
-        onClick={handleSubmit}
-        disabled={isLoading}
+        type="button" onClick={handleSubmit} disabled={isLoading}
         className="w-full text-white border-0 rounded-xl h-11 text-sm font-semibold transition-all duration-300"
         style={{ background: isLoading ? t.badgeBgPrimary : t.buttonGradient, boxShadow: t.buttonShadow, opacity: isLoading ? 0.7 : 1 }}
       >

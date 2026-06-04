@@ -114,7 +114,7 @@ function OrgPagination({ currentPage, totalPages, onPageChange, ac }) {
       <div className="flex items-center gap-1">
         {withEllipsis.map((item, idx) =>
           item === "…"
-            ? <span key={`e-${idx}`} className="text-white/20 text-[11px] px-1">…</span>
+            ? <span key={`e-${idx}`} className="text-[11px] px-1" style={{ color: "rgb(var(--text-faint))"}}>…</span>
             : (
               <button key={item} onClick={() => onPageChange(item)}
                 className="w-6 h-6 rounded-md text-[11px] font-medium transition-all"
@@ -326,7 +326,7 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
 
   if (!currentOrg?.id) {
     return (
-      <div className="flex items-center justify-center py-20 text-white/20 gap-3">
+      <div className="flex items-center justify-center py-20 gap-3" style={{ color: "rgb(var(--text-faint))"}}>
         <Loader2 className="w-5 h-5 animate-spin" style={{ color: p }} />
         <span className="text-sm">Loading organization data…</span>
       </div>
@@ -376,8 +376,9 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
             <input
               value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search by title or author…"
-              className="ovs-search w-full pl-9 pr-3 h-9 rounded-lg bg-black/25 text-white text-sm placeholder:text-white/25 transition-all"
-              style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+              className="ovs-search w-full pl-9 pr-3 h-9 rounded-lg bg-black/25 text-sm placeholder:text-white/25 transition-all"
+              
+              style={{ border: "1px solid rgba(255,255,255,0.08)",  color: "rgb(var(--text-faint))"}}
             />
           </div>
         </div>
@@ -783,7 +784,7 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
           {/* Description */}
           {item.des && (
             <DetailBlock icon={<AlignLeft className="w-3.5 h-3.5" />} label="Description" ac={ac}>
-              <p className="text-white/65 text-sm leading-relaxed">{item.des}</p>
+              <p className="text-sm leading-relaxed" style={{ color: "rgb(var((--text-primary))"}}>{item.des}</p>
             </DetailBlock>
           )}
 
@@ -829,7 +830,7 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
               {/* Countries */}
               {item.countries && (
                 <DetailBlock icon={<MapPin className="w-3.5 h-3.5" />} label="Countries" ac={ac}>
-                  <p className="text-white/80 text-sm">{item.countries}</p>
+                  <p className="text-sm" style={{ color: "rgb(var(--text-primary))"}}>{item.countries}</p>
                 </DetailBlock>
               )}
 
