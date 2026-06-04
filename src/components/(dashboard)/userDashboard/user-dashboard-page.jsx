@@ -10,6 +10,8 @@ import {
   LayoutDashboard, ChevronRight, Menu, X, FileText,
   Clock, CheckCircle2, AlertCircle, Sparkles,
   ArrowUpRight, PenLine,
+  Sun,
+  Moon,
 } from "lucide-react"
 
 import { useAuth }            from "@/components/(auth)/authContext"
@@ -22,6 +24,7 @@ import { useNotifications }   from "@/components/notifications/use-notification"
 import { Toast }              from "../toast"
 import { useToast }           from "@/components/use-toast"
 import UserViewableSection    from "./user-viewable"
+import { useTheme } from "next-themes"
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const P  = "#c026d3"  // primary
@@ -43,6 +46,58 @@ function StatusPill({ status }) {
     </span>
   )
 }
+
+// ── Theme Toggle Switch ───────────────────────────────────────────────────────
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+
+  return (
+    <div className="w-full flex items-center gap-3 px-3 py-2.5">
+      <Sun
+        className="w-[18px] h-[18px] shrink-0"
+        style={{ color: isDark ? "rgb(var(--text-faint))" : "#f59e0b" }}
+      />
+      <button
+        role="switch"
+        aria-checked={isDark}
+        onClick={() => setTheme(isDark ? "light" : "dark")}
+        className="relative shrink-0 rounded-full transition-all duration-300 focus-visible:outline-none"
+        style={{
+          width: 36,
+          height: 20,
+          background: isDark
+            ? "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))"
+            : "rgb(var(--surface-border))",
+          boxShadow: isDark ? "0 0 8px rgb(var(--brand-500) / 0.4)" : "none",
+          border: isDark
+            ? "1px solid rgb(var(--brand-500) / 0.4)"
+            : "1px solid rgb(var(--surface-border))",
+        }}
+      >
+        <span
+          className="absolute top-[2px] flex items-center justify-center rounded-full bg-white transition-all duration-300"
+          style={{
+            width: 16,
+            height: 16,
+            left: isDark ? "calc(100% - 18px)" : "2px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
+          }}
+        >
+          {isDark
+            ? <Moon className="w-2.5 h-2.5" style={{ color: "rgb(var(--brand-600))" }} />
+            : <Sun  className="w-2.5 h-2.5" style={{ color: "#f59e0b" }} />
+          }
+        </span>
+      </button>
+      <Moon
+        className="w-[18px] h-[18px] shrink-0"
+        style={{ color: isDark ? "rgb(var(--brand-400))" : "rgb(var(--text-faint))" }}
+      />
+    </div>
+  )
+}
+
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, accent, delay = 0, onClick }) {
@@ -160,6 +215,17 @@ function SidebarContent({ nav, activeTab, setActiveTab, profile, onClose, router
 
       {/* Footer */}
       <div className="space-y-2 pt-3" style={{ borderTop: `1px solid ${P}15` }}>
+
+        {/* Theme toggle */}
+          <div
+            className="rounded-xl mb-1"
+            style={{
+              background: "rgb(var(--surface-raised) / 0.5)",
+              border: "1px solid rgb(var(--brand-500) / 0.2)",
+            }}
+          >
+            <ThemeToggle />
+          </div>
         {/* User chip */}
         <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
           style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${P}18` }}>

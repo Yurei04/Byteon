@@ -27,7 +27,7 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
 
   const handleSubmit = async () => {
     if (!currentUser || !authUserId) {
-      setAlert({ type: "error", message: "User not found. Please refresh and log in again." }); return
+      addToast("error", "User not found. Please refresh and log in again."); return
     }
     if (!formData.title || !formData.content) {
       addToast("error", "Please add a Title and Content"); return
@@ -62,7 +62,7 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
       setImageError(false)
       setTimeout(() => { if (onSuccess) onSuccess() }, 1500)
     } catch (error) {
-      setAlert({ type: "error", message: `Submission failed: ${error.message}` })
+      addToast("error", "Submission Failed Try Again")
     } finally {
       setIsLoading(false)
     }
