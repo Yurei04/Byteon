@@ -26,7 +26,6 @@ import {
   BookOpenCheck, ScrollText, PauseCircle, Info,
 } from "lucide-react"
 
-// UTC date + time formatter
 function formatUTCDateTime(dateString) {
   if (!dateString) return "—"
   const date = new Date(dateString)
@@ -40,6 +39,7 @@ function formatUTCDateTime(dateString) {
 import { notifyPostApproved, notifyPostRejected } from "@/lib/notification"
 
 const ITEMS_PER_PAGE = 10
+
 
 // ── Guidelines content ─────────────────────────────────────────────────────────
 const APPROVAL_GUIDELINES = [
@@ -83,7 +83,7 @@ const APPROVAL_GUIDELINES = [
 const REJECTION_GUIDELINES = [
   {
     title: "1 · General Rule",
-    color: "text-red-300",
+    color: "text-red-500 dark:text-red-300",
     items: [
       "Any submission violating platform standards of accuracy, relevance, clarity, or appropriateness may be rejected.",
       "The submitting organization receives a clear rejection reason to guide improvements and resubmission.",
@@ -91,7 +91,7 @@ const REJECTION_GUIDELINES = [
   },
   {
     title: "2 · Hackathon / Announcement Rejections",
-    color: "text-orange-300",
+    color: "text-orange-500 dark:text-orange-300",
     items: [
       "Invalid or Incomplete Information — missing title, description, date, or organizer details; unclear or misleading event details.",
       "Irrelevant Content — event is not related to hackathons, innovation, or technology.",
@@ -102,7 +102,7 @@ const REJECTION_GUIDELINES = [
   },
   {
     title: "3 · Blog Post Rejections",
-    color: "text-pink-300",
+    color: "text-pink-500 dark:text-pink-300",
     items: [
       "Low-Quality Content — poor grammar, unclear structure, or lack of substance.",
       "Irrelevant Topics — not related to hackathons, learning, or innovation.",
@@ -112,7 +112,7 @@ const REJECTION_GUIDELINES = [
   },
   {
     title: "4 · Learning Resource Rejections",
-    color: "text-violet-300",
+    color: "text-violet-500 dark:text-violet-300",
     items: [
       "Content is inaccurate or outdated.",
       "Not aligned with hackathon learning objectives.",
@@ -121,7 +121,7 @@ const REJECTION_GUIDELINES = [
   },
   {
     title: "5 · Rejection Process Flow",
-    color: "text-blue-300",
+    color: "text-blue-500 dark:text-blue-300",
     items: [
       "Organizer / user submits content → system stores as 'Pending'.",
       "Super Admin reviews the submission in the approval queue.",
@@ -132,6 +132,7 @@ const REJECTION_GUIDELINES = [
   },
 ]
 
+
 // ── Guidelines Dialog ──────────────────────────────────────────────────────────
 function GuidelinesDialog({ open, onClose, mode }) {
   const isApproval = mode === "approval"
@@ -139,26 +140,35 @@ function GuidelinesDialog({ open, onClose, mode }) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className={`max-w-lg bg-gradient-to-br ${
-        isApproval
-          ? "from-slate-950 via-emerald-950/20 to-slate-950 border-emerald-500/20"
-          : "from-slate-950 via-rose-950/20 to-slate-950 border-red-500/20"
-        } backdrop-blur-xl border shadow-2xl`}>
+      <DialogContent
+        className="max-w-lg backdrop-blur-xl border shadow-2xl"
+        style={{
+          background: isApproval
+            ? "linear-gradient(rgb(var(--bg-base))"
+            : "linear-gradient(135deg, rgb(var(--bg-base)), rgba(239,68,68,0.04), rgb(var(--bg-base)))",
+          borderColor: isApproval ? "rgba(5,150,105,0.2)" : "rgba(239,68,68,0.2)",
+        }}
+      >
         <DialogHeader>
           <div className="flex items-center gap-3 mb-1">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-              isApproval
-                ? "bg-emerald-500/10 border border-emerald-500/25"
-                : "bg-red-500/10 border border-red-500/25"}`}>
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+              style={{
+                background: isApproval ? "rgba(5,150,105,0.1)" : "rgba(239,68,68,0.1)",
+                border: `1px solid ${isApproval ? "rgba(5,150,105,0.25)" : "rgba(239,68,68,0.25)"}`,
+              }}
+            >
               {isApproval
-                ? <BookOpenCheck className="w-4 h-4 text-emerald-400" />
-                : <ScrollText   className="w-4 h-4 text-red-400" />}
+                ? <BookOpenCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+                : <ScrollText   className="w-4 h-4 text-red-500 dark:text-red-400" />}
             </div>
             <div>
-              <DialogTitle className={`text-base font-semibold ${isApproval ? "text-emerald-200" : "text-red-200"}`}>
+              <DialogTitle className={`text-base font-semibold ${isApproval ? "text-emerald-700 dark:text-emerald-200" : "text-red-700 dark:text-red-200"}`}>
                 {isApproval ? "Approval Guidelines" : "Rejection Rules & Guidelines"}
               </DialogTitle>
-              <p className="text-white/30 text-xs mt-0.5">Platform policy — read before acting on a submission</p>
+              <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
+                Platform policy — read before acting on a submission
+              </p>
             </div>
           </div>
         </DialogHeader>
@@ -168,14 +178,18 @@ function GuidelinesDialog({ open, onClose, mode }) {
             {sections.map((sec, i) => (
               <div key={i}>
                 <p className={`text-[11px] font-bold uppercase tracking-widest mb-2 ${
-                  sec.color ?? (isApproval ? "text-emerald-400" : "text-red-400")}`}>
+                  sec.color ?? (isApproval ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400")
+                }`}>
                   {sec.title}
                 </p>
                 <ul className="space-y-1.5">
                   {sec.items.map((item, j) => (
-                    <li key={j} className="flex items-start gap-2 text-white/55 text-xs leading-relaxed">
-                      <span className={`mt-[5px] w-1.5 h-1.5 rounded-full shrink-0 ${
-                        isApproval ? "bg-emerald-500/60" : "bg-red-500/60"}`} />
+                    <li key={j} className="flex items-start gap-2 text-xs leading-relaxed"
+                      style={{ color: "rgb(var(--text-muted))" }}>
+                      <span
+                        className="mt-[5px] w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: isApproval ? "rgba(5,150,105,0.6)" : "rgba(239,68,68,0.6)" }}
+                      />
                       {item}
                     </li>
                   ))}
@@ -188,6 +202,7 @@ function GuidelinesDialog({ open, onClose, mode }) {
     </Dialog>
   )
 }
+
 
 // ── Pagination ─────────────────────────────────────────────────────────────────
 function Pagination({ currentPage, totalPages, onPageChange }) {
@@ -202,34 +217,59 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
     if (idx > 0 && page - pages[idx - 1] > 1) withEllipsis.push("…")
     withEllipsis.push(page)
   })
+
   return (
-    <div className="flex items-center justify-between px-3 py-2 border-t border-white/6 shrink-0 bg-black/10">
-      <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}
-        className="flex cursor-pointer  items-center gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
+    <div
+      className="flex items-center justify-between px-3 py-2 shrink-0"
+      style={{
+        borderTop: "1px solid rgb(var(--surface-border) / 0.2)",
+        background: "rgb(var(--surface-raised) / 0.2)",
+      }}
+    >
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex cursor-pointer items-center gap-1 px-2 py-1 rounded-lg text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        style={{ border: "1px solid rgb(var(--surface-border) / 0.4)", color: "rgb(var(--text-faint))" }}
+        onMouseEnter={e => { e.currentTarget.style.color = "rgb(var(--text-secondary))"; e.currentTarget.style.background = "rgb(var(--surface-raised) / 0.5)" }}
+        onMouseLeave={e => { e.currentTarget.style.color = "rgb(var(--text-faint))"; e.currentTarget.style.background = "transparent" }}
+      >
         <ChevronLeft className="w-3 h-3" /> Prev
       </button>
       <div className="flex items-center gap-1">
         {withEllipsis.map((item, idx) =>
           item === "…" ? (
-            <span key={`ellipsis-${idx}`} className="text-white/20 text-[11px] px-1">…</span>
+            <span key={`ellipsis-${idx}`} className="text-[11px] px-1" style={{ color: "rgb(var(--text-faint) / 0.5)" }}>…</span>
           ) : (
-            <button key={item} onClick={() => onPageChange(item)}
-              className={`w-6 h-6 rounded-md border text-[11px] font-medium transition-all
-                ${currentPage === item
-                  ? "bg-amber-500/20 border-amber-500/40 text-amber-300"
-                  : "border-white/8 text-white/30 hover:bg-amber-500/10 hover:border-amber-500/30 hover:text-amber-300"}`}>
+            <button
+              key={item}
+              onClick={() => onPageChange(item)}
+              className="w-6 h-6 rounded-md text-[11px] font-medium transition-all"
+              style={currentPage === item
+                ? { background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.4)", color: "#d97706" }
+                : { border: "1px solid rgb(var(--surface-border) / 0.4)", color: "rgb(var(--text-faint))" }}
+              onMouseEnter={e => { if (currentPage !== item) { e.currentTarget.style.background = "rgba(245,158,11,0.08)"; e.currentTarget.style.borderColor = "rgba(245,158,11,0.3)"; e.currentTarget.style.color = "#d97706" } }}
+              onMouseLeave={e => { if (currentPage !== item) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgb(var(--surface-border) / 0.4)"; e.currentTarget.style.color = "rgb(var(--text-faint))" } }}
+            >
               {item}
             </button>
           )
         )}
       </div>
-      <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}
-        className="flex items-center cursor-pointer  gap-1 px-2 py-1 rounded-lg border border-white/8 text-white/30 text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:text-white/60 hover:bg-white/5 hover:border-white/15">
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex items-center cursor-pointer gap-1 px-2 py-1 rounded-lg text-[11px] transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        style={{ border: "1px solid rgb(var(--surface-border) / 0.4)", color: "rgb(var(--text-faint))" }}
+        onMouseEnter={e => { e.currentTarget.style.color = "rgb(var(--text-secondary))"; e.currentTarget.style.background = "rgb(var(--surface-raised) / 0.5)" }}
+        onMouseLeave={e => { e.currentTarget.style.color = "rgb(var(--text-faint))"; e.currentTarget.style.background = "transparent" }}
+      >
         Next <ChevronRight className="w-3 h-3" />
       </button>
     </div>
   )
 }
+
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function ApprovalSection({ onApprovalChange, addToast }) {
@@ -245,17 +285,12 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
   const [approveDialog, setApproveDialog]     = useState(null)
   const [rejectDialog, setRejectDialog]       = useState(null)
   const [rejectionReason, setRejectionReason] = useState("")
-
-  // Guidelines panel
-  const [guidelinesMode, setGuidelinesMode] = useState(null) // "approval" | "rejection" | null
-
-  // Pre-approval checklist state
-  const [approvalChecks, setApprovalChecks] = useState({})
+  const [guidelinesMode, setGuidelinesMode]   = useState(null)
+  const [approvalChecks, setApprovalChecks]   = useState({})
   const [confirmRejectCheck, setConfirmRejectCheck] = useState(false)
   const [pages, setPages] = useState({ announcements: 1, blogs: 1, resources: 1 })
 
-  const totalPending =
-    pending.announcements.length + pending.blogs.length + pending.resources.length
+  const totalPending = pending.announcements.length + pending.blogs.length + pending.resources.length
 
   const fetchPending = useCallback(async () => {
     setLoading(true)
@@ -280,9 +315,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
     const list = filtered[activeTab]
     if (list.length > 0) {
       setSelectedItem((prev) =>
-        prev && list.find((i) => i.id === prev.item?.id)
-          ? prev
-          : { item: list[0], type: activeTab }
+        prev && list.find((i) => i.id === prev.item?.id) ? prev : { item: list[0], type: activeTab }
       )
     } else {
       setSelectedItem(null)
@@ -290,9 +323,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, pending])
 
-  useEffect(() => {
-    setPages({ announcements: 1, blogs: 1, resources: 1 })
-  }, [search, activeTab])
+  useEffect(() => { setPages({ announcements: 1, blogs: 1, resources: 1 }) }, [search, activeTab])
 
   const handleTabChange = (val) => { setActiveTab(val); setSelectedItem(null); setSearch("") }
   const setPage = (tab, page) => setPages((prev) => ({ ...prev, [tab]: page }))
@@ -322,31 +353,24 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
     resources:     Math.ceil(filtered.resources.length / ITEMS_PER_PAGE),
   }
 
-  // Checklist items per content type
   const getChecklistForType = (type) => {
     const common = [
       "Content is accurate, relevant, and clearly written.",
       "No harmful, discriminatory, or inappropriate material.",
       "Post complies with all platform guidelines.",
     ]
-    if (type === "announcements") return [
-      ...common,
+    if (type === "announcements") return [...common,
       "Event details (title, date, organizer) are complete.",
       "This is not a duplicate submission.",
       "External links are safe and legitimate.",
     ]
-    if (type === "blogs") return [
-      ...common,
+    if (type === "blogs") return [...common,
       "Content is original and not plagiarized.",
       "Topic is relevant to hackathons, learning, or innovation.",
     ]
-    return [
-      ...common,
-      "Resource is up-to-date and aligns with learning objectives.",
-    ]
+    return [...common, "Resource is up-to-date and aligns with learning objectives."]
   }
 
-  // Open approve dialog and reset checklist
   const openApproveDialog = (item) => {
     const checks = {}
     getChecklistForType(activeTab).forEach((_, i) => { checks[i] = false })
@@ -382,26 +406,17 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
       }
 
       await supabase.from(`pending_${type}`).update({
-        status:      "approved",
-        reviewed_by: session?.user?.id,
-        reviewed_at: new Date().toISOString(),
+        status: "approved", reviewed_by: session?.user?.id, reviewed_at: new Date().toISOString(),
       }).eq("id", item.id)
 
       if (item.organization_id && countField) {
-        const { data: orgRow } = await supabase
-          .from("organizations").select(countField).eq("id", item.organization_id).single()
+        const { data: orgRow } = await supabase.from("organizations").select(countField).eq("id", item.organization_id).single()
         if (orgRow) {
-          await supabase.from("organizations")
-            .update({ [countField]: (orgRow[countField] || 0) + 1 })
-            .eq("id", item.organization_id)
+          await supabase.from("organizations").update({ [countField]: (orgRow[countField] || 0) + 1 }).eq("id", item.organization_id)
         }
       }
 
-      await notifyPostApproved({
-        submittedBy: item.submitted_by,
-        contentType: type.replace(/s$/, ""),
-        title:       item.title,
-      })
+      await notifyPostApproved({ submittedBy: item.submitted_by, contentType: type.replace(/s$/, ""), title: item.title })
 
       setPending((prev) => {
         const next = { ...prev, [type]: prev[type].filter((i) => i.id !== item.id) }
@@ -409,9 +424,9 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
         onApprovalChange?.(next.announcements.length + next.blogs.length + next.resources.length)
         return next
       })
-      addToast("success", "approved and published!")
+      addToast("success", "Approved and published!")
     } catch (err) {
-      addToast("error", "Post Rejected Error")
+      addToast("error", "Post Approval Error")
     } finally {
       setActionLoading(null)
     }
@@ -425,17 +440,17 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
     setActionLoading(item.id)
     try {
       await supabase.from(`pending_${type}`).update({
-        status:           "rejected",
+        status: "rejected",
         rejection_reason: rejectionReason.trim() || "No reason provided",
-        reviewed_by:      session?.user?.id,
-        reviewed_at:      new Date().toISOString(),
+        reviewed_by: session?.user?.id,
+        reviewed_at: new Date().toISOString(),
       }).eq("id", item.id)
 
       await notifyPostRejected({
         submittedBy: item.submitted_by,
         contentType: type.replace(/s$/, ""),
-        title:       item.title,
-        reason:      rejectionReason.trim() || "No reason provided",
+        title: item.title,
+        reason: rejectionReason.trim() || "No reason provided",
       })
 
       setPending((prev) => {
@@ -444,9 +459,9 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
         onApprovalChange?.(next.announcements.length + next.blogs.length + next.resources.length)
         return next
       })
-      addToast("success", "Post Reject")
+      addToast("success", "Post Rejected")
     } catch (err) {
-      addToast("error", "error in rejection")
+      addToast("error", "Error in rejection")
     } finally {
       setActionLoading(null)
       setRejectionReason("")
@@ -462,59 +477,85 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
   return (
     <>
       {/* Summary bar */}
-      <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-amber-500/8 border border-amber-500/18">
-        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-        <span className="text-amber-200/80 text-sm">
+      <div
+        className="flex items-center gap-3 mb-4 p-3 rounded-xl"
+        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.2)" }}
+      >
+        <Clock className="w-4 h-4 shrink-0" style={{ color: "#d97706" }} />
+        <span className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>
           {totalPending > 0
-            ? <><strong className="text-amber-300">{totalPending}</strong> item{totalPending !== 1 ? "s" : ""} awaiting review</>
+            ? <><strong style={{ color: "#d97706" }}>{totalPending}</strong> item{totalPending !== 1 ? "s" : ""} awaiting review</>
             : "All caught up — no pending items!"}
         </span>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        {/* Tabs + Search + Guidelines buttons row */}
+        {/* Top bar */}
         <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <TabsList className="bg-black/30 border border-white/8 p-1 rounded-xl h-auto">
+          <TabsList
+            className="p-1 rounded-xl h-auto"
+            style={{
+              border: "1px solid rgb(var(--surface-border) / 0.3)",
+              background: "rgb(var(--surface-raised) / 0.3)",
+            }}
+          >
             {tabConfig.map(({ value, label, Icon, tabActive }) => (
               <TabsTrigger key={value} value={value}
-                className={` cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                  text-white/40 hover:text-white/70
+                className={`cursor-pointer flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                   data-[state=active]:bg-gradient-to-r data-[state=active]:text-white data-[state=active]:shadow-lg
-                  ${tabActive}`}>
+                  ${tabActive}`}
+                style={{ color: "rgb(var(--text-faint))" }}
+              >
                 <Icon className="w-3.5 h-3.5" />
                 {label}
                 {pending[value].length > 0 && (
-                  <Badge className="ml-1 text-[10px] px-1.5 py-0.5 bg-amber-500/25 text-amber-200 border border-amber-500/30">
+                  <span
+                    className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full border font-medium"
+                    style={{ background: "rgba(245,158,11,0.15)", color: "#d97706", borderColor: "rgba(245,158,11,0.35)" }}
+                  >
                     {pending[value].length}
-                  </Badge>
+                  </span>
                 )}
               </TabsTrigger>
             ))}
           </TabsList>
 
+          {/* Search */}
           <div className="relative flex-1 max-w-xs group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20 group-focus-within:text-white/50 transition-colors" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors"
+              style={{ color: "rgb(var(--text-faint) / 0.6)" }} />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, organization…"
-              className="pl-9 h-9 cursor-pointer  bg-black/30 border-white/8 hover:border-white/15 focus:border-white/25 text-white text-sm placeholder:text-white/20 rounded-lg focus:ring-0 transition-colors"
+              className="pl-9 h-9 text-sm rounded-lg focus:ring-0 transition-colors"
+              style={{
+                background: "rgb(var(--surface-raised) / 0.5)",
+                border: "1px solid rgb(var(--surface-border) / 0.4)",
+                color: "rgb(var(--text-primary))",
+              }}
             />
           </div>
 
-          {/* ── Top-right: Guidelines buttons ── */}
+          {/* Guidelines buttons */}
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => setGuidelinesMode("approval")}
-              className="flex cursor-pointer  items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-500/25 bg-emerald-500/8 text-emerald-300/80 text-xs font-medium hover:bg-emerald-500/15 hover:border-emerald-400/40 hover:text-emerald-200 transition-all">
-              <BookOpenCheck className="w-3.5 h-3.5" />
-              Approval Guide
+              className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{ border: "1px solid rgba(5,150,105,0.25)", background: "rgba(5,150,105,0.06)", color: "rgb(var(--text-secondary))" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(5,150,105,0.12)"; e.currentTarget.style.borderColor = "rgba(5,150,105,0.4)"; e.currentTarget.style.color = "#059669" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(5,150,105,0.06)"; e.currentTarget.style.borderColor = "rgba(5,150,105,0.25)"; e.currentTarget.style.color = "rgb(var(--text-secondary))" }}
+            >
+              <BookOpenCheck className="w-3.5 h-3.5" />Approval Guide
             </button>
             <button
               onClick={() => setGuidelinesMode("rejection")}
-              className="flex cursor-pointer  items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-500/25 bg-red-500/8 text-red-300/80 text-xs font-medium hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-200 transition-all">
-              <ScrollText className="w-3.5 h-3.5" />
-              Rejection Rules
+              className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={{ border: "1px solid rgba(239,68,68,0.25)", background: "rgba(239,68,68,0.06)", color: "rgb(var(--text-secondary))" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; e.currentTarget.style.color = "#ef4444" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.06)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"; e.currentTarget.style.color = "rgb(var(--text-secondary))" }}
+            >
+              <ScrollText className="w-3.5 h-3.5" />Rejection Rules
             </button>
           </div>
         </div>
@@ -529,50 +570,62 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
             <TabsContent key={value} value={value}>
               {loading ? (
                 <div className="flex justify-center py-16">
-                  <Loader2 className="w-6 h-6 animate-spin text-fuchsia-400/60" />
+                  <Loader2 className="w-6 h-6 animate-spin" style={{ color: "rgb(var(--brand-400) / 0.6)" }} />
                 </div>
               ) : list.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3 text-white/20">
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
                   {search
-                    ? <><Inbox className="w-10 h-10 opacity-30" /><p className="text-sm">No results for "{search}"</p></>
-                    : <><CheckCircle className="w-10 h-10 opacity-30 text-emerald-400" /><p className="text-sm">No pending {value}</p></>}
+                    ? <><Inbox className="w-10 h-10 opacity-30" style={{ color: "rgb(var(--text-faint))" }} /><p className="text-sm" style={{ color: "rgb(var(--text-faint))" }}>No results for "{search}"</p></>
+                    : <><CheckCircle className="w-10 h-10 opacity-40 text-emerald-500" /><p className="text-sm" style={{ color: "rgb(var(--text-faint))" }}>No pending {value}</p></>}
                 </div>
               ) : (
                 <div className="flex gap-3 h-[620px]">
                   {/* LEFT — list */}
-                  <div className="w-[300px] shrink-0 flex flex-col rounded-2xl border border-white/8 bg-black/20 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between shrink-0">
-                      <span className="text-xs font-bold uppercase tracking-widest text-amber-400">Queue</span>
+                  <div
+                    className="w-[300px] shrink-0 flex flex-col rounded-2xl overflow-hidden"
+                    style={{
+                      background: "rgb(var(--surface) / 0.5)",
+                      border: "1px solid rgb(var(--surface-border) / 0.35)",
+                    }}
+                  >
+                    <div
+                      className="px-4 py-3 flex items-center justify-between shrink-0"
+                      style={{ borderBottom: "1px solid rgb(var(--surface-border) / 0.2)" }}
+                    >
+                      <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#d97706" }}>Queue</span>
                       <div className="flex items-center gap-2">
-                        {tp > 1 && <span className="text-white/18 text-[10px]">p.{cp}/{tp}</span>}
-                        <span className="text-white/25 text-xs">{list.length} pending</span>
+                        {tp > 1 && <span className="text-[10px]" style={{ color: "rgb(var(--text-faint) / 0.5)" }}>p.{cp}/{tp}</span>}
+                        <span className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>{list.length} pending</span>
                       </div>
                     </div>
 
                     <ScrollArea className="flex-1 min-h-0">
-                      <div className="divide-y divide-white/5">
+                      <div>
                         {pageList.map((item) => (
                           <PendingListRow
                             key={item.id}
                             item={item}
                             isSelected={selectedItem?.item?.id === item.id}
-                            onClick={() => setSelectedItem(
-                              selectedItem?.item?.id === item.id ? null : { item, type: value }
-                            )}
+                            onClick={() => setSelectedItem(selectedItem?.item?.id === item.id ? null : { item, type: value })}
                           />
                         ))}
                       </div>
                     </ScrollArea>
 
                     <Pagination
-                      currentPage={cp}
-                      totalPages={tp}
+                      currentPage={cp} totalPages={tp}
                       onPageChange={(p) => { setPage(value, p); setSelectedItem(null) }}
                     />
                   </div>
 
                   {/* RIGHT — detail */}
-                  <div className="flex-1 rounded-2xl border border-white/8 bg-black/20 overflow-hidden">
+                  <div
+                    className="flex-1 rounded-2xl overflow-hidden"
+                    style={{
+                      background: "rgb(var(--surface) / 0.4)",
+                      border: "1px solid rgb(var(--surface-border) / 0.25)",
+                    }}
+                  >
                     {selectedItem && selectedItem.type === value ? (
                       <DetailPanel
                         item={selectedItem.item}
@@ -583,9 +636,9 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
                         onReject={() => { setRejectDialog(selectedItem.item); setRejectionReason("") }}
                       />
                     ) : (
-                      <div className="h-full flex flex-col items-center justify-center gap-3 text-white/15 select-none">
-                        <Inbox className="w-10 h-10 opacity-30" />
-                        <p className="text-sm text-white/20">Select a submission to review</p>
+                      <div className="h-full flex flex-col items-center justify-center gap-3 select-none">
+                        <Inbox className="w-10 h-10 opacity-30" style={{ color: "rgb(var(--text-faint))" }} />
+                        <p className="text-sm" style={{ color: "rgb(var(--text-faint))" }}>Select a submission to review</p>
                       </div>
                     )}
                   </div>
@@ -597,40 +650,53 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
       </Tabs>
 
       {/* ── Guidelines Dialog ── */}
-      <GuidelinesDialog
-        open={!!guidelinesMode}
-        onClose={() => setGuidelinesMode(null)}
-        mode={guidelinesMode}
-      />
+      <GuidelinesDialog open={!!guidelinesMode} onClose={() => setGuidelinesMode(null)} mode={guidelinesMode} />
 
-      {/* ── Approve dialog (checklist) ── */}
+      {/* ── Approve dialog ── */}
       <AlertDialog open={!!approveDialog} onOpenChange={(open) => !open && setApproveDialog(null)}>
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-emerald-950/20 to-slate-950 backdrop-blur-xl border border-emerald-500/20 shadow-2xl shadow-emerald-900/20 max-w-lg">
+        <AlertDialogContent
+          className="backdrop-blur-xl border shadow-2xl max-w-lg"
+          style={{
+            background: "linear-gradient(135deg, rgb(var(--bg-base)), rgba(5,150,105,0.05), rgb(var(--bg-base)))",
+            borderColor: "rgba(5,150,105,0.2)",
+            boxShadow: "0 25px 50px rgba(5,150,105,0.1)",
+          }}
+        >
           <AlertDialogHeader className="gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: "rgba(5,150,105,0.1)", border: "1px solid rgba(5,150,105,0.25)" }}
+              >
+                <ShieldCheck className="w-5 h-5 text-emerald-500" />
               </div>
               <div>
-                <AlertDialogTitle className="text-emerald-200 text-base font-semibold">Approve & Publish</AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">Tick every item to confirm this post meets platform standards</p>
+                <AlertDialogTitle className="text-emerald-700 dark:text-emerald-200 text-base font-semibold">
+                  Approve & Publish
+                </AlertDialogTitle>
+                <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
+                  Tick every item to confirm this post meets platform standards
+                </p>
               </div>
             </div>
 
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
-                <p className="text-white/55">
+                <p style={{ color: "rgb(var(--text-muted))" }}>
                   Publishing{" "}
-                  <span className="text-white font-medium">"{approveDialog?.title}"</span>{" "}
-                  by <span className="text-emerald-300 font-medium">{approveDialog?.organization || "unknown org"}</span>.
+                  <span className="font-medium" style={{ color: "rgb(var(--text-primary))" }}>"{approveDialog?.title}"</span>{" "}
+                  by <span className="font-medium text-emerald-600 dark:text-emerald-300">{approveDialog?.organization || "unknown org"}</span>.
                 </p>
 
                 {/* Pre-approval checklist */}
-                <div className="rounded-xl bg-emerald-950/50 border border-emerald-500/20 p-4 space-y-3">
-                  <p className="text-emerald-300 text-xs font-semibold uppercase tracking-wider flex items-center gap-2">
+                <div
+                  className="rounded-xl p-4 space-y-3"
+                  style={{ background: "rgba(5,150,105,0.06)", border: "1px solid rgba(5,150,105,0.2)" }}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
                     <CheckCircle className="w-3.5 h-3.5" />
                     Pre-Approval Checklist
-                    <span className="ml-auto text-emerald-500/60 font-normal normal-case tracking-normal">
+                    <span className="ml-auto font-normal normal-case tracking-normal" style={{ color: "rgba(5,150,105,0.7)" }}>
                       {Object.values(approvalChecks).filter(Boolean).length} / {Object.keys(approvalChecks).length} confirmed
                     </span>
                   </p>
@@ -638,17 +704,21 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
                     {getChecklistForType(activeTab).map((label, i) => (
                       <li key={i}
                         onClick={() => setApprovalChecks((prev) => ({ ...prev, [i]: !prev[i] }))}
-                        className="flex items-start gap-2.5 cursor-pointer group">
-                        <div className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
-                          ${approvalChecks[i]
-                            ? "bg-emerald-500 border-emerald-400"
-                            : "border-white/20 bg-white/5 group-hover:border-emerald-500/50"}`}>
+                        className="flex items-start gap-2.5 cursor-pointer group"
+                      >
+                        <div
+                          className="mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 transition-all"
+                          style={{
+                            background: approvalChecks[i] ? "#059669" : "rgb(var(--surface-raised) / 0.5)",
+                            border: `1px solid ${approvalChecks[i] ? "#059669" : "rgb(var(--surface-border) / 0.5)"}`,
+                          }}
+                        >
                           {approvalChecks[i] && <CheckCircle className="w-3 h-3 text-white" />}
                         </div>
-                        <span className={`text-xs leading-relaxed transition-colors ${
-                          approvalChecks[i]
-                            ? "text-emerald-200/60 line-through"
-                            : "text-white/50 group-hover:text-white/75"}`}>
+                        <span
+                          className="text-xs leading-relaxed transition-colors"
+                          style={{ color: approvalChecks[i] ? "rgba(5,150,105,0.5)" : "rgb(var(--text-muted))", textDecoration: approvalChecks[i] ? "line-through" : "none" }}
+                        >
                           {label}
                         </span>
                       </li>
@@ -657,25 +727,32 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
                 </div>
 
                 {/* Admin notice */}
-                <div className="rounded-lg bg-black/25 border border-white/8 p-3 space-y-1.5">
-                  <p className="text-white/28 text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <div
+                  className="rounded-lg p-3 space-y-1.5"
+                  style={{
+                    background: "rgb(var(--surface-raised) / 0.4)",
+                    border: "1px solid rgb(var(--surface-border) / 0.25)",
+                  }}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5"
+                    style={{ color: "rgb(var(--text-faint))" }}>
                     <Info className="w-3 h-3" />Admin Notice
                   </p>
-                  <ul className="text-white/35 text-xs space-y-1 leading-relaxed">
+                  <ul className="text-xs space-y-1 leading-relaxed" style={{ color: "rgb(var(--text-faint))" }}>
                     {[
                       "Content becomes immediately visible to all platform users.",
                       "This action is permanently logged under your admin account.",
                       "The submitting organization will be notified of this approval.",
                     ].map((t, i) => (
                       <li key={i} className="flex items-start gap-1.5">
-                        <span className="text-white/20 mt-0.5 shrink-0">•</span>{t}
+                        <span className="mt-0.5 shrink-0" style={{ color: "rgb(var(--text-faint) / 0.5)" }}>•</span>{t}
                       </li>
                     ))}
                   </ul>
                 </div>
 
                 {!allChecked && (
-                  <p className="text-amber-400/70 text-xs flex items-center gap-1.5">
+                  <p className="text-xs flex items-center gap-1.5" style={{ color: "#d97706" }}>
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     Confirm all checklist items before approving.
                   </p>
@@ -683,14 +760,29 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+
           <AlertDialogFooter className="gap-2 mt-1">
-            <AlertDialogCancel className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all">
+            <AlertDialogCancel
+              className="cursor-pointer text-sm transition-all"
+              style={{
+                background: "rgb(var(--surface-raised) / 0.4)",
+                border: "1px solid rgb(var(--surface-border) / 0.4)",
+                color: "rgb(var(--text-muted))",
+              }}
+            >
               Cancel
             </AlertDialogCancel>
             <Button
               onClick={confirmApprove}
               disabled={!allChecked}
-              className="cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed">
+              className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, #059669, #0d9488)",
+                boxShadow: "0 4px 16px rgba(5,150,105,0.35)",
+              }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 6px 20px rgba(5,150,105,0.5)"}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(5,150,105,0.35)"}
+            >
               <CheckCircle className="w-4 h-4 shrink-0" />Approve & Publish
             </Button>
           </AlertDialogFooter>
@@ -701,27 +793,30 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
       <AlertDialog
         open={!!rejectDialog}
         onOpenChange={(open) => {
-          if (!open) {
-            setRejectDialog(null)
-            setRejectionReason("")
-            setConfirmRejectCheck(false)
-          }
+          if (!open) { setRejectDialog(null); setRejectionReason(""); setConfirmRejectCheck(false) }
         }}
       >
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/20 max-w-md">
-          
+        <AlertDialogContent
+          className="backdrop-blur-xl border shadow-2xl max-w-md"
+          style={{
+            background: "linear-gradient(135deg, rgb(var(--bg-base)), rgba(239,68,68,0.04), rgb(var(--bg-base)))",
+            borderColor: "rgba(239,68,68,0.2)",
+            boxShadow: "0 25px 50px rgba(239,68,68,0.1)",
+          }}
+        >
           <AlertDialogHeader className="gap-4">
-
-            {/* Header */}
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
-                <ShieldAlert className="w-5 h-5 text-red-400" />
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)" }}
+              >
+                <ShieldAlert className="w-5 h-5 text-red-500" />
               </div>
               <div>
-                <AlertDialogTitle className="text-red-200 text-base font-semibold">
+                <AlertDialogTitle className="text-base font-semibold" style={{ color: "rgb(var(--text-primary))" }}>
                   Reject Submission
                 </AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">
+                <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
                   The organization will be notified with your reason
                 </p>
               </div>
@@ -729,21 +824,15 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
 
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
-
-                <p className="text-white/55">
+                <p style={{ color: "rgb(var(--text-muted))" }}>
                   Rejecting{" "}
-                  <span className="text-white font-medium">
-                    "{rejectDialog?.title}"
-                  </span>{" "}
-                  by{" "}
-                  <span className="text-red-300 font-medium">
-                    {rejectDialog?.organization || "unknown org"}
-                  </span>.
+                  <span className="font-medium" style={{ color: "rgb(var(--text-primary))" }}>"{rejectDialog?.title}"</span>{" "}
+                  by <span className="font-medium text-red-500">{rejectDialog?.organization || "unknown org"}</span>.
                 </p>
 
-                {/* Quick-pick common reasons */}
+                {/* Quick-pick reasons */}
                 <div className="space-y-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-white/28">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "rgb(var(--text-faint))" }}>
                     Common Reasons
                   </p>
                   <div className="flex flex-wrap gap-1.5">
@@ -759,12 +848,12 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
                         key={r}
                         type="button"
                         onClick={() => setRejectionReason(r)}
-                        className={`text-[11px] px-2.5 py-1 rounded-full border transition-all
-                          ${
-                            rejectionReason === r
-                              ? "bg-red-500/25 border-red-400/50 text-red-200"
-                              : "bg-white/4 border-white/10 text-white/35 hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-300"
-                          }`}
+                        className="text-[11px] px-2.5 py-1 rounded-full border transition-all"
+                        style={rejectionReason === r
+                          ? { background: "rgba(239,68,68,0.15)", borderColor: "rgba(239,68,68,0.5)", color: "#ef4444" }
+                          : { background: "rgb(var(--surface-raised) / 0.4)", borderColor: "rgb(var(--surface-border) / 0.4)", color: "rgb(var(--text-muted))" }}
+                        onMouseEnter={e => { if (rejectionReason !== r) { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; e.currentTarget.style.color = "#ef4444" } }}
+                        onMouseLeave={e => { if (rejectionReason !== r) { e.currentTarget.style.background = "rgb(var(--surface-raised) / 0.4)"; e.currentTarget.style.borderColor = "rgb(var(--surface-border) / 0.4)"; e.currentTarget.style.color = "rgb(var(--text-muted))" } }}
                       >
                         {r}
                       </button>
@@ -772,27 +861,31 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
                   </div>
                 </div>
 
-                {/* REQUIRED REASON */}
+                {/* Reason textarea */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-2">
+                  <label className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-2"
+                    style={{ color: "rgb(var(--text-secondary))" }}>
                     <XCircle className="w-3 h-3 shrink-0" />
-                    Reason <span className="text-red-400">*</span>
+                    Reason <span className="text-red-500">*</span>
                   </label>
-
                   <Textarea
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                     placeholder="Provide a clear reason for rejection..."
-                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
+                    className="text-xs resize-none focus:ring-0 rounded-lg"
+                    style={{
+                      background: "rgb(var(--surface-raised) / 0.6)",
+                      border: "1px solid rgba(239,68,68,0.2)",
+                      color: "rgb(var(--text-secondary))",
+                    }}
                     rows={3}
                   />
-
-                  <p className="text-white/20 text-[11px]">
+                  <p className="text-[11px]" style={{ color: "rgb(var(--text-faint) / 0.6)" }}>
                     Required. This will be sent to the organization.
                   </p>
                 </div>
 
-                {/* CONFIRMATION CHECKBOX */}
+                {/* Confirm checkbox */}
                 <div className="flex items-start gap-2 pt-1">
                   <input
                     type="checkbox"
@@ -800,180 +893,257 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
                     onChange={(e) => setConfirmRejectCheck(e.target.checked)}
                     className="mt-1 accent-red-500 cursor-pointer"
                   />
-                  <p className="text-[11px] text-white/40 leading-snug">
+                  <p className="text-[11px] leading-snug" style={{ color: "rgb(var(--text-faint))" }}>
                     I confirm that this submission violates guidelines or does not meet requirements.
                   </p>
                 </div>
-
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           <AlertDialogFooter className="gap-2 mt-1">
             <AlertDialogCancel
-              onClick={() => {
-                setRejectionReason("")
-                setConfirmRejectCheck(false)
+              onClick={() => { setRejectionReason(""); setConfirmRejectCheck(false) }}
+              className="cursor-pointer text-sm transition-all"
+              style={{
+                background: "rgb(var(--surface-raised) / 0.4)",
+                border: "1px solid rgb(var(--surface-border) / 0.4)",
+                color: "rgb(var(--text-muted))",
               }}
-              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
             >
               Cancel
             </AlertDialogCancel>
-
             <Button
               onClick={confirmReject}
-              disabled={
-                !rejectionReason.trim() || !confirmRejectCheck
-              }
-              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600 hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500 active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all shadow-lg hover:shadow-pink-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+              disabled={!rejectionReason.trim() || !confirmRejectCheck}
+              className="cursor-pointer text-white border-0 gap-2 text-sm transition-all shadow-lg active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, #ec4899, #c026d3)",
+                boxShadow: "0 4px 16px rgba(192,38,211,0.4)",
+              }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow = "0 6px 24px rgba(192,38,211,0.6)"}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(192,38,211,0.4)"}
             >
-              <XCircle className="w-4 h-4 shrink-0" />
-              Confirm Rejection
+              <XCircle className="w-4 h-4 shrink-0" />Confirm Rejection
             </Button>
           </AlertDialogFooter>
-
         </AlertDialogContent>
       </AlertDialog>
     </>
   )
 }
 
+
 // ── List row ──────────────────────────────────────────────────────────────────
 function PendingListRow({ item, isSelected, onClick }) {
   return (
-    <button onClick={onClick}
-      className={`w-full cursor-pointer  text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2
-        ${isSelected ? "bg-amber-500/8 border-l-amber-400" : "border-l-transparent hover:bg-white/3 hover:border-l-amber-500/30"}`}>
-      <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 bg-amber-400
-        ${isSelected ? "opacity-100 shadow-[0_0_6px_rgba(251,191,36,0.6)]" : "opacity-40 group-hover:opacity-70"}`} />
+    <button
+      onClick={onClick}
+      className="w-full cursor-pointer text-left px-4 py-3.5 flex items-start gap-3 transition-all duration-150 group border-l-2"
+      style={{
+        background: isSelected ? "rgba(245,158,11,0.06)" : "transparent",
+        borderLeftColor: isSelected ? "#d97706" : "transparent",
+        borderBottom: "1px solid rgb(var(--surface-border) / 0.1)",
+      }}
+      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "rgba(245,158,11,0.03)" }}
+      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "transparent" }}
+    >
+      <span
+        className="mt-[7px] w-1.5 h-1.5 rounded-full shrink-0"
+        style={{
+          background: "#f59e0b",
+          opacity: isSelected ? 1 : 0.4,
+          boxShadow: isSelected ? "0 0 6px rgba(251,191,36,0.6)" : "none",
+        }}
+      />
       <div className="flex-1 min-w-0 space-y-1">
-        <p className={`text-xs font-semibold leading-snug line-clamp-2 ${isSelected ? "text-white" : "text-white/55 group-hover:text-white/85"}`}>
+        <p
+          className="text-xs font-semibold leading-snug line-clamp-2 transition-colors"
+          style={{ color: isSelected ? "rgb(var(--text-primary))" : "rgb(var(--text-muted))" }}
+        >
           {item.title}
         </p>
         {item.organization && (
-          <p className="text-[11px] text-amber-400/70 truncate">{item.organization}</p>
+          <p className="text-[11px] truncate font-medium" style={{ color: "rgba(245,158,11,0.8)" }}>{item.organization}</p>
         )}
-        <p className="text-[10px] text-white/20">
+        <p className="text-[10px]" style={{ color: "rgb(var(--text-faint) / 0.6)" }}>
           {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
         </p>
       </div>
-      <ChevronRight className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isSelected ? "text-amber-400" : "text-white/12 group-hover:text-white/30"}`} />
+      <ChevronRight
+        className="w-3.5 h-3.5 shrink-0 mt-0.5 transition-colors"
+        style={{ color: isSelected ? "#d97706" : "rgb(var(--text-faint) / 0.3)" }}
+      />
     </button>
   )
 }
 
+
 // ── Detail panel ──────────────────────────────────────────────────────────────
 function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }) {
   const isBusy = actionLoading === item.id
-  const accent = {
-    announcements: { heading: "text-fuchsia-300", badge: "bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30" },
-    blogs:         { heading: "text-pink-300",    badge: "bg-pink-500/15 text-pink-300 border-pink-500/30"           },
-    resources:     { heading: "text-violet-300",  badge: "bg-violet-500/15 text-violet-300 border-violet-500/30"     },
+  const accentColor = {
+    announcements: "#e879f9",
+    blogs:         "#f472b6",
+    resources:     "#a78bfa",
+  }[type]
+  const accentBadge = {
+    announcements: "bg-fuchsia-500/15 text-fuchsia-600 dark:text-fuchsia-300 border-fuchsia-500/30",
+    blogs:         "bg-pink-500/15 text-pink-600 dark:text-pink-300 border-pink-500/30",
+    resources:     "bg-violet-500/15 text-violet-600 dark:text-violet-300 border-violet-500/30",
   }[type]
 
   return (
     <div className="h-full flex flex-col">
-      <div className="px-6 pt-5 pb-4 border-b border-white/8 shrink-0">
+      {/* Header */}
+      <div
+        className="px-6 pt-5 pb-4 shrink-0"
+        style={{ borderBottom: "1px solid rgb(var(--surface-border) / 0.15)" }}
+      >
+        {/* Accent line */}
+        <div
+          className="h-px mb-4 -mx-6 -mt-5 rounded-t-2xl"
+          style={{ background: `linear-gradient(to right, transparent, ${accentColor}60, transparent)` }}
+        />
         <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-          <span className={`text-xs font-bold uppercase tracking-widest ${accent.heading}`}>
+          <span className="text-xs font-bold uppercase tracking-widest" style={{ color: accentColor }}>
             {type === "announcements" ? "Announcement" : type === "blogs" ? "Blog Post" : "Resource"} Preview
           </span>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={onApprove} disabled={isBusy}
-              className="h-8 px-3 cursor-pointer  bg-emerald-600/18 hover:bg-emerald-600/35 text-emerald-300 border border-emerald-500/28 hover:border-emerald-400/50 text-xs gap-1.5 transition-all">
+              className="h-8 px-3 cursor-pointer text-xs gap-1.5 transition-all"
+              style={{ background: "rgba(5,150,105,0.1)", border: "1px solid rgba(5,150,105,0.3)", color: "#059669" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(5,150,105,0.18)"; e.currentTarget.style.borderColor = "rgba(5,150,105,0.5)" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(5,150,105,0.1)"; e.currentTarget.style.borderColor = "rgba(5,150,105,0.3)" }}
+            >
               {isBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}Approve
             </Button>
             <Button size="sm" onClick={onReject} disabled={isBusy}
-              className="h-8 px-3 cursor-pointer  bg-red-600/18 hover:bg-red-600/35 text-red-300 border border-red-500/28 hover:border-red-400/50 text-xs gap-1.5 transition-all">
+              className="h-8 px-3 cursor-pointer text-xs gap-1.5 transition-all"
+              style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.18)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.5)" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)" }}
+            >
               <XCircle className="w-3 h-3" />Reject
             </Button>
           </div>
         </div>
 
         {item.organization && (
-          <Badge className={`${accent.badge} border text-xs flex items-center gap-1.5 w-fit mb-2`}>
+          <Badge className={`${accentBadge} border text-xs flex items-center gap-1.5 w-fit mb-2`}>
             <Building2 className="w-3 h-3" />{item.organization}
           </Badge>
         )}
-        <h2 className="text-lg font-bold text-white leading-snug">{item.title}</h2>
-        <p className="text-white/28 text-xs mt-1 flex items-center gap-1.5">
-          <Clock className="w-3 h-3" />
-          Submitted {formatUTCDateTime(item.created_at)}
+        <h2 className="text-lg font-bold leading-snug" style={{ color: "rgb(var(--text-primary))" }}>{item.title}</h2>
+        <p className="text-xs mt-1 flex items-center gap-1.5" style={{ color: "rgb(var(--text-faint))" }}>
+          <Clock className="w-3 h-3" />Submitted {formatUTCDateTime(item.created_at)}
         </p>
       </div>
 
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-6 py-5 space-y-6 min-h-full">
 
-          {item.des && <DetailBlock icon={<AlignLeft className="w-3.5 h-3.5" />} label="Description">
-            <p className="text-white/60 text-sm leading-relaxed whitespace-pre-wrap">{item.des}</p>
-          </DetailBlock>}
+          {item.des && (
+            <DetailBlock icon={<AlignLeft className="w-3.5 h-3.5" />} label="Description">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "rgb(var(--text-secondary))" }}>{item.des}</p>
+            </DetailBlock>
+          )}
 
-          {type === "announcements" && <>
-            {(item.date_begin || item.date_end) && (
-              <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Event Dates">
-                <p className="text-white/60 text-sm">
-                  {item.date_begin ? formatUTCDateTime(item.date_begin) : "—"}
-                  <span className="text-white/25 mx-2">→</span>
-                  {item.date_end ? formatUTCDateTime(item.date_end) : "—"}
-                </p>
-              </DetailBlock>
-            )}
-            {item.open_to && <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Open To">
-              <p className="text-white/60 text-sm">{item.open_to}</p>
-            </DetailBlock>}
-            {item.prizes?.length > 0 && <DetailBlock icon={<Trophy className="w-3.5 h-3.5" />} label={`Prizes (${item.prizes.length})`}>
-              <div className="space-y-2">
-                {item.prizes.map((prize, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                    <Award className="w-3.5 h-3.5 text-amber-400 mt-0.5 shrink-0" />
-                    <div>
-                      {prize.place  && <p className="text-amber-300 text-xs font-semibold">{prize.place}</p>}
-                      {prize.reward && <p className="text-white/55 text-xs">{prize.reward}</p>}
-                      {typeof prize === "string" && <p className="text-white/55 text-xs">{prize}</p>}
-                    </div>
+          {type === "announcements" && (
+            <>
+              {(item.date_begin || item.date_end) && (
+                <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Event Dates">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>
+                    {item.date_begin ? formatUTCDateTime(item.date_begin) : "—"}
+                    <span className="mx-2" style={{ color: "rgb(var(--text-faint) / 0.4)" }}>→</span>
+                    {item.date_end ? formatUTCDateTime(item.date_end) : "—"}
+                  </p>
+                </DetailBlock>
+              )}
+              {item.open_to && (
+                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Open To">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.open_to}</p>
+                </DetailBlock>
+              )}
+              {item.prizes?.length > 0 && (
+                <DetailBlock icon={<Trophy className="w-3.5 h-3.5" />} label={`Prizes (${item.prizes.length})`}>
+                  <div className="space-y-2">
+                    {item.prizes.map((prize, idx) => (
+                      <div key={idx}
+                        className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
+                        style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.18)" }}
+                      >
+                        <Award className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "#f59e0b" }} />
+                        <div>
+                          {prize.place  && <p className="text-xs font-semibold" style={{ color: "#d97706" }}>{prize.place}</p>}
+                          {prize.reward && <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>{prize.reward}</p>}
+                          {typeof prize === "string" && <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>{prize}</p>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </DetailBlock>}
-          </>}
+                </DetailBlock>
+              )}
+            </>
+          )}
 
-          {type === "blogs" && <>
-            {item.author && <DetailBlock icon={<User className="w-3.5 h-3.5" />} label="Author">
-              <p className="text-white/60 text-sm">{item.author}</p>
-            </DetailBlock>}
-            {item.theme && <DetailBlock icon={<Tag className="w-3.5 h-3.5" />} label="Theme">
-              <Badge className="bg-pink-500/15 text-pink-300 border border-pink-500/25 text-xs">{item.theme}</Badge>
-            </DetailBlock>}
-            {item.content && <DetailBlock icon={<FileText className="w-3.5 h-3.5" />} label="Content">
-              <p className="text-white/60 text-sm leading-relaxed whitespace-pre-wrap line-clamp-6">{item.content}</p>
-            </DetailBlock>}
-          </>}
+          {type === "blogs" && (
+            <>
+              {item.author && (
+                <DetailBlock icon={<User className="w-3.5 h-3.5" />} label="Author">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.author}</p>
+                </DetailBlock>
+              )}
+              {item.theme && (
+                <DetailBlock icon={<Tag className="w-3.5 h-3.5" />} label="Theme">
+                  <Badge className="bg-pink-500/15 text-pink-600 dark:text-pink-300 border border-pink-500/25 text-xs">{item.theme}</Badge>
+                </DetailBlock>
+              )}
+              {item.content && (
+                <DetailBlock icon={<FileText className="w-3.5 h-3.5" />} label="Content">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap line-clamp-6" style={{ color: "rgb(var(--text-secondary))" }}>{item.content}</p>
+                </DetailBlock>
+              )}
+            </>
+          )}
 
-          {type === "resources" && <>
-            {item.category && <DetailBlock icon={<Hash className="w-3.5 h-3.5" />} label="Category">
-              <Badge className="bg-violet-500/15 text-violet-300 border border-violet-500/25 text-xs">{item.category}</Badge>
-            </DetailBlock>}
-            {item.link && <DetailBlock icon={<Globe className="w-3.5 h-3.5" />} label="Link">
+          {type === "resources" && (
+            <>
+              {item.category && (
+                <DetailBlock icon={<Hash className="w-3.5 h-3.5" />} label="Category">
+                  <Badge className="bg-violet-500/15 text-violet-600 dark:text-violet-300 border border-violet-500/25 text-xs">{item.category}</Badge>
+                </DetailBlock>
+              )}
+              {item.link && (
+                <DetailBlock icon={<Globe className="w-3.5 h-3.5" />} label="Link">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline break-all"
+                    style={{ color: "#a78bfa" }}>
+                    {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+            </>
+          )}
+
+          {item.link && type === "announcements" && (
+            <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Link">
               <a href={item.link} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-violet-400 hover:underline break-all">
+                className="inline-flex items-center gap-1.5 text-sm hover:underline break-all"
+                style={{ color: "#e879f9" }}>
                 {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
               </a>
-            </DetailBlock>}
-          </>}
+            </DetailBlock>
+          )}
 
-          {(item.link && type === "announcements") && <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Link">
-            <a href={item.link} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-fuchsia-400 hover:underline break-all">
-              {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
-            </a>
-          </DetailBlock>}
-
-          {item.submitted_by && <div className="pt-1 pb-2">
-            <p className="flex items-center gap-1.5 text-[11px] text-white/15 font-mono">
-              <User className="w-3 h-3" />{item.submitted_by}
-            </p>
-          </div>}
+          {item.submitted_by && (
+            <div className="pt-1 pb-2">
+              <p className="flex items-center gap-1.5 text-[11px] font-mono"
+                style={{ color: "rgb(var(--text-faint) / 0.4)" }}>
+                <User className="w-3 h-3" />{item.submitted_by}
+              </p>
+            </div>
+          )}
         </div>
       </ScrollArea>
     </div>
@@ -983,8 +1153,9 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
 function DetailBlock({ icon, label, children }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-white/28 flex items-center gap-1.5 mb-2">
-        <span className="text-white/35">{icon}</span>{label}
+      <p className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2"
+        style={{ color: "rgb(var(--text-faint))" }}>
+        <span style={{ color: "rgb(var(--text-faint))" }}>{icon}</span>{label}
       </p>
       {children}
     </div>

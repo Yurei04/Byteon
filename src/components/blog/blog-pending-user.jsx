@@ -2,15 +2,129 @@
 
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle, Loader2, FileText, User, Tag, Camera, Clock } from "lucide-react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from "next/image"
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   CSS TOKENS
+───────────────────────────────────────────────────────────────────────────── */
+const THEME_STYLES = `
+  /* ── Light ── */
+  :root {
+    --pbf-bg:             rgba(253,244,255,0.70);
+    --pbf-bg-raised:      rgba(255,255,255,0.80);
+    --pbf-border:         rgba(192,38,211,0.20);
+    --pbf-border-subtle:  rgba(192,38,211,0.12);
+
+    --pbf-text-primary:   #1e0320;
+    --pbf-text-secondary: #701976;
+    --pbf-text-muted:     #a11bb0;
+    --pbf-text-faint:     rgba(161,27,176,0.55);
+    --pbf-text-label:     #1e0320;
+
+    --pbf-brand:          #c026d3;
+    --pbf-brand-soft:     rgba(192,38,211,0.08);
+
+    --pbf-title-from:     #c026d3;
+    --pbf-title-to:       #a855f7;
+
+    --pbf-header-border:  rgba(192,38,211,0.15);
+
+    --pbf-chip-bg:        rgba(192,38,211,0.10);
+    --pbf-chip-border:    rgba(192,38,211,0.28);
+    --pbf-chip-text:      #701976;
+
+    --pbf-notice-bg:      rgba(245,158,11,0.08);
+    --pbf-notice-border:  rgba(245,158,11,0.22);
+    --pbf-notice-text:    #92400e;
+    --pbf-notice-strong:  #78350f;
+
+    --pbf-author-bg:      rgba(168,85,247,0.08);
+    --pbf-author-border:  rgba(168,85,247,0.25);
+    --pbf-author-label:   rgba(109,40,217,0.55);
+    --pbf-author-name:    #4c1d95;
+    --pbf-author-icon:    #7c3aed;
+
+    --pbf-input-bg:       rgba(255,255,255,0.75);
+    --pbf-input-border:   rgba(192,38,211,0.22);
+    --pbf-input-text:     #1e0320;
+    --pbf-input-placeholder: rgba(161,27,176,0.40);
+    --pbf-input-focus-border: rgba(192,38,211,0.50);
+
+    --pbf-select-bg:      rgba(255,255,255,0.90);
+    --pbf-select-border:  rgba(192,38,211,0.22);
+    --pbf-select-text:    #1e0320;
+
+    --pbf-divider:        rgba(192,38,211,0.15);
+
+    --pbf-btn-from:       #c026d3;
+    --pbf-btn-to:         #a855f7;
+    --pbf-btn-shadow:     rgba(192,38,211,0.30);
+
+    --pbf-img-border:     rgba(192,38,211,0.25);
+    --pbf-img-error-bg:   rgba(239,68,68,0.08);
+    --pbf-img-error-border: rgba(239,68,68,0.25);
+    --pbf-img-error-text: #b91c1c;
+  }
+
+  /* ── Dark ── */
+  .dark {
+    --pbf-bg:             rgba(20,5,30,0.70);
+    --pbf-bg-raised:      rgba(255,255,255,0.03);
+    --pbf-border:         rgba(168,85,247,0.30);
+    --pbf-border-subtle:  rgba(168,85,247,0.18);
+
+    --pbf-text-primary:   #fae8ff;
+    --pbf-text-secondary: #e879f9;
+    --pbf-text-muted:     rgba(232,121,249,0.70);
+    --pbf-text-faint:     rgba(232,121,249,0.40);
+    --pbf-text-label:     #f5d0fe;
+
+    --pbf-brand:          #e879f9;
+    --pbf-brand-soft:     rgba(168,85,247,0.08);
+
+    --pbf-title-from:     #f0abfc;
+    --pbf-title-to:       #c4b5fd;
+
+    --pbf-header-border:  rgba(168,85,247,0.20);
+
+    --pbf-chip-bg:        rgba(168,85,247,0.18);
+    --pbf-chip-border:    rgba(168,85,247,0.35);
+    --pbf-chip-text:      #e879f9;
+
+    --pbf-notice-bg:      rgba(245,158,11,0.08);
+    --pbf-notice-border:  rgba(245,158,11,0.22);
+    --pbf-notice-text:    #fcd34d;
+    --pbf-notice-strong:  #fbbf24;
+
+    --pbf-author-bg:      rgba(168,85,247,0.10);
+    --pbf-author-border:  rgba(168,85,247,0.30);
+    --pbf-author-label:   rgba(216,180,254,0.50);
+    --pbf-author-name:    #e879f9;
+    --pbf-author-icon:    #c4b5fd;
+
+    --pbf-input-bg:       rgba(255,255,255,0.05);
+    --pbf-input-border:   rgba(168,85,247,0.30);
+    --pbf-input-text:     #fae8ff;
+    --pbf-input-placeholder: rgba(216,180,254,0.35);
+    --pbf-input-focus-border: rgba(232,121,249,0.55);
+
+    --pbf-select-bg:      rgba(10,0,20,0.80);
+    --pbf-select-border:  rgba(168,85,247,0.30);
+    --pbf-select-text:    #fae8ff;
+
+    --pbf-divider:        rgba(168,85,247,0.20);
+
+    --pbf-btn-from:       #c026d3;
+    --pbf-btn-to:         #a855f7;
+    --pbf-btn-shadow:     rgba(192,38,211,0.30);
+
+    --pbf-img-border:     rgba(168,85,247,0.30);
+    --pbf-img-error-bg:   rgba(239,68,68,0.10);
+    --pbf-img-error-border: rgba(239,68,68,0.30);
+    --pbf-img-error-text: #fca5a5;
+  }
+`
 
 const THEME_OPTIONS = [
   "Technology","Education","Lifestyle","Business","Health & Wellness",
@@ -18,12 +132,59 @@ const THEME_OPTIONS = [
   "Gaming","Finance","Environment","Personal Development","Other"
 ]
 
+// ── Shared field label ────────────────────────────────────────────────────────
+function FieldLabel({ icon: Icon, children, required }) {
+  return (
+    <label className="text-base font-semibold flex items-center gap-2 mb-1"
+      style={{ color: "var(--pbf-text-label)" }}>
+      {Icon && <Icon className="w-4 h-4" style={{ color: "var(--pbf-brand)" }} />}
+      {children}{required && <span style={{ color: "var(--pbf-brand)" }}> *</span>}
+    </label>
+  )
+}
+
+// ── Shared text input ─────────────────────────────────────────────────────────
+function Field({ ...props }) {
+  return (
+    <input
+      {...props}
+      className="w-full px-3 h-12 rounded-lg text-base outline-none transition-all"
+      style={{
+        background:   "var(--pbf-input-bg)",
+        border:       "1px solid var(--pbf-input-border)",
+        color:        "var(--pbf-input-text)",
+      }}
+      onFocus={e => e.target.style.borderColor = "var(--pbf-input-focus-border)"}
+      onBlur={e  => e.target.style.borderColor = "var(--pbf-input-border)"}
+    />
+  )
+}
+
+// ── Shared textarea ───────────────────────────────────────────────────────────
+function Tarea({ rows = 3, ...props }) {
+  return (
+    <textarea
+      {...props}
+      rows={rows}
+      className="w-full px-3 py-2.5 rounded-lg text-sm outline-none transition-all resize-none"
+      style={{
+        background:   "var(--pbf-input-bg)",
+        border:       "1px solid var(--pbf-input-border)",
+        color:        "var(--pbf-input-text)",
+      }}
+      onFocus={e => e.target.style.borderColor = "var(--pbf-input-focus-border)"}
+      onBlur={e  => e.target.style.borderColor = "var(--pbf-input-border)"}
+    />
+  )
+}
+
+// ── Main form ─────────────────────────────────────────────────────────────────
 export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId, addToast }) {
   const [isLoading, setIsLoading]   = useState(false)
   const [imageError, setImageError] = useState(false)
-  const [formData, setFormData]     = useState({
-    title: "", des: "", content: "", image: "", theme: ""
-  })
+  const [formData, setFormData]     = useState({ title: "", des: "", content: "", image: "", theme: "" })
+
+  const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }))
 
   const handleSubmit = async () => {
     if (!currentUser || !authUserId) {
@@ -37,7 +198,6 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
     }
 
     setIsLoading(true)
-
     try {
       const payload = {
         title:           formData.title.trim(),
@@ -45,24 +205,21 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
         content:         formData.content.trim(),
         image:           formData.image.trim() || null,
         theme:           formData.theme || null,
-        user_id:         authUserId,          // bigint id from users table
+        user_id:         authUserId,
         organization_id: null,
         author:          currentUser.name || "Anonymous",
         user_name:       currentUser.name || null,
-        // ── Pending metadata ──
         status:          "pending",
-        submitted_by:    currentUser.user_id, // auth UUID for RLS
+        submitted_by:    currentUser.user_id,
       }
-
       const { error } = await supabase.from("pending_blogs").insert([payload])
       if (error) throw error
-
       addToast("success", "Submitted for approval! The super admin will review your announcement.")
       setFormData({ title: "", des: "", content: "", image: "", theme: "" })
       setImageError(false)
       setTimeout(() => { if (onSuccess) onSuccess() }, 1500)
-    } catch (error) {
-      addToast("error", "Submission Failed Try Again")
+    } catch {
+      addToast("error", "Submission Failed. Try Again.")
     } finally {
       setIsLoading(false)
     }
@@ -71,130 +228,180 @@ export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId
   if (!currentUser) {
     return (
       <div className="w-full max-w-4xl mx-auto">
-        <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
-          <CardContent className="p-12 text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-fuchsia-300" />
-            <p className="text-fuchsia-200/70">Loading user information...</p>
-          </CardContent>
-        </Card>
+        <style>{THEME_STYLES}</style>
+        <div className="rounded-2xl p-12 text-center"
+          style={{ background: "var(--pbf-bg)", border: "1px solid var(--pbf-border)" }}>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: "var(--pbf-brand)" }} />
+          <p style={{ color: "var(--pbf-text-muted)" }}>Loading user information…</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
-        <CardHeader className="border-b border-fuchsia-500/20 pb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
-                Create New Blog Post
-              </CardTitle>
-              <CardDescription className="text-fuchsia-200/70 text-base mt-2">
-                Your post will be reviewed before going live
-              </CardDescription>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-fuchsia-500/20 rounded-lg border border-fuchsia-400/30">
-              <User className="w-4 h-4 text-fuchsia-300" />
-              <span className="text-fuchsia-200 text-sm font-medium">{currentUser.name}</span>
-            </div>
-          </div>
-        </CardHeader>
+      <style>{THEME_STYLES}</style>
 
-        <CardContent className="p-6">
+      <div className="rounded-2xl overflow-hidden backdrop-blur-xl"
+        style={{ background: "var(--pbf-bg)", border: "1px solid var(--pbf-border)" }}>
+
+        {/* Card header */}
+        <div className="px-6 pt-6 pb-5 flex items-center justify-between"
+          style={{ borderBottom: "1px solid var(--pbf-header-border)" }}>
+          <div>
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent"
+              style={{ backgroundImage: `linear-gradient(135deg, var(--pbf-title-from), var(--pbf-title-to))` }}>
+              Create New Blog Post
+            </h2>
+            <p className="text-base mt-1" style={{ color: "var(--pbf-text-muted)" }}>
+              Your post will be reviewed before going live
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg"
+            style={{ background: "var(--pbf-chip-bg)", border: "1px solid var(--pbf-chip-border)" }}>
+            <User className="w-4 h-4" style={{ color: "var(--pbf-brand)" }} />
+            <span className="text-sm font-medium" style={{ color: "var(--pbf-chip-text)" }}>
+              {currentUser.name}
+            </span>
+          </div>
+        </div>
+
+        {/* Card body */}
+        <div className="p-6 space-y-6">
+
           {/* Pending notice */}
-          <div className="flex items-center gap-2 mb-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-            <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-            <p className="text-amber-200 text-sm">
-              This blog will be <strong>reviewed by the super admin</strong> before going live.
+          <div className="flex items-center gap-2 p-3 rounded-xl"
+            style={{ background: "var(--pbf-notice-bg)", border: "1px solid var(--pbf-notice-border)" }}>
+            <Clock className="w-4 h-4 shrink-0" style={{ color: "#f59e0b" }} />
+            <p className="text-sm" style={{ color: "var(--pbf-notice-text)" }}>
+              This blog will be <strong style={{ color: "var(--pbf-notice-strong)" }}>reviewed by the super admin</strong> before going live.
             </p>
           </div>
 
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-lg border border-purple-400/30">
-              <User className="w-5 h-5 text-purple-300" />
-              <div>
-                <p className="text-purple-200/70 text-sm">Submitting as</p>
-                <p className="text-purple-100 font-semibold">{currentUser.name}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 text-lg font-semibold flex items-center gap-2">
-                <FileText className="w-5 h-5" />Blog Title *
-              </Label>
-              <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40 h-12 text-lg"
-                placeholder="Enter an engaging title..." />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 text-lg font-semibold">Short Description</Label>
-              <Textarea value={formData.des} onChange={(e) => setFormData({ ...formData, des: e.target.value })}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40 resize-none" rows={3}
-                placeholder="Brief summary..." />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 text-lg font-semibold flex items-center gap-2">
-                <FileText className="w-5 h-5" />Blog Content *
-              </Label>
-              <Textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40 resize-none" rows={10}
-                placeholder="Share your story, insights, or knowledge here..." />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 font-semibold flex items-center gap-2">
-                <Tag className="w-4 h-4" />Theme/Category
-              </Label>
-              <Select value={formData.theme} onValueChange={(v) => setFormData({ ...formData, theme: v })}>
-                <SelectTrigger className="bg-white/5 border-fuchsia-500/30 text-white">
-                  <SelectValue placeholder="Select a theme..." />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-fuchsia-500/30">
-                  {THEME_OPTIONS.map((t) => (
-                    <SelectItem key={t} value={t} className="text-white hover:bg-fuchsia-500/20">{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 font-semibold flex items-center gap-2">
-                <Camera className="w-4 h-4" />Featured Image URL
-              </Label>
-              <Input type="url" value={formData.image}
-                onChange={(e) => { setFormData({ ...formData, image: e.target.value }); setImageError(false) }}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40"
-                placeholder="https://example.com/image.jpg" />
-              {formData.image && !imageError && (
-                <div className="mt-4 rounded-lg overflow-hidden border border-fuchsia-500/30 relative w-full h-48">
-                  <Image src={formData.image} alt="Blog preview" fill className="object-cover" onError={() => setImageError(true)} />
-                </div>
-              )}
-              {imageError && formData.image && (
-                <div className="mt-4 p-4 rounded-lg border border-red-500/30 bg-red-500/10">
-                  <p className="text-red-200 text-sm flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4" />Unable to load image. Please check the URL.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-6 border-t border-fuchsia-500/20">
-              <Button onClick={handleSubmit} disabled={isLoading}
-                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white shadow-lg shadow-fuchsia-500/30">
-                {isLoading ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Submitting...</>
-                ) : (
-                  <><Clock className="mr-2 h-5 w-5" />Submit for Approval</>
-                )}
-              </Button>
+          {/* Author chip */}
+          <div className="flex items-center gap-3 p-4 rounded-lg"
+            style={{ background: "var(--pbf-author-bg)", border: "1px solid var(--pbf-author-border)" }}>
+            <User className="w-5 h-5" style={{ color: "var(--pbf-author-icon)" }} />
+            <div>
+              <p className="text-sm" style={{ color: "var(--pbf-author-label)" }}>Submitting as</p>
+              <p className="font-semibold" style={{ color: "var(--pbf-author-name)" }}>{currentUser.name}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Title */}
+          <div className="space-y-2">
+            <FieldLabel icon={FileText} required>Blog Title</FieldLabel>
+            <Field
+              value={formData.title}
+              onChange={e => set("title", e.target.value)}
+              placeholder="Enter an engaging title…"
+              style={{
+                background: "var(--pbf-input-bg)",
+                border: "1px solid var(--pbf-input-border)",
+                color: "var(--pbf-input-text)",
+              }}
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <FieldLabel>Short Description</FieldLabel>
+            <Tarea
+              value={formData.des}
+              onChange={e => set("des", e.target.value)}
+              placeholder="Brief summary…"
+              rows={3}
+            />
+          </div>
+
+          {/* Content */}
+          <div className="space-y-2">
+            <FieldLabel icon={FileText} required>Blog Content</FieldLabel>
+            <Tarea
+              value={formData.content}
+              onChange={e => set("content", e.target.value)}
+              placeholder="Share your story, insights, or knowledge here…"
+              rows={10}
+            />
+          </div>
+
+          {/* Theme select */}
+          <div className="space-y-2">
+            <FieldLabel icon={Tag}>Theme / Category</FieldLabel>
+            <select
+              value={formData.theme}
+              onChange={e => set("theme", e.target.value)}
+              className="w-full px-3 h-10 rounded-lg text-sm outline-none transition-all appearance-none"
+              style={{
+                background: "var(--pbf-select-bg)",
+                border:     "1px solid var(--pbf-select-border)",
+                color:      formData.theme ? "var(--pbf-select-text)" : "var(--pbf-input-placeholder)",
+              }}
+            >
+              <option value="" disabled hidden>Select a theme…</option>
+              {THEME_OPTIONS.map(t => (
+                <option key={t} value={t}
+                  style={{ background: "var(--pbf-select-bg)", color: "var(--pbf-select-text)" }}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Image URL */}
+          <div className="space-y-2">
+            <FieldLabel icon={Camera}>Featured Image URL</FieldLabel>
+            <input
+              type="url"
+              value={formData.image}
+              onChange={e => { set("image", e.target.value); setImageError(false) }}
+              placeholder="https://example.com/image.jpg"
+              className="w-full px-3 h-10 rounded-lg text-sm outline-none transition-all"
+              style={{
+                background: "var(--pbf-input-bg)",
+                border:     "1px solid var(--pbf-input-border)",
+                color:      "var(--pbf-input-text)",
+              }}
+              onFocus={e => e.target.style.borderColor = "var(--pbf-input-focus-border)"}
+              onBlur={e  => e.target.style.borderColor = "var(--pbf-input-border)"}
+            />
+            {formData.image && !imageError && (
+              <div className="mt-3 rounded-lg overflow-hidden relative w-full h-48"
+                style={{ border: "1px solid var(--pbf-img-border)" }}>
+                <Image src={formData.image} alt="Blog preview" fill className="object-cover"
+                  onError={() => setImageError(true)} />
+              </div>
+            )}
+            {imageError && formData.image && (
+              <div className="mt-3 p-4 rounded-lg flex items-center gap-2 text-sm"
+                style={{ background: "var(--pbf-img-error-bg)", border: "1px solid var(--pbf-img-error-border)", color: "var(--pbf-img-error-text)" }}>
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                Unable to load image. Please check the URL.
+              </div>
+            )}
+          </div>
+
+          {/* Submit */}
+          <div className="pt-4" style={{ borderTop: "1px solid var(--pbf-divider)" }}>
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full h-14 rounded-xl text-lg font-semibold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-70"
+              style={{
+                background:  `linear-gradient(135deg, var(--pbf-btn-from), var(--pbf-btn-to))`,
+                boxShadow:   `0 4px 20px var(--pbf-btn-shadow)`,
+              }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.90"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+            >
+              {isLoading
+                ? <><Loader2 className="w-5 h-5 animate-spin" />Submitting…</>
+                : <><Clock className="w-5 h-5" />Submit for Approval</>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
