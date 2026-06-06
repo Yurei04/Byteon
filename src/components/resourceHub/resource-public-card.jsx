@@ -37,6 +37,7 @@ export default function ResourcePublicCard({ item, theme }) {
         .resource-card:hover {
           transform: translateY(-5px);
           border-color: rgb(var(--brand-400) / 0.45);
+          box-shadow: 0 20px 52px rgb(var(--brand-700) / 0.15), 0 4px 14px rgb(var(--brand-700) / 0.08);  /* ← add this */
         }
         .resource-card .bottom-bar {
           position: absolute;
@@ -79,13 +80,6 @@ export default function ResourcePublicCard({ item, theme }) {
       <div
         className="resource-card"
         style={{ ...t.cssVars }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow =
-            `0 20px 52px rgb(var(--brand-700) / 0.15), 0 4px 14px rgb(var(--brand-700) / 0.08)`
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow = "none"
-        }}
       >
         {/* Top gradient bar */}
         <div

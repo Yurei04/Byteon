@@ -82,6 +82,7 @@ export default function ResourceHubPage() {
     fetchData()
   }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setPage(1) }, [filter, searchTerm, sort])
 
   const countFor = (value) =>

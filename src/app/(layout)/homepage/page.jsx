@@ -86,24 +86,28 @@ export default function HomeMain() {
             {activeTab === "partners" && (
               <motion.div key="partners" {...fade}>
                 <PartnersPage />
+                <ClientFooterLoader />
               </motion.div>
             )}
 
             {activeTab === "blog" && (
               <motion.div key="blog" {...fade}>
                 <BlogPage />
+                <ClientFooterLoader />
               </motion.div>
             )}
 
             {activeTab === "resource" && (
               <motion.div key="resource" {...fade}>
                 <ResourceHubPage />
+                <ClientFooterLoader />
               </motion.div>
             )}
 
             {activeTab === "hacks" && (
               <motion.div key="hacks" {...fade}>
                 <AnnouncePage />
+                <ClientFooterLoader />
               </motion.div>
             )}
 
@@ -115,6 +119,7 @@ export default function HomeMain() {
 
           </AnimatePresence>
         </div>
+
       </main>
     </div>
   )

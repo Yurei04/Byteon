@@ -1,3 +1,4 @@
+"use client"  
 import Link from "next/link"
 import { Github, Mail, Twitter, Linkedin } from "lucide-react"
 
