@@ -23,7 +23,8 @@ import {
   Link2, Tag, Clock, User, Hash, Globe,
   AlignLeft, Award, Users, ExternalLink, Inbox,
   ShieldAlert, ShieldCheck, ChevronRight, ChevronLeft, Search,
-  BookOpenCheck, ScrollText, PauseCircle, Info,
+  BookOpenCheck, ScrollText, PauseCircle, Info, MapPin, BarChart2,
+  Sheet,
 } from "lucide-react"
 
 function formatUTCDateTime(dateString) {
@@ -982,6 +983,14 @@ function PendingListRow({ item, isSelected, onClick }) {
 // ── Detail panel ──────────────────────────────────────────────────────────────
 function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }) {
   const isBusy = actionLoading === item.id
+
+  // ── Normalize prizes (string JSON or array) ──────────────────────────────
+  const prizes = useMemo(() => {
+    if (!item.prizes) return []
+    if (Array.isArray(item.prizes)) return item.prizes
+    try { return JSON.parse(item.prizes) } catch { return [] }
+  }, [item.prizes])
+
   const accentColor = {
     announcements: "#e879f9",
     blogs:         "#f472b6",
@@ -1049,6 +1058,7 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
             </DetailBlock>
           )}
 
+          {/* ── Announcements ── */}
           {type === "announcements" && (
             <>
               {(item.date_begin || item.date_end) && (
@@ -1060,33 +1070,139 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
                   </p>
                 </DetailBlock>
               )}
+
               {item.open_to && (
                 <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Open To">
                   <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.open_to}</p>
                 </DetailBlock>
               )}
-              {item.prizes?.length > 0 && (
-                <DetailBlock icon={<Trophy className="w-3.5 h-3.5" />} label={`Prizes (${item.prizes.length})`}>
+
+              {item.countries && (
+                <DetailBlock icon={<MapPin className="w-3.5 h-3.5" />} label="Countries">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.countries}</p>
+                </DetailBlock>
+              )}
+
+              {/* ── Prizes (fixed) ── */}
+              {prizes.length > 0 && (
+                <DetailBlock
+                  icon={<Trophy className="w-3.5 h-3.5" />}
+                  label={`Prizes (${prizes.length})${item.prize_currency ? ` · ${item.prize_currency}` : ""}`}
+                >
                   <div className="space-y-2">
-                    {item.prizes.map((prize, idx) => (
-                      <div key={idx}
-                        className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl"
-                        style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.18)" }}
-                      >
-                        <Award className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "#f59e0b" }} />
-                        <div>
-                          {prize.place  && <p className="text-xs font-semibold" style={{ color: "#d97706" }}>{prize.place}</p>}
-                          {prize.reward && <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>{prize.reward}</p>}
-                          {typeof prize === "string" && <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>{prize}</p>}
+                    {prizes.map((prize, idx) => {
+                      let name = "", value = "", description = ""
+                      if (typeof prize === "string") {
+                        value = prize
+                      } else if (typeof prize === "object" && prize !== null) {
+                        name        = prize.name || prize.title || prize.place || `Prize ${idx + 1}`
+                        value       = prize.value || prize.reward || prize.amount || ""
+                        description = prize.description || prize.details || ""
+                      }
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-2.5 px-3.5 py-2.5 rounded-xl"
+                          style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.18)" }}
+                        >
+                          <Award className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: "#f59e0b" }} />
+                          <div className="min-w-0">
+                            <div className="flex items-start gap-3">
+                              <span
+                                className="text-xs leading-none mt-0.5 font-medium"
+                                style={{ color: "rgb(var(--text-faint))" }}
+                              >
+                                #{idx + 1}
+                              </span>
+                              <div className="min-w-0">
+                                {name && (
+                                  <p
+                                    className="text-[10px] uppercase tracking-widest font-bold mb-1"
+                                    style={{ color: "rgb(var(--text-faint))" }}
+                                  >
+                                    {name}
+                                  </p>
+                                )}
+                                {value && (
+                                  <p
+                                    className="text-sm font-bold leading-tight"
+                                    style={{ color: "rgb(var(--text-primary))" }}
+                                  >
+                                    {value}
+                                  </p>
+                                )}
+                                {description && (
+                                  <p
+                                    className="text-xs mt-1.5 leading-relaxed"
+                                    style={{ color: "rgb(var(--text-muted))" }}
+                                  >
+                                    {description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {typeof prize === "object" && prize !== null
+                              && !prize.name && !prize.value && !prize.reward && !prize.place && (
+                              <p className="text-xs font-mono break-all mt-1" style={{ color: "rgb(var(--text-faint))" }}>
+                                {JSON.stringify(prize)}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
+                </DetailBlock>
+              )}
+
+              {item.website_link && (
+                <DetailBlock icon={<Globe className="w-3.5 h-3.5" />} label="Website">
+                  <a href={item.website_link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
+                    style={{ color: accentColor }}>
+                    {item.website_link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+
+              {item.link && (
+                <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Link">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline break-all"
+                    style={{ color: accentColor }}>
+                    {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+
+              {item.dev_link && (
+                <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Dev / Submission Link">
+                  <a href={item.dev_link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
+                    style={{ color: accentColor }}>
+                    {item.dev_link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+
+              {item.tracking_method && (
+                <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Tracking Method">
+                  <p className="text-sm capitalize" style={{ color: "rgb(var(--text-secondary))" }}>{item.tracking_method}</p>
+                  {item.google_sheet_csv_url && (
+                    <a href={item.google_sheet_csv_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-xs mt-1.5 hover:underline underline-offset-2 break-all"
+                      style={{ color: accentColor }}>
+                      <Sheet className="w-3 h-3 shrink-0" />
+                      Google Sheet CSV
+                      <ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                    </a>
+                  )}
                 </DetailBlock>
               )}
             </>
           )}
 
+          {/* ── Blogs ── */}
           {type === "blogs" && (
             <>
               {item.author && (
@@ -1104,9 +1220,19 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
                   <p className="text-sm leading-relaxed whitespace-pre-wrap line-clamp-6" style={{ color: "rgb(var(--text-secondary))" }}>{item.content}</p>
                 </DetailBlock>
               )}
+              {item.link && (
+                <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Link">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline break-all"
+                    style={{ color: accentColor }}>
+                    {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
             </>
           )}
 
+          {/* ── Resources ── */}
           {type === "resources" && (
             <>
               {item.category && (
@@ -1126,16 +1252,6 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
             </>
           )}
 
-          {item.link && type === "announcements" && (
-            <DetailBlock icon={<Link2 className="w-3.5 h-3.5" />} label="Link">
-              <a href={item.link} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm hover:underline break-all"
-                style={{ color: "#e879f9" }}>
-                {item.link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
-              </a>
-            </DetailBlock>
-          )}
-
           {item.submitted_by && (
             <div className="pt-1 pb-2">
               <p className="flex items-center gap-1.5 text-[11px] font-mono"
@@ -1150,6 +1266,7 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
   )
 }
 
+// ── Detail block ──────────────────────────────────────────────────────────────
 function DetailBlock({ icon, label, children }) {
   return (
     <div>
