@@ -839,30 +839,48 @@ export default function OrgDashboardPage() {
             }}
             onMouseEnter={e => {
               e.currentTarget.style.background = `${p}15`
-              e.currentTarget.style.color = uiT.headingText
               e.currentTarget.style.borderColor = `${p}30`
             }}
             onMouseLeave={e => {
               e.currentTarget.style.background = uiT.inlineBg
-              e.currentTarget.style.color = uiT.mutedText
               e.currentTarget.style.borderColor = uiT.borderSubtle
             }}
           >
             {isDark
-              ? <><Sun  className="w-4 h-4 flex-shrink-0" style={{ color: "#f59e0b" }} /><span>Light Mode</span></>
-              : <><Moon className="w-4 h-4 flex-shrink-0" style={{ color: p }} /><span>Dark Mode</span></>
+              ? <Sun  className="w-4 h-4 flex-shrink-0" style={{ color: "#f59e0b" }} />
+              : <Moon className="w-4 h-4 flex-shrink-0" style={{ color: p }} />
             }
-            {/* Visual pill showing current mode */}
-            <span
-              className="ml-auto text-[10px] px-2 py-0.5 rounded-full font-semibold"
+            <span style={{ color: uiT.mutedText }}>
+              {isDark ? "Light mode" : "Dark mode"}
+            </span>
+
+            {/* ── Toggle pill ── */}
+            <div
+              className="ml-auto relative flex-shrink-0"
               style={{
-                background: isDark ? "rgba(245,158,11,0.15)" : `${p}18`,
-                color:       isDark ? "#f59e0b"               : p,
-                border:      isDark ? "1px solid rgba(245,158,11,0.3)" : `1px solid ${p}30`,
+                width: 36,
+                height: 20,
+                borderRadius: 999,
+                background:     isDark ? "#f59e0b" : p,
+                border:         isDark ? "1px solid rgba(245,158,11,0.6)" : `1px solid ${p}99`,
+                transition:     "background 0.25s, border-color 0.25s",
               }}
             >
-              {isDark ? "dark" : "light"}
-            </span>
+              <div
+                style={{
+                  position:    "absolute",
+                  top:          2,
+                  left:         2,
+                  width:        16,
+                  height:       16,
+                  borderRadius: "50%",
+                  background:   "#fff",
+                  transform:    isDark ? "translateX(16px)" : "translateX(0)",
+                  transition:   "transform 0.25s cubic-bezier(.4,0,.2,1)",
+                  boxShadow:    "0 1px 3px rgba(0,0,0,0.2)",
+                }}
+              />
+            </div>
           </button>
 
           <button
