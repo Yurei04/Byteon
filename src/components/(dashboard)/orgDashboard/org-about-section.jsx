@@ -227,7 +227,7 @@ export default function OrgAboutSection({
               <p style={{ color: `${primaryC}aa` }} className="text-sm mb-1">
                 Status
               </p>
-              <p style={{ color: formData.active ? secondaryC : `${primaryC}aa` }}>
+              <p style={{ color: formData.active ? secondaryC : `${primaryC}a` }}>
                 {formData.active ? "● Active" : "○ Inactive"}
               </p>
             </div>

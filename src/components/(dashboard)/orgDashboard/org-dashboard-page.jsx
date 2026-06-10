@@ -1230,7 +1230,8 @@ export default function OrgDashboardPage() {
                       onEdit={() => setIsEditing(true)}
                       onSave={handleProfileSubmit}
                       onCancel={handleProfileCancel}
-                      orgTheme={orgTheme} primaryC={p} secondaryC={s} addToast={addToast}
+                      uiT={uiT}
+                      addToast={addToast}
                     />
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
