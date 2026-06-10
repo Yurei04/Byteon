@@ -145,8 +145,8 @@ function GuidelinesDialog({ open, onClose, mode }) {
         className="max-w-lg backdrop-blur-xl border shadow-2xl"
         style={{
           background: isApproval
-            ? "linear-gradient(rgb(var(--bg-base))"
-            : "linear-gradient(135deg, rgb(var(--bg-base)), rgba(239,68,68,0.04), rgb(var(--bg-base)))",
+            ? "rgb(var(--bg-base))"
+            : "rgb(var(--bg-base))",
           borderColor: isApproval ? "rgba(5,150,105,0.2)" : "rgba(239,68,68,0.2)",
         }}
       >
@@ -658,7 +658,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
         <AlertDialogContent
           className="backdrop-blur-xl border shadow-2xl max-w-lg"
           style={{
-            background: "linear-gradient(135deg, rgb(var(--bg-base)), rgba(5,150,105,0.05), rgb(var(--bg-base)))",
+            background: "rgb(var(--bg-base)))",
             borderColor: "rgba(5,150,105,0.2)",
             boxShadow: "0 25px 50px rgba(5,150,105,0.1)",
           }}
@@ -800,7 +800,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
         <AlertDialogContent
           className="backdrop-blur-xl border shadow-2xl max-w-md"
           style={{
-            background: "linear-gradient(135deg, rgb(var(--bg-base)), rgba(239,68,68,0.04), rgb(var(--bg-base)))",
+            background: "rgb(var(--bg-base)))",
             borderColor: "rgba(239,68,68,0.2)",
             boxShadow: "0 25px 50px rgba(239,68,68,0.1)",
           }}

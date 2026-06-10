@@ -31,9 +31,6 @@ import SuperProfile              from "./super-profile,"
 import AccountManageSection      from "./accounts-manage-section"
 import ApprovalSection           from "./approval-section"
 import ViewableSection           from "./viewable-section"
-import AnnounceForm              from "../announce/announce-form"
-import BlogOrgForm               from "@/components/blog/blog-edit-user"
-import ResourceForm              from "@/components/resourceHub/resource-form"
 import HistorySection            from "./historyRecordsSection"
 import NotificationsTab          from "@/components/notifications/notification-tab"
 import { useNotifications }      from "@/components/notifications/use-notification"
@@ -750,17 +747,6 @@ function SuperAdminDashboardPage() {
               {/* ════ APPROVAL ════ */}
               {activeTab === "approval" && (
                 <motion.div key="approval" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
-                  {pendingCount > 0 && (
-                    <div
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl mb-4"
-                      style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)" }}
-                    >
-                      <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: "#f59e0b" }} />
-                      <p className="text-sm" style={{ color: "#fbbf24" }}>
-                        <span className="font-bold">{pendingCount}</span> item{pendingCount !== 1 ? "s" : ""} waiting for your review
-                      </p>
-                    </div>
-                  )}
                   <div
                     className="rounded-2xl p-5"
                     style={{ background: "rgb(var(--surface-raised) / 0.3)", border: "1px solid rgb(var(--brand-500) / 0.18)" }}

@@ -590,7 +590,7 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
         <AlertDialogContent
           className="backdrop-blur-xl max-w-md"
           style={{
-            background: uiT?.cardBg ?? "linear-gradient(135deg, rgb(2,4,18), rgba(120,10,10,0.15), rgb(2,4,18))",
+            background: "rgb(var((--primary-base))",
             border:     "1px solid rgba(239,68,68,0.25)",
             boxShadow:  "0 24px 64px rgba(239,68,68,0.12)",
           }}
