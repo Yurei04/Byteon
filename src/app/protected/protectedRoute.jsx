@@ -1,5 +1,3 @@
-// components/protected/ProtectedRoute.jsx
-
 "use client"
 
 import { useEffect } from "react"
@@ -12,54 +10,23 @@ export default function ProtectedRoute({
   allowOrg = false,
   allowSuperAdmin = false,
 }) {
-  const {
-    loading,
-    isLoggedIn,
-    isUser,
-    isOrgAdmin,
-    isSuperAdmin,
-  } = useAuth()
-
+  const { loading, isLoggedIn, isUser, isOrgAdmin, isSuperAdmin } = useAuth()
   const router = useRouter()
-
-  useEffect(() => {
-    if (loading) return
-
-    // not logged in
-    if (!isLoggedIn) {
-      router.replace("/log-in")
-      return
-    }
-
-    const allowed =
-      (allowUser && isUser) ||
-      (allowOrg && isOrgAdmin) ||
-      (allowSuperAdmin && isSuperAdmin)
-
-    if (!allowed) {
-      router.replace("/")
-    }
-  }, [
-    loading,
-    isLoggedIn,
-    isUser,
-    isOrgAdmin,
-    isSuperAdmin,
-    allowUser,
-    allowOrg,
-    allowSuperAdmin,
-    router,
-  ])
-
-  if (loading) return null
-
-  if (!isLoggedIn) return null
 
   const allowed =
     (allowUser && isUser) ||
     (allowOrg && isOrgAdmin) ||
     (allowSuperAdmin && isSuperAdmin)
 
+  useEffect(() => {
+    if (loading) return
+    if (!isLoggedIn) { router.replace("/log-in"); return }
+    if (!allowed) router.replace("/")
+  }, [loading, isLoggedIn, allowed, router])
+
+  // Don't render or redirect until auth is fully resolved
+  if (loading) return null
+  if (!isLoggedIn) return null
   if (!allowed) return null
 
   return children

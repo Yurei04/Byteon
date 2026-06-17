@@ -23,17 +23,6 @@ import Link from "next/link"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
 import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
 
-const USER_THEMES = [
-  { id: "violet",  label: "Violet",  accent: "#8b5cf6" },
-  { id: "sky",     label: "Sky",     accent: "#0ea5e9" },
-  { id: "emerald", label: "Emerald", accent: "#10b981" },
-  { id: "rose",    label: "Rose",    accent: "#f43f5e" },
-  { id: "amber",   label: "Amber",   accent: "#f59e0b" },
-  { id: "indigo",  label: "Indigo",  accent: "#6366f1" },
-  { id: "teal",    label: "Teal",    accent: "#14b8a6" },
-  { id: "fuchsia", label: "Fuchsia", accent: "#d946ef" },
-]
-
 const ORG_PALETTES = [
   { id: "midnight", label: "Midnight", primary: "#6366f1", secondary: "#0ea5e9", scheme: "midnight" },
   { id: "forest",   label: "Forest",   primary: "#10b981", secondary: "#84cc16", scheme: "forest"   },
@@ -44,45 +33,6 @@ const ORG_PALETTES = [
   { id: "aurora",   label: "Aurora",   primary: "#22d3ee", secondary: "#a78bfa", scheme: "aurora"   },
   { id: "slate",    label: "Slate",    primary: "#64748b", secondary: "#94a3b8", scheme: "slate"    },
 ]
-
-function UserThemePicker({ value, onChange }) {
-  return (
-    <Field>
-      <FieldLabel
-        className="text-xs font-medium flex items-center gap-1.5"
-        style={{ color: "rgb(var(--text-secondary))" }}
-      >
-        <Palette className="size-3" /> Accent Color
-        <span className="font-normal" style={{ color: "rgb(var(--text-faint))" }}>(optional)</span>
-      </FieldLabel>
-      <div className="grid grid-cols-8 gap-1.5 mt-1">
-        {USER_THEMES.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            title={t.label}
-            onClick={() => onChange(t.id)}
-            className="relative w-7 h-7 rounded-full border-2 transition-all duration-200 hover:scale-110 focus:outline-none"
-            style={{
-              backgroundColor: t.accent,
-              borderColor: value === t.id ? "#fff" : "transparent",
-              boxShadow: value === t.id ? `0 0 0 2px ${t.accent}` : "none",
-            }}
-          >
-            {value === t.id && (
-              <Check className="absolute inset-0 m-auto size-3 text-white drop-shadow" />
-            )}
-          </button>
-        ))}
-      </div>
-      {value && (
-        <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint))" }}>
-          {USER_THEMES.find((t) => t.id === value)?.label} accent selected
-        </p>
-      )}
-    </Field>
-  )
-}
 
 function OrgPalettePicker({ value, onChange }) {
   return (
@@ -179,8 +129,6 @@ export function SignupForm() {
   const [profilePhoto, setProfilePhoto] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
-  const [termsGated, setTermsGated] = useState(false)
-  const [userTheme, setUserTheme] = useState("")
   const [orgPalette, setOrgPalette] = useState(null)
 
   const handlePhotoChange = (e) => {
@@ -208,7 +156,6 @@ export function SignupForm() {
 
   const handleNext = () => {
     setError(null)
-    if (!termsGated) { setError("Please agree to the Terms of Service and Privacy Policy first."); return }
     if (mode === "organization" && !orgName.trim()) { setError("Organization name is required"); return }
     if (!email.trim()) { setError("Email is required"); return }
     if (!password) { setError("Password is required"); return }
@@ -253,12 +200,10 @@ export function SignupForm() {
       }
 
       if (mode === "user") {
-        const accentColor = userTheme ? USER_THEMES.find((t) => t.id === userTheme)?.accent ?? null : null
         const { error: userError } = await supabase.from("users").insert({
           user_id: data.user.id, name: userName.trim(), age: parseInt(age),
           country: country.trim(), affiliation: occupation.trim(),
           profile_photo_url: profilePhotoUrl,
-          ...(accentColor ? { accent_color: accentColor } : {}),
         })
         if (userError) { setError(`Failed to create user profile: ${userError.message}`); setLoading(false); return }
       }
@@ -290,7 +235,6 @@ export function SignupForm() {
     if (e.key === "Enter") { e.preventDefault(); step === 1 ? handleNext() : handleSignUp() }
   }
 
-  // Shared input/label styles using tokens
   const inputCls = "h-8 text-sm rounded-lg"
   const inputStyle = {
     background: "rgb(var(--surface-raised))",
@@ -307,7 +251,7 @@ export function SignupForm() {
           onValueChange={(value) => {
             setMode(value); setStep(1); setError(null)
             setProfilePhoto(null); setPhotoPreview(null); setAgreedToTerms(false)
-            setUserTheme(""); setOrgPalette(null); setTermsGated(false)
+            setOrgPalette(null)
           }}
         >
           {/* Tab switcher */}
@@ -327,9 +271,7 @@ export function SignupForm() {
                   key={value}
                   value={value}
                   className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 data-[state=active]:shadow-md"
-                  style={{
-                    color: "rgb(var(--text-muted))",
-                  }}
+                  style={{ color: "rgb(var(--text-muted))" }}
                 >
                   <Icon className="size-3" /> {label}
                 </TabsTrigger>
@@ -391,7 +333,7 @@ export function SignupForm() {
                     <CardDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
                       {step === 1
                         ? (type === "user" ? "Enter your login credentials to get started" : "Set up your organization's name and credentials")
-                        : (type === "user" ? "Tell us about yourself and personalize your look" : "Add details and choose your brand colors")}
+                        : (type === "user" ? "Tell us a bit about yourself" : "Add details and choose your brand colors")}
                     </CardDescription>
                   </div>
                 </CardHeader>
@@ -400,69 +342,25 @@ export function SignupForm() {
                   {step === 1 ? (
                     <div onKeyDown={handleKeyDown}>
                       <FieldGroup className="space-y-2.5">
-                        {/* Terms gate */}
-                        <div
-                          className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 border transition-all duration-200"
-                          style={{
-                            background: termsGated ? "rgba(16,185,129,0.08)" : "rgb(var(--surface-raised))",
-                            borderColor: termsGated ? "rgba(16,185,129,0.3)" : "rgb(var(--surface-border) / 0.3)",
-                          }}
-                        >
-                          <Checkbox
-                            id={`terms-gate-${type}`}
-                            checked={termsGated}
-                            onCheckedChange={(checked) => { setTermsGated(!!checked); setError(null) }}
-                            className="mt-0.5 shrink-0"
-                          />
-                          <label
-                            htmlFor={`terms-gate-${type}`}
-                            className="text-xs leading-relaxed cursor-pointer"
-                            style={{ color: "rgb(var(--text-secondary))" }}
-                          >
-                            I have read and agree to Byteon&apos;s{" "}
-                            <TermsDialog trigger={
-                              <button type="button" className="underline underline-offset-2 transition-colors" style={{ color: "rgb(var(--text-primary))" }}>
-                                Terms of Service
-                              </button>
-                            } />{" "}and{" "}
-                            <PrivacyDialog trigger={
-                              <button type="button" className="underline underline-offset-2 transition-colors" style={{ color: "rgb(var(--text-primary))" }}>
-                                Privacy Policy
-                              </button>
-                            } />{" "}before continuing.
-                            {termsGated && (
-                              <span className="ml-1.5 inline-flex items-center gap-0.5 text-emerald-500 font-medium">
-                                <Check className="size-3" /> Agreed
-                              </span>
-                            )}
-                          </label>
-                        </div>
-
-                        {/* Form fields — locked until terms accepted */}
-                        <fieldset
-                          disabled={!termsGated}
-                          className={`space-y-2.5 transition-opacity duration-300 ${!termsGated ? "opacity-40 pointer-events-none select-none" : "opacity-100"}`}
-                        >
-                          {type === "organization" && (
-                            <Field>
-                              <FieldLabel style={labelStyle}>Organization Name</FieldLabel>
-                              <Input placeholder="My Organization" value={orgName} onChange={(e) => setOrgName(e.target.value)} className={inputCls} style={inputStyle} />
-                            </Field>
-                          )}
+                        {type === "organization" && (
                           <Field>
-                            <FieldLabel style={labelStyle}>Email</FieldLabel>
-                            <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} style={inputStyle} required />
-                            <FieldDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>Each email can only be used once.</FieldDescription>
+                            <FieldLabel style={labelStyle}>Organization Name</FieldLabel>
+                            <Input placeholder="My Organization" value={orgName} onChange={(e) => setOrgName(e.target.value)} className={inputCls} style={inputStyle} />
                           </Field>
-                          <Field>
-                            <FieldLabel style={labelStyle}>Password</FieldLabel>
-                            <div className="grid grid-cols-2 gap-2">
-                              <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} style={inputStyle} required />
-                              <Input type="password" placeholder="Confirm password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className={inputCls} style={inputStyle} required />
-                            </div>
-                            <FieldDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>Must be at least 8 characters.</FieldDescription>
-                          </Field>
-                        </fieldset>
+                        )}
+                        <Field>
+                          <FieldLabel style={labelStyle}>Email</FieldLabel>
+                          <Input type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} style={inputStyle} required />
+                          <FieldDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>Each email can only be used once.</FieldDescription>
+                        </Field>
+                        <Field>
+                          <FieldLabel style={labelStyle}>Password</FieldLabel>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} style={inputStyle} required />
+                            <Input type="password" placeholder="Confirm password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className={inputCls} style={inputStyle} required />
+                          </div>
+                          <FieldDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>Must be at least 8 characters.</FieldDescription>
+                        </Field>
 
                         {error && <ErrorBanner message={error} />}
 
@@ -540,9 +438,6 @@ export function SignupForm() {
                               <FieldLabel style={labelStyle}>Occupation</FieldLabel>
                               <Input type="text" placeholder="Software Developer" value={occupation} onChange={(e) => setOccupation(e.target.value)} className={inputCls} style={inputStyle} required />
                             </Field>
-                            <div className="border-t pt-2.5" style={{ borderColor: "rgb(var(--surface-border) / 0.2)" }}>
-                              <UserThemePicker value={userTheme} onChange={setUserTheme} />
-                            </div>
                           </>
                         ) : (
                           <>
@@ -563,22 +458,41 @@ export function SignupForm() {
                           </>
                         )}
 
-                        {/* Step 2 terms confirmation */}
+                        {/* Single terms checkbox per tab, in step 2 */}
                         <div
-                          className="flex items-start gap-2.5 rounded-lg px-3 py-2 border"
-                          style={{ background: "rgb(var(--surface-raised))", borderColor: "rgb(var(--surface-border) / 0.25)" }}
+                          className="flex items-start gap-2.5 rounded-lg px-3 py-2.5 border transition-all duration-200"
+                          style={{
+                            background: agreedToTerms ? "rgba(16,185,129,0.08)" : "rgb(var(--surface-raised))",
+                            borderColor: agreedToTerms ? "rgba(16,185,129,0.3)" : "rgb(var(--surface-border) / 0.3)",
+                          }}
                         >
                           <Checkbox
-                            id="terms" checked={agreedToTerms}
-                            onCheckedChange={(checked) => { setAgreedToTerms(checked); if (checked) setError(null) }}
+                            id={`terms-${type}`}
+                            checked={agreedToTerms}
+                            onCheckedChange={(checked) => { setAgreedToTerms(!!checked); if (checked) setError(null) }}
                             className="mt-0.5 shrink-0"
                           />
-                          <label htmlFor="terms" className="text-xs leading-relaxed cursor-pointer" style={{ color: "rgb(var(--text-secondary))" }}>
+                          <label
+                            htmlFor={`terms-${type}`}
+                            className="text-xs leading-relaxed cursor-pointer"
+                            style={{ color: "rgb(var(--text-secondary))" }}
+                          >
                             I agree to Byteon&apos;s{" "}
-                            <TermsDialog trigger={<button type="button" className="underline underline-offset-2" style={{ color: "rgb(var(--text-primary))" }}>Terms of Service</button>} />{" "}
-                            and{" "}
-                            <PrivacyDialog trigger={<button type="button" className="underline underline-offset-2" style={{ color: "rgb(var(--text-primary))" }}>Privacy Policy</button>} />,
-                            and confirm I am at least 18 years of age.
+                            <TermsDialog trigger={
+                              <button type="button" className="underline underline-offset-2 transition-colors" style={{ color: "rgb(var(--text-primary))" }}>
+                                Terms of Service
+                              </button>
+                            } />{" "}and{" "}
+                            <PrivacyDialog trigger={
+                              <button type="button" className="underline underline-offset-2 transition-colors" style={{ color: "rgb(var(--text-primary))" }}>
+                                Privacy Policy
+                              </button>
+                            } />,{" "}and confirm I am at least 18 years of age.
+                            {agreedToTerms && (
+                              <span className="ml-1.5 inline-flex items-center gap-0.5 text-emerald-500 font-medium">
+                                <Check className="size-3" /> Agreed
+                              </span>
+                            )}
                           </label>
                         </div>
 

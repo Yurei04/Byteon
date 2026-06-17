@@ -37,56 +37,6 @@ import { useNotifications }      from "@/components/notifications/use-notificati
 import { Toast }                 from "../toast"
 import { useToast }              from "@/components/use-toast"
 
-// ── Theme Toggle Switch ───────────────────────────────────────────────────────
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const isDark = theme === "dark"
-
-  return (
-    <div className="w-full flex items-center gap-3 px-3 py-2.5">
-      <Sun
-        className="w-[18px] h-[18px] shrink-0"
-        style={{ color: isDark ? "rgb(var(--text-faint))" : "#f59e0b" }}
-      />
-      <button
-        role="switch"
-        aria-checked={isDark}
-        onClick={() => setTheme(isDark ? "light" : "dark")}
-        className="relative shrink-0 rounded-full transition-all duration-300 focus-visible:outline-none"
-        style={{
-          width: 36,
-          height: 20,
-          background: isDark
-            ? "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))"
-            : "rgb(var(--surface-border))",
-          boxShadow: isDark ? "0 0 8px rgb(var(--brand-500) / 0.4)" : "none",
-          border: isDark
-            ? "1px solid rgb(var(--brand-500) / 0.4)"
-            : "1px solid rgb(var(--surface-border))",
-        }}
-      >
-        <span
-          className="absolute top-[2px] flex items-center justify-center rounded-full bg-white transition-all duration-300"
-          style={{
-            width: 16,
-            height: 16,
-            left: isDark ? "calc(100% - 18px)" : "2px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
-          }}
-        >
-          {isDark
-            ? <Moon className="w-2.5 h-2.5" style={{ color: "rgb(var(--brand-600))" }} />
-            : <Sun  className="w-2.5 h-2.5" style={{ color: "#f59e0b" }} />
-          }
-        </span>
-      </button>
-      <Moon
-        className="w-[18px] h-[18px] shrink-0"
-        style={{ color: isDark ? "rgb(var(--brand-400))" : "rgb(var(--text-faint))" }}
-      />
-    </div>
-  )
-}
 
 function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick, onPageClick }) {
   const isActive = activeTab === "website"
@@ -226,6 +176,11 @@ function SidebarNavItem({ value, icon, label, isActive, onClick, badge, pulse })
 function SuperAdminDashboardPage() {
   const { profile, session, logout } = useAuth()
   const router = useRouter()
+
+  // At the top of SuperAdminDashboardPage, add:
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+  const toggleTheme = () => setTheme(isDark ? "light" : "dark")
 
   const [activeTab, setActiveTab]                 = useState("overview")
   const [sidebarOpen, setSidebarOpen]             = useState(false)
@@ -437,17 +392,6 @@ function SuperAdminDashboardPage() {
           className="p-3 space-y-1"
           style={{ borderTop: "1px solid rgb(var(--brand-500) / 0.15)" }}
         >
-          {/* Theme toggle */}
-          <div
-            className="rounded-xl mb-1"
-            style={{
-              background: "rgb(var(--surface-raised) / 0.5)",
-              border: "1px solid rgb(var(--brand-500) / 0.2)",
-            }}
-          >
-            <ThemeToggle />
-          </div>
-
           <ReturnButton className="mb-1" />
 
           <button
@@ -495,7 +439,7 @@ function SuperAdminDashboardPage() {
               <span className="text-sm font-semibold" style={{ color: "rgb(var(--text-primary))" }}>
                 {pageTitles[activeTab]?.title}
               </span>
-            </div>
+            </div> 
           </div>
 
           <div className="flex items-center gap-2">
@@ -550,6 +494,27 @@ function SuperAdminDashboardPage() {
                 Super Admin
               </span>
             </div>
+
+            <button
+              onClick={toggleTheme}
+              className="hidden md:flex p-2 rounded-xl transition-all duration-200"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              style={{
+                background: `rgb(var(--surface-raised))`,
+                border: `1px solid rgb(var(--surface-border))`,
+                color: `rgb(var(--text-faint))`,
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = `rgb(var(--bg-muted))`;
+                e.currentTarget.style.color = isDark ? "#f59e0b" : `rgb(var(--brand-500))`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = `rgb(var(--surface-raised))`;
+                e.currentTarget.style.color = `rgb(var(--text-faint))`;
+              }}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
         </header>
 

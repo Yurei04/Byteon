@@ -449,23 +449,46 @@ export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
 
-  // ── Theme mode ─────────────────────────────────────────────────────────────
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === "undefined") return true
-    const stored = localStorage.getItem("orgDashboardTheme")
-    return stored === null ? true : stored === "dark"
-  })
+// ── Theme mode ──────────────────────────────────────────────────────────────
+// Syncs BOTH our custom uiT tokens AND the global .dark class on <html>
+// so components using CSS variables (--text-faint, --brand-400, etc.) also respond.
 
-  const toggleTheme = () => {
-    setIsDark(prev => {
-      const next = !prev
-      try { localStorage.setItem("orgDashboardTheme", next ? "dark" : "light") } catch {}
-      return next
-    })
+const [isDark, setIsDark] = useState(() => {
+  if (typeof window === "undefined") return true
+  const stored = localStorage.getItem("orgDashboardTheme")
+  // If no preference stored yet, read the current <html> class as the source of truth
+  if (stored === null) {
+    return document.documentElement.classList.contains("dark")
   }
+  return stored === "dark"
+})
 
-  // uiT = UI theme tokens (backgrounds, borders, text colors)
-  const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
+// Apply on first render so the HTML class matches state immediately
+useEffect(() => {
+  if (isDark) {
+    document.documentElement.classList.add("dark")
+  } else {
+    document.documentElement.classList.remove("dark")
+  }
+}, [isDark])
+
+const toggleTheme = () => {
+  setIsDark(prev => {
+    const next = !prev
+    // 1. Persist preference
+    try { localStorage.setItem("orgDashboardTheme", next ? "dark" : "light") } catch {}
+    // 2. Flip the global CSS class — this makes ALL css vars update instantly
+    if (next) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+    return next
+  })
+}
+
+// uiT = our dashboard-specific surface/text tokens (separate from CSS vars)
+const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
 
   const [activeTab, setActiveTab]             = useState("overview")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
@@ -827,62 +850,6 @@ export default function OrgDashboardPage() {
         {/* ── Sidebar footer ── */}
         <div className="p-3 space-y-1" style={{ borderTop: `1px solid ${p}15` }}>
           <ReturnButton primaryC={p} secondaryC={s} />
-
-          {/* ── Light / Dark toggle ── */}
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
-            style={{
-              background: uiT.inlineBg,
-              color: uiT.mutedText,
-              border: `1px solid ${uiT.borderSubtle}`,
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = `${p}15`
-              e.currentTarget.style.borderColor = `${p}30`
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = uiT.inlineBg
-              e.currentTarget.style.borderColor = uiT.borderSubtle
-            }}
-          >
-            {isDark
-              ? <Sun  className="w-4 h-4 flex-shrink-0" style={{ color: "#f59e0b" }} />
-              : <Moon className="w-4 h-4 flex-shrink-0" style={{ color: p }} />
-            }
-            <span style={{ color: uiT.mutedText }}>
-              {isDark ? "Light mode" : "Dark mode"}
-            </span>
-
-            {/* ── Toggle pill ── */}
-            <div
-              className="ml-auto relative flex-shrink-0"
-              style={{
-                width: 36,
-                height: 20,
-                borderRadius: 999,
-                background:     isDark ? "#f59e0b" : p,
-                border:         isDark ? "1px solid rgba(245,158,11,0.6)" : `1px solid ${p}99`,
-                transition:     "background 0.25s, border-color 0.25s",
-              }}
-            >
-              <div
-                style={{
-                  position:    "absolute",
-                  top:          2,
-                  left:         2,
-                  width:        16,
-                  height:       16,
-                  borderRadius: "50%",
-                  background:   "#fff",
-                  transform:    isDark ? "translateX(16px)" : "translateX(0)",
-                  transition:   "transform 0.25s cubic-bezier(.4,0,.2,1)",
-                  boxShadow:    "0 1px 3px rgba(0,0,0,0.2)",
-                }}
-              />
-            </div>
-          </button>
-
           <button
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-red-500/10 mt-1"
             style={{ color: "#f87171", border: "1px solid transparent" }}
@@ -1236,8 +1203,15 @@ export default function OrgDashboardPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                       <div className="lg:col-span-2 space-y-6">
-                        <OrgAboutSection formData={formData} isEditing={isEditing} onChange={handleProfileChange} orgTheme={orgTheme} primaryC={p} secondaryC={s} />
-
+                        <OrgAboutSection
+                          formData={formData}
+                          isEditing={isEditing}
+                          onChange={handleProfileChange}
+                          primaryC={p}
+                          secondaryC={s}
+                          uiT={uiT}
+                          isDark={isDark}
+                        />
                         {/* Account info */}
                         <div className="rounded-2xl p-6 relative overflow-hidden"
                           style={{ background: uiT.cardBg2, border: `1px solid ${p}25`, boxShadow: `inset 0 1px 0 ${uiT.borderBase}` }}>
@@ -1362,7 +1336,14 @@ export default function OrgDashboardPage() {
                       <p className="text-xs mt-1" style={{ color: uiT.mutedText }}>Approval decisions, content alerts, and account status updates.</p>
                       <div className="org-section-divider mt-4" />
                     </div>
-                    <NotificationsTab userId={session?.user?.id} role="org_admin" />
+                    <NotificationsTab
+                      userId={session?.user?.id}
+                      role="org_admin"
+                      uiT={uiT}
+                      isDark={isDark}
+                      primaryC={p}
+                      secondaryC={s}
+                    />
                   </div>
                 </motion.div>
               )}
