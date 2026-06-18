@@ -1,11 +1,15 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 import { updateAccountTokens } from "@/lib/accountManager"
 
 const AuthContext = createContext(null)
 const CACHE_KEY = "auth_cache"
+
+// Roles that have an active/suspension_reason column
+const SUSPENDABLE_ROLES = ["user", "org_admin"]
 
 export function AuthProvider({ children }) {
   const [session, setSession]   = useState(null)
@@ -13,7 +17,18 @@ export function AuthProvider({ children }) {
   const [role, setRole]         = useState(null)
   const [loading, setLoading]   = useState(true)
   const currentUserIdRef        = useRef(null)
-  const isSwitchingRef          = useRef(false)
+  const router                  = useRouter()
+
+  // ── Redirect suspended accounts ────────────────────────────────────────────
+  const checkSuspension = useCallback((resolvedProfile, resolvedRole) => {
+    if (!SUSPENDABLE_ROLES.includes(resolvedRole)) return false
+    if (resolvedProfile?.active === false) {
+      const reason = encodeURIComponent(resolvedProfile.suspension_reason || "")
+      router.replace(`/account-suspended?reason=suspended&detail=${reason}`)
+      return true
+    }
+    return false
+  }, [router])
 
   const hydrateUser = useCallback(async (supabaseSession) => {
     if (!supabaseSession?.user) {
@@ -26,11 +41,12 @@ export function AuthProvider({ children }) {
 
     const userId = supabaseSession.user.id
 
+    // ── Cache — skip for suspendable roles so active status is always fresh ──
     try {
       const cached = sessionStorage.getItem(CACHE_KEY)
       if (cached) {
         const parsed = JSON.parse(cached)
-        if (parsed.id === userId) {
+        if (parsed.id === userId && !SUSPENDABLE_ROLES.includes(parsed.role)) {
           setSession(supabaseSession)
           setProfile(parsed.profile)
           setRole(parsed.role)
@@ -73,9 +89,7 @@ export function AuthProvider({ children }) {
 
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-          id:      userId,
-          role:    "super_admin",
-          profile: resolvedProfile,
+          id: userId, role: "super_admin", profile: resolvedProfile,
         }))
       } catch {}
 
@@ -95,7 +109,7 @@ export function AuthProvider({ children }) {
         profile_photo_url, color_scheme, primary_color, secondary_color,
         active, total_announcements, total_blogs, total_resources,
         profile_completed, created_at, updated_at,
-        approval_status, rejection_reason
+        approval_status, rejection_reason, suspension_reason
       `)
       .eq("user_id", userId)
       .maybeSingle()
@@ -103,11 +117,15 @@ export function AuthProvider({ children }) {
     if (!orgError && orgData) {
       const resolvedProfile = { ...orgData, role: "org_admin", table: "organizations" }
 
+      // ✅ Check suspension BEFORE caching or setting state
+      if (checkSuspension(resolvedProfile, "org_admin")) {
+        setLoading(false)
+        return
+      }
+
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-          id:      userId,
-          role:    "org_admin",
-          profile: resolvedProfile,
+          id: userId, role: "org_admin", profile: resolvedProfile,
         }))
       } catch {}
 
@@ -123,23 +141,11 @@ export function AuthProvider({ children }) {
     const { data: userData, error: userError } = await supabase
       .from("users")
       .select(`
-        id,
-        user_id,
-        name,
-        age,
-        affiliation,
-        country,
-        profile_photo_url,
-        achievements,
-        achievements_metadata,
-        chapters_completed,
-        chapters_unlocked,
-        profile_completed,
-        active,
-        suspension_reason,
-        accent_color,
-        created_at,
-        updated_at
+        id, user_id, name, age, affiliation, country,
+        profile_photo_url, achievements, achievements_metadata,
+        chapters_completed, chapters_unlocked,
+        profile_completed, active, suspension_reason,
+        accent_color, created_at, updated_at
       `)
       .eq("user_id", userId)
       .maybeSingle()
@@ -147,23 +153,24 @@ export function AuthProvider({ children }) {
     if (!userError && userData) {
       const resolvedProfile = { ...userData, role: "user", table: "users" }
 
+      // ✅ Check suspension BEFORE caching or setting state
+      if (checkSuspension(resolvedProfile, "user")) {
+        setLoading(false)
+        return
+      }
+
       try {
         sessionStorage.setItem(CACHE_KEY, JSON.stringify({
-          id:      userId,
-          role:    "user",
-          profile: resolvedProfile,
+          id: userId, role: "user", profile: resolvedProfile,
         }))
       } catch {}
 
-      // ✅ All state set atomically before setLoading(false), matching
-      // the super_admin and org_admin branches above. This prevents
-      // ProtectedRoute from seeing loading=false with role=null.
       setProfile(resolvedProfile)
       setRole("user")
       setSession(supabaseSession)
       currentUserIdRef.current = userId
       setLoading(false)
-      return  // ← early return, same pattern as other branches
+      return
     }
 
     // ── 4. Authenticated but no profile in any table ───────────────────────
@@ -172,7 +179,7 @@ export function AuthProvider({ children }) {
     setSession(supabaseSession)
     currentUserIdRef.current = userId
     setLoading(false)
-  }, [])
+  }, [checkSuspension])
 
   const clearAuth = useCallback(() => {
     try { sessionStorage.removeItem(CACHE_KEY) } catch {}
@@ -205,9 +212,7 @@ export function AuthProvider({ children }) {
           hydrateUser(newSession)
         }
       }
-
       if (event === "SIGNED_OUT") clearAuth()
-
       if (event === "TOKEN_REFRESHED" && newSession?.user?.id) {
         setSession(newSession)
         updateAccountTokens(
@@ -249,6 +254,7 @@ export function AuthProvider({ children }) {
       isUser:       role === "user",
       isOrgAdmin:   role === "org_admin",
       isSuperAdmin: role === "super_admin",
+      isSuspended:  profile?.active === false,
     }}>
       {children}
     </AuthContext.Provider>

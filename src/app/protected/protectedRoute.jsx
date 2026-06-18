@@ -10,7 +10,7 @@ export default function ProtectedRoute({
   allowOrg = false,
   allowSuperAdmin = false,
 }) {
-  const { loading, isLoggedIn, isUser, isOrgAdmin, isSuperAdmin } = useAuth()
+  const { loading, isLoggedIn, isUser, isOrgAdmin, isSuperAdmin, isSuspended, profile } = useAuth()
   const router = useRouter()
 
   const allowed =
@@ -21,12 +21,18 @@ export default function ProtectedRoute({
   useEffect(() => {
     if (loading) return
     if (!isLoggedIn) { router.replace("/log-in"); return }
-    if (!allowed) router.replace("/")
-  }, [loading, isLoggedIn, allowed, router])
+    if (isSuspended) {
+      const reason = encodeURIComponent(profile?.suspension_reason || "")
+      router.replace(`/account-suspended?reason=suspended&detail=${reason}`)
+      return
+    }
 
-  // Don't render or redirect until auth is fully resolved
+    if (!allowed) router.replace("/")
+  }, [loading, isLoggedIn, isSuspended, allowed, profile, router])
+
   if (loading) return null
   if (!isLoggedIn) return null
+  if (isSuspended) return null
   if (!allowed) return null
 
   return children
