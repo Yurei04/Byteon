@@ -53,7 +53,10 @@ export default function ResourceHubPage() {
     async function fetchData() {
       setLoading(true)
       const { data, error } = await supabase
-        .from("resource_hub").select("*").order("created_at", { ascending: false })
+        .from("resource_hub")
+        .select("*")
+        .neq("status", "suspended")
+        .order("created_at", { ascending: false })
 
       if (error || !data?.length) { setLoading(false); return }
 

@@ -200,8 +200,11 @@ export default function AnnouncePage() {
     async function fetchAnnouncements() {
       setLoading(true)
       const { data, error } = await supabase
-        .from("announcements").select("*").order("created_at", { ascending: false })
-
+      .from("announcements")
+      .select("*")
+      .neq("status", "suspended")
+      .or("date_end.is.null,date_end.gt." + new Date().toISOString())
+      .order("created_at", { ascending: false })
       if (error || !data?.length) { setLoading(false); return }
 
       const orgNames = [...new Set(data.map(a => a.organization).filter(Boolean))]

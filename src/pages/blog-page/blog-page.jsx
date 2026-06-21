@@ -52,7 +52,10 @@ export default function BlogPage() {
     async function fetchBlogs() {
       setLoading(true)
       const { data: blogData, error } = await supabase
-        .from("blogs").select("*").order("created_at", { ascending: false })
+        .from("blogs")
+        .select("*")
+        .neq("status", "suspended")
+        .order("created_at", { ascending: false })
 
       if (error || !blogData?.length) { setLoading(false); return }
 
