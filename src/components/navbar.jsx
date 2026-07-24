@@ -70,7 +70,6 @@ export default function Sidebar({
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   const handleLogoClick = () => {
-    onTabChange("home")
     onToggle?.()
   }
 
