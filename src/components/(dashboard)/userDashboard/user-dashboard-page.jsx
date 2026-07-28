@@ -13,6 +13,11 @@ import {
   Sun,
   Moon,
 } from "lucide-react"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import { useAuth }            from "@/components/(auth)/authContext"
 import UserProfile            from "@/components/(dashboard)/userDashboard/profile"
@@ -42,55 +47,17 @@ function StatusPill({ status }) {
   )
 }
 
-// ── Theme Toggle Switch ───────────────────────────────────────────────────────
-function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
-  const isDark = theme === "dark"
-
-  return (
-    <div className="w-full flex items-center gap-3 px-3 py-2.5">
-      <Sun
-        className="w-[18px] h-[18px] shrink-0 transition-colors duration-300"
-        style={{ color: isDark ? "var(--dash-text-faint)" : "#f59e0b" }}
-      />
-      <button
-        role="switch"
-        aria-checked={isDark}
-        onClick={() => setTheme(isDark ? "light" : "dark")}
-        className="relative shrink-0 rounded-full transition-all duration-300 focus-visible:outline-none"
-        style={{
-          width: 36,
-          height: 20,
-          background: isDark
-            ? "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))"
-            : "rgb(var(--surface-border))",
-          boxShadow: isDark ? "0 0 8px rgb(var(--brand-500) / 0.4)" : "none",
-          border: isDark
-            ? "1px solid rgb(var(--brand-500) / 0.4)"
-            : "1px solid rgb(var(--surface-border))",
-        }}
-      >
-        <span
-          className="absolute top-[2px] flex items-center justify-center rounded-full bg-white transition-all duration-300"
-          style={{
-            width: 16,
-            height: 16,
-            left: isDark ? "calc(100% - 18px)" : "2px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.4)",
-          }}
-        >
-          {isDark
-            ? <Moon className="w-2.5 h-2.5" style={{ color: "rgb(var(--brand-600))" }} />
-            : <Sun  className="w-2.5 h-2.5" style={{ color: "#f59e0b" }} />
-          }
-        </span>
-      </button>
-      <Moon
-        className="w-[18px] h-[18px] shrink-0 transition-colors duration-300"
-        style={{ color: isDark ? "rgb(var(--brand-400))" : "var(--dash-text-faint)" }}
-      />
-    </div>
-  )
+const toggleTheme = () => {
+  setIsDark(prev => {
+    const next = !prev
+    try { localStorage.setItem("orgDashboardTheme", next ? "dark" : "light") } catch {}
+    if (next) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+    return next
+  })
 }
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -166,7 +133,7 @@ function SectionWrapper({ children }) {
 }
 
 // ── Sidebar content ───────────────────────────────────────────────────────────
-function SidebarContent({ nav, activeTab, setActiveTab, profile, onClose, router }) {
+function SidebarContent({ nav, activeTab, setActiveTab, profile, onClose, router, setShowSignOutDialog }) {
   return (
     <div className="flex flex-col h-full py-5 px-3 relative">
       {/* Top gradient overlay */}
@@ -208,29 +175,22 @@ function SidebarContent({ nav, activeTab, setActiveTab, profile, onClose, router
       </nav>
 
       {/* Footer */}
-      <div className="space-y-2 pt-3 dash-footer-border">
-        {/* Theme toggle */}
-        <div className="rounded-xl mb-1 dash-theme-toggle-wrap">
-          <ThemeToggle />
-        </div>
+      <div
+          className="p-3 space-y-1"
+          style={{ borderTop: "1px solid rgb(var(--brand-500) / 0.15)" }}
+        >
+          <ReturnButton className="mb-1" />
 
-        {/* User chip */}
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl dash-user-chip">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 dash-avatar">
-            {profile?.full_name?.[0]?.toUpperCase() || "U"}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold truncate" style={{ color: "var(--dash-text-primary)" }}>
-              {profile?.full_name || "Participant"}
-            </p>
-            <p className="text-[10px] truncate" style={{ color: "var(--dash-text-faint)" }}>
-              {profile?.email || ""}
-            </p>
-          </div>
+          <button
+            onClick={() => setShowSignOutDialog(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-red-500/10 mt-1"
+            style={{ color: "#f87171", border: "1px solid transparent" }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = "transparent"}
+          >
+            <LogOut className="w-4 h-4" />Sign Out
+          </button>
         </div>
-
-        <ReturnButton />
-      </div>
     </div>
   )
 }
@@ -238,8 +198,14 @@ function SidebarContent({ nav, activeTab, setActiveTab, profile, onClose, router
 // ── Main dashboard ────────────────────────────────────────────────────────────
 export default function UserDashboardPage() {
   const router = useRouter()
-  const { profile, role, loading: authLoading, isLoggedIn } = useAuth()
-  const { theme } = useTheme()
+  const { profile, role, loading: authLoading, isLoggedIn, logout } = useAuth()
+  
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+  const toggleTheme = () => setTheme(isDark ? "light" : "dark")
+
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false)
+  const [signingOut, setSigningOut]               = useState(false)
 
   const [activeTab, setActiveTab]       = useState("overview")
   const [blogs, setBlogs]               = useState([])
@@ -249,6 +215,12 @@ export default function UserDashboardPage() {
   const realtimeChannelRef = useRef(null)
   const { unreadCount }                = useNotifications({ userId: profile?.user_id || null, role: "user" })
   const { toasts, addToast, removeToast } = useToast()
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try { await logout(); router.push("/") }
+    catch (err) { console.error(err); setSigningOut(false); setShowSignOutDialog(false) }
+  }
 
   // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -529,6 +501,40 @@ export default function UserDashboardPage() {
         }
       `}</style>
 
+      <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <AlertDialogContent
+          className="border-red-500/30"
+          style={{ background: "rgb(var(--bg-base))", backdropFilter: "blur(20px)" }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2" style={{ color: "#f87171" }}>
+              <LogOut className="w-5 h-5" />Sign Out
+            </AlertDialogTitle>
+            <AlertDialogDescription style={{ color: "rgb(var(--text-muted))" }}>
+              Are you sure you want to sign out of the Super Admin panel?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={signingOut}
+              style={{ background: "rgb(var(--surface-raised))", color: "rgb(var(--text-primary))", borderColor: "rgb(var(--surface-border))" }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white border-none"
+            >
+              {signingOut
+                ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Signing out…</>
+                : <><LogOut className="w-4 h-4 mr-2" />Sign Out</>
+              }
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Dot grid + ambient glows */}
       <div className="fixed inset-0 z-0 pointer-events-none dash-dot-grid" />
       <div className="fixed top-[-8%] left-[15%] w-[520px] h-[520px] rounded-full pointer-events-none z-0 dash-glow-blob-1" />
@@ -563,6 +569,7 @@ export default function UserDashboardPage() {
           nav={NAV} activeTab={activeTab}
           setActiveTab={(v) => { setActiveTab(v); setSidebarOpen(false) }}
           profile={profile} onClose={() => setSidebarOpen(false)} router={router}
+          setShowSignOutDialog={setShowSignOutDialog} 
         />
       </motion.aside>
 
@@ -575,7 +582,7 @@ export default function UserDashboardPage() {
           backdropFilter: "blur(20px)",
         }}
       >
-        <SidebarContent nav={NAV} activeTab={activeTab} setActiveTab={setActiveTab} profile={profile} router={router} />
+        <SidebarContent nav={NAV} activeTab={activeTab} setActiveTab={setActiveTab} profile={profile} router={router} setShowSignOutDialog={setShowSignOutDialog} />
       </aside>
 
       {/* ════ MAIN AREA ════ */}
@@ -651,6 +658,16 @@ export default function UserDashboardPage() {
               <span className="text-xs hidden sm:inline max-w-[90px] truncate" style={{ color: "var(--dash-text-secondary)" }}>
                 {profile?.full_name || "Participant"}
               </span>
+            </button>
+            <button
+              onClick={toggleTheme}
+              className="hidden md:flex p-2 rounded-xl transition-all duration-200 dash-theme-toggle-wrap"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              style={{ color: "var(--dash-text-muted)" }}
+              onMouseEnter={e => { e.currentTarget.style.color = isDark ? "#f59e0b" : "#c026d3" }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--dash-text-muted)" }}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
         </header>
@@ -889,6 +906,8 @@ export default function UserDashboardPage() {
 
             </motion.div>
           </AnimatePresence>
+
+          
 
           <div className="h-8" />
         </main>

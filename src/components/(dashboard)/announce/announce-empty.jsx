@@ -17,7 +17,7 @@ export default function AnnounceEmpty() {
             </h3>
             
             <p className="text-text-secondary/70 text-center leading-relaxed">
-                We couldn't find any announcements matching your search. Try adjusting your filters or search terms.
+                We couldn&apos;t find any announcements matching your search. Try adjusting your filters or search terms.
             </p>
 
             <div className="mt-8 flex gap-3">

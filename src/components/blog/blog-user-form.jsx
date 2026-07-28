@@ -1,113 +1,92 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle, Loader2, FileText, User, Tag, Camera } from "lucide-react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Image from "next/image"
+import { Loader2, FileText, User, Tag, Clock } from "lucide-react"
 
 const THEME_OPTIONS = [
-  "Technology",
-  "Education",
-  "Lifestyle",
-  "Business",
-  "Health & Wellness",
-  "Science",
-  "Arts & Culture",
-  "Travel",
-  "Food & Cooking",
-  "Sports",
-  "Gaming",
-  "Finance",
-  "Environment",
-  "Personal Development",
-  "Other"
+  "Technology","Education","Lifestyle","Business","Health & Wellness",
+  "Science","Arts & Culture","Travel","Food & Cooking","Sports",
+  "Gaming","Finance","Environment","Personal Development","Other"
 ]
 
-export default function BlogUserForm({ onSuccess, currentUser, authUserId }) {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const [isFetchingUser, setIsFetchingUser] = useState(true)
-  const [alert, setAlert] = useState(null)
-  const [imageError, setImageError] = useState(false)
-  const [formData, setFormData] = useState({
-    title: "",
-    des: "",
-    content: "",
-    image: "",
-    theme: ""
-  })
+// ── Shared field label ────────────────────────────────────────────────────────
+function FieldLabel({ icon: Icon, children, required }) {
+  return (
+    <label className="text-base font-semibold flex items-center gap-2 mb-1 text-text-primary">
+      {Icon && <Icon className="w-4 h-4 text-brand-600" />}
+      {children}{required && <span className="text-brand-600"> *</span>}
+    </label>
+  )
+}
 
-  const handleImageChange = (e) => {
-    setFormData({...formData, image: e.target.value})
-    setImageError(false)
-  }
+// ── Shared text input ─────────────────────────────────────────────────────────
+function Field({ className = "", ...props }) {
+  return (
+    <input
+      {...props}
+      className={`w-full px-3 h-12 rounded-lg text-base outline-none transition-all
+        bg-surface-raised border border-surface-border text-text-primary
+        placeholder:text-text-faint
+        focus:border-brand-500 ${className}`}
+    />
+  )
+}
+
+// ── Shared textarea ───────────────────────────────────────────────────────────
+function Tarea({ rows = 3, className = "", ...props }) {
+  return (
+    <textarea
+      {...props}
+      rows={rows}
+      className={`w-full px-3 py-2.5 rounded-lg text-sm outline-none transition-all resize-none
+        bg-surface-raised border border-surface-border text-text-primary
+        placeholder:text-text-faint
+        focus:border-brand-500 ${className}`}
+    />
+  )
+}
+
+// ── Main form ─────────────────────────────────────────────────────────────────
+export default function PendingBlogUserForm({ onSuccess, currentUser, authUserId, addToast }) {
+  const [isLoading, setIsLoading]   = useState(false)
+  const [formData, setFormData]     = useState({ title: "", des: "", content: "", theme: "" })
+
+  const set = (key, val) => setFormData(prev => ({ ...prev, [key]: val }))
 
   const handleSubmit = async () => {
     if (!currentUser || !authUserId) {
-      setAlert({ type: 'error', message: 'User not found. Please refresh the page and log in again.' })
-      return
+      addToast("error", "User not found. Please refresh and log in again."); return
     }
-
-    if (!formData.title.trim() || !formData.content.trim()) {
-      setAlert({ type: 'error', message: 'Please fill in all required fields (Title and Content)' })
-      return
+    if (!formData.title || !formData.content) {
+      addToast("error", "Please add a Title and Content"); return
+    }
+    if (!formData.theme) {
+      addToast("error", "Please add a theme"); return
     }
 
     setIsLoading(true)
-    setAlert(null)
-
     try {
-      const blogData = {
-        title: formData.title.trim(),
-        des: formData.des.trim() || null,
-        content: formData.content.trim(),
-        image: formData.image.trim() || null,
-        theme: formData.theme || null,
-        user_id: currentUser.id,
+      const payload = {
+        title:           formData.title.trim(),
+        des:             formData.des.trim() || null,
+        content:         formData.content.trim(),
+        image:           null,
+        theme:           formData.theme || null,
+        user_id:         authUserId,
         organization_id: null,
-        author: currentUser.name || 'Anonymous',
-        user_name: currentUser.name || null,
-        created_at: new Date().toISOString()
+        author:          currentUser.name || "Anonymous",
+        user_name:       currentUser.name || null,
+        status:          "pending",
+        submitted_by:    currentUser.user_id,
       }
-
-      console.log('Submitting blog:', blogData)
-
-      const { data, error } = await supabase
-        .from('blogs')
-        .insert([blogData])
-        .select()
-      
-      if (error) {
-        console.error('Insert error:', error)
-        throw error
-      }
-
-      console.log('Blog created:', data)
-      setAlert({ type: 'success', message: 'Blog created successfully! 🎉' })
-      
-      setFormData({
-        title: "",
-        des: "",
-        content: "",
-        image: "",
-        theme: ""
-      })
-      setImageError(false)
-
-      setTimeout(() => {
-        if (onSuccess) onSuccess()
-      }, 1500)
-    } catch (error) {
-      console.error('Error creating blog:', error)
-      setAlert({ type: 'error', message: `Failed to create blog: ${error.message}` })
+      const { error } = await supabase.from("pending_blogs").insert([payload])
+      if (error) throw error
+      addToast("success", "Submitted for approval! The super admin will review your announcement.")
+      setFormData({ title: "", des: "", content: "", theme: "" })
+      setTimeout(() => { if (onSuccess) onSuccess() }, 1500)
+    } catch {
+      addToast("error", "Submission Failed. Try Again.")
     } finally {
       setIsLoading(false)
     }
@@ -116,167 +95,122 @@ export default function BlogUserForm({ onSuccess, currentUser, authUserId }) {
   if (!currentUser) {
     return (
       <div className="w-full max-w-4xl mx-auto">
-        <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
-          <CardContent className="p-12 text-center">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-fuchsia-300" />
-            <p className="text-fuchsia-200/70">Loading user information...</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl p-12 text-center bg-surface border border-surface-border">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-brand-600" />
+          <p className="text-text-muted">Loading user information…</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <Card className="bg-gradient-to-br from-fuchsia-900/20 via-purple-900/20 to-slate-950/20 backdrop-blur-xl border border-fuchsia-500/30">
-        <CardHeader className="border-b border-fuchsia-500/20 pb-6">
-          <div className="flex items-center justify-between">
+      <div className="rounded-2xl overflow-hidden backdrop-blur-xl bg-surface border border-surface-border">
+
+        {/* Card header */}
+        <div className="px-6 pt-6 pb-5 flex items-center justify-between border-b border-surface-border">
+          <div>
+            <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-brand-600 to-accent-500">
+              Create New Blog Post
+            </h2>
+            <p className="text-base mt-1 text-text-muted">
+              Your post will be reviewed before going live
+            </p>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-100 border border-brand-300">
+            <User className="w-4 h-4 text-brand-600" />
+            <span className="text-sm font-medium text-brand-700">
+              {currentUser.name}
+            </span>
+          </div>
+        </div>
+
+        {/* Card body */}
+        <div className="p-6 space-y-6">
+
+          {/* Pending notice */}
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/25">
+            <Clock className="w-4 h-4 shrink-0 text-amber-500" />
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              This blog will be <strong className="text-amber-900 dark:text-amber-200">reviewed by the super admin</strong> before going live.
+            </p>
+          </div>
+
+          {/* Author chip */}
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-accent-500/10 border border-accent-500/25">
+            <User className="w-5 h-5 text-accent-500" />
             <div>
-              <CardTitle className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-purple-300">
-                Create New Blog Post
-              </CardTitle>
-              <CardDescription className="text-fuchsia-200/70 text-base mt-2">
-                Share your thoughts, experiences, and insights with the Byteon community
-              </CardDescription>
-            </div>
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-fuchsia-500/20 rounded-lg border border-fuchsia-400/30">
-              <User className="w-4 h-4 text-fuchsia-300" />
-              <span className="text-fuchsia-200 text-sm font-medium">{currentUser.name}</span>
+              <p className="text-sm text-text-muted">Submitting as</p>
+              <p className="font-semibold text-text-primary">{currentUser.name}</p>
             </div>
           </div>
-        </CardHeader>
 
-        <CardContent className="p-6">
-          {alert && (
-            <Alert className={`mb-6 ${alert.type === 'error' ? 'border-red-500 bg-red-500/10 text-red-100' : 'border-green-500 bg-green-500/10 text-green-100'}`}>
-              {alert.type === 'error' ? <AlertCircle className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
-              <AlertDescription className="text-base">{alert.message}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 p-4 bg-purple-500/10 rounded-lg border border-purple-400/30">
-              <User className="w-5 h-5 text-purple-300" />
-              <div>
-                <p className="text-purple-200/70 text-sm">Publishing as</p>
-                <p className="text-purple-100 font-semibold">{currentUser.name}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 text-lg font-semibold flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Blog Title *
-              </Label>
-              <Input
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40 focus:border-fuchsia-400 focus:ring-fuchsia-400/20 h-12 text-lg"
-                placeholder="Enter an engaging title for your blog post..."
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 text-lg font-semibold">
-                Short Description
-              </Label>
-              <Textarea
-                value={formData.des}
-                onChange={(e) => setFormData({...formData, des: e.target.value})}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40 focus:border-fuchsia-400 focus:ring-fuchsia-400/20 resize-none"
-                placeholder="Write a brief summary that captures the essence of your post..."
-                rows={3}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 text-lg font-semibold flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Blog Content *
-              </Label>
-              <Textarea
-                value={formData.content}
-                onChange={(e) => setFormData({...formData, content: e.target.value})}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40 focus:border-fuchsia-400 focus:ring-fuchsia-400/20 resize-none"
-                placeholder="Share your story, insights, or knowledge here..."
-                rows={10}
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 font-semibold flex items-center gap-2">
-                <Tag className="w-4 h-4" />
-                Theme/Category
-              </Label>
-              <Select value={formData.theme} onValueChange={(value) => setFormData({...formData, theme: value})}>
-                <SelectTrigger className="bg-white/5 border-fuchsia-500/30 text-white focus:border-fuchsia-400 focus:ring-fuchsia-400/20">
-                  <SelectValue placeholder="Select a theme for your blog..." />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-950 border-fuchsia-500/30">
-                  {THEME_OPTIONS.map((theme) => (
-                    <SelectItem key={theme} value={theme} className="text-white hover:bg-fuchsia-500/20">
-                      {theme}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-fuchsia-100 font-semibold flex items-center gap-2">
-                <Camera className="w-4 h-4" />
-                Featured Image URL
-              </Label>
-              <Input
-                type="url"
-                value={formData.image}
-                onChange={handleImageChange}
-                className="bg-white/5 border-fuchsia-500/30 text-white placeholder:text-fuchsia-200/40 focus:border-fuchsia-400"
-                placeholder="https://example.com/image.jpg"
-              />
-              {formData.image && !imageError && (
-                <div className="mt-4 rounded-lg overflow-hidden border border-fuchsia-500/30 relative w-full h-48">
-                  <Image
-                    src={formData.image} 
-                    alt="Blog preview"
-                    fill
-                    className="object-cover"
-                    onError={() => setImageError(true)}
-                  />
-                </div>
-              )}
-              {imageError && formData.image && (
-                <div className="mt-4 p-4 rounded-lg border border-red-500/30 bg-red-500/10">
-                  <p className="text-red-200 text-sm flex items-center gap-2">
-                    <AlertCircle className="w-4 w-4" />
-                    Unable to load image. Please check the URL.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-6 border-t border-fuchsia-500/20">
-              <Button 
-                onClick={handleSubmit}
-                className="w-full h-14 text-lg font-semibold bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white shadow-lg shadow-fuchsia-500/30 transition-all duration-300"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Publishing Your Blog...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="mr-2 h-5 w-5" />
-                    Publish Blog Post
-                  </>
-                )}
-              </Button>
-            </div>
+          {/* Title */}
+          <div className="space-y-2">
+            <FieldLabel icon={FileText} required>Blog Title</FieldLabel>
+            <Field
+              value={formData.title}
+              onChange={e => set("title", e.target.value)}
+              placeholder="Enter an engaging title…"
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <FieldLabel>Short Description</FieldLabel>
+            <Tarea
+              value={formData.des}
+              onChange={e => set("des", e.target.value)}
+              placeholder="Brief summary…"
+              rows={3}
+            />
+          </div>
+
+          {/* Content */}
+          <div className="space-y-2">
+            <FieldLabel icon={FileText} required>Blog Content</FieldLabel>
+            <Tarea
+              value={formData.content}
+              onChange={e => set("content", e.target.value)}
+              placeholder="Share your story, insights, or knowledge here…"
+              rows={10}
+            />
+          </div>
+
+          {/* Theme select */}
+          <div className="space-y-2">
+            <FieldLabel icon={Tag}>Theme / Category</FieldLabel>
+            <select
+              value={formData.theme}
+              onChange={e => set("theme", e.target.value)}
+              className={`w-full px-3 h-10 rounded-lg text-sm outline-none transition-all appearance-none
+                bg-surface-raised border border-surface-border
+                ${formData.theme ? "text-text-primary" : "text-text-faint"}`}
+            >
+              <option value="" disabled hidden>Select a theme…</option>
+              {THEME_OPTIONS.map(t => (
+                <option key={t} value={t} className="bg-surface-raised text-text-primary">
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Submit */}
+          <div className="pt-4 border-t border-surface-border">
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full h-14 rounded-xl text-lg font-semibold text-white flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-70 bg-gradient-to-br from-brand-600 to-accent-500 shadow-[0_4px_20px_rgba(192,38,211,0.30)] hover:opacity-90"
+            >
+              {isLoading
+                ? <><Loader2 className="w-5 h-5 animate-spin" />Submitting…</>
+                : <><Clock className="w-5 h-5" />Submit for Approval</>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

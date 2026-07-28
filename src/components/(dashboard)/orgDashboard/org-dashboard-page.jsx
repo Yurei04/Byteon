@@ -510,7 +510,7 @@ const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
   const [isEditing, setIsEditing]             = useState(false)
   const [isProfileSaving, setIsProfileSaving] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false)
   const [formData, setFormData] = useState({
     name: "", description: "", author_name: "", contact_email: "",
     color_scheme: "black", active: true, achievements: [],
