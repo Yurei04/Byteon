@@ -7,7 +7,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
 import { useRouter } from "next/navigation"
@@ -447,7 +451,8 @@ function SidebarNavItem({ value, icon, label, isActive, onClick, p, s, uiT, badg
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function OrgDashboardPage() {
   const router = useRouter()
-  const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile } = useAuth()
+  const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile, logout } = useAuth()
+  
 
 // ── Theme mode ──────────────────────────────────────────────────────────────
 // Syncs BOTH our custom uiT tokens AND the global .dark class on <html>
@@ -487,8 +492,8 @@ const toggleTheme = () => {
   })
 }
 
-// uiT = our dashboard-specific surface/text tokens (separate from CSS vars)
-const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
+  const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
+
 
   const [activeTab, setActiveTab]             = useState("overview")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
@@ -511,6 +516,7 @@ const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
   const [isProfileSaving, setIsProfileSaving] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [showSignOutDialog, setShowSignOutDialog] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
   const [formData, setFormData] = useState({
     name: "", description: "", author_name: "", contact_email: "",
     color_scheme: "black", active: true, achievements: [],
@@ -673,6 +679,19 @@ const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
       else                         refreshResources()
       await notifyContentDeletedByOrg({ orgName: profile?.name || "An organization", contentType: type, contentTitle: item?.title || "Untitled" })
     } catch (error) { console.error("Delete error:", error) }
+  }
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try {
+      await logout()
+      router.push("/")
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSigningOut(false)
+      setShowSignOutDialog(false)
+    }
   }
 
   const paginateData  = (data, page) => data.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
@@ -851,7 +870,8 @@ const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
         <div className="p-3 space-y-1" style={{ borderTop: `1px solid ${p}15` }}>
           <ReturnButton primaryC={p} secondaryC={s} />
           <button
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:bg-red-500/10 mt-1"
+            onClick={() => setShowSignOutDialog(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-red-500/10 mt-1"
             style={{ color: "#f87171", border: "1px solid transparent" }}
             onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"}
             onMouseLeave={e => e.currentTarget.style.borderColor = "transparent"}
@@ -1348,6 +1368,40 @@ const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
                 </motion.div>
               )}
             </AnimatePresence>
+
+            <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+              <AlertDialogContent
+                className="border-red-500/30"
+                style={{ background: uiT.cardBg, backdropFilter: "blur(20px)" }}
+              >
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2" style={{ color: "#f87171" }}>
+                    <LogOut className="w-5 h-5" />Sign Out
+                  </AlertDialogTitle>
+                  <AlertDialogDescription style={{ color: uiT.mutedText }}>
+                    Are you sure you want to sign out of the organization dashboard?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel
+                    disabled={signingOut}
+                    style={{ background: uiT.surfaceBg2, color: uiT.headingText, borderColor: uiT.borderMid }}
+                  >
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white border-none"
+                  >
+                    {signingOut
+                      ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Signing out…</>
+                      : <><LogOut className="w-4 h-4 mr-2" />Sign Out</>
+                    }
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
             <div className="h-8" />
           </div>
