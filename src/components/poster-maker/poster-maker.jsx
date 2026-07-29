@@ -16,7 +16,7 @@ export default function PosterMaker({ embedded = false }) {
   const handleGenerate = async (formData) => {
     setIsLoading(true)
     setError(null)
-    setAspectRatio(formData.aspectRatio)
+    setAspectRatio(formData.ratio)  
     try {
       const res = await fetch("/api/generate-poster", {
         method: "POST",
