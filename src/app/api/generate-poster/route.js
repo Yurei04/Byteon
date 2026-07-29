@@ -2,8 +2,7 @@ export const maxDuration = 60
 export const dynamic = "force-dynamic"
 
 import { NextResponse } from "next/server"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
 
 const openai = new OpenAI({
@@ -68,44 +67,29 @@ async function generateWithOpenAI(prompt, aspectRatio) {
 }
 
 export async function POST(req) {
-  const cookieStore = await cookies()
-
-  const supabase = createServerClient(
+  // Plain supabase-js client — no cookie/session handling, no @supabase/ssr.
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // Expected when called from a Server Component; middleware
-            // refreshing the session handles this case instead.
-          }
-        },
-      },
-    }
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
 
   try {
-    // getUser() revalidates the JWT against the Supabase Auth server.
-    // getSession() only reads cookies and can be spoofed if tampered with.
+    // Expect the client to send the Supabase access token as a Bearer token,
+    // e.g. `Authorization: Bearer <session.access_token>`.
+    const authHeader = req.headers.get("authorization") || ""
+    const token = authHeader.startsWith("Bearer ")
+      ? authHeader.slice("Bearer ".length)
+      : null
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // getUser(token) validates the JWT against the Supabase Auth server.
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser()
-
-    // TEMP DEBUG — remove once auth issue is resolved
-    console.log("AUTH_DEBUG:", {
-      userId: user?.id,
-      authError: authError?.message,
-      cookieNames: cookieStore.getAll().map((c) => c.name),
-    })
+    } = await supabase.auth.getUser(token)
 
     if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

@@ -4,8 +4,10 @@ import { useState } from "react"
 import PosterForm from "./poster-form"
 import PosterPreview from "./poster-preview"
 import PosterHistory from "./poster-history"
+import { useAuth } from "../(auth)/authContext"
 
 export default function PosterMaker({ embedded = false }) {
+   const { session } = useAuth() 
   const [activeTab, setActiveTab] = useState("create")
   const [result, setResult] = useState({ images: [], prompt: null })
   const [isLoading, setIsLoading] = useState(false)
@@ -20,7 +22,10 @@ export default function PosterMaker({ embedded = false }) {
     try {
       const res = await fetch("/api/generate-poster", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify(formData),
       })
       const data = await res.json()
