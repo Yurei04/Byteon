@@ -289,7 +289,7 @@ export default function UserViewableSection({ blogs = [], blogsLoading = false, 
   const closeDelete = () => { if (actionLoading) return; setDeleteDialog(null); setDeleteReason("") }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 ">
       <style>{THEME_STYLES}</style>
 
       {/* Local toast */}
@@ -324,7 +324,7 @@ export default function UserViewableSection({ blogs = [], blogsLoading = false, 
       </div>
 
       {/* Split screen */}
-      <div className="flex gap-3 h-[580px]">
+      <div className="flex gap-3 h-[580px]  w-full">
 
         {/* LEFT — list */}
         <div className="w-[300px] shrink-0 flex flex-col rounded-2xl overflow-hidden transition-colors duration-200"

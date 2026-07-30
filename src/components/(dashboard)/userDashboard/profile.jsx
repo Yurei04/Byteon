@@ -7,42 +7,6 @@ import PersonalInformation from "./personal-information"
 import ProfileStats from "./profile-stats"
 import AchievementsTab from "@/components/achievements/achievementStab"
 
-const THEME_STYLES = `
-  /* ── Light ── */
-  :root {
-    --up-bg:           rgba(253,244,255,0.60);
-    --up-border:       rgba(192,38,211,0.18);
-    --up-heading:      #c026d3;
-
-    --up-alert-ok-bg:      rgba(34,197,94,0.10);
-    --up-alert-ok-border:  rgba(34,197,94,0.30);
-    --up-alert-ok-text:    #15803d;
-    --up-alert-err-bg:     rgba(239,68,68,0.10);
-    --up-alert-err-border: rgba(239,68,68,0.30);
-    --up-alert-err-text:   #b91c1c;
-
-    --up-loading-text:  #a11bb0;
-    --up-empty-text:    rgba(112,25,118,0.45);
-  }
-
-  /* ── Dark ── */
-  .dark {
-    --up-bg:           rgba(15,2,20,0.60);
-    --up-border:       rgba(168,85,247,0.20);
-    --up-heading:      #e879f9;
-
-    --up-alert-ok-bg:      rgba(34,197,94,0.12);
-    --up-alert-ok-border:  rgba(34,197,94,0.30);
-    --up-alert-ok-text:    #86efac;
-    --up-alert-err-bg:     rgba(239,68,68,0.12);
-    --up-alert-err-border: rgba(239,68,68,0.30);
-    --up-alert-err-text:   #fca5a5;
-
-    --up-loading-text:  #e879f9;
-    --up-empty-text:    rgba(255,255,255,0.35);
-  }
-`
-
 export default function UserProfile({ onSuccess, currentUser, authUserId }) {
   const [profile, setProfile]               = useState(null)
   const [isLoading, setIsLoading]           = useState(true)
@@ -133,36 +97,29 @@ export default function UserProfile({ onSuccess, currentUser, authUserId }) {
 
   if (isLoading) return (
     <div className="flex justify-center items-center p-12">
-      <style>{THEME_STYLES}</style>
-      <Loader2 className="mr-2 h-8 w-8 animate-spin" style={{ color: "var(--up-loading-text)" }} />
-      <span style={{ color: "var(--up-loading-text)" }}>Loading profile…</span>
+      <Loader2 className="mr-2 h-8 w-8 animate-spin text-accent-600 dark:text-accent-400" />
+      <span className="text-accent-600 dark:text-accent-400">Loading profile…</span>
     </div>
   )
 
   if (!profile) return (
     <div className="flex justify-center items-center p-12">
-      <style>{THEME_STYLES}</style>
-      <AlertCircle className="mr-2 h-6 w-6" style={{ color: "var(--up-empty-text)" }} />
-      <span style={{ color: "var(--up-empty-text)" }}>Profile not found.</span>
+      <AlertCircle className="mr-2 h-6 w-6 text-text-muted/60" />
+      <span className="text-text-muted/60">Profile not found.</span>
     </div>
   )
 
   return (
     <div className="space-y-6">
-      <style>{THEME_STYLES}</style>
 
       {/* Alert */}
       {alert && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium"
-          style={alert.type === "error" ? {
-            background:   "var(--up-alert-err-bg)",
-            borderColor:  "var(--up-alert-err-border)",
-            color:        "var(--up-alert-err-text)",
-          } : {
-            background:   "var(--up-alert-ok-bg)",
-            borderColor:  "var(--up-alert-ok-border)",
-            color:        "var(--up-alert-ok-text)",
-          }}>
+        <div className={
+          "flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium " +
+          (alert.type === "error"
+            ? "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300"
+            : "bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-300")
+        }>
           {alert.type === "error"
             ? <AlertCircle className="h-4 w-4 shrink-0" />
             : <CheckCircle className="h-4 w-4 shrink-0" />}
@@ -183,10 +140,8 @@ export default function UserProfile({ onSuccess, currentUser, authUserId }) {
       </div>
 
       {/* Achievements panel */}
-      <div className="rounded-2xl backdrop-blur-lg p-4 sm:p-6"
-        style={{ background: "var(--up-bg)", border: "1px solid var(--up-border)" }}>
-        <h2 className="text-sm font-mono font-bold tracking-widest uppercase mb-4 flex items-center gap-2"
-          style={{ color: "var(--up-heading)" }}>
+      <div className="rounded-2xl backdrop-blur-lg p-4 sm:p-6 bg-brand-50/60 dark:bg-bg-base/60 border border-brand-500/20 dark:border-accent-500/20">
+        <h2 className="text-sm font-mono font-bold tracking-widest uppercase mb-4 flex items-center gap-2 text-brand-600 dark:text-brand-400">
           🏆 Achievements
         </h2>
         <AchievementsTab achievementsMetadata={achievementsMetadata} />
