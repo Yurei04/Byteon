@@ -332,3 +332,36 @@
   line-height: 1.55;
   white-space: pre;
 }
+
+/* ════════════════════════════════════════
+   NOVA RICH TEXT
+   ════════════════════════════════════════ */
+.nova-rich-text strong {
+  font-weight: 600;
+  color: rgb(var(--text-primary));
+}
+
+.nova-h2,
+.nova-h3 {
+  font-weight: 600;
+  color: rgb(var(--brand-700)); /* dark purple — readable on white */
+}
+
+.dark .nova-h2,
+.dark .nova-h3 {
+  color: rgb(var(--brand-300)); /* light purple — readable on dark surface */
+}
+
+.nova-inline-code {
+  font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 0.75rem;
+  background: rgb(var(--brand-500) / 0.12);
+  color: rgb(var(--brand-700));
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgb(var(--brand-500) / 0.25);
+}
+
+.dark .nova-inline-code {
+  color: rgb(var(--brand-200));
+}
