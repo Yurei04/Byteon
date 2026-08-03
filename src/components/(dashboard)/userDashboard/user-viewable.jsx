@@ -91,6 +91,31 @@ const THEME_STYLES = `
     --uv-pager-hover-border: rgba(192,38,211,0.30);
     --uv-pager-hover-text: #c026d3;
     --uv-pager-disabled:  rgba(161,27,176,0.25);
+
+    /* toast */
+    --uv-toast-success-bg:     rgba(236,253,245,0.95);
+    --uv-toast-success-border: rgba(16,185,129,0.35);
+    --uv-toast-success-text:   #065f46;
+    --uv-toast-success-icon:   #059669;
+    --uv-toast-error-bg:       rgba(254,242,242,0.95);
+    --uv-toast-error-border:   rgba(239,68,68,0.35);
+    --uv-toast-error-text:     #991b1b;
+    --uv-toast-error-icon:     #dc2626;
+
+    /* delete dialog */
+    --uv-danger-bg:            linear-gradient(135deg, #ffffff, #fdf2f8 55%, #ffffff);
+    --uv-danger-border:        rgba(225,29,72,0.18);
+    --uv-danger-icon-bg:       rgba(225,29,72,0.08);
+    --uv-danger-icon-border:   rgba(225,29,72,0.22);
+    --uv-danger-icon-color:    #dc2626;
+    --uv-danger-title:         #9f1239;
+    --uv-danger-quote-bg:      rgba(225,29,72,0.06);
+    --uv-danger-quote-border:  rgba(225,29,72,0.16);
+    --uv-danger-quote-text:    rgba(112,25,118,0.60);
+    --uv-danger-note:          rgba(112,25,118,0.35);
+    --uv-danger-textarea-bg:      rgba(255,255,255,0.70);
+    --uv-danger-textarea-border:  rgba(225,29,72,0.20);
+    --uv-danger-cancel-hover-bg:  rgba(192,38,211,0.06);
   }
 
   /* ── Dark ── */
@@ -154,6 +179,31 @@ const THEME_STYLES = `
     --uv-pager-hover-border: rgba(255,255,255,0.15);
     --uv-pager-hover-text: rgba(255,255,255,0.60);
     --uv-pager-disabled:  rgba(255,255,255,0.20);
+
+    /* toast */
+    --uv-toast-success-bg:     rgba(6,78,59,0.90);
+    --uv-toast-success-border: rgba(16,185,129,0.40);
+    --uv-toast-success-text:   #a7f3d0;
+    --uv-toast-success-icon:   #34d399;
+    --uv-toast-error-bg:       rgba(69,10,10,0.90);
+    --uv-toast-error-border:   rgba(239,68,68,0.40);
+    --uv-toast-error-text:     #fecaca;
+    --uv-toast-error-icon:     #f87171;
+
+    /* delete dialog */
+    --uv-danger-bg:            linear-gradient(135deg, #020617, rgba(76,5,25,0.25), #020617);
+    --uv-danger-border:        rgba(244,63,94,0.20);
+    --uv-danger-icon-bg:       rgba(239,68,68,0.10);
+    --uv-danger-icon-border:   rgba(239,68,68,0.25);
+    --uv-danger-icon-color:    #f87171;
+    --uv-danger-title:         #fecdd3;
+    --uv-danger-quote-bg:      rgba(255,255,255,0.03);
+    --uv-danger-quote-border:  rgba(255,255,255,0.08);
+    --uv-danger-quote-text:    rgba(255,255,255,0.40);
+    --uv-danger-note:          rgba(255,255,255,0.18);
+    --uv-danger-textarea-bg:      rgba(0,0,0,0.40);
+    --uv-danger-textarea-border:  rgba(239,68,68,0.15);
+    --uv-danger-cancel-hover-bg:  rgba(255,255,255,0.08);
   }
 `
 
@@ -294,14 +344,17 @@ export default function UserViewableSection({ blogs = [], blogsLoading = false, 
 
       {/* Local toast */}
       {localToast && !addToast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm font-medium
-          animate-in slide-in-from-top-2 fade-in duration-300
-          ${localToast.type === "error"
-            ? "bg-red-950/90 border-red-500/40 text-red-200 shadow-red-900/40"
-            : "bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-900/40"}`}>
+        <div
+          className="fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl backdrop-blur-md text-sm font-medium animate-in slide-in-from-top-2 fade-in duration-300"
+          style={{
+            background: localToast.type === "error" ? "var(--uv-toast-error-bg)" : "var(--uv-toast-success-bg)",
+            borderColor: localToast.type === "error" ? "var(--uv-toast-error-border)" : "var(--uv-toast-success-border)",
+            color: localToast.type === "error" ? "var(--uv-toast-error-text)" : "var(--uv-toast-success-text)",
+          }}
+        >
           {localToast.type === "error"
-            ? <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            : <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />}
+            ? <AlertCircle className="w-4 h-4 shrink-0" style={{ color: "var(--uv-toast-error-icon)" }} />
+            : <CheckCircle className="w-4 h-4 shrink-0" style={{ color: "var(--uv-toast-success-icon)" }} />}
           {localToast.msg}
         </div>
       )}
@@ -420,44 +473,73 @@ export default function UserViewableSection({ blogs = [], blogsLoading = false, 
 
       {/* Delete dialog */}
       <AlertDialog open={!!deleteDialog} onOpenChange={(open) => { if (!open) closeDelete() }}>
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
+        <AlertDialogContent
+          className="backdrop-blur-xl shadow-2xl max-w-md"
+          style={{ background: "var(--uv-danger-bg)", border: "1px solid var(--uv-danger-border)" }}
+        >
           <AlertDialogHeader className="gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
-                <ShieldAlert className="w-5 h-5 text-red-400" />
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: "var(--uv-danger-icon-bg)", border: "1px solid var(--uv-danger-icon-border)" }}
+              >
+                <ShieldAlert className="w-5 h-5" style={{ color: "var(--uv-danger-icon-color)" }} />
               </div>
               <div>
-                <AlertDialogTitle className="text-red-200 text-base font-semibold">Delete Blog Post</AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">Platform admins will be notified</p>
+                <AlertDialogTitle className="text-base font-semibold" style={{ color: "var(--uv-danger-title)" }}>
+                  Delete Blog Post
+                </AlertDialogTitle>
+                <p className="text-xs mt-0.5" style={{ color: "var(--uv-text-faint)" }}>
+                  Platform admins will be notified
+                </p>
               </div>
             </div>
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
-                <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
+                <div
+                  className="px-3 py-2.5 rounded-lg text-xs leading-relaxed"
+                  style={{ background: "var(--uv-danger-quote-bg)", border: "1px solid var(--uv-danger-quote-border)", color: "var(--uv-danger-quote-text)" }}
+                >
                   Permanently deleting{" "}
-                  <span className="text-white font-medium">"{deleteDialog?.title}"</span>.
+                  <span className="font-medium" style={{ color: "var(--uv-text-primary)" }}>"{deleteDialog?.title}"</span>.
                   This cannot be undone.
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
+                  <label
+                    className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-2"
+                    style={{ color: "var(--uv-text-faint)" }}
+                  >
                     <XCircle className="w-3 h-3 shrink-0" />Reason
-                    <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
+                    <span className="font-normal normal-case tracking-normal" style={{ color: "var(--uv-danger-note)" }}>(optional)</span>
                   </label>
                   <Textarea
                     value={deleteReason}
                     onChange={(e) => setDeleteReason(e.target.value)}
                     placeholder="e.g. Outdated content, no longer relevant…"
-                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
+                    className="text-xs resize-none focus:ring-0 rounded-lg"
+                    style={{
+                      background: "var(--uv-danger-textarea-bg)",
+                      border: "1px solid var(--uv-danger-textarea-border)",
+                      color: "var(--uv-text-primary)",
+                    }}
                     rows={3}
                   />
-                  <p className="text-white/18 text-[11px] leading-relaxed">Optional note for the audit trail.</p>
+                  <p className="text-[11px] leading-relaxed" style={{ color: "var(--uv-danger-note)" }}>
+                    Optional note for the audit trail.
+                  </p>
                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 mt-1">
-            <AlertDialogCancel disabled={actionLoading} onClick={closeDelete}
-              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all">
+            <AlertDialogCancel
+              disabled={actionLoading}
+              onClick={closeDelete}
+              className="cursor-pointer text-sm transition-all"
+              style={{ background: "transparent", color: "var(--uv-text-muted)", border: "1px solid var(--uv-border)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--uv-danger-cancel-hover-bg)"; e.currentTarget.style.color = "var(--uv-text-primary)" }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--uv-text-muted)" }}
+            >
               Cancel
             </AlertDialogCancel>
             <Button onClick={confirmDelete} disabled={actionLoading}
@@ -596,7 +678,7 @@ function BlogDetailPane({ blog, onDelete, onUpdate, actionLoading }) {
               onClick={onDelete}
               disabled={actionLoading}
               className="h-9 px-4 rounded-lg text-xs font-medium flex items-center gap-2 transition-all active:scale-[0.97] text-white disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, rgba(219,39,119,0.70), rgba(192,38,211,0.70))" }}
+              style={{ background: "linear-gradient(135deg, rgba(219,39,119,0.85), rgba(192,38,211,0.85))" }}
               onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
               onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             >

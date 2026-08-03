@@ -126,7 +126,7 @@ function NavItem({ icon: Icon, label, badge, active, onClick }) {
 // ── Section wrapper ───────────────────────────────────────────────────────────
 function SectionWrapper({ children }) {
   return (
-    <div className="dash-section-wrapper rounded-2xl overflow-hidden">
+    <div className="dash-section-wrapper rounded-2xl overflow-hidden w-full">
       <div className="p-4 sm:p-6">{children}</div>
     </div>
   )

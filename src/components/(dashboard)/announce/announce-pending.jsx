@@ -364,45 +364,90 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded,
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link2 className="w-4 h-4" style={{ color: uiT?.mutedText }} />
-          <Label style={{ color: uiT?.headingText }} className="font-semibold">
+          <Link2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+
+          <Label
+            style={{ color: uiT?.headingText }}
+            className="font-semibold"
+          >
             Links <span className="text-red-400">*</span>
           </Label>
+
           {links.length > 0 && (
-            <span className="text-xs px-1.5 py-0.5 rounded-full"
-              style={{ color: uiT?.mutedText, background: uiT?.inlineBg, border: `1px solid ${uiT?.borderSubtle}` }}>
+            <span
+              className="
+                text-xs px-1.5 py-0.5 rounded-full
+                bg-blue-100 text-blue-700 border border-blue-300
+                dark:bg-white/5 dark:text-white/70 dark:border-white/10
+              "
+            >
               {links.length}
             </span>
           )}
         </div>
+
         <div className="relative">
           <button
             type="button"
-            onClick={(e) => { e.preventDefault(); setShowDropdown(p => !p) }}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all"
-            style={{ background: uiT?.inlineBg, borderColor: uiT?.borderSubtle, color: uiT?.mutedText }}
+            onClick={(e) => {
+              e.preventDefault()
+              setShowDropdown((p) => !p)
+            }}
+            className="
+              flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all
+
+              bg-blue-50 border-blue-300 text-blue-700
+              hover:bg-blue-100 hover:border-blue-400 hover:text-blue-800
+
+              dark:bg-white/5 dark:border-white/10 dark:text-white/70
+              dark:hover:bg-white/10 dark:hover:text-white
+            "
           >
             <Plus className="w-3.5 h-3.5" />
             Add Link
-            <ChevronDown className={`w-3 h-3 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`w-3 h-3 transition-transform ${
+                showDropdown ? "rotate-180" : ""
+              }`}
+            />
           </button>
+
           {showDropdown && (
             <div
-              className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden min-w-[180px]"
-              style={{
-                background: uiT?.cardBg ?? "rgba(15,15,25,0.95)",
-                border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
-                boxShadow: "0 16px 40px rgba(0,0,0,0.35)",
-              }}
+              className="
+                absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden min-w-[180px]
+                bg-white border border-slate-300 shadow-xl
+
+                dark:bg-[rgba(15,15,25,0.95)]
+                dark:border-white/10
+              "
             >
               {LINK_TYPES.map((lt) => {
                 const Icon = lt.icon
+
                 return (
-                  <button key={lt.key} type="button" onClick={(e) => addLink(e, lt.key)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left transition-all hover:bg-white/5 ${lt.color}`}
+                  <button
+                    key={lt.key}
+                    type="button"
+                    onClick={(e) => addLink(e, lt.key)}
+                    className={`
+                      w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left transition-all
+                      hover:bg-slate-100
+                      dark:hover:bg-white/5
+                      ${lt.color}
+                    `}
                   >
-                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${lt.bg}`}><Icon className="w-3.5 h-3.5" /></span>
-                    <span style={{ color: uiT?.bodyText ?? "rgba(255,255,255,0.8)" }}>{lt.label}</span>
+                    <span
+                      className={`w-6 h-6 rounded-md flex items-center justify-center ${lt.bg}`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                    </span>
+
+                    <span
+                      className="text-slate-700 dark:text-white/80"
+                    >
+                      {lt.label}
+                    </span>
                   </button>
                 )
               })}
@@ -413,40 +458,116 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded,
 
       {links.length === 0 ? (
         <div
-          className="flex flex-col items-center justify-center py-6 rounded-xl border-dashed border text-center transition-all"
+          className="
+            flex flex-col items-center justify-center py-6 rounded-xl border-dashed border text-center transition-all
+          "
           style={{
-            background: hasError ? "rgba(239,68,68,0.04)" : uiT?.surfaceBg ?? "rgba(255,255,255,0.02)",
-            borderColor: hasError ? "rgba(239,68,68,0.35)" : uiT?.borderSubtle ?? "rgba(255,255,255,0.10)",
+            background: hasError
+              ? "rgba(239,68,68,0.06)"
+              : undefined,
+            borderColor: hasError
+              ? "rgba(239,68,68,0.35)"
+              : undefined,
           }}
         >
-          <Link2 className="w-5 h-5 mb-2" style={{ color: hasError ? "rgba(248,113,113,0.4)" : uiT?.mutedText }} />
-          <p className="text-xs" style={{ color: hasError ? "rgba(248,113,113,0.7)" : uiT?.mutedText }}>
-            {hasError ? "At least one link is required." : 'No links added yet. Click "Add Link" to get started.'}
+          <Link2
+            className={`w-5 h-5 mb-2 ${
+              hasError
+                ? "text-red-400"
+                : "text-slate-500 dark:text-slate-400"
+            }`}
+          />
+
+          <p
+            className={`text-xs ${
+              hasError
+                ? "text-red-500"
+                : "text-slate-600 dark:text-slate-400"
+            }`}
+          >
+            {hasError
+              ? "At least one link is required."
+              : 'No links added yet. Click "Add Link" to get started.'}
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           {links.map((link) => {
-            const cfg = LINK_TYPES.find(lt => lt.key === link.typeKey) || LINK_TYPES[0]
+            const cfg =
+              LINK_TYPES.find((lt) => lt.key === link.typeKey) ||
+              LINK_TYPES[0]
+
             const Icon = cfg.icon
+
             return (
-              <div key={link.id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${cfg.border} transition-all`}
-                style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)" }}>
-                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}><Icon className={`w-3.5 h-3.5 ${cfg.color}`} /></span>
+              <div
+                key={link.id}
+                className={`
+                  flex items-center gap-2 px-3 py-2 rounded-xl border
+                  ${cfg.border}
+                  transition-all
+                `}
+                style={{
+                  background:
+                    uiT?.surfaceBg2 ??
+                    "rgba(255,255,255,0.03)",
+                }}
+              >
+                <span
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}
+                >
+                  <Icon
+                    className={`w-3.5 h-3.5 ${cfg.color}`}
+                  />
+                </span>
+
                 <div className="flex-1 min-w-0">
-                  <p className={`text-[10px] font-medium mb-0.5 ${cfg.color}`}>{cfg.label}</p>
+                  <p
+                    className={`text-[10px] font-medium mb-0.5 ${cfg.color}`}
+                  >
+                    {cfg.label}
+                  </p>
+
                   <Input
-                    onFocus={onFocus} onBlur={onBlur} type="url"
-                    value={link.value} onChange={(e) => updateLink(link.id, e.target.value)}
+                    onFocus={onFocus}
+                    onBlur={onBlur}
+                    type="url"
+                    value={link.value}
+                    onChange={(e) =>
+                      updateLink(link.id, e.target.value)
+                    }
                     placeholder={cfg.placeholder}
-                    className="h-7 text-xs placeholder:text-white/25 border-0 bg-transparent px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    style={{ color: uiT?.headingText ?? "#ffffff", boxShadow: "none" }}
+                    className="
+                      h-7 text-xs px-0 border-0 bg-transparent
+                      text-slate-900 placeholder:text-slate-400
+                      focus-visible:ring-0 focus-visible:ring-offset-0
+
+                      dark:text-white
+                      dark:placeholder:text-white/25
+                    "
+                    style={{
+                      color: uiT?.headingText,
+                      boxShadow: "none",
+                    }}
                   />
                 </div>
-                <button type="button" onClick={(e) => removeLink(e, link.id)}
-                  className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-all hover:text-red-400 hover:bg-red-400/10"
-                  style={{ color: uiT?.mutedText }}>
+
+                <button
+                  type="button"
+                  onClick={(e) => removeLink(e, link.id)}
+                  className="
+                    shrink-0 w-6 h-6 rounded-lg flex items-center justify-center
+                    text-slate-500
+                    hover:text-red-500
+                    hover:bg-red-100
+
+                    dark:text-white/60
+                    dark:hover:text-red-400
+                    dark:hover:bg-red-400/10
+
+                    transition-all
+                  "
+                >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -475,91 +596,230 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur, uiT }) {
   }, 0)
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-amber-400/15 border border-amber-400/25 flex items-center justify-center">
-          <Trophy className="w-3.5 h-3.5 text-amber-400" />
-        </div>
-        <div>
-          <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>
-            Prize Pool <span className="text-red-400">*</span>
-          </Label>
-          {total > 0 && <p className="text-xs text-amber-400/70 mt-0.5">≈ ${total.toLocaleString()} total</p>}
-        </div>
+   <div className="space-y-4">
+    <div className="flex items-center gap-2">
+      <div className="w-7 h-7 rounded-lg bg-amber-200 dark:bg-amber-400/15 border border-amber-500 dark:border-amber-400/25 flex items-center justify-center">
+        <Trophy className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
       </div>
 
-      <div className="p-3 rounded-xl"
-        style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)", border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}` }}>
-        <div className="flex items-center gap-1.5 mb-2">
-          <Sparkles className="w-3 h-3 text-amber-400/60" />
-          <span className="text-[10px] font-medium uppercase tracking-widest" style={{ color: uiT?.mutedText }}>Quick templates</span>
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {PRIZE_TEMPLATES.map((tmpl) => (
-            <button key={tmpl.name} type="button" onClick={(e) => applyTemplate(e, tmpl)}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-all hover:bg-amber-400/10 hover:text-amber-300 hover:border-amber-400/25"
-              style={{ color: uiT?.mutedText, background: uiT?.inlineBg, borderColor: uiT?.borderBase }}
+      <div>
+        <Label
+          className="font-semibold leading-none"
+          style={{ color: uiT?.headingText }}
+        >
+          Prize Pool <span className="text-red-400">*</span>
+        </Label>
+
+        {total > 0 && (
+          <p className="text-xs text-amber-700 dark:text-amber-400/70 mt-0.5">
+            ≈ ${total.toLocaleString()} total
+          </p>
+        )}
+      </div>
+    </div>
+
+    <div
+      className="p-3 rounded-xl"
+      style={{
+        background:
+          uiT?.surfaceBg2 ??
+          "rgba(255,255,255,0.03)",
+        border: `1px solid ${
+          uiT?.borderBase ?? "rgba(255,255,255,0.07)"
+        }`,
+      }}
+    >
+      <div className="flex items-center gap-1.5 mb-2">
+        <Sparkles className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+        <span
+          className="text-[10px] font-medium uppercase tracking-widest"
+          style={{ color: uiT?.mutedText }}
+        >
+          Quick templates
+        </span>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {PRIZE_TEMPLATES.map((tmpl) => (
+          <button
+            key={tmpl.name}
+            type="button"
+            onClick={(e) => applyTemplate(e, tmpl)}
+            className="
+              flex items-center gap-1 px-2 py-1 rounded-md text-[11px]
+              border border-amber-300 bg-amber-50 text-amber-800
+              transition-all
+
+              hover:bg-amber-200
+              hover:text-amber-900
+              hover:border-amber-500
+
+              dark:border-white/10
+              dark:bg-white/5
+              dark:text-white
+              dark:hover:bg-amber-400/10
+              dark:hover:text-amber-300
+              dark:hover:border-amber-400/25
+            "
+          >
+            {tmpl.name}
+            <span
+              className="text-[10px] opacity-70"
             >
-              {tmpl.name}
-              <span className="text-[10px]" style={{ color: uiT?.mutedText, opacity: 0.6 }}>{tmpl.value}</span>
-            </button>
-          ))}
-        </div>
+              {tmpl.value}
+            </span>
+          </button>
+        ))}
       </div>
+    </div>
 
-      <div className="space-y-2">
-        {prizes.map((prize, index) => {
-          const rank = RANK_STYLES[index] || DEFAULT_RANK
-          return (
-            <div key={prize.id} className={`rounded-xl overflow-hidden ${rank.ring} ${rank.glow} transition-all`}>
-              <div className={`px-4 py-3 ${rank.bg}`}>
-                <div className="flex items-start gap-3">
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 mt-1 ${rank.badge}`}>
-                    {rank.medal ?? `#${index + 1}`}
-                  </span>
-                  <div className="flex-1 grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="text-[9px] font-medium uppercase tracking-widest mb-1" style={{ color: uiT?.mutedText }}>Prize Name</p>
-                      <Input
-                        onFocus={onFocus} onBlur={onBlur}
-                        value={prize.name}
-                        onChange={(e) => updatePrize(prize.id, "name", e.target.value.slice(0, LIMITS.prize_name))}
-                        placeholder="e.g. 1st Place"
-                        maxLength={LIMITS.prize_name}
-                        className="h-8 text-sm placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
-                        style={{ borderRadius: "0.5rem", color: uiT?.headingText }}
-                      />
-                      <CharCount current={prize.name.length} max={LIMITS.prize_name} uiT={uiT} />
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-medium uppercase tracking-widest mb-1" style={{ color: uiT?.mutedText }}>Value</p>
-                      <Input
-                        onFocus={onFocus} onBlur={onBlur}
-                        value={prize.value}
-                        onChange={(e) => updatePrize(prize.id, "value", e.target.value)}
-                        placeholder="$5,000"
-                        className="h-8 text-sm placeholder:text-white/20 border-white/10 bg-white/5 focus-visible:border-white/30"
-                        style={{ borderRadius: "0.5rem", color: uiT?.headingText }}
-                      />
-                    </div>
+    <div className="space-y-2">
+      {prizes.map((prize, index) => {
+        const rank = RANK_STYLES[index] || DEFAULT_RANK
+
+        return (
+          <div
+            key={prize.id}
+            className={`rounded-xl overflow-hidden ${rank.ring} ${rank.glow} transition-all`}
+          >
+            <div className={`px-4 py-3 ${rank.bg}`}>
+              <div className="flex items-start gap-3">
+                <span
+                  className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 mt-1 ${rank.badge}`}
+                >
+                  {rank.medal ?? `#${index + 1}`}
+                </span>
+
+                <div className="flex-1 grid grid-cols-2 gap-2">
+                  <div>
+                    <p
+                      className="text-[9px] font-medium uppercase tracking-widest mb-1"
+                      style={{ color: uiT?.mutedText }}
+                    >
+                      Prize Name
+                    </p>
+
+                    <Input
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                      value={prize.name}
+                      onChange={(e) =>
+                        updatePrize(
+                          prize.id,
+                          "name",
+                          e.target.value.slice(0, LIMITS.prize_name)
+                        )
+                      }
+                      placeholder="e.g. 1st Place"
+                      maxLength={LIMITS.prize_name}
+                      className="
+                        h-8 text-sm
+                        bg-white
+                        border-slate-400
+                        text-slate-900
+                        placeholder:text-slate-500
+                        focus-visible:border-amber-500
+
+                        dark:bg-white/5
+                        dark:border-white/10
+                        dark:text-white
+                        dark:placeholder:text-white/20
+                        dark:focus-visible:border-white/30
+                      "
+                      style={{
+                        borderRadius: "0.5rem",
+                        color: uiT?.headingText,
+                      }}
+                    />
+
+                    <CharCount
+                      current={prize.name.length}
+                      max={LIMITS.prize_name}
+                      uiT={uiT}
+                    />
                   </div>
-                  {prizes.length > 1 && (
-                    <button type="button" onClick={(e) => removePrize(e, prize.id)}
-                      className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:text-red-400 hover:bg-red-400/10 mt-0.5"
-                      style={{ color: uiT?.mutedText }}>
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+
+                  <div>
+                    <p
+                      className="text-[9px] font-medium uppercase tracking-widest mb-1"
+                      style={{ color: uiT?.mutedText }}
+                    >
+                      Value
+                    </p>
+
+                    <Input
+                      onFocus={onFocus}
+                      onBlur={onBlur}
+                      value={prize.value}
+                      onChange={(e) =>
+                        updatePrize(prize.id, "value", e.target.value)
+                      }
+                      placeholder="$5,000"
+                      className="
+                        h-8 text-sm
+                        bg-white
+                        border-slate-400
+                        text-slate-900
+                        placeholder:text-slate-500
+                        focus-visible:border-amber-500
+
+                        dark:bg-white/5
+                        dark:border-white/10
+                        dark:text-white
+                        dark:placeholder:text-white/20
+                        dark:focus-visible:border-white/30
+                      "
+                      style={{
+                        borderRadius: "0.5rem",
+                        color: uiT?.headingText,
+                      }}
+                    />
+                  </div>
                 </div>
+
+                {prizes.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => removePrize(e, prize.id)}
+                    className="
+                      shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
+                      text-slate-500
+                      hover:text-red-500
+                      hover:bg-red-100
+                      transition-all
+                      mt-0.5
+
+                      dark:text-white/60
+                      dark:hover:text-red-400
+                      dark:hover:bg-red-400/10
+                    "
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
-          )
-        })}
-      </div>
+          </div>
+        )
+      })}
+    </div>
 
-      <button type="button" onClick={addPrize}
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-amber-500/25 text-amber-400/60 hover:text-amber-300 hover:bg-amber-500/8 hover:border-amber-500/40 text-sm transition-all">
-        <Plus className="w-4 h-4" /> Add Prize
+      <button
+        type="button"
+        onClick={addPrize}
+        className="
+          w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
+          border border-dashed
+          border-amber-300 dark:border-amber-500/25
+          text-amber-600 dark:text-amber-400/60
+          hover:text-amber-700 dark:hover:text-amber-300
+          hover:bg-amber-100 dark:hover:bg-amber-500/8
+          hover:border-amber-400 dark:hover:border-amber-500/40
+          text-sm transition-all
+        "
+      >
+        <Plus className="w-4 h-4" />
+        Add Prize
       </button>
     </div>
   )
@@ -810,9 +1070,9 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       {/* ── Pending notice ── */}
       <div className="flex items-start gap-2.5 p-3.5 rounded-xl"
         style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
-        <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <p className="text-amber-200/80 text-sm leading-relaxed">
-          This submission will be <span className="text-amber-300 font-medium">reviewed by the super admin</span> before going live.
+        <Clock className="w-4 h-4 text-amber-800 dark:text-amber-300 shrink-0 mt-0.5" />
+        <p className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed">
+          This submission will be <span className="text-amber-800 dark:text-amber-300 font-medium">reviewed by the super admin</span> before going live.
         </p>
       </div>
 
@@ -822,7 +1082,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
           style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)" }}>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-            <span className="text-amber-200/70 text-xs">Draft auto-saved</span>
+            <span className="text-amber-800 dark:text-amber-300 text-xs">Draft auto-saved</span>
           </div>
           <div className="flex items-center gap-1">
             <button type="button" onClick={() => resetForm()} className="text-xs text-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 px-2.5 py-1 rounded-lg transition-all">Clear</button>

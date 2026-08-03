@@ -1,3 +1,4 @@
+/*
 "use client"
 import DatePicker from "@/components/DatePickerClient"
 import { forwardRef } from "react"
@@ -285,7 +286,7 @@ return
         )}
 
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Draft restored indicator */}
+
           {hasDraft && (
             <div className="flex items-center justify-between gap-3 p-3 border border-amber-400/30 rounded-xl bg-amber-950/20">
               <div className="flex items-center gap-2">
@@ -383,7 +384,6 @@ return
 
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-  {/* START */}
 <div className="relative">
 
   <label className="block text-sm font-semibold mb-1">
@@ -397,7 +397,6 @@ return
     customInput={<CalendarInput />}
   />
 
-{/* START TIME */}
 <div className="flex items-center gap-3 mt-2">
 
   <Input
@@ -432,7 +431,7 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
 </div>
   </div>
 
- {/* END */}
+
 <div className="relative">
 
   <label className="block text-sm font-semibold mb-1">
@@ -445,7 +444,7 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
     dateFormat="yyyy/MM/dd"
     customInput={<CalendarInput />}
   />
-{/* END TIME */}
+
 <div className="flex items-center gap-3 mt-2">
 
   <Input
@@ -528,3 +527,4 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
     </Card>
   )
 }
+*/

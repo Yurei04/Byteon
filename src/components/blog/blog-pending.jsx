@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Image from "next/image"
 
 const THEME_OPTIONS = [
   "Technology","Education","Lifestyle","Business","Health & Wellness",
@@ -32,10 +31,8 @@ const LIMITS = {
 export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, addToast, uiT }) {
   const [isLoading, setIsLoading]   = useState(false)
   const [alert, setAlert]           = useState(null)
-  const [imageError, setImageError] = useState(false)
   const [formData, setFormData]     = useState({
-    title: "", des: "", content: "", author: "",
-    image: "", hackathon: "", place: "", theme: ""
+    title: "", des: "", content: "", author: "", hackathon: "", place: "", theme: ""
   })
 
   // Derive org brand theme (for gradients, primary color accents, button styles)
@@ -64,7 +61,6 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
         des:             formData.des.trim()       || null,
         content:         formData.content.trim(),
         author:          formData.author.trim()    || currentOrg.name,
-        image:           formData.image.trim()     || null,
         hackathon:       formData.hackathon.trim() ? [formData.hackathon.trim()] : null,
         place:           formData.place.trim()     || null,
         theme:           formData.theme            || null,
@@ -80,8 +76,7 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
 
       addToast("success", "Submitted for approval! The super admin will review your blog.")
       setAlert({ type: "success", message: "Blog submitted for approval! ✅ The super admin will review it." })
-      setFormData({ title: "", des: "", content: "", author: "", image: "", hackathon: "", place: "", theme: "" })
-      setImageError(false)
+      setFormData({ title: "", des: "", content: "", author: "", hackathon: "", place: "", theme: "" })
       setTimeout(() => { if (onSuccess) onSuccess() }, 1500)
     } catch (error) {
       setAlert({ type: "error", message: `Submission failed: ${error.message}` })
@@ -164,15 +159,13 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
 
         <CardContent className="p-6">
           {/* ── Pending notice ── */}
-          <div
-            className="flex items-center gap-2 mb-5 p-3 rounded-xl"
-            style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.20)" }}
-          >
-            <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-            <p className="text-amber-200 text-sm">
-              This blog will be <strong>reviewed by the super admin</strong> before going live.
-            </p>
-          </div>
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl mb-4"
+          style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
+          <Clock className="w-4 h-4 text-amber-800 dark:text-amber-300 shrink-0 mt-0.5" />
+          <p className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed">
+            This submission will be <span className="text-amber-800 dark:text-amber-300 font-medium">reviewed by the super admin</span> before going live.
+          </p>
+        </div>
 
           {/* ── Alert ── */}
           {alert && (
@@ -312,33 +305,6 @@ export default function PendingBlogOrgForm({ onSuccess, currentOrg, authUserId, 
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* ── Image URL ── */}
-            <div className="space-y-3">
-              <Label className="font-semibold flex items-center gap-2" style={{ color: labelColor }}>
-                <Camera className="w-4 h-4" />Featured Image URL
-              </Label>
-              <Input
-                type="url"
-                value={formData.image}
-                onChange={(e) => { setFormData({ ...formData, image: e.target.value }); setImageError(false) }}
-                className="placeholder:opacity-40"
-                style={inputStyle}
-                placeholder="https://example.com/image.jpg"
-              />
-              {formData.image && !imageError && (
-                <div
-                  className="mt-4 rounded-lg overflow-hidden relative w-full h-48"
-                  style={{ border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.1)"}` }}
-                >
-                  <Image
-                    src={formData.image} alt="Preview" fill
-                    className="object-cover"
-                    onError={() => setImageError(true)}
-                  />
-                </div>
-              )}
             </div>
 
             {/* ── Submit ── */}

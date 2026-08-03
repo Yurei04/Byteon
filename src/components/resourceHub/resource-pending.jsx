@@ -100,13 +100,11 @@ export default function PendingResourceForm({ onSuccess, currentOrg, authUserId,
     <div style={t.cssVars}>
 
       {/* ── Pending notice ── */}
-      <div
-        className="flex items-center gap-2 mb-5 p-3 rounded-xl"
-        style={{ background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.20)" }}
-      >
-        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-        <p className="text-amber-200 text-sm">
-          This resource will be <strong>reviewed by the super admin</strong> before going live.
+      <div className="flex items-start gap-2.5 p-3.5 rounded-xl m-2"
+        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
+        <Clock className="w-4 h-4 text-amber-800 dark:text-amber-300 shrink-0 mt-0.5" />
+        <p className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed">
+          This submission will be <span className="text-amber-800 dark:text-amber-300 font-medium">reviewed by the super admin</span> before going live.
         </p>
       </div>
 
