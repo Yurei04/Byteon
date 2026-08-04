@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "../(auth)/authContext"
 
 function timeAgo(dateStr) {
   const diff  = Date.now() - new Date(dateStr).getTime()
@@ -25,15 +26,19 @@ const RATIO_CLASS = {
 }
 
 export default function PosterHistory({ refreshTrigger }) {
-  const [posters,  setPosters]  = useState([])
-  const [loading,  setLoading]  = useState(true)
+   const { session } = useAuth()
+  const [posters, setPosters] = useState([])
+  const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
   const [selected, setSelected] = useState(null)
 
   const fetchPosters = async () => {
+    if (!session?.access_token) { setLoading(false); return }
     setLoading(true)
     try {
-      const res  = await fetch("/api/poster-history")
+      const res = await fetch("/api/poster-history", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
       const data = await res.json()
       setPosters(data.posters ?? [])
     } catch (e) {
@@ -43,15 +48,19 @@ export default function PosterHistory({ refreshTrigger }) {
     }
   }
 
-  useEffect(() => { fetchPosters() }, [refreshTrigger])
+  useEffect(() => { fetchPosters() }, [refreshTrigger, session?.access_token])
 
   const handleDelete = async (id, e) => {
     e.stopPropagation()
+    if (!session?.access_token) return
     setDeleting(id)
     try {
       await fetch("/api/poster-history", {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ id }),
       })
       setPosters((prev) => prev.filter((p) => p.id !== id))

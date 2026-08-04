@@ -50,17 +50,11 @@ export default function PosterMaker({ embedded = false }) {
             >
               AI Poster Maker
             </h2>
-            <p
-              className="text-sm mt-0.5"
-              style={{ color: "rgb(var(--text-faint))" }}
-            >
-              Free · Pollinations.ai
-            </p>
           </div>
         )}
 
         {/* Tab switcher */}
-        <div
+{/*        <div
           className="flex items-center gap-1 p-1 rounded-xl"
           style={{
             background: "rgb(var(--surface))",
@@ -92,6 +86,7 @@ export default function PosterMaker({ embedded = false }) {
             </button>
           ))}
         </div>
+        */}
       </div>
 
       {activeTab === "create" && (
@@ -157,7 +152,6 @@ export default function PosterMaker({ embedded = false }) {
           </div>
         </div>
       )}
-
       {activeTab === "history" && (
         <div
           className="rounded-2xl p-6"

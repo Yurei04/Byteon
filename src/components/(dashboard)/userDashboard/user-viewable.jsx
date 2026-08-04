@@ -339,7 +339,7 @@ export default function UserViewableSection({ blogs = [], blogsLoading = false, 
   const closeDelete = () => { if (actionLoading) return; setDeleteDialog(null); setDeleteReason("") }
 
   return (
-    <div className="flex flex-col gap-4 ">
+    <div className="flex flex-col gap-4  w-full">
       <style>{THEME_STYLES}</style>
 
       {/* Local toast */}
@@ -659,21 +659,6 @@ function BlogDetailPane({ blog, onDelete, onUpdate, actionLoading }) {
 
           {/* actions */}
           <div className="flex items-center gap-2 shrink-0">
-            <BlogEditOrg blog={blog} onUpdate={onUpdate}>
-              <button
-                className="h-9 px-3 rounded-lg border text-xs flex items-center gap-1.5 transition-all active:scale-[0.97]"
-                style={{
-                  border:  "1px solid var(--uv-border)",
-                  color:   "var(--uv-text-muted)",
-                  background: "transparent",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--uv-brand-border)"; e.currentTarget.style.color = "var(--uv-brand)"; e.currentTarget.style.background = "var(--uv-brand-soft)" }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--uv-border)"; e.currentTarget.style.color = "var(--uv-text-muted)"; e.currentTarget.style.background = "transparent" }}
-              >
-                <Edit className="w-3.5 h-3.5" />Edit
-              </button>
-            </BlogEditOrg>
-
             <button
               onClick={onDelete}
               disabled={actionLoading}
