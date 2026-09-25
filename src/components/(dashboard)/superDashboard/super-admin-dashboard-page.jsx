@@ -572,10 +572,7 @@ function SuperAdminDashboardPage() {
                         style={{
                           background: "rgb(var(--surface-raised) / 0.4)",
                           border: `1px solid ${accent}28`,
-                          transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = `${accent}60`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${accent}20` }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = `${accent}28`; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none" }}
                       >
                         <div
                           className="w-8 h-8 rounded-xl flex items-center justify-center"
