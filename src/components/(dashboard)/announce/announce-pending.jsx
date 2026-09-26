@@ -43,14 +43,16 @@ const EMPTY_FORM = {
   color_scheme: "purple",
 }
 
-//restrict 3 days calendar
+//--- 3 days restrict
 const getMinHackathonDate = () => {
   const date = new Date()
   date.setHours(0, 0, 0, 0)
   date.setDate(date.getDate() + 3)
   return date
 }
-//---------
+//---
+
+
 const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
 const EMPTY_COUNTRIES = { mode: "global", list: [] }
 
@@ -159,22 +161,51 @@ function CharCount({ current, max, uiT }) {
 }
 
 // ─── CalendarInput ────────────────────────────────────────────────────────────
-const CalendarInput = forwardRef(({ value, onClick, uiT }, ref) => (
-  <div
-    onClick={onClick} ref={ref}
-    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all"
-    style={{
-      background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
-      border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
-      color: uiT?.headingText ?? "#ffffff",
-    }}
-  >
-    <span className="text-sm" style={{ color: value ? (uiT?.headingText ?? "#ffffff") : (uiT?.mutedText ?? "rgba(255,255,255,0.3)") }}>
-      {value || "Select date"}
-    </span>
-    <Calendar className="w-4 h-4" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.4)" }} />
-  </div>
-))
+const CalendarInput = forwardRef(
+  ({ value, onClick, onInputClick, uiT }, ref) => (
+    <div
+      onClick={(e) => {
+        if (onInputClick) {
+          const shouldOpen = onInputClick(e)
+
+          if (shouldOpen === false) {
+            e.preventDefault()
+            e.stopPropagation()
+            return
+          }
+        }
+
+        if (onClick) onClick(e)
+      }}
+      ref={ref}
+      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all"
+      style={{
+        background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+        border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+        color: uiT?.headingText ?? "#ffffff",
+      }}
+    >
+      <span
+        className="text-sm"
+        style={{
+          color: value
+            ? (uiT?.headingText ?? "#ffffff")
+            : (uiT?.mutedText ?? "rgba(255,255,255,0.3)"),
+        }}
+      >
+        {value || "Select date"}
+      </span>
+
+      <Calendar
+        className="w-4 h-4"
+        style={{
+          color: uiT?.mutedText ?? "rgba(255,255,255,0.4)",
+        }}
+      />
+    </div>
+  )
+)
+
 CalendarInput.displayName = "CalendarInput"
 
 // ─── TimeSelect ───────────────────────────────────────────────────────────────
@@ -1075,90 +1106,174 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
 
   return (
     <div style={t.cssVars} className="space-y-4">
-
       {/* ── Pending notice ── */}
-      <div className="flex items-start gap-2.5 p-3.5 rounded-xl"
-        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
+      <div
+        className="flex items-start gap-2.5 p-3.5 rounded-xl"
+        style={{
+          background: "rgba(245,158,11,0.08)",
+          border: "1px solid rgba(245,158,11,0.18)",
+        }}
+      >
         <Clock className="w-4 h-4 text-amber-800 dark:text-amber-300 shrink-0 mt-0.5" />
         <p className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed">
-          This submission will be <span className="text-amber-800 dark:text-amber-300 font-medium">reviewed by the super admin</span> before going live.
+          This submission will be{" "}
+          <span className="text-amber-800 dark:text-amber-300 font-medium">
+            reviewed by the super admin
+          </span>{" "}
+          before going live.
         </p>
       </div>
 
       {/* ── Auto-save draft indicator ── */}
       {hasDraft && !draftDismissed && (
-        <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl"
-          style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)" }}>
+        <div
+          className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl"
+          style={{
+            background: "rgba(245,158,11,0.06)",
+            border: "1px solid rgba(245,158,11,0.22)",
+          }}
+        >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-            <span className="text-amber-800 dark:text-amber-300 text-xs">Draft auto-saved</span>
+            <span className="text-amber-800 dark:text-amber-300 text-xs">
+              Draft auto-saved
+            </span>
           </div>
           <div className="flex items-center gap-1">
-            <button type="button" onClick={() => resetForm()} className="text-xs text-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 px-2.5 py-1 rounded-lg transition-all">Clear</button>
-            <button type="button" onClick={() => setDraftDismissed(true)} className="w-6 h-6 flex items-center justify-center rounded-lg text-amber-400/40 hover:text-amber-300 hover:bg-amber-400/10 transition-all" title="Dismiss"><X className="w-3.5 h-3.5" /></button>
+            <button
+              type="button"
+              onClick={() => resetForm()}
+              className="text-xs text-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 px-2.5 py-1 rounded-lg transition-all"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => setDraftDismissed(true)}
+              className="w-6 h-6 flex items-center justify-center rounded-lg text-amber-400/40 hover:text-amber-300 hover:bg-amber-400/10 transition-all"
+              title="Dismiss"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}
 
       {/* ── Submitting as ── */}
-      <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl"
-        style={{ background: uiT?.surfaceBg2 ?? t.badgeBgPrimary, border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.1)"}` }}>
-        <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: t.primaryFull }} />
-        <span className="text-sm" style={{ color: uiT?.mutedText }}>Submitting as</span>
-        <span className="font-semibold text-sm" style={{ color: t.primaryText }}>{currentOrg.name}</span>
+      <div
+        className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl"
+        style={{
+          background: uiT?.surfaceBg2 ?? t.badgeBgPrimary,
+          border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
+        }}
+      >
+        <div
+          className="w-2 h-2 rounded-full animate-pulse"
+          style={{ background: t.primaryFull }}
+        />
+        <span className="text-sm" style={{ color: uiT?.mutedText }}>
+          Submitting as
+        </span>
+        <span
+          className="font-semibold text-sm"
+          style={{ color: t.primaryText }}
+        >
+          {currentOrg.name}
+        </span>
       </div>
 
       {/* ── Basic Info ── */}
       <Section uiT={uiT}>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: labelColor }}>Basic Info</p>
+        <p
+          className="text-xs font-semibold uppercase tracking-widest mb-4"
+          style={{ color: labelColor }}
+        >
+          Basic Info
+        </p>
         <div className="space-y-4">
-
           <div className="space-y-1.5">
-            <Label className="text-sm" style={{ color: labelColor }}>Title <span className="text-red-400">*</span></Label>
+            <Label className="text-sm" style={{ color: labelColor }}>
+              Title <span className="text-red-400">*</span>
+            </Label>
             <Input
-              onFocus={handleFocus} onBlur={handleBlur}
-              value={formData.title} onChange={(e) => setField("title", e.target.value)}
-              maxLength={LIMITS.title} style={inputStyle}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              value={formData.title}
+              onChange={(e) => setField("title", e.target.value)}
+              maxLength={LIMITS.title}
+              style={inputStyle}
               className="rounded-xl placeholder:opacity-30"
               placeholder="AI Hackathon 2025"
             />
-            <CharCount current={formData.title.length} max={LIMITS.title} uiT={uiT} />
+            <CharCount
+              current={formData.title.length}
+              max={LIMITS.title}
+              uiT={uiT}
+            />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm" style={{ color: labelColor }}>Description <span className="text-red-400">*</span></Label>
+            <Label className="text-sm" style={{ color: labelColor }}>
+              Description <span className="text-red-400">*</span>
+            </Label>
             <Textarea
-              onFocus={handleFocus} onBlur={handleBlur}
-              value={formData.des} onChange={(e) => setField("des", e.target.value)}
-              maxLength={LIMITS.des} style={inputStyle}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              value={formData.des}
+              onChange={(e) => setField("des", e.target.value)}
+              maxLength={LIMITS.des}
+              style={inputStyle}
               className="rounded-xl resize-none placeholder:opacity-30"
-              rows={4} placeholder="Describe your competition…"
+              rows={4}
+              placeholder="Describe your competition…"
             />
-            <CharCount current={formData.des.length} max={LIMITS.des} uiT={uiT} />
+            <CharCount
+              current={formData.des.length}
+              max={LIMITS.des}
+              uiT={uiT}
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-sm" style={{ color: labelColor }}>Author <span className="text-red-400">*</span></Label>
+              <Label className="text-sm" style={{ color: labelColor }}>
+                Author <span className="text-red-400">*</span>
+              </Label>
               <Input
-                onFocus={handleFocus} onBlur={handleBlur}
-                value={formData.author} onChange={(e) => setField("author", e.target.value)}
-                maxLength={LIMITS.author} style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                value={formData.author}
+                onChange={(e) => setField("author", e.target.value)}
+                maxLength={LIMITS.author}
+                style={inputStyle}
                 className="rounded-xl placeholder:opacity-30"
                 placeholder="First Name, Last Name"
               />
-              <CharCount current={formData.author.length} max={LIMITS.author} uiT={uiT} />
+              <CharCount
+                current={formData.author.length}
+                max={LIMITS.author}
+                uiT={uiT}
+              />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm" style={{ color: labelColor }}>Open To <span className="text-red-400">*</span></Label>
+              <Label className="text-sm" style={{ color: labelColor }}>
+                Open To <span className="text-red-400">*</span>
+              </Label>
               <Input
-                onFocus={handleFocus} onBlur={handleBlur}
-                value={formData.open_to} onChange={(e) => setField("open_to", e.target.value)}
-                maxLength={LIMITS.open_to} style={inputStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+                value={formData.open_to}
+                onChange={(e) => setField("open_to", e.target.value)}
+                maxLength={LIMITS.open_to}
+                style={inputStyle}
                 className="rounded-xl placeholder:opacity-30"
                 placeholder="Students, Everyone, 18+"
               />
-              <CharCount current={formData.open_to.length} max={LIMITS.open_to} uiT={uiT} />
+              <CharCount
+                current={formData.open_to.length}
+                max={LIMITS.open_to}
+                uiT={uiT}
+              />
             </div>
           </div>
 
@@ -1166,69 +1281,209 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
             <Label className="text-sm" style={{ color: labelColor }}>
               Countries <span className="text-red-400">*</span>
             </Label>
-            <CountrySelector value={countries} onChange={setCountries} hasError={countriesError} uiT={uiT} />
+            <CountrySelector
+              value={countries}
+              onChange={setCountries}
+              hasError={countriesError}
+              uiT={uiT}
+            />
           </div>
-
         </div>
       </Section>
 
       {/* ── Date & Time ── */}
       <Section uiT={uiT}>
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: labelColor }}>Date & Time</p>
+        <p
+          className="text-xs font-semibold uppercase tracking-widest mb-4"
+          style={{ color: labelColor }}
+        >
+          Date & Time
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
-            <Label className="text-sm block mb-1.5" style={{ color: labelColor }}>Start Date <span className="text-red-400">*</span></Label>
+            <Label
+              className="text-sm block mb-1.5"
+              style={{ color: labelColor }}
+            >
+              Start Date <span className="text-red-400">*</span>
+            </Label>
             <DatePicker
-              selected={startDate} onChange={setStartDate} dateFormat="yyyy/MM/dd"
+              selected={startDate}
+              onChange={(date) => {
+                if (date && endDate) {
+                  const diffTime = endDate.getTime() - date.getTime();
+                  const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+                  if (diffDays < 3) {
+                    addToast(
+                      "error",
+                      "Start date must be at least 3 days prior to the end date.",
+                    );
+                    return;
+                  }
+                }
+
+                setStartDate(date);
+              }}
+              minDate={getMinHackathonDate()}
+              dateFormat="yyyy/MM/dd"
               customInput={<CalendarInput uiT={uiT} />}
             />
-            <TimeSelect hour={startHour12} minute={startMinute} period={startPeriod}
-              onHour={setStartHour12} onMinute={setStartMinute} onPeriod={setStartPeriod} uiT={uiT} />
+            <TimeSelect
+              hour={startHour12}
+              minute={startMinute}
+              period={startPeriod}
+              onHour={setStartHour12}
+              onMinute={setStartMinute}
+              onPeriod={setStartPeriod}
+              uiT={uiT}
+            />
           </div>
           <div>
-            <Label className="text-sm block mb-1.5" style={{ color: labelColor }}>End Date <span className="text-red-400">*</span></Label>
-            <DatePicker
-              selected={endDate} onChange={setEndDate} dateFormat="yyyy/MM/dd"
-              customInput={<CalendarInput uiT={uiT} />}
+            <Label
+              className="text-sm block mb-1.5"
+              style={{ color: labelColor }}
+            >
+              End Date <span className="text-red-400">*</span>
+            </Label>
+            <div
+              onClick={() => {
+                if (!startDate) {
+                  addToast("error", "Please select the start date first.");
+                }
+              }}
+            >
+              <DatePicker
+                selected={endDate}
+                onChange={(date) => {
+                  if (!startDate) {
+                    addToast("error", "Please select the start date first.");
+                    return;
+                  }
+
+                  const minEndDate = new Date(startDate);
+                  minEndDate.setHours(0, 0, 0, 0);
+                  minEndDate.setDate(minEndDate.getDate() + 3);
+
+                  const selectedDate = new Date(date);
+                  selectedDate.setHours(0, 0, 0, 0);
+
+                  if (selectedDate < minEndDate) {
+                    addToast(
+                      "error",
+                      "End date must be at least 3 days after the start date.",
+                    );
+                    return;
+                  }
+
+                  setEndDate(date);
+                }}
+                minDate={
+                  startDate
+                    ? new Date(
+                        startDate.getFullYear(),
+                        startDate.getMonth(),
+                        startDate.getDate() + 3,
+                      )
+                    : undefined
+                }
+                dateFormat="yyyy/MM/dd"
+                customInput={
+                  <CalendarInput
+                    uiT={uiT}
+                    onInputClick={() => {
+                      if (!startDate) {
+                        addToast(
+                          "error",
+                          "Please select the start date first.",
+                        );
+                        return false;
+                      }
+
+                      return true;
+                    }}
+                  />
+                }
+              />
+            </div>
+            <TimeSelect
+              hour={endHour12}
+              minute={endMinute}
+              period={endPeriod}
+              onHour={setEndHour12}
+              onMinute={setEndMinute}
+              onPeriod={setEndPeriod}
+              uiT={uiT}
             />
-            <TimeSelect hour={endHour12} minute={endMinute} period={endPeriod}
-              onHour={setEndHour12} onMinute={setEndMinute} onPeriod={setEndPeriod} uiT={uiT} />
           </div>
         </div>
       </Section>
 
       {/* ── Prize Pool ── */}
       <Section uiT={uiT}>
-        <PrizePool prizes={prizes} setPrizes={setPrizes} onFocus={handleFocus} onBlur={handleBlur} uiT={uiT} />
+        <PrizePool
+          prizes={prizes}
+          setPrizes={setPrizes}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          uiT={uiT}
+        />
       </Section>
 
       {/* ── Links ── */}
       <Section uiT={uiT}>
-        <LinksSection links={links} setLinks={setLinks} onFocus={handleFocus} onBlur={handleBlur}
-          hasError={linkError} onLinkAdded={() => setLinkError(false)} uiT={uiT} />
+        <LinksSection
+          links={links}
+          setLinks={setLinks}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          hasError={linkError}
+          onLinkAdded={() => setLinkError(false)}
+          uiT={uiT}
+        />
       </Section>
 
       {/* ── Terms ── */}
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1">
           <ShieldCheck className="w-4 h-4" style={{ color: labelColor }} />
-          <Label className="text-xs uppercase tracking-widest font-semibold" style={{ color: labelColor }}>Agreement</Label>
+          <Label
+            className="text-xs uppercase tracking-widest font-semibold"
+            style={{ color: labelColor }}
+          >
+            Agreement
+          </Label>
         </div>
-        <TermsCheckbox addToast={addToast} checked={termsAccepted}
-          onChange={(v) => { setTermsAccepted(v); if (v) setTermsError(false) }}
-          hasError={termsError} uiT={uiT} />
+        <TermsCheckbox
+          addToast={addToast}
+          checked={termsAccepted}
+          onChange={(v) => {
+            setTermsAccepted(v);
+            if (v) setTermsError(false);
+          }}
+          hasError={termsError}
+          uiT={uiT}
+        />
       </div>
 
       {/* ── Submit ── */}
       <Button
-        type="button" onClick={handleSubmit} disabled={isLoading}
+        type="button"
+        onClick={handleSubmit}
+        disabled={isLoading}
         className="w-full text-white border-0 rounded-xl h-11 text-sm font-semibold transition-all duration-300"
-        style={{ background: isLoading ? t.badgeBgPrimary : t.buttonGradient, boxShadow: t.buttonShadow, opacity: isLoading ? 0.7 : 1 }}
+        style={{
+          background: isLoading ? t.badgeBgPrimary : t.buttonGradient,
+          boxShadow: t.buttonShadow,
+          opacity: isLoading ? 0.7 : 1,
+        }}
       >
         {isLoading ? (
           <span className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            {retryCount > 1 ? `Retrying… (${retryCount}/${MAX_RETRIES})` : "Submitting…"}
+            {retryCount > 1
+              ? `Retrying… (${retryCount}/${MAX_RETRIES})`
+              : "Submitting…"}
           </span>
         ) : (
           <span className="flex items-center gap-2">
@@ -1238,5 +1493,5 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         )}
       </Button>
     </div>
-  )
+  );
 }
