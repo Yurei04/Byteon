@@ -27,6 +27,15 @@ const EMPTY_FORM = {
   open_to: "", countries: "", website_link: "", dev_link: "",
   color_scheme: "purple", google_sheet_csv_url: "",
 }
+
+//restrict 3 days calendar
+const getMinHackathonDate = () => {
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() + 3)
+  return date
+}
+//---------
 const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
 
 const loadDraft  = () => { try { const s = localStorage.getItem(STORAGE_KEY); return s ? { ...EMPTY_FORM, ...JSON.parse(s) } : { ...EMPTY_FORM } } catch { return { ...EMPTY_FORM } } }
@@ -394,6 +403,7 @@ const { data, error } = await supabase
             <DatePicker
               selected={startDate}
               onChange={(date) => setStartDate(date)}
+              minDate={getMinHackathonDate()}
               dateFormat="yyyy/MM/dd"
               customInput={<CalendarInput borderColor={t.borderColor} />}
             />
@@ -411,6 +421,7 @@ const { data, error } = await supabase
             <DatePicker
               selected={endDate}
               onChange={(date) => setEndDate(date)}
+              minDate={startDate || getMinHackathonDate()}
               dateFormat="yyyy/MM/dd"
               customInput={<CalendarInput borderColor={t.borderColor} />}
             />
