@@ -393,8 +393,9 @@ return
   <DatePicker
     selected={startDate}
     onChange={(date) => setStartDate(date)}
+    minDate={getMinHackathonDate()}
     dateFormat="yyyy/MM/dd"
-    customInput={<CalendarInput />}
+    customInput={<CalendarInput borderColor={t.borderColor} />}
   />
 
 <div className="flex items-center gap-3 mt-2">
@@ -441,6 +442,7 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
   <DatePicker
     selected={endDate}
     onChange={(date) => setEndDate(date)}
+    minDate={getMinHackathonDate()}
     dateFormat="yyyy/MM/dd"
     customInput={<CalendarInput />}
   />

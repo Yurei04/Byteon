@@ -42,6 +42,15 @@ const EMPTY_FORM = {
   open_to: "",
   color_scheme: "purple",
 }
+
+//restrict 3 days calendar
+const getMinHackathonDate = () => {
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() + 3)
+  return date
+}
+//---------
 const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
 const EMPTY_COUNTRIES = { mode: "global", list: [] }
 
