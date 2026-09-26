@@ -1,96 +1,218 @@
-// components/poster-maker/PosterPreview.jsx
 "use client"
 
+import { Download } from "lucide-react"
+
 const RATIO_CLASS = {
-  "1:1":  "aspect-square",
-  "2:3":  "aspect-[2/3]",
-  "3:4":  "aspect-[3/4]",
-  "4:5":  "aspect-[4/5]",
+  "1:1": "aspect-square",
+  "2:3": "aspect-[2/3]",
+  "3:4": "aspect-[3/4]",
+  "4:5": "aspect-[4/5]",
   "16:9": "aspect-video",
   "9:16": "aspect-[9/16]",
 }
 
-export default function PosterPreview({ image, isLoading, prompt, aspectRatio }) {
+export default function PosterPreview({
+  images = [],
+  isLoading,
+  prompt,
+  aspectRatio,
+}) {
   const ratioClass = RATIO_CLASS[aspectRatio] ?? "aspect-[2/3]"
 
-  const download = () => {
+  const download = (image, index) => {
     if (!image) return
-
-    // image is base64 data URL — download directly, no CORS issue
     const a = document.createElement("a")
     a.href = image
-    a.download = `poster-${Date.now()}.jpg`
+    a.download = `poster-${index + 1}-${Date.now()}.jpg`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Preview */}
-      <div className={`
-        relative ${ratioClass} w-full max-w-sm mx-auto
-        rounded-2xl overflow-hidden
-        border border-zinc-700/50 bg-zinc-900
-        shadow-[0_8px_32px_rgba(0,0,0,0.5)]
-      `}>
-        {isLoading && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950 gap-4 z-10">
-            <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-2 border-fuchsia-900/30" />
-              <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-fuchsia-500 animate-spin" />
-              <div className="absolute inset-2 rounded-full border-2 border-transparent border-t-pink-400 animate-spin [animation-duration:0.7s]" />
+    <div className="flex flex-col gap-6">
+      {/* Poster Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {(isLoading ? [null, null, null] : images.length ? images : [null, null, null]).map(
+          (image, index) => (
+            <div
+              key={index}
+              className={`relative ${ratioClass} w-full rounded-xl overflow-hidden group transition-all duration-300`}
+              style={{
+                border: "1px solid rgb(var(--surface-border) / 0.4)",
+                background: "rgb(var(--surface))",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+              }}
+            >
+              {/* Loading State */}
+              {isLoading ? (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10 p-4"
+                  style={{ background: "rgb(var(--bg-base))" }}
+                >
+                  <div className="relative w-12 h-12">
+                    <div
+                      className="absolute inset-0 rounded-full border-2"
+                      style={{ borderColor: "rgb(var(--brand-500) / 0.15)" }}
+                    />
+                    <div
+                      className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
+                      style={{ borderTopColor: "rgb(var(--brand-500))" }}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p
+                      className="text-xs font-medium"
+                      style={{ color: "rgb(var(--text-secondary))" }}
+                    >
+                      Generating {index + 1}…
+                    </p>
+                    <p
+                      className="text-[10px] mt-0.5"
+                      style={{ color: "rgb(var(--text-faint))" }}
+                    >
+                      10–40 seconds
+                    </p>
+                  </div>
+                </div>
+              ) : image ? (
+                /* Loaded Image */
+                <>
+                  <img
+                    src={image}
+                    alt={`Generated poster ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Hover Overlay with Download */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center backdrop-blur-sm"
+                    style={{
+                      background: "rgba(0,0,0,0.3)",
+                    }}
+                  >
+                    <button
+                      onClick={() => download(image, index)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-xs font-medium transition-all duration-150 hover:scale-105"
+                      style={{
+                        background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))",
+                        boxShadow: "0 4px 12px rgb(var(--accent-500) / 0.3)",
+                      }}
+                    >
+                      <Download size={12} />
+                      Download
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* Empty State */
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-4">
+                  <div
+                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                    style={{
+                      background: "rgb(var(--surface-raised))",
+                      border: "1px solid rgb(var(--surface-border) / 0.5)",
+                    }}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 28 28"
+                      fill="none"
+                    >
+                      <rect
+                        x="3"
+                        y="3"
+                        width="22"
+                        height="22"
+                        rx="4"
+                        stroke="rgb(var(--text-faint))"
+                        strokeWidth="1.5"
+                      />
+                      <circle
+                        cx="10"
+                        cy="10"
+                        r="2.5"
+                        stroke="rgb(var(--text-muted))"
+                        strokeWidth="1.5"
+                      />
+                      <path
+                        d="M3 19l6-5 4 4 4-4 8 7"
+                        stroke="rgb(var(--text-muted))"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p
+                      className="text-xs font-medium"
+                      style={{ color: "rgb(var(--text-muted))" }}
+                    >
+                      Poster {index + 1}
+                    </p>
+                    <p
+                      className="text-[10px] mt-0.5"
+                      style={{ color: "rgb(var(--text-faint))" }}
+                    >
+                      Fill form & generate
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="text-center px-4">
-              <p className="text-sm font-medium text-zinc-300">Generating your poster…</p>
-              <p className="text-xs text-zinc-600 mt-1">Fetching from AI — takes 10–40 seconds</p>
-            </div>
-          </div>
+          )
         )}
-
-        {image && !isLoading ? (
-          <img
-            src={image}
-            alt="Generated poster"
-            className="w-full h-full object-cover"
-          />
-        ) : !isLoading ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-6">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-800 border border-zinc-700/50 flex items-center justify-center">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <rect x="3" y="3" width="22" height="22" rx="4" stroke="#52525b" strokeWidth="1.5"/>
-                <circle cx="10" cy="10" r="2.5" stroke="#71717a" strokeWidth="1.5"/>
-                <path d="M3 19l6-5 4 4 4-4 8 7" stroke="#71717a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-zinc-400">Your poster appears here</p>
-              <p className="text-xs text-zinc-600 mt-1">Fill the form and click Generate</p>
-            </div>
-          </div>
-        ) : null}
       </div>
 
-      {/* Actions */}
-      {image && !isLoading && (
-        <div className="flex gap-2 justify-center">
-          <button
-            onClick={download}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white text-sm font-medium transition-all shadow-[0_0_16px_rgba(217,70,239,0.3)] hover:shadow-[0_0_24px_rgba(217,70,239,0.5)]"
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            Download
-          </button>
+      {/* Download All Buttons */}
+      {images.length > 0 && !isLoading && (
+        <div className="flex flex-wrap gap-2 justify-start sm:justify-between">
+          {images.map((image, index) => (
+            <button
+              key={index}
+              onClick={() => download(image, index)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-150 hover:shadow-lg"
+              style={{
+                background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))",
+                boxShadow: "0 0 12px rgb(var(--accent-500) / 0.25)",
+              }}
+            >
+              <Download size={14} />
+              Download {index + 1}
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Prompt used */}
+      {/* Prompt Details */}
       {prompt && !isLoading && (
-        <details className="text-xs text-zinc-600 cursor-pointer group">
-          <summary className="hover:text-zinc-400 transition-colors select-none">View AI prompt used</summary>
-          <p className="mt-2 p-3 bg-zinc-900 rounded-lg border border-zinc-800 text-zinc-500 leading-relaxed">{prompt}</p>
+        <details
+          className="text-xs cursor-pointer group"
+          style={{ color: "rgb(var(--text-faint))" }}
+        >
+          <summary
+            className="transition-colors select-none font-medium py-2"
+            style={{ color: "rgb(var(--text-faint))" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.color = "rgb(var(--text-muted))")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "rgb(var(--text-faint))")
+            }
+          >
+            📋 View AI prompt used
+          </summary>
+          <p
+            className="mt-3 p-3 rounded-lg leading-relaxed"
+            style={{
+              background: "rgb(var(--surface))",
+              border: "1px solid rgb(var(--surface-border) / 0.4)",
+              color: "rgb(var(--text-secondary))",
+            }}
+          >
+            {prompt}
+          </p>
         </details>
       )}
     </div>

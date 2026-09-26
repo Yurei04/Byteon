@@ -14,14 +14,13 @@ export default function SignLogInDialog({ onClose }) {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="w-full h-screen flex justify-center items-center"
     >
-      <Card className="w-full max-w-md relative overflow-hidden bg-fuchsia-950/40 border border-fuchsia-400/40 backdrop-blur-xl text-fuchsia-100 shadow-2xl transition-all duration-500 hover:border-fuchsia-400/70 hover:shadow-fuchsia-500/20 group">
+      <Card className="w-full max-w-md relative overflow-hidden bg-surface-raised border border-brand-400/40 backdrop-blur-xl text-text-primary shadow-2xl transition-all duration-500 hover:border-brand-400/70 hover:shadow-brand-500/20 group">
 
-        {/* Hover glow */}
         <motion.div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
           style={{
             background:
-              "radial-gradient(circle at 50% 50%, rgba(217, 70, 239, 0.15), transparent 60%)",
+              "radial-gradient(circle at 50% 50%, rgb(var(--brand-500) / 0.15), transparent 60%)",
           }}
         />
 
@@ -29,7 +28,7 @@ export default function SignLogInDialog({ onClose }) {
           <div className="flex flex-row gap-5 justify-between items-center">
             <Link
               href="/"
-              className="inline-flex items-center gap-1 text-xs text-purple-400/80 hover:text-purple-200 transition-colors group/back cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-text-primary transition-colors group/back cursor-pointer"
             >
               <ArrowLeft className="size-3 group-hover/back:-translate-x-0.5 transition-transform" />
               Back to home
@@ -37,22 +36,22 @@ export default function SignLogInDialog({ onClose }) {
             <button
               onClick={onClose}
               aria-label="Close"
-              className="cursor-pointer size-7 rounded-full text-fuchsia-400 hover:text-white hover:bg-fuchsia-500/20 transition-all duration-200"
+              className="cursor-pointer size-7 rounded-full text-text-faint hover:text-text-primary hover:bg-brand-500/20 transition-all duration-200"
             >
               <X className="size-4" />
             </button>
           </div>
-          <h2 className="text-2xl font-semibold tracking-tight">
+          <h2 className="text-2xl font-semibold tracking-tight text-text-primary">
             Login required
           </h2>
-          <p className="text-sm text-fuchsia-300">
+          <p className="text-sm text-text-secondary">
             Sign in or create an account to continue
           </p>
         </CardHeader>
 
         <CardContent className="flex flex-col gap-3 relative z-10">
           <Link href="/log-in">
-            <Button className="w-full cursor-pointer bg-fuchsia-600 hover:bg-fuchsia-500 text-white shadow-md hover:shadow-fuchsia-500/30 transition-all">
+            <Button className="w-full cursor-pointer bg-brand-600 hover:bg-brand-500 dark:text-brand-100 text-fg-on-brand shadow-md hover:shadow-brand-500/30 transition-all">
               Login
             </Button>
           </Link>
@@ -60,14 +59,14 @@ export default function SignLogInDialog({ onClose }) {
           <Link href="/sign-up">
             <Button
               variant="outline"
-              className="w-full cursor-pointer border-fuchsia-400/60 text-fuchsia-200 hover:bg-fuchsia-900/40 hover:text-white transition-all"
+              className="w-full cursor-pointer border-brand-400/60 text-text-secondary hover:bg-brand-900/40 hover:text-text-primary transition-all"
             >
               Create account
             </Button>
           </Link>
         </CardContent>
 
-        <CardFooter className="text-xs text-center text-fuchsia-400 relative z-10 justify-center">
+        <CardFooter className="text-xs text-center text-text-faint relative z-10 justify-center">
           It only takes a minute ✨
         </CardFooter>
       </Card>

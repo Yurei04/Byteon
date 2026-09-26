@@ -1,71 +1,228 @@
 "use client"
 
-import React, { useEffect, useState, useMemo, useRef } from "react"
-import { motion } from "framer-motion"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import React, { useEffect, useState, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import {
-  Plus, FileText, AlertCircle, User2,
-  BookOpen, Eye, Loader2, Trophy, Star, Bell,
-  ShieldAlert, XCircle, Trash2,
-  LogOut,
-  ShieldCheck,
+  Plus, User2, BookOpen, Loader2, Bell, LogOut,
+  LayoutDashboard, ChevronRight, Menu, X, FileText,
+  Clock, CheckCircle2, AlertCircle, Sparkles,
+  ArrowUpRight, PenLine,
+  Sun,
+  Moon,
 } from "lucide-react"
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  Pagination, PaginationContent, PaginationItem,
-  PaginationLink, PaginationNext, PaginationPrevious,
-} from "@/components/ui/pagination"
 
 import { useAuth }            from "@/components/(auth)/authContext"
 import UserProfile            from "@/components/(dashboard)/userDashboard/profile"
 import BlogEmpty              from "@/components/blog/blog-empty"
-import BlogCard               from "@/components/blog/blogCard"
 import PendingBlogUserForm    from "@/components/blog/blog-pending-user"
 import { ReturnButton }       from "@/components/return"
+import NotificationsTab       from "@/components/notifications/notification-tab"
+import { useNotifications }   from "@/components/notifications/use-notification"
+import { Toast }              from "../toast"
+import { useToast }           from "@/components/use-toast"
+import UserViewableSection    from "./user-viewable"
+import { useTheme } from "next-themes"
 
-// ── Notifications — CORRECT path with 's' ─────────────────────────────────────
-import NotificationsTab          from "@/components/notifications/notification-tab"
-import { useNotifications }      from "@/components/notifications/use-notification"
-import { notifyBlogDeletedByUser } from "@/lib/notification" 
+// ── Status pill ───────────────────────────────────────────────────────────────
+function StatusPill({ status }) {
+  const map = {
+    published: { label: "Published", bg: "rgba(34,197,94,0.12)",  color: "#16a34a", border: "rgba(34,197,94,0.25)"  },
+    pending:   { label: "Pending",   bg: "rgba(245,158,11,0.12)", color: "#d97706", border: "rgba(245,158,11,0.25)" },
+    draft:     { label: "Draft",     bg: "rgba(100,100,120,0.08)",color: "var(--dash-text-muted)", border: "rgba(100,100,120,0.15)" },
+  }
+  const s = map[status] || map.draft
+  return (
+    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border flex-shrink-0"
+      style={{ background: s.bg, color: s.color, borderColor: s.border }}>
+      {s.label}
+    </span>
+  )
+}
 
-const ITEMS_PER_PAGE = 6
+const toggleTheme = () => {
+  setIsDark(prev => {
+    const next = !prev
+    try { localStorage.setItem("orgDashboardTheme", next ? "dark" : "light") } catch {}
+    if (next) {
+      document.documentElement.classList.add("dark")
+    } else {
+      document.documentElement.classList.remove("dark")
+    }
+    return next
+  })
+}
 
+// ── Stat card ─────────────────────────────────────────────────────────────────
+function StatCard({ icon: Icon, label, value, accent, delay = 0, onClick }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.4 }}
+      onClick={onClick}
+      className="dash-card relative overflow-hidden rounded-2xl p-4 flex items-center gap-4 group"
+      style={{
+        cursor: onClick ? "pointer" : "default",
+        transition: "border-color 0.2s, transform 0.2s, box-shadow 0.2s",
+        "--card-accent": accent,
+      }}
+      onMouseEnter={e => { if (!onClick) return; e.currentTarget.style.borderColor = `${accent}55`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 24px ${accent}18` }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none" }}
+    >
+      <div className="absolute -top-6 -left-6 w-24 h-24 rounded-full blur-2xl opacity-10 pointer-events-none"
+        style={{ background: accent }} />
+      <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center"
+        style={{ background: `${accent}18`, border: `1px solid ${accent}35` }}>
+        <Icon className="w-5 h-5" style={{ color: accent }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-2xl font-bold leading-none" style={{ color: "var(--dash-text-primary)" }}>{value}</p>
+        <p className="text-xs mt-0.5 truncate" style={{ color: "var(--dash-text-muted)" }}>{label}</p>
+      </div>
+      <div className="absolute bottom-0 left-4 right-4 h-px"
+        style={{ background: `linear-gradient(to right, transparent, ${accent}40, transparent)` }} />
+    </motion.div>
+  )
+}
+
+// ── Sidebar nav item ──────────────────────────────────────────────────────────
+function NavItem({ icon: Icon, label, badge, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative group"
+      style={active ? {
+        background: "var(--dash-nav-active-bg)",
+        color: "var(--dash-nav-active-text)",
+        border: "var(--dash-nav-active-border)",
+        boxShadow: "var(--dash-nav-active-shadow)",
+      } : {
+        background: "transparent",
+        color: "var(--dash-nav-inactive-text)",
+        border: "1px solid transparent",
+      }}
+    >
+      {active && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full dash-nav-indicator" />
+      )}
+      <Icon className="w-4 h-4 flex-shrink-0 transition-colors duration-200"
+        style={{ color: active ? "var(--dash-brand)" : "inherit" }} />
+      <span className="flex-1 text-left">{label}</span>
+      {badge > 0 && (
+        <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-white text-[10px] font-bold px-1 dash-badge">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// ── Section wrapper ───────────────────────────────────────────────────────────
+function SectionWrapper({ children }) {
+  return (
+    <div className="dash-section-wrapper rounded-2xl overflow-hidden w-full">
+      <div className="p-4 sm:p-6">{children}</div>
+    </div>
+  )
+}
+
+// ── Sidebar content ───────────────────────────────────────────────────────────
+function SidebarContent({ nav, activeTab, setActiveTab, profile, onClose, router, setShowSignOutDialog }) {
+  return (
+    <div className="flex flex-col h-full py-5 px-3 relative">
+      {/* Top gradient overlay */}
+      <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none dash-sidebar-top-glow" />
+
+      {/* Brand */}
+      <div className="relative flex items-center gap-3 pb-4 mb-2 px-2 dash-sidebar-brand-border">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 dash-brand-icon">
+          <Sparkles className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold leading-tight truncate" style={{ color: "var(--dash-text-primary)" }}>
+            {profile?.full_name?.split(" ")[0] || "Participant"}
+          </p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#22c55e" }} />
+            <p className="text-[10px]" style={{ color: "var(--dash-text-faint)" }}>Active</p>
+          </div>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="p-1.5 rounded-lg lg:hidden"
+            style={{ color: "var(--dash-text-faint)" }}>
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Nav label */}
+      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] px-3 mb-2 mt-3 dash-section-label">
+        Menu
+      </p>
+
+      {/* Nav items */}
+      <nav className="flex-1 space-y-0.5 overflow-y-auto">
+        {nav.map(({ value, icon, label, badge }) => (
+          <NavItem key={value} icon={icon} label={label} badge={badge}
+            active={activeTab === value} onClick={() => setActiveTab(value)} />
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div
+          className="p-3 space-y-1"
+          style={{ borderTop: "1px solid rgb(var(--brand-500) / 0.15)" }}
+        >
+          <ReturnButton className="mb-1" />
+
+          <button
+            onClick={() => setShowSignOutDialog(true)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 hover:bg-red-500/10 mt-1"
+            style={{ color: "#f87171", border: "1px solid transparent" }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = "transparent"}
+          >
+            <LogOut className="w-4 h-4" />Sign Out
+          </button>
+        </div>
+    </div>
+  )
+}
+
+// ── Main dashboard ────────────────────────────────────────────────────────────
 export default function UserDashboardPage() {
   const router = useRouter()
-  const { profile, role, loading: authLoading, isLoggedIn } = useAuth()
+  const { profile, role, loading: authLoading, isLoggedIn, logout } = useAuth()
+  
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+  const toggleTheme = () => setTheme(isDark ? "light" : "dark")
 
-  const [activeTab, setActiveTab]       = useState("profile")
+  const [showSignOutDialog, setShowSignOutDialog] = useState(false)
+  const [signingOut, setSigningOut]               = useState(false)
+
+  const [activeTab, setActiveTab]       = useState("overview")
   const [blogs, setBlogs]               = useState([])
   const [blogsLoading, setBlogsLoading] = useState(false)
-  const [currentPage, setCurrentPage]   = useState(1)
-  const [achievementsMetadata, setAchievementsMetadata] = useState({})
-  const [stats, setStats]               = useState({ totalBlogs: 0, totalViews: 0 })
+  const [sidebarOpen, setSidebarOpen]   = useState(false)
 
   const realtimeChannelRef = useRef(null)
+  const { unreadCount }                = useNotifications({ userId: profile?.user_id || null, role: "user" })
+  const { toasts, addToast, removeToast } = useToast()
 
-  // ── Notification badge ─────────────────────────────────────────────────────
-  const { unreadCount } = useNotifications({ userId: profile?.user_id || null, role: "user" })
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try { await logout(); router.push("/") }
+    catch (err) { console.error(err); setSigningOut(false); setShowSignOutDialog(false) }
+  }
 
-  // ── Delete dialog state — lives at ROOT level so the portal always renders ─
-  const [deleteDialog, setDeleteDialog]   = useState(null)   // full blog object
-  const [deleteReason, setDeleteReason]   = useState("")
-  const [actionLoading, setActionLoading] = useState(false)
-
-  // ── Auth guard ─────────────────────────────────────────────────────────────
+  // ── Auth guard ────────────────────────────────────────────────────────────
   useEffect(() => {
     if (authLoading) return
     if (isLoggedIn && role === null) return
@@ -75,11 +232,9 @@ export default function UserDashboardPage() {
 
   useEffect(() => {
     if (!profile?.id || !profile?.user_id) return
-    setAchievementsMetadata(profile.achievements_metadata ?? {})
     fetchBlogs(profile.id)
-    subscribeToAchievements(profile.user_id)
     return () => { if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current) }
-  }, [profile?.achievements_metadata, profile?.id, profile?.user_id])
+  }, [profile?.id, profile?.user_id])
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -89,20 +244,6 @@ export default function UserDashboardPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibility)
   }, [profile?.id])
 
-  const subscribeToAchievements = (authUserId) => {
-    if (realtimeChannelRef.current) supabase.removeChannel(realtimeChannelRef.current)
-    realtimeChannelRef.current = supabase
-      .channel(`dashboard-achievements-${authUserId}`)
-      .on("postgres_changes", {
-        event: "UPDATE", schema: "public", table: "users",
-        filter: `user_id=eq.${authUserId}`,
-      }, (payload) => {
-        if (payload.new?.achievements_metadata !== undefined)
-          setAchievementsMetadata(payload.new.achievements_metadata ?? {})
-      })
-      .subscribe()
-  }
-
   const fetchBlogs = async (bigintUserId) => {
     setBlogsLoading(true)
     try {
@@ -110,380 +251,667 @@ export default function UserDashboardPage() {
         .from("blogs").select("*").eq("user_id", bigintUserId).order("created_at", { ascending: false })
       if (error) throw error
       setBlogs(data || [])
-      setStats({
-        totalBlogs: data?.length || 0,
-        totalViews: data?.reduce((sum, b) => sum + (b.views || 0), 0) || 0,
-      })
     } catch (err) { console.error("fetchBlogs error:", err) }
     finally { setBlogsLoading(false) }
   }
 
   const handleBlogUpdate = () => profile?.id && fetchBlogs(profile.id)
 
-  // ── Open the dialog (called from BlogCard's onDelete prop) ─────────────────
-  const openDeleteDialog = (id) => {
-    const blog = blogs.find((b) => b.id === id)
-    if (!blog) return
-    setDeleteReason("")
-    setDeleteDialog(blog)
-  }
-
-  // ── Confirmed delete handler ───────────────────────────────────────────────
-  const handleConfirmedDelete = async () => {
-    if (!deleteDialog?.id) return
-    setActionLoading(true)
-    try {
-      const { error } = await supabase.from("blogs").delete().eq("id", deleteDialog.id)
-      if (error) throw error
-
-      handleBlogUpdate()
-
-      // ✅ Notify all super admins — import path is now correct
-      await notifyBlogDeletedByUser({
-        userName:  profile?.name  || "A user",
-        blogTitle: deleteDialog.title || "Untitled",
-      })
-
-      setDeleteDialog(null)
-      setDeleteReason("")
-    } catch (err) {
-      console.error("Delete error:", err)
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const closeDeleteDialog = () => {
-    if (actionLoading) return   // don't close mid-request
-    setDeleteDialog(null)
-    setDeleteReason("")
-  }
-
-  // ── Pagination ─────────────────────────────────────────────────────────────
-  const paginatedBlogs   = useMemo(() =>
-    blogs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
-    [blogs, currentPage]
-  )
-  const totalPages       = Math.ceil(blogs.length / ITEMS_PER_PAGE)
-  const handlePageChange = (page) => { if (page >= 1 && page <= totalPages) setCurrentPage(page) }
-
-  const totalAchievements      = Object.keys(achievementsMetadata).length
-  const totalAchievementPoints = Object.values(achievementsMetadata).reduce((sum, a) => sum + (a.reward_points ?? 0), 0)
-
   if (authLoading || (isLoggedIn && role === null)) {
-    return <div className="w-full min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" /></div>
+    return (
+      <div className="w-full min-h-screen flex items-center justify-center dash-root">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center dash-loader-wrap">
+            <Loader2 className="w-6 h-6 animate-spin dash-brand-color" />
+          </div>
+          <p className="text-sm" style={{ color: "var(--dash-text-faint)" }}>Loading your dashboard…</p>
+        </div>
+      </div>
+    )
   }
   if (!isLoggedIn || role !== "user") return null
 
+  // Derived stats
+  const publishedCount = blogs.filter(b => b.status === "published").length
+  const pendingCount   = blogs.filter(b => b.status === "pending").length
+  const totalCount     = blogs.length
+
+  const NAV = [
+    { value: "overview",       icon: LayoutDashboard, label: "Overview"                         },
+    { value: "profile",        icon: User2,           label: "Profile"                          },
+    { value: "myBlog",         icon: BookOpen,        label: "My Posts",  badge: totalCount      },
+    { value: "create",         icon: Plus,            label: "New Post"                         },
+    { value: "notifications",  icon: Bell,            label: "Notifications", badge: unreadCount },
+  ]
+
+  const PAGE_TITLES = {
+    overview:      { title: "Overview",      sub: "Your writing activity at a glance"        },
+    profile:       { title: "Profile",       sub: "Manage your personal information"          },
+    myBlog:        { title: "My Posts",      sub: "View, manage and track your content"       },
+    create:        { title: "New Post",      sub: "Write and submit a blog post for review"   },
+    notifications: { title: "Notifications", sub: "Status updates and alerts from admins"     },
+  }
+
   return (
-    <div className="w-full min-h-screen p-4 md:p-6 lg:p-8">
+    <div className="flex w-full h-screen overflow-hidden dash-root">
 
-      {/* Top bar */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-        className="w-full flex justify-between items-center max-w-7xl mx-auto mb-6 gap-4">
-        <ReturnButton />
-        <div className="flex-1 bg-gradient-to-r from-fuchsia-900/40 to-purple-900/40 backdrop-blur-lg border border-fuchsia-500/30 py-2.5 px-4 rounded-lg shadow-lg shadow-fuchsia-500/10">
-          <p className="text-fuchsia-200 text-sm text-center flex items-center justify-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
-            Participants Panel
-          </p>
-        </div>
-        <Button onClick={() => setShowSignOutDialog(true)} variant="outline" size="sm"
-          className="shrink-0 border-red-500/40 text-red-300 hover:bg-red-500/20 hover:border-red-400 hover:text-red-200 transition-all gap-2">
-          <LogOut className="w-4 h-4" /><span className="hidden sm:inline">Sign Out</span>
-        </Button>
-      </motion.div>
+      <style>{`
+        /* ═══════════════════════════════════════════════
+           DASHBOARD CSS TOKENS — light & dark
+           ═══════════════════════════════════════════════ */
 
-      <div className="max-w-7xl mx-auto">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="space-y-8">
+        /* ── Light ── */
+        :root {
+          --dash-brand:   #c026d3;
+          --dash-secondary: #a855f7;
 
-          {/* ── HEADER ── */}
-          <div className="text-center space-y-3">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300">
-                Participant&apos;s Dashboard
-              </span>
-            </h1>
-            <p className="text-fuchsia-200/70 text-sm sm:text-base max-w-2xl mx-auto">
-              Manage your profile, create engaging blog posts, and track your content all in one place
-            </p>
-          </div>
+          --dash-bg:           #fdf4ff;
+          --dash-sidebar-bg:   rgba(255,255,255,0.92);
+          --dash-header-bg:    rgba(255,255,255,0.88);
+          --dash-sidebar-border: rgba(192,38,211,0.12);
+          --dash-header-border:  rgba(192,38,211,0.12);
 
-          {/* ── STAT CARDS ── */}
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
-            className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          --dash-text-primary:   #1e0320;
+          --dash-text-secondary: #701976;
+          --dash-text-muted:     #a11bb0;
+          --dash-text-faint:     #c026d3;
 
-            <Card className="group relative bg-gradient-to-br from-fuchsia-900/40 via-pink-900/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/30 hover:border-fuchsia-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-fuchsia-500/20">
-              <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-pink-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="relative p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-fuchsia-200/70 text-xs sm:text-sm mb-1">Total Blogs</p>
-                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-pink-300">{stats.totalBlogs}</p>
-                  </div>
-                  <div className="p-2 sm:p-3 bg-fuchsia-500/20 rounded-lg border border-fuchsia-400/30">
-                    <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-fuchsia-300" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          --dash-dot-color:      rgba(192,38,211,0.12);
+          --dash-dot-bg:         #fdf4ff;
+          --dash-glow-1:         rgba(192,38,211,0.08);
+          --dash-glow-2:         rgba(168,85,247,0.06);
 
-            <Card className="group relative bg-gradient-to-br from-amber-900/40 via-yellow-900/40 to-slate-950/40 backdrop-blur-xl border border-amber-500/30 hover:border-amber-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-amber-500/20 cursor-pointer"
-              onClick={() => setActiveTab("achievements")}>
-              <div className="absolute inset-0 bg-gradient-to-r from-amber-600/0 via-yellow-600/5 to-amber-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="relative p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-amber-200/70 text-xs sm:text-sm mb-1">Achievements</p>
-                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-300">{totalAchievements}</p>
-                    {totalAchievementPoints > 0 && (
-                      <p className="text-xs text-amber-300/60 mt-0.5 flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />{totalAchievementPoints} pts
-                      </p>
-                    )}
-                  </div>
-                  <div className="p-2 sm:p-3 bg-amber-500/20 rounded-lg border border-amber-400/30">
-                    <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-amber-300" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          --dash-card-bg:        rgba(255,255,255,0.80);
+          --dash-card-border:    rgba(192,38,211,0.14);
+          --dash-card-shadow:    0 2px 16px rgba(192,38,211,0.07);
 
-            <Card className="group relative bg-gradient-to-br from-emerald-900/40 via-green-900/40 to-slate-950/40 backdrop-blur-xl border border-emerald-500/30 hover:border-emerald-400/50 transition-all duration-300 overflow-hidden hover:shadow-xl hover:shadow-emerald-500/20">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/0 via-green-600/5 to-emerald-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <CardContent className="relative p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-emerald-200/70 text-xs sm:text-sm mb-1">Total Views</p>
-                    <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-green-300">{stats.totalViews}</p>
-                  </div>
-                  <div className="p-2 sm:p-3 bg-emerald-500/20 rounded-lg border border-emerald-400/30">
-                    <Eye className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-300" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          --dash-section-bg:     rgba(255,255,255,0.75);
+          --dash-section-border: rgba(192,38,211,0.14);
 
-          {/* ── MAIN TABS ── */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 shadow-2xl">
-              <CardContent className="p-4 sm:p-6 lg:p-8">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-6 sm:mb-8 bg-black/30 border border-fuchsia-500/20 p-1 h-auto rounded-xl">
-                    {[
-                      { value: "profile", icon: <User2    className="w-4 h-4" />, label: "Profile"  },
-                      { value: "myBlog",  icon: <BookOpen className="w-4 h-4" />, label: "My Blogs" },
-                      { value: "create",  icon: <Plus     className="w-4 h-4" />, label: "Create"   },
-                      {
-                        value: "notifications",
-                        icon:  <Bell className="w-4 h-4" />,
-                        label: (
-                          <span className="flex items-center gap-1">
-                            Alerts
-                            {unreadCount > 0 && (
-                              <span className="min-w-[17px] h-[17px] flex items-center justify-center rounded-full
-                                bg-gradient-to-br from-pink-500 to-fuchsia-600 text-white text-[10px] font-bold px-1
-                                shadow-sm shadow-fuchsia-500/40">
-                                {unreadCount > 99 ? "99+" : unreadCount}
-                              </span>
-                            )}
-                          </span>
-                        ),
-                      },
-                    ].map(({ value, icon, label }) => (
-                      <TabsTrigger key={value} value={value}
-                        className="flex items-center justify-center gap-2 data-[state=active]:bg-gradient-to-r data-[state=active]:from-fuchsia-600 data-[state=active]:to-purple-600 data-[state=active]:text-white transition-all rounded-lg py-3 text-xs sm:text-sm">
-                        {icon}
-                        <span className="hidden sm:inline">{label}</span>
-                        {/* On mobile render label as-is (handles both string and JSX) */}
-                        <span className="sm:hidden">{label}</span>
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
+          --dash-nav-active-bg:     linear-gradient(135deg, rgba(192,38,211,0.12), rgba(168,85,247,0.08));
+          --dash-nav-active-text:   #1e0320;
+          --dash-nav-active-border: 1px solid rgba(192,38,211,0.32);
+          --dash-nav-active-shadow: 0 0 18px rgba(192,38,211,0.10), inset 0 1px 0 rgba(192,38,211,0.12);
+          --dash-nav-inactive-text: rgba(112,25,118,0.55);
 
-                  {/* ── Profile ── */}
-                  <TabsContent value="profile" className="mt-0">
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
-                        <CardContent className="p-4 sm:p-6">
-                          <UserProfile currentUser={profile?.user_id} authUserId={profile?.id} />
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  </TabsContent>
+          --dash-section-label-color: rgba(192,38,211,0.55);
 
-                  {/* ── My Blogs ── */}
-                  <TabsContent value="myBlog" className="mt-0">
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
-                        <CardContent className="p-4 sm:p-6">
-                          {blogsLoading ? (
-                            <div className="flex justify-center py-12">
-                              <Loader2 className="w-8 h-8 animate-spin text-fuchsia-300" />
-                            </div>
-                          ) : blogs.length === 0 ? (
-                            <BlogEmpty />
-                          ) : (
-                            <div className="space-y-6">
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {paginatedBlogs.map((item) => (
-                                  <BlogCard
-                                    key={item.id}
-                                    item={item}
-                                    onUpdate={handleBlogUpdate}
-                                    // ✅ opens the dialog — does NOT delete directly
-                                    onDelete={(id) => openDeleteDialog(id)}
-                                  />
-                                ))}
-                              </div>
-                              {totalPages > 1 && (
-                                <Pagination>
-                                  <PaginationContent>
-                                    <PaginationItem>
-                                      <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)}
-                                        className={currentPage > 1 ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} />
-                                    </PaginationItem>
-                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                      <PaginationItem key={page}>
-                                        <PaginationLink onClick={() => handlePageChange(page)} isActive={page === currentPage}
-                                          className={`cursor-pointer ${page === currentPage ? "bg-fuchsia-600/50 text-white" : "hover:bg-fuchsia-800/20"}`}>
-                                          {page}
-                                        </PaginationLink>
-                                      </PaginationItem>
-                                    ))}
-                                    <PaginationItem>
-                                      <PaginationNext onClick={() => handlePageChange(currentPage + 1)}
-                                        className={currentPage < totalPages ? "cursor-pointer hover:bg-fuchsia-800/20" : "pointer-events-none opacity-50"} />
-                                    </PaginationItem>
-                                  </PaginationContent>
-                                </Pagination>
-                              )}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  </TabsContent>
+          --dash-user-chip-bg:     rgba(253,244,255,0.8);
+          --dash-user-chip-border: rgba(192,38,211,0.15);
 
-                  {/* ── Create ── */}
-                  <TabsContent value="create" className="mt-0">
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
-                        <CardContent className="p-4 sm:p-6">
-                          <PendingBlogUserForm onSuccess={handleBlogUpdate} currentUser={profile} authUserId={profile?.id} />
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  </TabsContent>
+          --dash-recent-row-hover: rgba(192,38,211,0.04);
+          --dash-recent-border:    rgba(192,38,211,0.10);
 
-                  {/* ── Notifications ── */}
-                  <TabsContent value="notifications" className="mt-0">
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                      <Card className="bg-black/20 backdrop-blur-lg border border-fuchsia-500/10">
-                        <CardContent className="p-4 sm:p-6">
-                          <div className="mb-4">
-                            <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-300 to-pink-300">
-                              Your Notifications
-                            </h3>
-                            <p className="text-white/35 text-xs mt-1">
-                              Account status updates and platform alerts from admins.
-                            </p>
-                          </div>
-                          <NotificationsTab userId={profile?.user_id} role="user" />
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  </TabsContent>
+          --dash-quick-action-bg:     rgba(255,255,255,0.6);
+          --dash-quick-action-border: rgba(0,0,0,0.06);
 
-                </Tabs>
-              </CardContent>
-            </Card>
-          </motion.div>
+          --dash-empty-border: rgba(192,38,211,0.20);
+          --dash-empty-bg:     rgba(192,38,211,0.03);
 
-        </motion.div>
-      </div>
+          --dash-pending-bg:     rgba(245,158,11,0.08);
+          --dash-pending-border: rgba(245,158,11,0.28);
+          --dash-pending-text:   #b45309;
 
-      {/* ─────────────────────────────────────────────────────────────────────
-          DELETE DIALOG — at component ROOT, outside all tabs and cards.
-          This is the only correct place: shadcn portals work fine here and
-          the dialog is never unmounted when a tab changes.
-      ───────────────────────────────────────────────────────────────────── */}
-      <AlertDialog
-        open={!!deleteDialog}
-        onOpenChange={(open) => { if (!open) closeDeleteDialog() }}
-      >
-        <AlertDialogContent className="bg-gradient-to-br from-slate-950 via-rose-950/25 to-slate-950 backdrop-blur-xl border border-red-500/20 shadow-2xl shadow-red-900/25 max-w-md">
-          <AlertDialogHeader className="gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0">
-                <ShieldAlert className="w-5 h-5 text-red-400" />
-              </div>
-              <div>
-                <AlertDialogTitle className="text-red-200 text-base font-semibold">
-                  Delete Blog Post
-                </AlertDialogTitle>
-                <p className="text-white/30 text-xs mt-0.5">
-                  Platform admins will be notified
-                </p>
-              </div>
-            </div>
+          --dash-theme-toggle-bg:     rgba(250,232,255,0.7);
+          --dash-theme-toggle-border: rgba(192,38,211,0.18);
 
-            <AlertDialogDescription asChild>
-              <div className="space-y-4 text-sm">
-                <div className="px-3 py-2.5 rounded-lg bg-white/3 border border-white/8 text-white/40 text-xs leading-relaxed">
-                  Permanently deleting{" "}
-                  <span className="text-white font-medium">"{deleteDialog?.title}"</span>.
-                  This cannot be undone.
-                </div>
+          --dash-footer-border-color: rgba(192,38,211,0.12);
+          --dash-brand-border-color:  rgba(192,38,211,0.14);
+        }
 
-                <div className="space-y-2">
-                  <label className="text-[11px] font-semibold uppercase tracking-wider text-white/30 flex items-center gap-2">
-                    <XCircle className="w-3 h-3 shrink-0" />
-                    Reason
-                    <span className="text-white/18 font-normal normal-case tracking-normal">(optional)</span>
-                  </label>
-                  <Textarea
-                    value={deleteReason}
-                    onChange={(e) => setDeleteReason(e.target.value)}
-                    placeholder="e.g. Outdated content, no longer relevant…"
-                    className="bg-black/40 border border-red-500/15 text-white/70 placeholder:text-white/18 text-xs resize-none focus:border-red-400/30 focus:ring-0 rounded-lg"
-                    rows={3}
-                  />
-                  <p className="text-white/20 text-[11px] leading-relaxed">
-                    Optional note for audit purposes.
-                  </p>
-                </div>
-              </div>
+        /* ── Dark ── */
+        .dark {
+          --dash-brand:     #c026d3;
+          --dash-secondary: #a855f7;
+
+          --dash-bg:           #00091d;
+          --dash-sidebar-bg:   rgba(3,5,18,0.75);
+          --dash-header-bg:    rgba(3,5,18,0.75);
+          --dash-sidebar-border: rgba(192,38,211,0.15);
+          --dash-header-border:  rgba(192,38,211,0.15);
+
+          --dash-text-primary:   #ffffff;
+          --dash-text-secondary: rgba(255,255,255,0.65);
+          --dash-text-muted:     rgba(255,255,255,0.45);
+          --dash-text-faint:     rgba(255,255,255,0.35);
+
+          --dash-dot-color:   rgba(255,255,255,0.07);
+          --dash-dot-bg:      #00091d;
+          --dash-glow-1:      rgba(192,38,211,0.10);
+          --dash-glow-2:      rgba(168,85,247,0.08);
+
+          --dash-card-bg:        rgba(255,255,255,0.03);
+          --dash-card-border:    rgba(192,38,211,0.14);
+          --dash-card-shadow:    none;
+
+          --dash-section-bg:     rgba(255,255,255,0.025);
+          --dash-section-border: rgba(192,38,211,0.18);
+
+          --dash-nav-active-bg:     linear-gradient(135deg, rgba(192,38,211,0.22), rgba(168,85,247,0.14));
+          --dash-nav-active-text:   #ffffff;
+          --dash-nav-active-border: 1px solid rgba(192,38,211,0.45);
+          --dash-nav-active-shadow: 0 0 18px rgba(192,38,211,0.18), inset 0 1px 0 rgba(192,38,211,0.20);
+          --dash-nav-inactive-text: rgba(255,255,255,0.45);
+
+          --dash-section-label-color: rgba(192,38,211,0.65);
+
+          --dash-user-chip-bg:     rgba(255,255,255,0.04);
+          --dash-user-chip-border: rgba(192,38,211,0.18);
+
+          --dash-recent-row-hover: rgba(255,255,255,0.03);
+          --dash-recent-border:    rgba(192,38,211,0.10);
+
+          --dash-quick-action-bg:     rgba(255,255,255,0.025);
+          --dash-quick-action-border: rgba(255,255,255,0.06);
+
+          --dash-empty-border: rgba(192,38,211,0.25);
+          --dash-empty-bg:     rgba(255,255,255,0.02);
+
+          --dash-pending-bg:     rgba(245,158,11,0.08);
+          --dash-pending-border: rgba(245,158,11,0.28);
+          --dash-pending-text:   #fbbf24;
+
+          --dash-theme-toggle-bg:     rgba(255,255,255,0.06);
+          --dash-theme-toggle-border: rgba(192,38,211,0.20);
+
+          --dash-footer-border-color: rgba(192,38,211,0.15);
+          --dash-brand-border-color:  rgba(192,38,211,0.18);
+        }
+
+        /* ── Scrollbars ── */
+        .user-content-scroll::-webkit-scrollbar { width: 4px; }
+        .user-content-scroll::-webkit-scrollbar-track { background: transparent; }
+        .user-content-scroll::-webkit-scrollbar-thumb { background: rgba(192,38,211,0.25); border-radius: 10px; }
+        .user-sidebar-scroll::-webkit-scrollbar { width: 3px; }
+        .user-sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .user-sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(192,38,211,0.25); border-radius: 10px; }
+
+        /* ── Themed helpers ── */
+        .dash-root {
+          background: var(--dash-bg);
+          transition: background 0.3s ease;
+        }
+        .dash-dot-grid {
+          background:
+            radial-gradient(var(--dash-dot-color) 1px, var(--dash-dot-bg) 1px);
+          background-size: 22px 22px;
+        }
+        .dash-sidebar-top-glow {
+          background: linear-gradient(to bottom, var(--dash-glow-1), transparent);
+        }
+        .dash-sidebar-brand-border {
+          border-bottom: 1px solid var(--dash-brand-border-color);
+        }
+        .dash-footer-border {
+          border-top: 1px solid var(--dash-footer-border-color);
+        }
+        .dash-brand-icon {
+          background: linear-gradient(135deg, #c026d3, #a855f7);
+          box-shadow: 0 4px 14px rgba(192,38,211,0.40);
+        }
+        .dash-section-label {
+          color: var(--dash-section-label-color);
+        }
+        .dash-nav-indicator {
+          background: linear-gradient(to bottom, #c026d3, #a855f7);
+          box-shadow: 0 0 8px #c026d3;
+        }
+        .dash-badge {
+          background: linear-gradient(135deg, #c026d3, #a855f7);
+          box-shadow: 0 0 8px rgba(192,38,211,0.55);
+          color: #fff;
+        }
+        .dash-theme-toggle-wrap {
+          background: var(--dash-theme-toggle-bg);
+          border: 1px solid var(--dash-theme-toggle-border);
+        }
+        .dash-user-chip {
+          background: var(--dash-user-chip-bg);
+          border: 1px solid var(--dash-user-chip-border);
+        }
+        .dash-avatar {
+          background: linear-gradient(135deg, #c026d3, #a855f7);
+        }
+        .dash-card {
+          background: var(--dash-card-bg);
+          border: 1px solid var(--dash-card-border);
+          box-shadow: var(--dash-card-shadow);
+        }
+        .dash-section-wrapper {
+          background: var(--dash-section-bg);
+          border: 1px solid var(--dash-section-border);
+        }
+        .dash-loader-wrap {
+          background: linear-gradient(135deg, rgba(192,38,211,0.25), rgba(168,85,247,0.15));
+          border: 1px solid rgba(192,38,211,0.40);
+        }
+        .dash-brand-color { color: #c026d3; }
+        .dash-header-write-btn {
+          background: linear-gradient(135deg, #c026d3, #a855f7);
+          color: #fff;
+          box-shadow: 0 2px 12px rgba(192,38,211,0.35);
+        }
+        .dash-glow-blob-1 {
+          background: var(--dash-glow-1);
+          filter: blur(120px);
+        }
+        .dash-glow-blob-2 {
+          background: var(--dash-glow-2);
+          filter: blur(100px);
+        }
+      `}</style>
+
+      <AlertDialog open={showSignOutDialog} onOpenChange={setShowSignOutDialog}>
+        <AlertDialogContent
+          className="border-red-500/30"
+          style={{ background: "rgb(var(--bg-base))", backdropFilter: "blur(20px)" }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2" style={{ color: "#f87171" }}>
+              <LogOut className="w-5 h-5" />Sign Out
+            </AlertDialogTitle>
+            <AlertDialogDescription style={{ color: "rgb(var(--text-muted))" }}>
+              Are you sure you want to sign out of the Super Admin panel?
             </AlertDialogDescription>
           </AlertDialogHeader>
-
-          <AlertDialogFooter className="gap-2 mt-1">
+          <AlertDialogFooter>
             <AlertDialogCancel
-              disabled={actionLoading}
-              onClick={() => closeDeleteDialog()}
-              className="cursor-pointer bg-white/5 hover:bg-white/8 text-white/55 hover:text-white border border-white/10 text-sm transition-all"
+              disabled={signingOut}
+              style={{ background: "rgb(var(--surface-raised))", color: "rgb(var(--text-primary))", borderColor: "rgb(var(--surface-border))" }}
             >
               Cancel
             </AlertDialogCancel>
-
-            <Button
-              onClick={handleConfirmedDelete}
-              disabled={actionLoading}
-              className="cursor-pointer bg-gradient-to-r from-pink-600 via-fuchsia-600 to-rose-600
-                hover:from-pink-500 hover:via-fuchsia-500 hover:to-rose-500
-                active:scale-[0.97] text-white border-0 gap-2 text-sm transition-all
-                shadow-lg hover:shadow-pink-500/25"
+            <AlertDialogAction
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white border-none"
             >
-              {actionLoading
-                ? <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                : <Trash2  className="w-4 h-4 shrink-0" />
+              {signingOut
+                ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Signing out…</>
+                : <><LogOut className="w-4 h-4 mr-2" />Sign Out</>
               }
-              Delete Permanently
-            </Button>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dot grid + ambient glows */}
+      <div className="fixed inset-0 z-0 pointer-events-none dash-dot-grid" />
+      <div className="fixed top-[-8%] left-[15%] w-[520px] h-[520px] rounded-full pointer-events-none z-0 dash-glow-blob-1" />
+      <div className="fixed bottom-[-5%] right-[8%] w-[400px] h-[400px] rounded-full pointer-events-none z-0 dash-glow-blob-2" />
+
+      <Toast toasts={toasts} onRemove={removeToast} />
+
+      {/* ════ Mobile overlay ════ */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ════ SIDEBAR — mobile ════ */}
+      <motion.aside
+        initial={false}
+        animate={{ x: sidebarOpen ? 0 : "-100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="fixed top-0 left-0 h-full w-60 z-50 lg:hidden flex flex-col user-sidebar-scroll"
+        style={{
+          background: "var(--dash-sidebar-bg)",
+          borderRight: "1px solid var(--dash-sidebar-border)",
+          backdropFilter: "blur(24px)",
+        }}
+      >
+        <SidebarContent
+          nav={NAV} activeTab={activeTab}
+          setActiveTab={(v) => { setActiveTab(v); setSidebarOpen(false) }}
+          profile={profile} onClose={() => setSidebarOpen(false)} router={router}
+          setShowSignOutDialog={setShowSignOutDialog} 
+        />
+      </motion.aside>
+
+      {/* ════ SIDEBAR — desktop ════ */}
+      <aside
+        className="hidden lg:flex flex-col w-60 xl:w-64 flex-shrink-0 relative z-10 user-sidebar-scroll"
+        style={{
+          background: "var(--dash-sidebar-bg)",
+          borderRight: "1px solid var(--dash-sidebar-border)",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        <SidebarContent nav={NAV} activeTab={activeTab} setActiveTab={setActiveTab} profile={profile} router={router} setShowSignOutDialog={setShowSignOutDialog} />
+      </aside>
+
+      {/* ════ MAIN AREA ════ */}
+      <div className="flex-1 flex flex-col min-w-0 w-full relative z-10 overflow-hidden">
+
+        {/* ── Header ── */}
+        <header
+          className="flex-shrink-0 flex items-center justify-between px-4 sm:px-6 h-[60px]"
+          style={{
+            background: "var(--dash-header-bg)",
+            borderBottom: "1px solid var(--dash-header-border)",
+            backdropFilter: "blur(16px)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-xl transition-all duration-200"
+              style={{
+                background: "rgba(192,38,211,0.12)",
+                border: "1px solid rgba(192,38,211,0.30)",
+                color: "#c026d3",
+              }}>
+              <Menu className="w-4 h-4" />
+            </button>
+
+            {/* Breadcrumb */}
+            <div className="hidden sm:flex items-center gap-2 text-xs" style={{ color: "var(--dash-text-faint)" }}>
+              <span style={{ color: "#c026d3", fontWeight: 600 }}>Dashboard</span>
+              <ChevronRight className="w-3 h-3" />
+              <span style={{ color: "var(--dash-text-secondary)" }}>{PAGE_TITLES[activeTab]?.title}</span>
+            </div>
+            <div className="sm:hidden">
+              <span className="text-sm font-semibold" style={{ color: "var(--dash-text-primary)" }}>
+                {PAGE_TITLES[activeTab]?.title}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Quick create */}
+            <button onClick={() => setActiveTab("create")}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 dash-header-write-btn">
+              <PenLine className="w-3.5 h-3.5" /> Write
+            </button>
+
+            {/* Notification bell */}
+            <button onClick={() => setActiveTab("notifications")}
+              className="relative p-2 rounded-xl transition-all duration-200"
+              style={{
+                background: activeTab === "notifications" ? "rgba(192,38,211,0.14)" : "var(--dash-card-bg)",
+                border: `1px solid ${activeTab === "notifications" ? "rgba(192,38,211,0.38)" : "var(--dash-card-border)"}`,
+                color: activeTab === "notifications" ? "#c026d3" : "var(--dash-text-muted)",
+              }}>
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full text-white text-[9px] font-bold px-1 dash-badge">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
+
+            {/* Avatar chip */}
+            <button onClick={() => setActiveTab("profile")}
+              className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full transition-all duration-200"
+              style={{
+                background: "var(--dash-card-bg)",
+                border: "1px solid var(--dash-card-border)",
+              }}
+            >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0 dash-avatar">
+                {profile?.full_name?.[0]?.toUpperCase() || "U"}
+              </div>
+              <span className="text-xs hidden sm:inline max-w-[90px] truncate" style={{ color: "var(--dash-text-secondary)" }}>
+                {profile?.full_name || "Participant"}
+              </span>
+            </button>
+            <button
+              onClick={toggleTheme}
+              className="hidden md:flex p-2 rounded-xl transition-all duration-200 dash-theme-toggle-wrap"
+              title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              style={{ color: "var(--dash-text-muted)" }}
+              onMouseEnter={e => { e.currentTarget.style.color = isDark ? "#f59e0b" : "#c026d3" }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--dash-text-muted)" }}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          </div>
+        </header>
+
+        {/* ── Content ── */}
+        <main className="flex-1 w-full overflow-y-auto user-content-scroll px-4 sm:px-6 lg:px-8 py-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}
+            >
+
+              {/* ════ OVERVIEW ════ */}
+              {activeTab === "overview" && (
+                <div className="space-y-6">
+
+                  {/* Welcome */}
+                  <div>
+                    <h2 className="text-xl font-bold" style={{ color: "var(--dash-text-primary)" }}>
+                      Welcome back,{" "}
+                      <span className="text-transparent bg-clip-text"
+                        style={{ backgroundImage: "linear-gradient(135deg, #c026d3, #a855f7)" }}>
+                        {profile?.full_name?.split(" ")[0] || "Participant"}
+                      </span>{" "}
+                      👋
+                    </h2>
+                    <p className="text-sm mt-0.5" style={{ color: "var(--dash-text-faint)" }}>
+                      Here's what's happening with your content.
+                    </p>
+                  </div>
+
+                  {/* Stat cards */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <StatCard icon={FileText}     label="Total Posts"   value={totalCount}     accent="#c026d3"  delay={0.05} onClick={() => setActiveTab("myBlog")} />
+                    <StatCard icon={CheckCircle2} label="Published"      value={publishedCount} accent="#16a34a"  delay={0.10} onClick={() => setActiveTab("myBlog")} />
+                    <StatCard icon={Clock}        label="Pending Review" value={pendingCount}   accent="#d97706"  delay={0.15} onClick={() => setActiveTab("myBlog")} />
+                    <StatCard icon={Bell}         label="Unread Alerts"  value={unreadCount}    accent="#db2777"  delay={0.20} onClick={() => setActiveTab("notifications")} />
+                  </div>
+
+                  {/* Pending notice */}
+                  {pendingCount > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                      style={{
+                        background: "var(--dash-pending-bg)",
+                        border: "1px solid var(--dash-pending-border)",
+                      }}>
+                      <div className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ background: "#f59e0b" }} />
+                      <p className="text-sm" style={{ color: "var(--dash-pending-text)" }}>
+                        <span className="font-semibold">{pendingCount} post{pendingCount !== 1 ? "s" : ""}</span> pending admin review
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* Quick actions */}
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] mb-3 dash-section-label">
+                      Quick Actions
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {[
+                        { icon: PenLine,  label: "Write a Post",    sub: "Share your thoughts",    tab: "create",  accent: "#c026d3" },
+                        { icon: BookOpen, label: "Browse My Posts", sub: "View & manage content",  tab: "myBlog",  accent: "#a855f7" },
+                        { icon: User2,    label: "Edit Profile",    sub: "Update your information", tab: "profile", accent: "#db2777" },
+                      ].map(({ icon: Icon, label, sub, tab, accent }) => (
+                        <button key={tab} onClick={() => setActiveTab(tab)}
+                          className="relative overflow-hidden rounded-2xl p-4 text-left group"
+                          style={{
+                            background: "var(--dash-quick-action-bg)",
+                            border: "1px solid var(--dash-quick-action-border)",
+                            transition: "all 0.2s",
+                          }}
+                          onMouseEnter={e => {
+                            e.currentTarget.style.background = `${accent}10`
+                            e.currentTarget.style.borderColor = `${accent}40`
+                            e.currentTarget.style.transform = "translateY(-2px)"
+                            e.currentTarget.style.boxShadow = `0 8px 24px ${accent}15`
+                          }}
+                          onMouseLeave={e => {
+                            e.currentTarget.style.background = "var(--dash-quick-action-bg)"
+                            e.currentTarget.style.borderColor = "var(--dash-quick-action-border)"
+                            e.currentTarget.style.transform = "translateY(0)"
+                            e.currentTarget.style.boxShadow = "none"
+                          }}
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
+                            style={{ background: `${accent}18`, border: `1px solid ${accent}35` }}>
+                            <Icon className="w-4.5 h-4.5" style={{ color: accent }} />
+                          </div>
+                          <p className="text-sm font-semibold" style={{ color: "var(--dash-text-primary)" }}>{label}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "var(--dash-text-faint)" }}>{sub}</p>
+                          <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-all duration-200"
+                            style={{ color: "var(--dash-text-faint)" }} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recent posts */}
+                  {blogs.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] dash-section-label">
+                          Recent Posts
+                        </p>
+                        <button onClick={() => setActiveTab("myBlog")}
+                          className="flex items-center gap-1 text-xs font-medium transition-opacity hover:opacity-70"
+                          style={{ color: "#c026d3" }}>
+                          View all <ArrowUpRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="rounded-2xl overflow-hidden dash-section-wrapper">
+                        {blogs.slice(0, 5).map((blog, i) => (
+                          <motion.div
+                            key={blog.id}
+                            initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
+                            className="flex items-center gap-3 px-4 py-3 transition-colors duration-150"
+                            style={{
+                              borderBottom: i < Math.min(blogs.length, 5) - 1
+                                ? "1px solid var(--dash-recent-border)"
+                                : "none",
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = "var(--dash-recent-row-hover)"}
+                            onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                          >
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ background: "rgba(192,38,211,0.12)", border: "1px solid rgba(192,38,211,0.25)" }}>
+                              <FileText className="w-3.5 h-3.5" style={{ color: "#c026d3" }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" style={{ color: "var(--dash-text-primary)" }}>
+                                {blog.title || "Untitled"}
+                              </p>
+                              <p className="text-xs mt-0.5" style={{ color: "var(--dash-text-faint)" }}>
+                                {blog.created_at
+                                  ? new Date(blog.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                  : "—"}
+                              </p>
+                            </div>
+                            <StatusPill status={blog.status} />
+                          </motion.div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {blogs.length === 0 && !blogsLoading && (
+                    <div className="flex flex-col items-center justify-center py-12 rounded-2xl text-center"
+                      style={{
+                        background: "var(--dash-empty-bg)",
+                        border: "1px dashed var(--dash-empty-border)",
+                      }}>
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
+                        style={{ background: "rgba(192,38,211,0.12)", border: "1px solid rgba(192,38,211,0.30)" }}>
+                        <PenLine className="w-5 h-5" style={{ color: "#c026d3" }} />
+                      </div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--dash-text-secondary)" }}>No posts yet</p>
+                      <p className="text-xs mt-1 mb-4" style={{ color: "var(--dash-text-faint)" }}>Write your first post to get started</p>
+                      <button onClick={() => setActiveTab("create")}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white dash-brand-icon"
+                        style={{ boxShadow: "0 4px 14px rgba(192,38,211,0.35)" }}>
+                        <Plus className="w-4 h-4" /> Write your first post
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ════ PROFILE ════ */}
+              {activeTab === "profile" && (
+                <div className="space-y-4">
+                  <SectionWrapper>
+                    <UserProfile currentUser={profile?.user_id} authUserId={profile?.id} />
+                  </SectionWrapper>
+                </div>
+              )}
+
+              {/* ════ MY POSTS ════ */}
+              {activeTab === "myBlog" && (
+                <div className="max-w-5xl space-y-4">
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Total",     value: totalCount,     accent: "#c026d3" },
+                      { label: "Published", value: publishedCount, accent: "#16a34a" },
+                      { label: "Pending",   value: pendingCount,   accent: "#d97706" },
+                    ].map(({ label, value, accent }) => (
+                      <div key={label} className="flex items-center gap-3 px-4 py-3 rounded-xl dash-card">
+                        <div>
+                          <p className="text-base font-bold leading-none" style={{ color: "var(--dash-text-primary)" }}>{value}</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: "var(--dash-text-faint)" }}>{label}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <SectionWrapper>
+                    {!blogsLoading && blogs.length === 0
+                      ? <BlogEmpty />
+                      : <UserViewableSection
+                          blogs={blogs} blogsLoading={blogsLoading}
+                          profile={profile} onBlogUpdate={handleBlogUpdate} addToast={addToast}
+                        />
+                    }
+                  </SectionWrapper>
+                </div>
+              )}
+
+              {/* ════ CREATE ════ */}
+              {activeTab === "create" && (
+                <div className="w-full">
+                  <SectionWrapper>
+                    <PendingBlogUserForm
+                      onSuccess={handleBlogUpdate} currentUser={profile}
+                      addToast={addToast} authUserId={profile?.id}
+                    />
+                  </SectionWrapper>
+                </div>
+              )}
+
+              {/* ════ NOTIFICATIONS ════ */}
+              {activeTab === "notifications" && (
+                <div className="w-full">
+                  <SectionWrapper>
+                    <div className="mb-5">
+                      <p className="text-[10px] uppercase tracking-widest mb-1 font-semibold dash-section-label">
+                        Activity Feed
+                      </p>
+                      <div className="h-px"
+                        style={{ background: "linear-gradient(to right, #c026d380, #a855f760, transparent)" }} />
+                    </div>
+                    <NotificationsTab userId={profile?.user_id} role="user" />
+                  </SectionWrapper>
+                </div>
+              )}
+
+            </motion.div>
+          </AnimatePresence>
+
+          
+
+          <div className="h-8" />
+        </main>
+      </div>
     </div>
   )
 }

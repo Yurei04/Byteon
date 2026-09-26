@@ -580,10 +580,13 @@
       "poses": {
         "neutral": "you_neutral.png",
         "thinking": "you_thinking.png",
-        "tired": "you_tired.png",
+        "concerned": "you_concerned.png",
         "determined": "you_determined.png",
         "happy": "you_happy.png",
-        "proud": "you_proud.png"
+        "proud": "you_proud.png",
+        "smile": "you_smile.png",
+        "surprised": "you_surprised.png",
+        "tired": "you_tired.png"
       }
     },
     {
@@ -591,12 +594,15 @@
       "name": "Aira",
       "poses": {
         "neutral": "aira_neutral.png",
-        "smiling": "aira_smiling.png",
-        "grinning": "aira_grinning.png",
-        "gentle": "aira_gentle.png",
+        "smile": "aira_smile.png",
+        "smiling": "aira_smilling.png",
         "happy": "aira_happy.png",
+        "grin": "aira_grin.png",
+        "grinning": "aira_grinnning.png",
         "clapping": "aira_clapping.png",
-        "teaching": "aira_teaching.png"
+        "laugh": "aira_laugh.png",
+        "fade": "aira_fade.png",
+        "teach": "aira_teaching.png"
       }
     },
     {

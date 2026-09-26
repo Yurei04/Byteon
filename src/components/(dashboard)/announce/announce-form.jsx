@@ -1,3 +1,4 @@
+/*
 "use client"
 import DatePicker from "@/components/DatePickerClient"
 import { forwardRef } from "react"
@@ -105,6 +106,10 @@ const minuteOptions = ["00","05","10","15","20","25","30","35","40","45","50","5
     setFormData({ ...EMPTY_FORM })
     setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
     setHasDraft(false)
+    setAlert(null)
+  }
+
+  const removeForm = () => {
     setAlert(null)
   }
 
@@ -280,16 +285,19 @@ return
           </Alert>
         )}
 
-<form onSubmit={handleSubmit} className="space-y-6">
-      {/* Draft restored indicator */}
+    <form onSubmit={handleSubmit} className="space-y-6">
+
           {hasDraft && (
             <div className="flex items-center justify-between gap-3 p-3 border border-amber-400/30 rounded-xl bg-amber-950/20">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
                 <span className="text-amber-200/80 text-xs">Draft auto-saved — your progress is safe</span>
               </div>
-              <button onClick={resetForm} className="flex items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
-                <RotateCcw className="w-3 h-3" /> Clear
+              <button onClick={resetForm} className="flex cursor-pointer items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
+                <RotateCcw className="w-3 h-3" /> Clear Form
+              </button>
+              <button onClick={removeForm} className="flex cursor-pointer items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors">
+                <RotateCcw className="w-3 h-3" />
               </button>
             </div>
           )}
@@ -304,7 +312,7 @@ return
             <div className="space-y-2 md:col-span-2">
               <Label className="text-white">Title *</Label>
               <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="bg-white/10 border-white/20 text-white" placeholder="AI Hackathon 2025" />
+                className="bg-white/10 border-white/20 text-white" placeholder="Hackatjon " />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label className="text-white">Description *</Label>
@@ -376,7 +384,6 @@ return
 
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-  {/* START */}
 <div className="relative">
 
   <label className="block text-sm font-semibold mb-1">
@@ -391,7 +398,6 @@ return
     customInput={<CalendarInput borderColor={t.borderColor} />}
   />
 
-{/* START TIME */}
 <div className="flex items-center gap-3 mt-2">
 
   <Input
@@ -426,7 +432,7 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
 </div>
   </div>
 
- {/* END */}
+
 <div className="relative">
 
   <label className="block text-sm font-semibold mb-1">
@@ -440,7 +446,7 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
     dateFormat="yyyy/MM/dd"
     customInput={<CalendarInput />}
   />
-{/* END TIME */}
+
 <div className="flex items-center gap-3 mt-2">
 
   <Input
@@ -523,3 +529,4 @@ onChange={(e)=>setStartHour12(e.target.value)}    className="w-20 text-center bg
     </Card>
   )
 }
+*/

@@ -10,29 +10,46 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, CheckCircle, Clock } from "lucide-react"
 
-export default function PendingResourceForm({ onSuccess, currentOrg, authUserId }) {
+const LIMITS = {
+  title:   80,
+  des:     1000,
+  author:  60,
+  content: 2000,
+  theme:   200,
+}
+
+// uiT is the UI theme token object passed down from the parent dashboard.
+// It is optional — the component falls back to the org's buildTheme styles when absent.
+export default function PendingResourceForm({ onSuccess, currentOrg, authUserId, addToast, uiT }) {
   const [isLoading, setIsLoading] = useState(false)
   const [alert, setAlert]         = useState(null)
   const [formData, setFormData]   = useState({ title: "", des: "", link: "", category: "" })
 
-  // ── Org theme ──────────────────────────────────────────────────────────────
+  // Derive org brand theme (for primary color, button gradients, etc.)
   const t = useMemo(
     () => buildTheme(currentOrg?.primary_color, currentOrg?.secondary_color),
     [currentOrg?.primary_color, currentOrg?.secondary_color],
   )
 
+  // ── Shared input style — adapts to uiT when provided ─────────────────────
   const inputStyle = {
-    background:   "rgba(255,255,255,0.06)",
-    borderColor:  t.primary30,
-    color:        "#fff",
+    background:  uiT?.inputBg     ?? "rgba(255,255,255,0.06)",
+    borderColor: uiT?.borderSubtle ?? t.primary30,
+    color:       uiT?.headingText  ?? "#fff",
   }
+
+  const labelColor   = uiT?.mutedText  ?? "#ffffff"
+  const headingColor = uiT?.headingText ?? "#ffffff"
 
   const handleSubmit = async () => {
     if (!currentOrg) {
       setAlert({ type: "error", message: "Organization not found. Please refresh." }); return
     }
     if (!formData.title || !formData.link) {
-      setAlert({ type: "error", message: "Title and Link are required." }); return
+      addToast("error", "Please add a Title and link"); return
+    }
+    if (!formData.des) {
+      addToast("error", "Please add a description"); return
     }
 
     setIsLoading(true)
@@ -63,98 +80,114 @@ export default function PendingResourceForm({ onSuccess, currentOrg, authUserId 
     }
   }
 
-  // ── Loading state ──────────────────────────────────────────────────────────
+  // ── Loading state ─────────────────────────────────────────────────────────
   if (!currentOrg) {
     return (
       <div
-        className="rounded-xl backdrop-blur-lg p-12 text-center"
-        style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)" }}
+        className="rounded-xl p-12 text-center"
+        style={{
+          background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.06)",
+          border:     `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+        }}
       >
         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4" style={{ color: t.primaryText }} />
-        <p style={{ color: t.mutedText }}>Loading organization information...</p>
+        <p style={{ color: uiT?.mutedText ?? t.mutedText }}>Loading organization information...</p>
       </div>
     )
   }
 
   return (
     <div style={t.cssVars}>
-      {/* Pending notice */}
-      <div className="flex items-center gap-2 mb-5 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-        <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-        <p className="text-amber-200 text-sm">
-          This resource will be <strong>reviewed by the super admin</strong> before going live.
+
+      {/* ── Pending notice ── */}
+      <div className="flex items-start gap-2.5 p-3.5 rounded-xl m-2"
+        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}>
+        <Clock className="w-4 h-4 text-amber-800 dark:text-amber-300 shrink-0 mt-0.5" />
+        <p className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed">
+          This submission will be <span className="text-amber-800 dark:text-amber-300 font-medium">reviewed by the super admin</span> before going live.
         </p>
       </div>
 
+      {/* ── Alert ── */}
       {alert && (
-        <Alert className={`mb-6 ${alert.type === "error" ? "border-red-500 bg-red-500/10" : "border-green-500 bg-green-500/10"}`}>
+        <Alert
+          className={`mb-6 ${alert.type === "error" ? "border-red-500 bg-red-500/10" : "border-green-500 bg-green-500/10"}`}
+        >
           {alert.type === "error" ? <AlertCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
-          <AlertDescription>{alert.message}</AlertDescription>
+          <AlertDescription style={{ color: alert.type === "error" ? "#fecaca" : "#bbf7d0" }}>
+            {alert.message}
+          </AlertDescription>
         </Alert>
       )}
 
       <div className="space-y-6">
-        {/* Submitting as */}
+
+        {/* ── Submitting as ── */}
         <div
           className="flex items-center gap-3 p-3 rounded-xl"
-          style={{ background: t.badgeBgPrimary, border: t.borderColorLight }}
+          style={{
+            background: uiT?.surfaceBg2 ?? t.badgeBgPrimary,
+            border:     `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
+          }}
         >
           <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: t.primaryFull }} />
-          <span className="text-white/50 text-sm">Submitting as</span>
+          <span className="text-sm" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.5)" }}>Submitting as</span>
           <span className="font-semibold text-sm" style={{ color: t.primaryText }}>{currentOrg.name}</span>
         </div>
 
-        {/* Title */}
+        {/* ── Title ── */}
         <div className="space-y-2">
-          <Label className="text-white">Title *</Label>
+          <Label style={{ color: labelColor }}>Title *</Label>
           <Input
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="text-white placeholder:text-white/30"
+            onChange={(e) => setFormData({ ...formData, title: e.target.value.slice(0, LIMITS.title) })}
+            className="placeholder:opacity-30"
             style={inputStyle}
+            maxLength={LIMITS.title}
             placeholder="React Documentation"
           />
         </div>
 
-        {/* Description */}
+        {/* ── Description ── */}
         <div className="space-y-2">
-          <Label className="text-white">Description</Label>
+          <Label style={{ color: labelColor }}>Description *</Label>
           <Textarea
             value={formData.des}
-            onChange={(e) => setFormData({ ...formData, des: e.target.value })}
-            className="text-white placeholder:text-white/30"
+            onChange={(e) => setFormData({ ...formData, des: e.target.value.slice(0, LIMITS.des) })}
+            className="placeholder:opacity-30"
             style={inputStyle}
             rows={3}
+            maxLength={LIMITS.des}
             placeholder="Helpful resource for learning React"
           />
         </div>
 
-        {/* Link */}
+        {/* ── Link ── */}
         <div className="space-y-2">
-          <Label className="text-white">Link *</Label>
+          <Label style={{ color: labelColor }}>Link *</Label>
           <Input
             type="url"
             value={formData.link}
             onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-            className="text-white placeholder:text-white/30"
+            className="placeholder:opacity-30"
             style={inputStyle}
             placeholder="https://react.dev"
           />
         </div>
 
-        {/* Category */}
+        {/* ── Category ── */}
         <div className="space-y-2">
-          <Label className="text-white">Category</Label>
+          <Label style={{ color: labelColor }}>Category</Label>
           <Input
             value={formData.category}
             onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            className="text-white placeholder:text-white/30"
+            className="placeholder:opacity-30"
             style={inputStyle}
             placeholder="Development, Design, Learning"
           />
         </div>
 
-        {/* Submit button — org branded */}
+        {/* ── Submit button ── */}
         <Button
           onClick={handleSubmit}
           disabled={isLoading}
@@ -167,9 +200,10 @@ export default function PendingResourceForm({ onSuccess, currentOrg, authUserId 
         >
           {isLoading
             ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</>
-            : <><Clock className="mr-2 h-4 w-4" />Submit for Approval</>
+            : <><Clock   className="mr-2 h-4 w-4" />Submit for Approval</>
           }
         </Button>
+
       </div>
     </div>
   )

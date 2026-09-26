@@ -1,60 +1,108 @@
 "use client"
 
-import Link from "next/link"
-import { Menu, X, Zap } from "lucide-react"
-import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import {
+  Zap, Home, Handshake, BookOpen,
+  Library, Terminal, GraduationCap, Sun, Moon,
+} from "lucide-react"
 import { useAuth } from "@/components/(auth)/authContext"
 import SignLogInDialog from "@/app/(auth)/loginSigninDialog"
 import AccountSwitcher from "./(auth)/accountSwitcher"
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog"
+import { useTheme } from "next-themes"
+import { useState } from "react"
 
 const navLinks = [
-  { title: "Home",      href: "/"                  },
-  { title: "Partners",  href: "/partners"           },
-  { title: "Blog",      href: "/blog"               },
-  { title: "Resource",  href: "/resource-hub"       },
-  { title: "Hacks",     href: "/announce"           },
-  { title: "HowToHack", href: "/how-to-hackathon"  },
+  { title: "Home",      tab: "home",     icon: Home },
+  { title: "Partners",  tab: "partners", icon: Handshake },
+  { title: "Blog",      tab: "blog",     icon: BookOpen },
+  { title: "Resource",  tab: "resource", icon: Library },
+  { title: "Hacks",     tab: "hacks",    icon: Terminal },
+  { title: "HowToHack", tab: "howto",    icon: GraduationCap },
 ]
 
-export default function NavBar() {
+// ── Nav Item ──────────────────────────────────────────────
+function SidebarNavItem({ value, icon: Icon, label, isActive, isCollapsed, onClick }) {
+  return (
+    <button
+      onClick={() => onClick(value)}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium relative transition-all duration-150"
+      style={
+        isActive
+          ? {
+              background: "rgb(var(--brand-500) / 0.12)",
+              color: "rgb(var(--text-primary))",
+              border: "1px solid rgb(var(--brand-500) / 0.35)",
+            }
+          : {
+              background: "transparent",
+              color: "rgb(var(--text-faint))",
+              border: "1px solid transparent",
+            }
+      }
+    >
+      {isActive && (
+        <div
+          className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-5 rounded-r-full"
+          style={{ background: "linear-gradient(to bottom, rgb(var(--accent-500)), rgb(var(--brand-500)))" }}
+        />
+      )}
+
+      <Icon className="w-[18px] h-[18px] shrink-0" />
+
+      <span
+        className="text-left text-xs whitespace-nowrap overflow-hidden transition-all"
+        style={{ width: isCollapsed ? 0 : "auto", opacity: isCollapsed ? 0 : 1 }}
+      >
+        {label}
+      </span>
+    </button>
+  )
+}
+
+// ── Sidebar ───────────────────────────────────────────────
+export default function Sidebar({
+  activeTab,
+  onTabChange = () => {},
+  isCollapsed = false,
+  onToggle = () => {},
+}) {
   const { loading, isLoggedIn } = useAuth()
-  const pathname = usePathname()
-  const [isOpen, setIsOpen]             = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [scrolled, setScrolled]         = useState(false)
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
+  const handleLogoClick = () => {
+    onToggle?.()
+  }
 
-  // Close mobile menu on route change
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { setIsOpen(false) }, [pathname])
-
-  const isActive = (href) =>
-    href === "/" ? pathname === "/" : pathname?.startsWith(href)
-
-  const renderAuthSlot = () => {
+  const renderAuthSlot = (mobile = false) => {
     if (loading) {
-      return <div className="w-8 h-8 rounded-full bg-fuchsia-400/20 animate-pulse ring-1 ring-fuchsia-400/30" />
+      return (
+        <div
+          className="rounded-lg animate-pulse"
+          style={{
+            width: mobile ? 80 : "100%",
+            height: 36,
+            background: "rgb(var(--surface-raised))",
+            border: "1px solid rgb(var(--surface-border) / 0.3)",
+          }}
+        />
+      )
     }
+
     if (isLoggedIn) return <AccountSwitcher />
 
     return (
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <button className="relative group flex items-center gap-2 px-4 py-1.5 rounded-xl text-sm font-semibold overflow-hidden transition-all duration-300
-            bg-gradient-to-r from-fuchsia-600 to-purple-600
-            hover:from-fuchsia-500 hover:to-purple-500
-            shadow-md shadow-fuchsia-900/40 hover:shadow-fuchsia-700/50
-            text-white hover:scale-[1.03] active:scale-95">
-            <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-            <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
-            <span className="relative">Login</span>
+          <button
+            className={`flex items-center gap-2 rounded-lg text-sm font-medium transition-all
+              ${isCollapsed ? "justify-center px-2 py-2" : "w-full px-3 py-2.5 justify-start"}`}
+            style={{
+              background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))",
+              color: "rgb(var(--fg-on-brand))",
+            }}
+          >
+            <Zap className="w-3.5 h-3.5" />
+            {!isCollapsed && <span className="text-xs">Login</span>}
           </button>
         </DialogTrigger>
         <DialogContent className="bg-transparent border-none shadow-none">
@@ -66,100 +114,200 @@ export default function NavBar() {
 
   return (
     <>
-      {/* Ambient top glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-20 bg-fuchsia-600/10 blur-3xl pointer-events-none z-40 rounded-full" />
+      {/* ── Desktop Sidebar ── */}
+      <aside
+        className="hidden md:flex fixed left-0 top-0 h-screen z-50 flex-col py-5 transition-[width] duration-[250ms] ease-[ease]"
+        style={{
+          width: isCollapsed ? "4.5rem" : "16rem",
+          background: "rgb(var(--bg-base))",
+          borderRight: "1px solid rgb(var(--surface-border) / 0.15)",
+        }}
+      >
+        {/* Top glow */}
+        <div
+          className="absolute top-0 left-0 right-0 h-24 pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, rgb(var(--accent-500) / 0.06), transparent)" }}
+        />
 
-      <div className={`fixed z-50 w-full flex justify-center px-4 sm:px-6 transition-all duration-500 ${scrolled ? "mt-2" : "mt-5"}`}>
-        <nav className={`w-full max-w-5xl rounded-2xl px-4 sm:px-6 transition-all duration-500 ${
-          scrolled
-            ? "py-3 bg-black/65 border border-fuchsia-400/20 shadow-xl shadow-fuchsia-900/25 backdrop-blur-2xl"
-            : "py-4 bg-fuchsia-950/35 border border-fuchsia-400/20 shadow-lg backdrop-blur-xl"
-        }`}>
+        {/* Logo */}
+        <button onClick={handleLogoClick} className="flex items-center gap-2.5 mb-6 px-3">
+          <div
+            className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))" }}
+          >
+            <Zap className="w-3.5 h-3.5" style={{ color: "rgb(var(--fg-on-brand))" }} />
+          </div>
 
-          <div className="flex items-center justify-between gap-4">
-
-            {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group flex-shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-fuchsia-500 to-purple-600 flex items-center justify-center shadow-lg shadow-fuchsia-500/30 group-hover:shadow-fuchsia-400/50 group-hover:scale-105 transition-all duration-300">
-                <Zap className="w-3.5 h-3.5 text-white fill-white" />
-              </div>
-              <span className="text-base font-bold bg-gradient-to-r from-fuchsia-300 to-purple-300 bg-clip-text text-transparent tracking-tight">
+          {!isCollapsed && (
+            <div className="flex flex-col leading-tight">
+              <span className="text-sm font-semibold" style={{ color: "rgb(var(--text-primary))" }}>
                 Byteon
               </span>
-            </Link>
-
-            {/* Desktop nav */}
-            <div className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
-              {navLinks.map((link) => {
-                const active = isActive(link.href)
-                return (
-                  <Link
-                    key={link.title}
-                    href={link.href}
-                    className={`relative px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 group ${
-                      active ? "text-fuchsia-100" : "text-fuchsia-300/65 hover:text-fuchsia-100"
-                    }`}
-                  >
-                    {active && (
-                      <span className="absolute inset-0 rounded-lg bg-fuchsia-500/15 ring-1 ring-fuchsia-400/30" />
-                    )}
-                    <span className="absolute inset-0 rounded-lg bg-fuchsia-500/0 group-hover:bg-fuchsia-500/8 transition-colors duration-200" />
-                    <span className="relative">{link.title}</span>
-                    {active && (
-                      <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-fuchsia-400" />
-                    )}
-                  </Link>
-                )
-              })}
+              <span className="text-[9px]" style={{ color: "rgb(var(--text-faint))" }}>
+                Platform
+              </span>
             </div>
+          )}
+        </button>
 
-            {/* Desktop auth */}
-            <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-              <div className="h-5 w-px bg-fuchsia-400/20" />
-              {renderAuthSlot()}
-            </div>
-
-            {/* Mobile: auth + burger */}
-            <div className="md:hidden flex items-center gap-2">
-              {renderAuthSlot()}
-              <button
-                onClick={() => setIsOpen(prev => !prev)}
-                className="w-8 h-8 rounded-lg bg-fuchsia-900/40 border border-fuchsia-400/20 flex items-center justify-center text-fuchsia-300 hover:bg-fuchsia-800/50 hover:text-fuchsia-100 transition-all duration-200"
-                aria-label="Toggle menu"
-              >
-                {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Mobile menu — smooth expand */}
-          <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            isOpen ? "max-h-96 opacity-100 mt-3" : "max-h-0 opacity-0 mt-0"
-          }`}>
-            <div className="border-t border-fuchsia-400/15 pt-3 flex flex-col gap-1">
-              {navLinks.map((link) => {
-                const active = isActive(link.href)
-                return (
-                  <Link
-                    key={link.title}
-                    href={link.href}
-                    onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
-                      active
-                        ? "bg-fuchsia-500/15 text-fuchsia-100 ring-1 ring-fuchsia-400/25"
-                        : "text-fuchsia-300/75 hover:bg-fuchsia-800/30 hover:text-fuchsia-100"
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${active ? "bg-fuchsia-400" : "bg-fuchsia-600/40"}`} />
-                    {link.title}
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-
+        {/* Nav links */}
+        <nav className="flex flex-col gap-1 flex-1 px-2">
+          {navLinks.map(({ title, tab, icon }) => (
+            <SidebarNavItem
+              key={tab}
+              value={tab}
+              icon={icon}
+              label={title}
+              isActive={activeTab === tab}
+              isCollapsed={isCollapsed}
+              onClick={onTabChange}
+            />
+          ))}
         </nav>
+
+        {/* Divider */}
+        <div
+          className="my-3 h-px mx-2"
+          style={{ background: "rgb(var(--surface-border) / 0.2)" }}
+        />
+
+        {/* Theme toggle + auth */}
+        <div className="px-2 flex flex-col gap-2">
+          <ThemeToggle isCollapsed={isCollapsed} />
+          {renderAuthSlot()}
+        </div>
+      </aside>
+
+      {/* ── Mobile Bottom Bar ── */}
+      <div
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-1 py-1.5"
+        style={{
+          background: "rgb(var(--bg-base))",
+          borderTop: "1px solid rgb(var(--surface-border) / 0.15)",
+        }}
+      >
+        {navLinks.map(({ title, tab, icon: Icon }) => {
+          const active = activeTab === tab
+          return (
+            <button
+              key={tab}
+              onClick={() => onTabChange(tab)}
+              className="flex flex-col items-center gap-0.5 px-2.5 py-1.5 transition-colors"
+              style={{ color: active ? "rgb(var(--accent-500))" : "rgb(var(--text-faint))" }}
+            >
+              <Icon className="w-[18px] h-[18px]" />
+              <span className="text-[9px]">{title}</span>
+            </button>
+          )
+        })}
+
+        {/* Theme toggle icon + auth on mobile */}
+        <button
+          onClick={() => {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const { theme, setTheme } = useTheme() 
+          }}
+          className="flex flex-col items-center gap-0.5 px-2.5 py-1.5"
+        >
+        </button>
+
+        <div className="flex items-center gap-2 px-1">
+          <MobileThemeToggle />
+          {renderAuthSlot(true)}
+        </div>
       </div>
     </>
+  )
+}
+// ── Theme Toggle ──────────────────────────────────────────
+function ThemeToggle({ isCollapsed }) {
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+
+  return (
+    <div
+      className={`w-full flex items-center rounded-xl px-3 py-2.5 transition-all duration-150
+        ${isCollapsed ? "justify-center px-2" : "gap-3"}`}
+      style={{ color: "rgb(var(--text-muted))" }}
+    >
+      {!isCollapsed && (
+        <Sun className="w-[18px] h-[18px] shrink-0" style={{ color: "rgb(var(--text-faint))" }} />
+      )}
+
+      {/* Switch track */}
+      <button
+        role="switch"
+        aria-checked={isDark}
+        onClick={() => setTheme(isDark ? "light" : "dark")}
+        className="relative shrink-0 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2"
+        style={{
+          width: 36,
+          height: 20,
+          background: isDark
+            ? "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))"
+            : "rgb(var(--surface-border))",
+          boxShadow: isDark ? "0 0 8px rgb(var(--brand-500) / 0.4)" : "none",
+          focusVisibleRing: "rgb(var(--brand-500))",
+        }}
+      >
+        {/* Thumb */}
+        <span
+          className="absolute top-[2px] flex items-center justify-center rounded-full bg-white transition-all duration-300"
+          style={{
+            width: 16,
+            height: 16,
+            left: isDark ? "calc(100% - 18px)" : "2px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+          }}
+        >
+          {isDark
+            ? <Moon className="w-2.5 h-2.5" style={{ color: "rgb(var(--brand-600))" }} />
+            : <Sun  className="w-2.5 h-2.5" style={{ color: "#f59e0b" }} />
+          }
+        </span>
+      </button>
+
+      {!isCollapsed && (
+        <Moon className="w-[18px] h-[18px] shrink-0" style={{ color: "rgb(var(--text-faint))" }} />
+      )}
+    </div>
+  )
+}
+
+// ── Mobile-specific minimal toggle ───────────────────────
+function MobileThemeToggle() {
+  const { theme, setTheme } = useTheme()
+  const isDark = theme === "dark"
+
+  return (
+    <button
+      role="switch"
+      aria-checked={isDark}
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="relative shrink-0 rounded-full transition-all duration-300"
+      style={{
+        width: 36,
+        height: 20,
+        background: isDark
+          ? "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))"
+          : "rgb(var(--surface-border))",
+        boxShadow: isDark ? "0 0 8px rgb(var(--brand-500) / 0.4)" : "none",
+      }}
+    >
+      <span
+        className="absolute top-[2px] flex items-center justify-center rounded-full bg-white transition-all duration-300"
+        style={{
+          width: 16,
+          height: 16,
+          left: isDark ? "calc(100% - 18px)" : "2px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+        }}
+      >
+        {isDark
+          ? <Moon className="w-2.5 h-2.5" style={{ color: "rgb(var(--brand-600))" }} />
+          : <Sun  className="w-2.5 h-2.5" style={{ color: "#f59e0b" }} />
+        }
+      </span>
+    </button>
   )
 }

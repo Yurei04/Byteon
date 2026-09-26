@@ -1,9 +1,13 @@
+// app/super-admin-dashboard/layout.jsx
 
+"use client"
 
-export default function SuperAdminDashboardLayout ({ children }) {
-    return (
-        <div>
-            {children}
-        </div>
-    )
+import ProtectedRoute from "@/app/protected/protectedRoute"
+
+export default function SuperAdminLayout({ children }) {
+  return (
+    <ProtectedRoute allowSuperAdmin>
+      {children}
+    </ProtectedRoute>
+  )
 }

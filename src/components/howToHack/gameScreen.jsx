@@ -33,6 +33,7 @@ export default function GameScreen({
   onMinigameComplete,
   onNextChapter,
   chapterGameIndex,
+  background,
   tutorial = false,
   onTutorialComplete,
   onChapterEnd = () => {},
@@ -130,7 +131,7 @@ export default function GameScreen({
       {/* BACKGROUND */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/temp_bkg.jpg"
+          src={backgroundSrc}
           alt="background"
           fill
           className="object-cover transition-all duration-700 ease-in-out"
