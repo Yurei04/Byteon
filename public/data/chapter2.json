@@ -10,59 +10,39 @@
           "id": "scene1",
           "dialogs": [
             {
-              "character": "You",
-              "pose": "neutral",
-              "text": "Alright, Aira said we’d talk about teams today… wonder what she’s got planned."
-            },
-            {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "A new day begins — and this time, you don’t just stare at the invitation. You click Join Discord Server."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Your Laptop screen glows and Aira appears in a soft flash.."
+              "text": "A new day begins. You join the hackathon Discord and Aira appears on your screen."
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Good morning, future hacker! Ready for your next mission?"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Her tone is the same as ever — warm and full of zeal. You can’t help but feel her energy is infectious."
-            },
-            {
-              "character": "You",
-              "pose": "smile",
-              "text": "I think so. I mean… as ready as I’ll ever be."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Perfect answer! Because today, we tackle the most powerful force in any hackathon."
+              "text": "Good morning, future hacker! Today, we're learning about the most important part of a hackathon: teamwork."
             },
             {
               "character": "You",
               "pose": "thinking",
-              "text": "Code?"
+              "text": "Teamwork? But how do I even find a team?"
             },
             {
               "character": "Aira",
+              "pose": "smile",
+              "text": "Let's take a look. Hackathons bring people with different skills together, and beginners are welcome too."
+            },
+            {
+              "character": "Narrator",
               "pose": "neutral",
-              "text": "Nope!"
+              "text": "The screen changes to a busy team-formation channel. Messages appear: 'Looking for a designer!' 'Need a developer!' 'Beginner-friendly team here!'"
             },
             {
               "character": "You",
-              "pose": "neutral",
-              "text": "Coffee?"
+              "pose": "smile",
+              "text": "Oh... so there are people looking for teammates too."
             },
             {
               "character": "Aira",
-              "pose": "laugh",
-              "text": "Close — but still no. The answer is… Teamwork!"
+              "pose": "smile",
+              "text": "Exactly. You don't have to know everything. You just need to find people whose strengths complement yours."
             }
           ]
         },
@@ -73,160 +53,215 @@
           "dialogs": [
             {
               "character": "Aira",
-              "pose": "smile",
-              "text": "Welcome to the Collaboration Hub — a virtual space where ideas meet people. On Devpost, this is how teams coordinate."
+              "pose": "neutral",
+              "text": "Meet three common hackathon roles."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Holographic avatars of students, designers, and coders float by."
+              "text": "Luna, Kenji, and Maya appear one after another."
             },
             {
-              "character": "Aira",
+              "character": "Luna",
               "pose": "smile",
-              "text": "Teams balance skills: Developers, Designers, Presenters, and Strategists. Devpost lets you register team members officially. Only real contributors count."
+              "text": "I'm Luna, the Designer. I focus on UI/UX and making sure the project is easy and enjoyable to use."
             },
             {
-              "character": "You",
-              "pose": "surprised",
-              "text": "Whoa, it’s busy! Everyone seems to know what they’re doing."
-            },
-            {
-              "character": "Aira",
+              "character": "Kenji",
               "pose": "smile",
-              "text": "Don’t be fooled! Most of them are first-timers too. The trick is: nobody knows everything — and that’s okay. That’s why teams exist."
+              "text": "I'm Kenji, the Developer. I turn ideas into working features and solve technical problems."
             },
             {
-              "character": "You",
-              "pose": "concerned",
-              "text": "But how do I even find a team? What if nobody wants to work with a beginner like me?"
-            },
-            {
-              "character": "Aira",
+              "character": "Maya",
               "pose": "smile",
-              "text": "Ah, the second most common fear — right after ‘what if I break something?’ Trust me, every hackathon is full of people looking for someone just like you."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The screen transforms into a glowing interface resembling Discord channels: #announcements, #team-formation, #sdg-resources, #general-chat, #mentor-help"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The #team-formation channel lights up."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Messages float by: Looking “for a designer!” , “Need 1 frontend dev + 1 presenter!” , “Beginner-friendly team here!”"
+              "text": "I'm Maya, the Presenter. I help explain the idea, research its impact, and present it to the judges."
             },
             {
               "character": "You",
               "pose": "thinking",
-              "text": "Whoa… it’s already active."
+              "text": "So everyone has a different job, but they all work toward the same idea."
             },
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "That’s because hackathons don’t wait. Ready to build your team?"
+              "text": "Exactly! A strong team combines different strengths."
             }
           ]
         },
         {
           "id": "scene3",
+          "title": "Team Builder MiniGame",
           "dialogs": [
             {
               "character": "Aira",
-              "pose": "neutral",
-              "text": "Let me introduce you to a few types of hackers you’ll meet. Think of it as... your future squad audition."
+              "pose": "grin",
+              "text": "Let's test what you learned with the Team Builder minigame!"
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Three avatars fade in — one at a time, each with their own personality and color theme."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Luna — the Designer — waves, surrounded by glowing shapes and color palettes."
-            },
-            {
-              "character": "Luna",
-              "pose": "smile",
-              "text": "Hey there! I’m Luna!  I’m into UI/UX and social impact projects. I make things look beautiful and usable. You know, colors, buttons, layouts. Without design, even great ideas feel dull."
-            },
-            {
-              "character": "You",
-              "pose": "neutral",
-              "text": "So you’re the artsy type?"
-            },
-            {
-              "character": "Luna",
-              "pose": "smile",
-              "text": "Sort of! But it’s more than art — it’s understanding people. I make sure the users actually enjoy using what we build."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Designers are like empathy wizards — they turn chaos into clarity. Despite what most say considering the age of generative AI, they are indispensable. After all, nobody knows aesthetics better than humans."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Next appears Kenji — the Developer — his avatar framed by lines of cascading code."
-            },
-            {
-              "character": "Kenji",
-              "pose": "neutral",
-              "text": "Sup. I’m Kenji! I code stuff. I can handle backend or frontend. Prefer projects with real technical challenges. I’m not great at talking, but give me a bug, and I’ll squash it faster than you can say ‘runtime error’."
-            },
-            {
-              "character": "You",
-              "pose": "surprised",
-              "text": "Wow, you seem… intense."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The coder’s rather stoic lips that were forming a flat line curl into a soft smile."
-            },
-            {
-              "character": "Kenji",
-              "pose": "smile",
-              "text": "I just like seeing ideas come to life. But coding alone? Nah. You need others to bring a project to the finish line."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Developers are the builders — they make things work. But without an idea, they have nothing to build. They thrive with direction and collaboration."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Lastly appears Maya — the Presenter — standing confidently with a glowing mic in hand."
-            },
-            {
-              "character": "Maya",
-              "pose": "smile",
-              "text": "Hiya! I’m Maya the storyteller! My job? Convince the judges that our idea changes the world. I love pitching and researching. Also super into SDGs!"
-            },
-            {
-              "character": "You",
-              "pose": "thinking",
-              "text": "So you’re like… the face of the group?"
-            },
-            {
-              "character": "Maya",
-              "pose": "smile",
-              "text": "Exactly! But it’s not about fame — it’s about making sure people understand our vision. A strong pitch can turn a small project into something unforgettable."
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Presenters are your voice. They connect your ideas to the world. They understand code, concept, and design enough to bring imagination to life."
+              "text": "A hologram appears: Team Builder — match each hackathon task with the correct role."
             }
-          ]
+          ],
+          "minigame": {
+            "minigame_type": "MultipleChoice",
+            "minigame_title": "Team Builder",
+            "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
+            "tasks": [
+              {
+                "id": 1,
+                "task": "Design the app’s layout",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Designer"
+                ]
+              },
+              {
+                "id": 2,
+                "task": "Fix a bug in the login system",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Developer"
+                ]
+              },
+              {
+                "id": 3,
+                "task": "Write the pitch script",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Presenter"
+                ]
+              },
+              {
+                "id": 4,
+                "task": "Brainstorm project ideas",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ]
+              },
+              {
+                "id": 5,
+                "task": "Test the prototype",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Developer",
+                  "Designer"
+                ]
+              },
+              {
+                "id": 6,
+                "task": "Create the app logo and branding",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Designer"
+                ]
+              },
+              {
+                "id": 7,
+                "task": "Prepare and deliver the final pitch",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Presenter"
+                ]
+              },
+              {
+                "id": 8,
+                "task": "Connect the frontend to the backend API",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Developer"
+                ]
+              },
+              {
+                "id": 9,
+                "task": "Create user flow diagrams",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Designer"
+                ]
+              },
+              {
+                "id": 10,
+                "task": "Organize the team's project plan and timeline",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Presenter"
+                ]
+              }
+            ],
+            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!",
+            "achievement": {
+              "title": "Team Player",
+              "description": "Matched all roles correctly in Team Builder. Teamwork skills leveled up!",
+              "reward_points": 15,
+              "icon": "team_medal.png"
+            },
+            "dialogs": [
+              {
+                "character": "Aira",
+                "pose": "smile",
+                "text": "Impressive! You’re learning fast. You built a balanced team — and more importantly, you understood why each role matters."
+              },
+              {
+                "character": "You",
+                "pose": "smile",
+                "text": "That was… kinda fun, actually. So hackathons are really like RPG parties, huh?"
+              },
+              {
+                "character": "Aira",
+                "pose": "smile",
+                "text": "Exactly! Developers are warriors, designers are healers, presenters are bards — and you? You could be anything you choose."
+              },
+              {
+                "character": "Aira",
+                "pose": "wink",
+                "text": "A strong team is the secret to winning — or at least having a great hackathon experience."
+              }
+            ]
+          }
         },
         {
           "id": "scene4",
@@ -234,327 +269,13 @@
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "Looks like you found your party."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "So, you see? Hackathons are like orchestras. Every role plays a different note — but together, they make music."
-            },
-            {
-              "character": "You",
-              "pose": "neutral",
-              "text": "I get it now… it’s not just about who’s smartest. It’s about combining strengths."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Exactly! Some people code. Some create. Some communicate. The best teams respect that balance."
-            },
-            {
-              "character": "You",
-              "pose": "thinking",
-              "text": "But what if I still don’t know what my role is?"
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Then that’s your challenge for today."
-            }
-          ]
-        },
-        {
-          "id": "scene5",
-          "title": "Team Builder MiniGame",
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Time for the Team Builder minigame! Let’s see if you can match each hackathon task with the right role. Ready?"
-            },
-            {
-              "character": "You",
-              "pose": "neutral",
-              "text": "Wait — is this another quiz?"
-            },
-            {
-              "character": "Aira",
-              "pose": "grin",
-              "text": "Think of it as your first team management simulation. Don’t worry — you can’t get fired."
+              "text": "Now that we understand the roles, let's build a project together."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "After your mentor — or Resource Assistant — speaks, a hologram pops up labeled “Team Builder Sim: Version Byteon Prep.”"
+              "text": "A virtual team call opens. The team chooses a problem connected to an SDG."
             },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "MiniGame: “Team Builder” — Drag and drop each role to the correct task."
-            }
-            ],
-              "minigame": {
-              "minigame_type":"MultipleChoice",
-              "minigame_title": "Team Builder",
-              "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
-               "tasks": [
-                {
-                  "id": 1,
-                  "task": "Design the app’s layout",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Designer"]
-                },
-                {
-                  "id": 2,
-                  "task": "Fix a bug in the login system",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Developer"]
-                },
-                {
-                  "id": 3,
-                  "task": "Write the pitch script",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Presenter"]
-                },
-                {
-                  "id": 4,
-                  "task": "Brainstorm project ideas",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Developer", "Designer", "Presenter"]
-                },
-                {
-                  "id": 5,
-                  "task": "Test the prototype",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Developer", "Designer"]
-                },
-                {
-                  "id": 6,
-                  "task": "Create the app logo and branding",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Designer"]
-                },
-                {
-                  "id": 7,
-                  "task": "Prepare and deliver the final pitch",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Presenter"]
-                },
-                {
-                  "id": 8,
-                  "task": "Connect the frontend to the backend API",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Developer"]
-                },
-                {
-                  "id": 9,
-                  "task": "Create user flow diagrams",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Designer"]
-                },
-                {
-                  "id": 10,
-                  "task": "Organize the team's project plan and timeline",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Presenter"]
-                }
-              ],
-            "completion_message": "Great job! You matched the roles perfectly—your teamwork sense is leveling up!",
-            "achievement": {
-            "title": "Team Player",
-            "description": "Matched all roles correctly in Team Builder. Teamwork skills leveled up!",
-            "reward_points": 15,
-            "icon": "team_medal.png"
-          },
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Impressive! You’re learning fast. You built a balanced team — and more importantly, you understood why each role matters."
-            },
-            {
-              "character": "You",
-              "pose": "smile",
-              "text": "That was… kinda fun, actually. So hackathons are really like RPG parties, huh?"
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Exactly! Developers are warriors, designers are healers, presenters are bards — and you? You could be anything you choose."
-            },
-            {
-              "character": "Aira",
-              "pose": "happy",
-              "text": "Amazing! Now you understand how each team member contributes!"
-            },
-            {
-              "character": "Aira",
-              "pose": "wink",
-              "text": "A strong team is the secret to winning — or at least having a great hackathon experience."
-            }
-          ]
-        }
-        },
-        {
-          "id": "scene6",
-          "type": "choice",
-          "prompt": "Which role do you feel most right now?",
-          "choices": [
-            {
-              "text": "Developer — I like building things.",
-              "nextScene": "scene6a"
-            },
-            {
-              "text": "Designer — I like making things look and feel right.",
-              "nextScene": "scene6b"
-            },
-            {
-              "text": "Presenter — I love telling stories and connecting with people.",
-              "nextScene": "scene6c"
-            },
-            {
-              "text": "I don’t know yet.",
-              "nextScene": "scene6d"
-            }
-          ]
-        },
-        {
-          "id": "scene6a",
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Ah, the builder type! You love logic, structure, and making ideas tangible. Your code is your craft — keep sharpening it."
-            }
-          ]
-        },
-        {
-          "id": "scene6b",
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Ah, a creative soul! You’ll make sure every detail speaks to the user. Design is how innovation meets emotion."
-            }
-          ]
-        },
-        {
-          "id": "scene6c",
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "A natural communicator! You’ll make ideas shine and inspire others to believe. Pitching is storytelling with purpose."
-            }
-          ]
-        },
-        {
-          "id": "scene6d",
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "That’s perfectly fine. Hackathons are the best places to find your role. You’ll discover what fits by trying things — and maybe surprising yourself."
-            }
-          ]
-        },
-        {
-          "id": "scene7",
-          "dialogs": [
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Hackathon encourages alignment with the UN Sustainable Development Goals."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Aira snaps her fingers. The screen shifts to a virtual video call layout. Four screens. Slightly awkward silence."
-            },
-            {
-              "character": "Luna",
-              "pose": "smile",
-              "text": "Hello, guys!"
-            },
-            {
-              "character": "Maya",
-              "pose": "smile",
-              "text": "So… what problem are we solving?"
-            },
-            {
-              "character": "Kenji",
-              "pose": "smile",
-              "text": "Yeah. We should start with the SDG theme."
-            },
-            {
-              "character": "Luna",
-              "pose": "smile",
-              "text": "I agree!"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Aira summons a floating SDG wheel. The colorful icons rotate in mid-air."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The SDG icons glow one by one: No Poverty, Zero Hunger, Good Health and Well-being, Quality Education, Gender Equality, Clean Water and Sanitation, Affordable and Clean Energy, Decent Work and Economic Growth"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Industry, Innovation, and Infrastructure, Reduced Inequalities, Sustainable Cities and Communities, Responsible Consumption and Production, Climate Action, Life Below Water, Life on Land"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Peace, Justice, and Strong Institutions and lastly Partnerships for the Goals"
-            },
-            {
-              "character": "You",
-              "pose": "thinking",
-              "text": "There are so many… how do we choose?"
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Start with a problem that feels personal."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Great teams don’t start with features. They start with problems."
-            },
-            {
-              "character": "Maya",
-              "pose": "smile",
-              "text": "Okay — let’s vote. Which problem excites us most?"
-            }
-          ]
-        },
-        {
-          "id": "scene8",
-          "type": "choice",
-          "prompt": "Which problem do you feel most right now?",
-          "choices": [
-            {
-              "text": "Mental health support for students",
-              "nextScene": "scene8a"
-            },
-            {
-              "text": "Digital platform for small businesses",
-              "nextScene": "scene8a"
-            },
-            {
-              "text": "Recycling awareness system.",
-              "nextScene": "scene6a"
-            }
-          ]
-        },
-        {
-          "id": "scene8a",
-          "dialogs": [
             {
               "character": "Luna",
               "pose": "smile",
@@ -563,194 +284,159 @@
             {
               "character": "Kenji",
               "pose": "smile",
-              "text": "We could add a chatbot for resource guidance."
+              "text": "I can work on the app and its technical features."
             },
             {
               "character": "Maya",
               "pose": "smile",
-              "text": "And data visualization to show stress trends!"
+              "text": "I'll research the problem, SDG connection, and prepare the pitch."
             },
             {
               "character": "You",
-              "pose": "thinking",
-              "text": "Wait… this is actually becoming real."
-            }
-          ]
-        },
-        {
-          "id": "scene9",
-          "dialogs": [
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Aira claps her hands. A Kanban board appears."
+              "pose": "smile",
+              "text": "And we'll all work together to make it happen."
             },
             {
               "character": "Aira",
-              "pose": "neutral",
-              "text": "Time to assign tasks."
+              "pose": "happy",
+              "text": "That's the spirit. Clear roles help a team move faster, but everyone contributes."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "The team discusses: Kenji → Build backend + login system, Luna → Design UI wireframes, Maya → Research SDG alignment + prepare pitch"
-            },
-            {
-              "character": "Aira",
-              "pose": "neutral",
-              "text": "Clear roles prevent chaos."
+              "text": "A Kanban board appears. It's time to distribute the tasks."
             }
           ],
-              "minigame": {
-              "minigame_type":"MultipleChoice",
-              "minigame_title": "Task Distribution",
-              "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
-               "tasks": [
-                {
-                  "id": 1,
-                  "task": "Who ensures the app looks intuitive?",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Designer"]
-                },
-                {
-                  "id": 2,
-                  "task": "Who ensures the app doesn’t crash?",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Developer"]
-                },
-                {
-                  "id": 3,
-                  "task": "Who connects the solution to SDG impact?",
-                  "options": ["Developer", "Designer", "Presenter"],
-                  "correct_answer": ["Presenter"]
-                },
-                {
-                  "id": 4,
-                  "task": "Who tests and gives feedback?",
-                  "options": ["Developer", "Designer", "Presenter","Everyone"],
-                  "correct_answer": ["Everyone"]
-                }
-              ],
+          "minigame": {
+            "minigame_type": "MultipleChoice",
+            "minigame_title": "Task Distribution",
+            "description": "Aira (voice-over): Drag and drop each role to the task that fits them best!",
+            "tasks": [
+              {
+                "id": 1,
+                "task": "Who ensures the app looks intuitive?",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Designer"
+                ]
+              },
+              {
+                "id": 2,
+                "task": "Who ensures the app doesn’t crash?",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Developer"
+                ]
+              },
+              {
+                "id": 3,
+                "task": "Who connects the solution to SDG impact?",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter"
+                ],
+                "correct_answer": [
+                  "Presenter"
+                ]
+              },
+              {
+                "id": 4,
+                "task": "Who tests and gives feedback?",
+                "options": [
+                  "Developer",
+                  "Designer",
+                  "Presenter",
+                  "Everyone"
+                ],
+                "correct_answer": [
+                  "Everyone"
+                ]
+              }
+            ],
             "dialogue": [
               {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "Balanced workload = stronger submission."
+                "character": "Aira",
+                "pose": "smile",
+                "text": "Balanced workload = stronger submission."
               },
               {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The Discord #announcements channel pings: The Hackathon starts tomorrow! Mentors available in #mentor-help, Midpoint Check-in tonight"
+                "character": "Narrator",
+                "pose": "neutral",
+                "text": "The Discord #announcements channel pings: The Hackathon starts tomorrow! Mentors available in #mentor-help, Midpoint Check-in tonight"
               },
               {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Your team looks at the countdown timer."
+                "character": "Narrator",
+                "pose": "neutral",
+                "text": "Your team looks at the countdown timer."
               },
               {
-              "character": "Kenji",
-              "pose": "smile",
-              "text": "We should create a prototype."
+                "character": "Kenji",
+                "pose": "smile",
+                "text": "We should create a prototype."
               },
               {
-              "character": "Luna",
-              "pose": "smile",
-              "text": "I can finish wireframes in 3 hours."
+                "character": "Luna",
+                "pose": "smile",
+                "text": "I can finish wireframes in 3 hours."
               },
               {
-              "character": "Maya",
-              "pose": "smile",
-              "text": "I’ll draft the problem statement and SDG alignment."
+                "character": "Maya",
+                "pose": "smile",
+                "text": "I’ll draft the problem statement and SDG alignment."
               },
               {
-              "character": "You",
-              "pose": "thinking",
-              "text": "Okay… this feels serious now."
+                "character": "You",
+                "pose": "thinking",
+                "text": "Okay… this feels serious now."
               }
-              ]
-            }
-          },
+            ]
+          }
+        },
         {
-          "id": "scene10",
+          "id": "scene5",
           "dialogs": [
             {
               "character": "Aira",
               "pose": "smile",
-              "text": "So… what have you learned?"
-            },
-            {
-              "character": "You",
-              "pose": "thinking",
-              "text": "That hackathons aren’t random chaos. They're an organized collaboration."
-            },
-            {
-              "character": "Aira",
-              "pose": "grin",
-              "text": "And?"
+              "text": "So, what did you learn?"
             },
             {
               "character": "You",
               "pose": "smile",
-              "text": "That starting with a real-world problem makes everything clearer."
+              "text": "Hackathons aren't about one person doing everything. They're about combining different strengths."
             },
             {
               "character": "Aira",
-              "pose": "smile",
-              "text": "Exactly. Innovation begins with empathy."
-            },
-            {
-              "character": "Aira",
-              "pose": "smile",
-              "text": "You’ve completed your second quest! Here’s your Teamwork Makes the Dream Work Achievement!"
+              "pose": "happy",
+              "text": "Exactly! You've completed your second quest."
             },
             {
               "character": "Narrator",
               "pose": "neutral",
-              "text": "Here it is again. Another “Achievement Unlocked” and this time it is “Teamwork Makes the Dream Work”. The description reads “Learning about how teamwork makes everyone work better.”"
+              "text": "Achievement Unlocked: Teamwork Makes the Dream Work."
             },
             {
               "character": "You",
-              "pose": "smile",
-              "text": "Nice! Two achievements already. I’m starting to feel like I actually belong here."
-            },
-            {
-              "character": "Aira",
-              "pose": "grin",
-              "text": "And that’s the point. The best teams aren’t made of perfect people — just curious ones who show up."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The video call ends. Your Discord notifications quiet down."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Your notebook now contains: Team Members, Chosen SDG, Defined Problem, Task Assignments"
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "For the first time, this isn’t just an invitation. It’s a project in motion."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "The digital space slowly fades. You sit at your desk, notebook open, scribbling ideas. For the first time, the word “hackathon” doesn’t feel intimidating. It feels… exciting."
+              "pose": "proud",
+              "text": "For the first time, being part of a hackathon feels exciting instead of intimidating."
             },
             {
               "character": "Aira",
               "pose": "fade",
-              "text": "Next stop — The Idea Sprint! Let’s spark your creativity."
-            },
-            {
-              "character": "Narrator",
-              "pose": "neutral",
-              "text": "Music swells as the screen fades to black."
+              "text": "Next stop — The Idea Sprint!"
             }
           ],
-            "completion_message": "Complete Chapter 2",
-            "achievement": {
+          "completion_message": "Complete Chapter 2",
+          "achievement": {
             "title": "Teamwork Makes the Dream Work",
             "description": "Complete Chapter 2 of How to Hackathon",
             "reward_points": 10,
