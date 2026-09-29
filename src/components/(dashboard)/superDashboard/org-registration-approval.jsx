@@ -6,13 +6,10 @@ import { supabase } from "@/lib/supabase"
 import {
   Building2, CheckCircle, XCircle, Clock, Loader2,
   Mail, User, Calendar, Search, RefreshCw, ChevronDown,
-  AlertCircle,
-  ScrollText,
-  BookOpenCheck,
-  ShieldCheck,
-  Info,
-  ShieldAlert,
+  AlertCircle, ScrollText, BookOpenCheck, ShieldCheck, Info, ShieldAlert,
+  ExternalLink, MessageCircle, Send, Phone, Link2,
 } from "lucide-react"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
@@ -138,6 +135,7 @@ const APPROVAL_CHECKLIST = [
   "No duplicate organization account exists",
   "Name and content are appropriate and not misleading",
   "Organization has legitimate purpose (hackathons, blogs, resources)",
+  "Community link opens and belongs to this organization",
   "All registration information is verified",
 ]
 
@@ -244,6 +242,29 @@ const REJECTION_GUIDELINES = [
   },
 ]
 
+const PLATFORMS = {
+  discord:  { label: "Discord",  domains: ["discord.gg", "discord.com"],           icon: MessageCircle },
+  telegram: { label: "Telegram", domains: ["t.me", "telegram.me"],                 icon: Send },
+  whatsapp: { label: "WhatsApp", domains: ["chat.whatsapp.com", "wa.me"],          icon: Phone },
+}
+
+// Returns a safe http(s) href, or null (blocks javascript: etc.)
+const getSafeHref = (raw) => {
+  try {
+    const v = (raw || "").trim()
+    const href = /^https?:\/\//i.test(v) ? v : `https://${v}`
+    const url = new URL(href)
+    return ["http:", "https:"].includes(url.protocol) ? href : null
+  } catch { return null }
+}
+
+const getCommunityPlatform = (raw) => {
+  const href = getSafeHref(raw)
+  if (!href) return null
+  const host = new URL(href).hostname.replace(/^www\./, "").toLowerCase()
+  return Object.values(PLATFORMS).find(p => p.domains.some(d => host === d || host.endsWith(`.${d}`))) ?? null
+}
+
 // ── Org card ──────────────────────────────────────────────────────────────────
 function OrgCard({ org, onApprove, onReject, approving, rejecting, onOpenApproveDialog, onOpenRejectDialog }) {
   const [expanded, setExpanded] = useState(false)
@@ -313,6 +334,34 @@ function OrgCard({ org, onApprove, onReject, approving, rejecting, onOpenApprove
                 </div>
               )}
 
+              {org.community_link && (() => {
+                const platform = getCommunityPlatform(org.community_link)
+                const href = getSafeHref(org.community_link)
+                const Icon = platform?.icon ?? Link2
+                return (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest mb-1.5 font-semibold"
+                      style={{ color: "var(--ora-brand)" }}>
+                      {platform?.label ?? "Community"} Link
+                    </p>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                      style={{ background: "var(--ora-meta-bg)" }}>
+                      <Icon className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--ora-brand)" }} />
+                      <span className="text-xs truncate flex-1" style={{ color: "var(--ora-text-secondary)" }}>
+                        {org.community_link}
+                      </span>
+                      {href && (
+                        <a href={href} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg flex-shrink-0 transition-all"
+                          style={{ background: "var(--ora-brand-soft)", border: "1px solid var(--ora-brand-border)", color: "var(--ora-brand)" }}>
+                          Open <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )
+              })()}
+
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { icon: <Mail className="w-3.5 h-3.5" />,     label: "Email",      value: org.contact_email || "—" },
@@ -379,6 +428,7 @@ function ApproveDialog({ org, open, onConfirm, onCancel }) {
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setChecks({})
     }
   }, [open])
@@ -424,6 +474,15 @@ function ApproveDialog({ org, open, onConfirm, onCancel }) {
         </AlertDialogHeader>
 
         <div className="space-y-4">
+
+          {org?.community_link && getSafeHref(org.community_link) && (
+            <a href={getSafeHref(org.community_link)} target="_blank" rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold transition-all"
+              style={{ background: "rgba(5,150,105,0.08)", border: "1px solid rgba(5,150,105,0.25)", color: "#059669" }}>
+              <ExternalLink className="w-3.5 h-3.5" />
+              Open {getCommunityPlatform(org.community_link)?.label ?? "community"} link to verify
+            </a>
+          )}
           <div style={{ background: "rgba(5,150,105,0.06)", border: "1px solid rgba(5,150,105,0.2)" }} className="rounded-xl p-4 space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wider flex items-center gap-2" style={{ color: "#059669" }}>
               <CheckCircle className="w-3.5 h-3.5" />
@@ -752,8 +811,7 @@ export default function OrgRegistrationApprovals({ addToast }) {
     setLoading(true)
     let q = supabase
       .from("organizations")
-      .select("id, user_id, name, description, author_name, contact_email, profile_photo_url, active, created_at, approval_status, rejection_reason")
-      .order("created_at", { ascending: false })
+    .select("id, user_id, name, description, author_name, contact_email, profile_photo_url, active, created_at, approval_status, rejection_reason, community_link")     .order("created_at", { ascending: false })
     if (filter !== "all") q = q.eq("approval_status", filter)
     const { data, error } = await q
     if (error) addToast?.("error", "Failed to load organizations")

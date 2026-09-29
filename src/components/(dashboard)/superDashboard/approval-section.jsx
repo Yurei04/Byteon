@@ -24,7 +24,7 @@ import {
   AlignLeft, Award, Users, ExternalLink, Inbox,
   ShieldAlert, ShieldCheck, ChevronRight, ChevronLeft, Search,
   BookOpenCheck, ScrollText, PauseCircle, Info, MapPin, BarChart2,
-  Sheet,
+  Sheet, MessageCircle, Send, Phone, 
 } from "lucide-react"
 
 function formatUTCDateTime(dateString) {
@@ -1184,6 +1184,24 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
                   </a>
                 </DetailBlock>
               )}
+
+              {item.community_link && (() => {
+                const url = item.community_link
+                const isDiscord  = /discord\.(gg|com)/i.test(url)
+                const isTelegram = /t\.me|telegram\.me/i.test(url)
+                const isWhatsApp = /wa\.me|chat\.whatsapp\.com/i.test(url)
+                const Icon  = isDiscord ? MessageCircle : isTelegram ? Send : isWhatsApp ? Phone : Link2
+                const label = isDiscord ? "Discord" : isTelegram ? "Telegram" : isWhatsApp ? "WhatsApp" : "Community"
+                return (
+                  <DetailBlock icon={<Icon className="w-3.5 h-3.5" />} label={`${label} Group`}>
+                    <a href={url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
+                      style={{ color: accentColor }}>
+                      {url}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                    </a>
+                  </DetailBlock>
+                )
+              })()}
 
               {item.tracking_method && (
                 <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Tracking Method">
