@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { supabase } from "@/lib/supabase"
 import { useState } from "react"
 import { persistCurrentSession } from "@/lib/restoreSession"
-import { ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react"
+import { ArrowLeft, AlertCircle, CheckCircle2, Clock } from "lucide-react"
 import Link from "next/link"
 import { TermsDialog } from "@/components/terms-and-condition/terms-and-condition-dialog"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
@@ -24,14 +24,18 @@ export function LoginForm() {
     ? new URLSearchParams(window.location.search)
     : null
   const justRegistered = searchParams?.get("registered") === "true"
+  const isPending = searchParams?.get("pending") === "true"
 
   const [email, setEmail]       = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState(null)
+  // Shown as a yellow "awaiting approval" banner when a pending org tries to sign in
+  const [pendingBlocked, setPendingBlocked] = useState(false)
 
   const handleLogin = async () => {
     setError(null)
+    setPendingBlocked(false)
     if (!email.trim()) { setError("Email is required"); return }
     if (!password)     { setError("Password is required"); return }
 
@@ -87,6 +91,24 @@ export function LoginForm() {
         return
       }
       if (orgData) {
+        // Not approved yet
+        if (orgData.approval_status === "pending") {
+          await supabase.auth.signOut({ scope: "local" })
+          setPendingBlocked(true)
+          setLoading(false)
+          return
+        }
+        // Rejected by superadmin (change "rejected" if your flow uses another value)
+        if (orgData.approval_status === "rejected") {
+          await supabase.auth.signOut({ scope: "local" })
+          setError(
+            orgData.rejection_reason
+              ? `Your organization was not approved: ${orgData.rejection_reason}`
+              : "Your organization was not approved."
+          )
+          setLoading(false)
+          return
+        }
         if (orgData.active === false) {
           await supabase.auth.signOut({ scope: "local" })
           const url = `/account-suspended?reason=suspended${
@@ -213,8 +235,17 @@ export function LoginForm() {
           </CardHeader>
 
           <CardContent className="px-5 pb-5 pt-1">
-            {/* Success banner */}
-            {justRegistered && (
+            {/* Registration banners */}
+            {justRegistered && isPending && (
+              <div className="flex items-start gap-2 mb-3 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                <Clock className="size-3.5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-amber-600 dark:text-amber-400 text-xs leading-snug">
+                  Awaiting superadmin approval. Your organization was submitted and can
+                  sign in once it has been approved.
+                </p>
+              </div>
+            )}
+            {justRegistered && !isPending && (
               <div className="flex items-center gap-2 mb-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2">
                 <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
                 <p className="text-emerald-600 dark:text-emerald-400 text-xs">
@@ -261,6 +292,17 @@ export function LoginForm() {
                     required
                   />
                 </Field>
+
+                {/* Pending approval banner (login attempt by an unapproved org) */}
+                {pendingBlocked && (
+                  <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                    <Clock className="size-3.5 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-amber-600 dark:text-amber-400 text-xs leading-snug">
+                      Awaiting superadmin approval. Your organization is still being
+                      reviewed, so you can&apos;t sign in yet.
+                    </p>
+                  </div>
+                )}
 
                 {/* Error banner */}
                 {error && (

@@ -5,6 +5,9 @@ import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from "@/components/ui/card"
 import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import {
   Field, FieldDescription, FieldGroup, FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -17,7 +20,8 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
   ArrowLeft, Building2, User, Upload, AlertCircle,
-  ChevronRight, ChevronLeft, Palette, Check, MessageCircle
+  ChevronRight, ChevronLeft, Palette, Check, MessageCircle,
+  Clock, CheckCircle2,
 } from "lucide-react"
 import Link from "next/link"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
@@ -148,6 +152,7 @@ export function SignupForm() {
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [orgPalette, setOrgPalette] = useState(null)
   const [orgCommunityLink, setOrgCommunityLink] = useState("")
+  const [successDialog, setSuccessDialog] = useState(null) // null | "user" | "organization"
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0]
@@ -245,11 +250,17 @@ export function SignupForm() {
 
       setLoading(false)
       try { await supabase.auth.signOut({ scope: "local" }) } catch {}
-      router.push("/log-in?registered=true&pending=true")
+      setSuccessDialog(mode)
     } catch (err) {
       setError(err.message || "An unexpected error occurred")
       setLoading(false)
     }
+  }
+
+  const handleDialogContinue = () => {
+    const wasOrg = successDialog === "organization"
+    setSuccessDialog(null)
+    router.push(wasOrg ? "/log-in?registered=true&pending=true" : "/log-in?registered=true")
   }
 
   const handleKeyDown = (e) => {
@@ -580,6 +591,62 @@ export function SignupForm() {
           ))}
         </Tabs>
       </div>
+
+      {/* Post-signup dialog */}
+      <Dialog
+        open={!!successDialog}
+        onOpenChange={(open) => { if (!open) handleDialogContinue() }}
+      >
+        <DialogContent
+          className="max-w-sm rounded-2xl"
+          style={{
+            background: "rgb(var(--surface-raised))",
+            border: "1px solid rgb(var(--surface-border) / 0.3)",
+            color: "rgb(var(--text-primary))",
+          }}
+        >
+          <DialogHeader className="items-center text-center space-y-3">
+            {successDialog === "organization" ? (
+              <>
+                <div className="size-12 rounded-full flex items-center justify-center bg-amber-500/10 border border-amber-500/30">
+                  <Clock className="size-6 text-amber-500" />
+                </div>
+                <DialogTitle className="text-base font-semibold">
+                  Awaiting Superadmin Approval
+                </DialogTitle>
+                <DialogDescription className="text-xs leading-relaxed" style={{ color: "rgb(var(--text-faint))" }}>
+                  Your organization has been submitted. A superadmin needs to review and
+                  approve it before you can log in and start using your organization page.
+                </DialogDescription>
+              </>
+            ) : (
+              <>
+                <div className="size-12 rounded-full flex items-center justify-center bg-emerald-500/10 border border-emerald-500/30">
+                  <CheckCircle2 className="size-6 text-emerald-500" />
+                </div>
+                <DialogTitle className="text-base font-semibold">
+                  Account created successfully
+                </DialogTitle>
+                <DialogDescription className="text-xs leading-relaxed" style={{ color: "rgb(var(--text-faint))" }}>
+                  Welcome to Byteon! You can now log in with your credentials.
+                </DialogDescription>
+              </>
+            )}
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center">
+            <Button
+              onClick={handleDialogContinue}
+              className="cursor-pointer w-full h-9 text-sm font-medium rounded-lg"
+              style={{
+                background: "linear-gradient(135deg, rgb(var(--brand-600)), rgb(var(--accent-600)))",
+                color: "rgb(var(--fg-on-brand, 255 255 255))",
+              }}
+            >
+              Go to Login
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
