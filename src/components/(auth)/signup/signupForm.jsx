@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import {
   ArrowLeft, Building2, User, Upload, AlertCircle,
-  ChevronRight, ChevronLeft, Palette, Check,
+  ChevronRight, ChevronLeft, Palette, Check, MessageCircle
 } from "lucide-react"
 import Link from "next/link"
 import { PrivacyDialog } from "@/components/privacy-policies/privacy-policy-dialog"
@@ -33,6 +33,23 @@ const ORG_PALETTES = [
   { id: "aurora",   label: "Aurora",   primary: "#22d3ee", secondary: "#a78bfa", scheme: "aurora"   },
   { id: "slate",    label: "Slate",    primary: "#64748b", secondary: "#94a3b8", scheme: "slate"    },
 ]
+
+const COMMUNITY_DOMAINS = ["discord.gg", "discord.com", "t.me", "telegram.me", "chat.whatsapp.com", "wa.me"]
+
+const normalizeCommunityLink = (raw) => {
+  const v = (raw || "").trim()
+  if (!v) return ""
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`
+}
+
+const isValidCommunityLink = (raw) => {
+  try {
+    const url = new URL(normalizeCommunityLink(raw))
+    if (!["http:", "https:"].includes(url.protocol)) return false
+    const host = url.hostname.replace(/^www\./, "").toLowerCase()
+    return COMMUNITY_DOMAINS.some(d => host === d || host.endsWith(`.${d}`))
+  } catch { return false }
+}
 
 function OrgPalettePicker({ value, onChange }) {
   return (
@@ -130,6 +147,7 @@ export function SignupForm() {
   const [photoPreview, setPhotoPreview] = useState(null)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [orgPalette, setOrgPalette] = useState(null)
+  const [orgCommunityLink, setOrgCommunityLink] = useState("")
 
   const handlePhotoChange = (e) => {
     const file = e.target.files?.[0]
@@ -177,6 +195,8 @@ export function SignupForm() {
       if (!occupation.trim()) { setError("Occupation is required"); return }
     } else {
       if (!orgDescription.trim()) { setError("Organization description is required"); return }
+      if (!orgCommunityLink.trim()) { setError("A community link (Discord, Telegram or WhatsApp) is required"); return }
+      if (!isValidCommunityLink(orgCommunityLink)) { setError("Community link must be a Discord, Telegram, or WhatsApp link"); return }
     }
     if (!agreedToTerms) { setError("You must agree to the Terms of Service and Privacy Policy to continue."); return }
 
@@ -212,6 +232,7 @@ export function SignupForm() {
         const { error: orgError } = await supabase.from("organizations").insert({
           user_id: data.user.id, name: orgName.trim(), author_name: orgName.trim(),
           description: orgDescription.trim(), profile_photo_url: profilePhotoUrl,
+          community_link: normalizeCommunityLink(orgCommunityLink),
           approval_status: "pending", rejection_reason: null,
           ...(orgPalette ? {
             primary_color: orgPalette.primary,
@@ -252,6 +273,7 @@ export function SignupForm() {
             setMode(value); setStep(1); setError(null)
             setProfilePhoto(null); setPhotoPreview(null); setAgreedToTerms(false)
             setOrgPalette(null)
+            setOrgCommunityLink("")
           }}
         >
           {/* Tab switcher */}
@@ -451,6 +473,23 @@ export function SignupForm() {
                                 className="min-h-[72px] text-sm rounded-lg resize-none"
                                 style={{ background: "rgb(var(--surface-raised))", borderColor: "rgb(var(--surface-border) / 0.5)", color: "rgb(var(--text-primary))" }}
                               />
+                            </Field>
+                            <Field>
+                              <FieldLabel style={labelStyle}>
+                                Community Link <span className="text-red-400">*</span>
+                              </FieldLabel>
+                              <Input
+                                type="text"
+                                placeholder="Discord, Telegram or WhatsApp invite link"
+                                value={orgCommunityLink}
+                                onChange={(e) => setOrgCommunityLink(e.target.value)}
+                                className={inputCls}
+                                style={inputStyle}
+                                required
+                              />
+                              <FieldDescription className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
+                                Used by our team to verify your organization.
+                              </FieldDescription>
                             </Field>
                             <div className="border-t pt-2.5" style={{ borderColor: "rgb(var(--surface-border) / 0.2)" }}>
                               <OrgPalettePicker value={orgPalette?.id ?? ""} onChange={setOrgPalette} />

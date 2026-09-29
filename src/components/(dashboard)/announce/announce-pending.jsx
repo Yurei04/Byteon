@@ -7,6 +7,7 @@ import {
   CheckCircle, Loader2, Link2, ChevronDown,
   Globe, Code2, FileSpreadsheet, ClipboardList,
   Search, Check, ChevronUp, ShieldCheck,
+  MessageCircle,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
@@ -93,6 +94,7 @@ const ALL_COUNTRIES = [
 const LINK_TYPES = [
   { key: "website_link",         label: "Website",          placeholder: "https://yoursite.com",                                         icon: Globe,          color: "text-sky-400",     bg: "bg-sky-400/10",     border: "border-sky-400/25"     },
   { key: "dev_link",             label: "DevPost",          placeholder: "https://devpost.com/...",                                      icon: Code2,          color: "text-violet-400",  bg: "bg-violet-400/10",  border: "border-violet-400/25"  },
+  { key: "community_link",       label: "Community",        placeholder: "Discord, Telegram or WhatsApp invite link",                    icon: MessageCircle,  color: "text-indigo-400",  bg: "bg-indigo-400/10",  border: "border-indigo-400/25"  },
   { key: "google_sheet_csv_url", label: "Google Sheet CSV", placeholder: "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv", icon: FileSpreadsheet,color: "text-emerald-400", bg: "bg-emerald-400/10", border: "border-emerald-400/25" },
   { key: "google_forms_url",     label: "Google Forms",     placeholder: "https://forms.google.com/...",                                icon: ClipboardList,  color: "text-orange-400",  bg: "bg-orange-400/10",  border: "border-orange-400/25"  },
 ]
@@ -128,6 +130,14 @@ const saveCountries = (c) => { try { localStorage.setItem(COUNTRIES_KEY, JSON.st
 const clearDraft    = ()  => { try {
   [STORAGE_KEY, PRIZES_KEY, LINKS_KEY, COUNTRIES_KEY].forEach(k => localStorage.removeItem(k))
 } catch {} }
+
+const COMMUNITY_DOMAINS = ["discord.gg", "discord.com", "t.me", "telegram.me", "chat.whatsapp.com", "wa.me"]
+const isValidCommunityLink = (url) => {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "")
+    return COMMUNITY_DOMAINS.some(d => host === d || host.endsWith(`.${d}`))
+  } catch { return false }
+}
 
 function convertTo24Hour(hour, minute, period) {
   let h = parseInt(hour)
@@ -1030,6 +1040,12 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       return
     }
 
+    const badCommunityLink = filledLinks.find(l => l.typeKey === "community_link" && !isValidCommunityLink(l.value.trim()))
+      if (badCommunityLink) {
+        addToast("error", "Community link must be a Discord, Telegram, or WhatsApp link.")
+        hasErrors = true
+    }
+
     const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
     const endTime24   = convertTo24Hour(endHour12, endMinute, endPeriod)
     const startISO    = createUTCISOString(startDate, startTime24)
@@ -1049,6 +1065,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       prizes:               validPrizes.map(({ id, ...p }) => ({ name: p.name.trim(), value: p.value.trim(), description: (p.description || "").trim() })),
       website_link:         linkFields.website_link         || null,
       dev_link:             linkFields.dev_link             || null,
+      community_link:       linkFields.community_link       || null,
       color_scheme:         formData.color_scheme,
       organization:         currentOrg.name,
       organization_id:      currentOrg.id,
