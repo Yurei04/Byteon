@@ -36,6 +36,7 @@ import NotificationsTab          from "@/components/notifications/notification-t
 import { useNotifications }      from "@/components/notifications/use-notification"
 import { Toast }                 from "../toast"
 import { useToast }              from "@/components/use-toast"
+import LogsHub from "./logs-hub"
 
 
 function SidebarWebsiteGroup({ isExpanded, activeTab, websitePage, onParentClick, onPageClick }) {
@@ -247,7 +248,7 @@ function SuperAdminDashboardPage() {
     { value: "view",          icon: <Eye             className="w-4 h-4" />, label: "All Content"   },
     { value: "history",       icon: <History         className="w-4 h-4" />, label: "Archives"      },
     { value: "profile",       icon: <ShieldCheck     className="w-4 h-4" />, label: "Profile"       },
-    { value: "notifications", icon: <Bell            className="w-4 h-4" />, label: "Notifications", badge: unreadCount > 0 ? unreadCount : null },
+    { value: "logs",          icon: <Bell            className="w-4 h-4" />, label: "Logs", badge: unreadCount > 0 ? unreadCount : null },
     { value: "org-approvals", icon: <Building2       className="w-4 h-4" />, label: "Org Approvals", badge: pendingOrgCount > 0 ? pendingOrgCount : null, pulse: pendingOrgCount > 0 },
   ]
 
@@ -258,7 +259,7 @@ function SuperAdminDashboardPage() {
     view:            { title: "All Content",     sub: "Browse and moderate published content"        },
     history:         { title: "Archives",        sub: "Historical records"                           },
     profile:         { title: "Profile",         sub: "Your super admin profile and settings"        },
-    notifications:   { title: "Alerts",          sub: "Platform activity, org deletions, and events" },
+    Logs:            { title: "Logs",            sub: "Platform activity, org deletions, and events" },
     website:         { title: "Website Preview", sub: "View-only preview — navigation via sidebar"  },
     "org-approvals": { title: "Org Approvals",   sub: "Review organization registration requests"    },
   }
@@ -454,16 +455,16 @@ function SuperAdminDashboardPage() {
             )}
 
             <button
-              onClick={() => setActiveTab("notifications")}
+              onClick={() => setActiveTab("logs")}
               className="relative p-2 rounded-xl transition-all duration-200"
               style={{
-                background: activeTab === "notifications"
+                background: activeTab === "logs"
                   ? "rgb(var(--brand-500) / 0.2)"
                   : "rgb(var(--surface-raised) / 0.4)",
-                border: activeTab === "notifications"
+                border: activeTab === "logs"
                   ? "1px solid rgb(var(--brand-500) / 0.4)"
                   : "1px solid rgb(var(--surface-border) / 0.3)",
-                color: activeTab === "notifications"
+                color: activeTab === "logs"
                   ? "rgb(var(--brand-500))"
                   : "rgb(var(--text-faint))",
               }}
@@ -568,14 +569,14 @@ function SuperAdminDashboardPage() {
                       <motion.div
                         key={label}
                         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                        className="relative flex flex-col items-center text-center gap-2 p-4 rounded-2xl group cursor-default"
+                        className="relative h-48 flex flex-col items-center text-center gap-2 p-4 rounded-2xl group cursor-default"
                         style={{
                           background: "rgb(var(--surface-raised) / 0.4)",
                           border: `1px solid ${accent}28`,
                         }}
                       >
                         <div
-                          className="w-8 h-8 rounded-xl flex items-center justify-center"
+                          className="w-12 h-12 rounded-xl flex items-center justify-center"
                           style={{ background: `${accent}18`, border: `1px solid ${accent}35` }}
                         >
                           <Icon className="w-4 h-4" style={{ color: accent }} />
@@ -795,9 +796,9 @@ function SuperAdminDashboardPage() {
                 </motion.div>
               )}
 
-              {/* ════ NOTIFICATIONS ════ */}
-              {activeTab === "notifications" && (
-                <motion.div key="notifications" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+              {/* ════ logs ════ */}
+              {activeTab === "logs" && (
+                <motion.div key="logs" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
                   <div
                     className="rounded-2xl p-5"
                     style={{ background: "rgb(var(--surface-raised) / 0.3)", border: "1px solid rgb(var(--brand-500) / 0.18)" }}
@@ -814,7 +815,7 @@ function SuperAdminDashboardPage() {
                         style={{ background: "linear-gradient(to right, rgb(var(--brand-500) / 0.6), rgb(var(--brand-600) / 0.4), transparent)" }}
                       />
                     </div>
-                    <NotificationsTab userId={userId} role="super_admin" />
+                    <LogsHub userId={userId} role="super_admin" />
                   </div>
                 </motion.div>
               )}
