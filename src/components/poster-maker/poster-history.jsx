@@ -26,7 +26,7 @@ const RATIO_CLASS = {
 }
 
 export default function PosterHistory({ refreshTrigger }) {
-   const { session } = useAuth()
+  const { session } = useAuth()
   const [posters, setPosters] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
@@ -237,17 +237,11 @@ export default function PosterHistory({ refreshTrigger }) {
             >
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <h3
-                    className="text-sm font-bold"
-                    style={{ color: "rgb(var(--text-primary))" }}
-                  >
+                  <h3 className="text-sm font-bold" style={{ color: "rgb(var(--text-primary))" }}>
                     {selected.title || "Untitled Poster"}
                   </h3>
                   {selected.subtitle && (
-                    <p
-                      className="text-xs mt-0.5"
-                      style={{ color: "rgb(var(--text-faint))" }}
-                    >
+                    <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
                       {selected.subtitle}
                     </p>
                   )}
@@ -274,39 +268,24 @@ export default function PosterHistory({ refreshTrigger }) {
               {/* Badges */}
               <div className="flex flex-wrap gap-1.5">
                 {selected.style && (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] capitalize"
-                    style={{
-                      borderColor: "rgb(var(--surface-border))",
-                      color: "rgb(var(--text-muted))",
-                    }}
-                  >
+                  <Badge variant="outline" className="text-[10px] capitalize"
+                    style={{ borderColor: "rgb(var(--surface-border))", color: "rgb(var(--text-muted))" }}>
                     {selected.style}
                   </Badge>
                 )}
                 {selected.aspect_ratio && (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px]"
-                    style={{
-                      borderColor: "rgb(var(--surface-border))",
-                      color: "rgb(var(--text-muted))",
-                    }}
-                  >
+                  <Badge variant="outline" className="text-[10px]"
+                    style={{ borderColor: "rgb(var(--surface-border))", color: "rgb(var(--text-muted))" }}>
                     {selected.aspect_ratio}
                   </Badge>
                 )}
                 {selected.color_scheme && (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] max-w-[140px] truncate"
+                  <Badge variant="outline" className="text-[10px] max-w-[140px] truncate"
                     style={{
                       borderColor: "rgb(var(--brand-500) / 0.4)",
                       color: "rgb(var(--brand-400))",
                       background: "rgb(var(--brand-500) / 0.08)",
-                    }}
-                  >
+                    }}>
                     {selected.color_scheme}
                   </Badge>
                 )}
@@ -314,12 +293,7 @@ export default function PosterHistory({ refreshTrigger }) {
 
               {/* Date */}
               <div className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>
-                <p
-                  className="uppercase tracking-wide text-[10px] mb-1"
-                  style={{ color: "rgb(var(--text-faint))" }}
-                >
-                  Generated
-                </p>
+                <p className="uppercase tracking-wide text-[10px] mb-1">Generated</p>
                 <p style={{ color: "rgb(var(--text-muted))" }}>
                   {new Date(selected.created_at).toLocaleDateString("en-US", {
                     year: "numeric", month: "long", day: "numeric",
@@ -331,16 +305,10 @@ export default function PosterHistory({ refreshTrigger }) {
               {/* Prompt */}
               {selected.prompt && (
                 <div className="flex-1 min-h-0">
-                  <p
-                    className="uppercase tracking-wide text-[10px] mb-1"
-                    style={{ color: "rgb(var(--text-faint))" }}
-                  >
+                  <p className="uppercase tracking-wide text-[10px] mb-1" style={{ color: "rgb(var(--text-faint))" }}>
                     AI Prompt
                   </p>
-                  <p
-                    className="text-xs leading-relaxed line-clamp-6"
-                    style={{ color: "rgb(var(--text-muted))" }}
-                  >
+                  <p className="text-xs leading-relaxed line-clamp-6" style={{ color: "rgb(var(--text-muted))" }}>
                     {selected.prompt}
                   </p>
                 </div>
@@ -366,11 +334,7 @@ export default function PosterHistory({ refreshTrigger }) {
                   variant="outline"
                   onClick={() => handleDelete(selected.id, { stopPropagation: () => {} })}
                   className="h-9 px-3 rounded-lg"
-                  style={{
-                    borderColor: "rgba(239,68,68,0.3)",
-                    color: "#f87171",
-                    background: "transparent",
-                  }}
+                  style={{ borderColor: "rgba(239,68,68,0.3)", color: "#f87171", background: "transparent" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                 >

@@ -57,6 +57,7 @@ import { notifyContentDeletedByOrg } from "@/lib/notification"
 import OrgViewableSection from "./org-view-section"
 import WebsitePreviewSection, { WEBSITE_PAGES } from "@/components/preview/website-preview-section"
 import OrgPendingApproval from "./org-pending-approval"
+import PosterHistory from "@/components/poster-maker/poster-history"
 
 const ITEMS_PER_PAGE = 6
 
@@ -467,7 +468,7 @@ const [isDark, setIsDark] = useState(() => {
   }
   return stored === "dark"
 })
-
+const [tick, setTick] = useState(0)
 // Apply on first render so the HTML class matches state immediately
 useEffect(() => {
   if (isDark) {
@@ -1202,7 +1203,8 @@ const toggleTheme = () => {
               {activeTab === "posters" && (
                 <motion.div key="posters" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
                   <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${p}20` }}>
-                    <PosterMaker embedded />
+                    <PosterHistory refreshTrigger={tick} />
+                    <PosterMaker onSaved={() => setTick((t) => t + 1)} />
                   </div>
                 </motion.div>
               )}

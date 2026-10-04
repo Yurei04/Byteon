@@ -4,13 +4,20 @@ import DatePicker from "@/components/DatePickerClient"
 import { forwardRef, useState, useEffect, useRef } from "react"
 import {
   Calendar, Clock, Trophy, Plus, X, Sparkles,
-  CheckCircle, Loader2, Link2, ChevronDown,
+  Loader2, Link2, ChevronDown,
   Globe, Code2, FileSpreadsheet, ClipboardList,
   Search, Check, ChevronUp, ShieldCheck,
-  MessageCircle,
+  MessageCircle, Megaphone, Gift, Banknote, Lock, Copy, RefreshCw,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
+import {
+  APPROVAL_BUFFER_DAYS, MIN_PROMO_DAYS, MIN_EVENT_DAYS,
+  startOfDay, addDays, toDateTime, validateTimeline, formatDuration,
+  CURRENCIES, getCurrency, parseAmount, formatMoney,
+  CASH_TEMPLATES, ITEM_TEMPLATES,
+  generateInviteCode, normalizeInviteCode, isValidInviteCode,
+} from "@/lib/announcement-config"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -35,27 +42,22 @@ const LIMITS = {
   author:     60,
   open_to:    80,
   prize_name: 40,
+  prize_item: 60,
+  prize_desc: 120,
 }
 
 const EMPTY_FORM = {
   title: "", des: "", author: "",
-  date_begin: "", date_end: "",
   open_to: "",
   color_scheme: "purple",
+  prize_currency: "USD",
+  is_invite_only: false,
+  invite_code: "",
 }
 
-//--- 3 days restrict
-const getMinHackathonDate = () => {
-  const date = new Date()
-  date.setHours(0, 0, 0, 0)
-  date.setDate(date.getDate() + 3)
-  return date
-}
-//---
-
-
-const EMPTY_PRIZES = [{ id: Date.now(), name: "", value: "", description: "" }]
+const newPrize = (over = {}) => ({ id: Date.now() + Math.random(), type: "cash", name: "", value: "", description: "", ...over })
 const EMPTY_COUNTRIES = { mode: "global", list: [] }
+const DEFAULT_TIME = { h: "12", m: "00", p: "AM" }
 
 // ─── Country list ─────────────────────────────────────────────────────────────
 const ALL_COUNTRIES = [
@@ -99,18 +101,6 @@ const LINK_TYPES = [
   { key: "google_forms_url",     label: "Google Forms",     placeholder: "https://forms.google.com/...",                                icon: ClipboardList,  color: "text-orange-400",  bg: "bg-orange-400/10",  border: "border-orange-400/25"  },
 ]
 
-// ─── Prize templates ──────────────────────────────────────────────────────────
-const PRIZE_TEMPLATES = [
-  { name: "1st Place",       value: "$5,000"      },
-  { name: "2nd Place",       value: "$3,000"      },
-  { name: "3rd Place",       value: "$2,000"      },
-  { name: "Best Design",     value: "$1,000"      },
-  { name: "Most Innovative", value: "$1,500"      },
-  { name: "Best Technical",  value: "$1,000"      },
-  { name: "People's Choice", value: "$500"        },
-  { name: "Participation",   value: "Certificate" },
-]
-
 const RANK_STYLES = [
   { ring: "ring-1 ring-yellow-400/40", bg: "bg-gradient-to-br from-yellow-400/8 to-amber-500/4",  badge: "bg-yellow-400/15 text-yellow-300 border border-yellow-400/30", glow: "shadow-[0_0_12px_rgba(251,191,36,0.12)]",  medal: "🥇" },
   { ring: "ring-1 ring-slate-400/40",  bg: "bg-gradient-to-br from-slate-400/8 to-slate-500/4",   badge: "bg-slate-400/15 text-slate-200 border border-slate-400/30",   glow: "shadow-[0_0_12px_rgba(148,163,184,0.10)]", medal: "🥈" },
@@ -119,8 +109,12 @@ const RANK_STYLES = [
 const DEFAULT_RANK = { ring: "ring-1 ring-white/10", bg: "bg-white/[0.03]", badge: "bg-white/10 text-white/50 border border-white/15", glow: "", medal: null }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const normalizePrize = (p) => {
+  const type = p.type === "non_cash" ? "non_cash" : "cash"
+  return { description: "", ...p, type, value: type === "cash" ? String(parseAmount(p.value) ?? "") : (p.value ?? "") }
+}
 const loadDraft     = () => { try { const s = localStorage.getItem(STORAGE_KEY);   return s ? { ...EMPTY_FORM, ...JSON.parse(s) } : { ...EMPTY_FORM } } catch { return { ...EMPTY_FORM } } }
-const loadPrizes    = () => { try { const s = localStorage.getItem(PRIZES_KEY);    return s ? JSON.parse(s) : [{ id: Date.now(), name: "", value: "", description: "" }] } catch { return [{ id: Date.now(), name: "", value: "", description: "" }] } }
+const loadPrizes    = () => { try { const s = localStorage.getItem(PRIZES_KEY);    return s ? JSON.parse(s).map(normalizePrize) : [newPrize()] } catch { return [newPrize()] } }
 const loadLinks     = () => { try { const s = localStorage.getItem(LINKS_KEY);     return s ? JSON.parse(s) : [] } catch { return [] } }
 const loadCountries = () => { try { const s = localStorage.getItem(COUNTRIES_KEY); return s ? JSON.parse(s) : { ...EMPTY_COUNTRIES } } catch { return { ...EMPTY_COUNTRIES } } }
 const saveDraft     = (d) => { try { localStorage.setItem(STORAGE_KEY,   JSON.stringify(d)) } catch {} }
@@ -139,16 +133,12 @@ const isValidCommunityLink = (url) => {
   } catch { return false }
 }
 
-function convertTo24Hour(hour, minute, period) {
-  let h = parseInt(hour)
-  if (period === "PM" && h !== 12) h += 12
-  if (period === "AM" && h === 12) h = 0
-  return `${String(h).padStart(2, "0")}:${minute}`
-}
-const createUTCISOString = (dateObj, time24) => {
-  const [hour, minute] = time24.split(":").map(Number)
-  return new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), hour, minute, 0).toISOString()
-}
+const PRIZE_INPUT_CLS = `
+  h-8 text-sm bg-white border-slate-400 text-slate-900 placeholder:text-slate-500
+  focus-visible:border-amber-500
+  dark:bg-white/5 dark:border-white/10 dark:text-white dark:placeholder:text-white/20
+  dark:focus-visible:border-white/30
+`
 
 // ─── CharCount ────────────────────────────────────────────────────────────────
 function CharCount({ current, max, uiT }) {
@@ -177,14 +167,12 @@ const CalendarInput = forwardRef(
       onClick={(e) => {
         if (onInputClick) {
           const shouldOpen = onInputClick(e)
-
           if (shouldOpen === false) {
             e.preventDefault()
             e.stopPropagation()
             return
           }
         }
-
         if (onClick) onClick(e)
       }}
       ref={ref}
@@ -195,31 +183,18 @@ const CalendarInput = forwardRef(
         color: uiT?.headingText ?? "#ffffff",
       }}
     >
-      <span
-        className="text-sm"
-        style={{
-          color: value
-            ? (uiT?.headingText ?? "#ffffff")
-            : (uiT?.mutedText ?? "rgba(255,255,255,0.3)"),
-        }}
-      >
+      <span className="text-sm" style={{ color: value ? (uiT?.headingText ?? "#ffffff") : (uiT?.mutedText ?? "rgba(255,255,255,0.3)") }}>
         {value || "Select date"}
       </span>
-
-      <Calendar
-        className="w-4 h-4"
-        style={{
-          color: uiT?.mutedText ?? "rgba(255,255,255,0.4)",
-        }}
-      />
+      <Calendar className="w-4 h-4" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.4)" }} />
     </div>
   )
 )
-
 CalendarInput.displayName = "CalendarInput"
 
 // ─── TimeSelect ───────────────────────────────────────────────────────────────
-function TimeSelect({ hour, minute, period, onHour, onMinute, onPeriod, uiT }) {
+// value = { h, m, p }, onChange receives a partial patch e.g. { h: "03" }
+function TimeSelect({ value, onChange, uiT }) {
   const hourOpts   = ["01","02","03","04","05","06","07","08","09","10","11","12"]
   const minuteOpts = ["00","05","10","15","20","25","30","35","40","45","50","55"]
   const sel = {
@@ -232,13 +207,70 @@ function TimeSelect({ hour, minute, period, onHour, onMinute, onPeriod, uiT }) {
   const optBg = uiT?.inputBg ?? "#1a1a2e"
   return (
     <div className="flex items-center gap-1.5 mt-2">
-      <select value={hour}   onChange={(e) => onHour(e.target.value)}   style={sel}>{hourOpts.map(h   => <option key={h}   style={{ background: optBg }}>{h}</option>)}</select>
+      <select value={value.h} onChange={(e) => onChange({ h: e.target.value })} style={sel}>{hourOpts.map(h => <option key={h} style={{ background: optBg }}>{h}</option>)}</select>
       <span className="text-sm font-light" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.3)" }}>:</span>
-      <select value={minute} onChange={(e) => onMinute(e.target.value)} style={sel}>{minuteOpts.map(m => <option key={m}   style={{ background: optBg }}>{m}</option>)}</select>
-      <select value={period} onChange={(e) => onPeriod(e.target.value)} style={sel}>
+      <select value={value.m} onChange={(e) => onChange({ m: e.target.value })} style={sel}>{minuteOpts.map(m => <option key={m} style={{ background: optBg }}>{m}</option>)}</select>
+      <select value={value.p} onChange={(e) => onChange({ p: e.target.value })} style={sel}>
         <option style={{ background: optBg }}>AM</option>
         <option style={{ background: optBg }}>PM</option>
       </select>
+    </div>
+  )
+}
+
+// ─── StageField (one date + time column of the schedule) ─────────────────────
+function StageField({ icon: Icon, title, hint, accent, selected, onChange, minDate, time, onTime, gate, addToast, uiT }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${accent}22`, color: accent }}>
+          <Icon className="w-3.5 h-3.5" />
+        </span>
+        <Label className="text-sm font-semibold" style={{ color: uiT?.headingText }}>
+          {title} <span className="text-red-400">*</span>
+        </Label>
+      </div>
+      <p className="text-[11px] mb-2 leading-snug" style={{ color: uiT?.mutedText }}>{hint}</p>
+      <DatePicker
+        selected={selected}
+        onChange={(d) => { if (gate) { addToast("error", gate); return } onChange(d) }}
+        minDate={minDate}
+        dateFormat="yyyy/MM/dd"
+        customInput={
+          <CalendarInput
+            uiT={uiT}
+            onInputClick={() => { if (gate) { addToast("error", gate); return false } return true }}
+          />
+        }
+      />
+      <TimeSelect value={time} onChange={onTime} uiT={uiT} />
+    </div>
+  )
+}
+
+// ─── TimelineSummary ──────────────────────────────────────────────────────────
+function TimelineSummary({ promoAt, startAt, endAt, uiT }) {
+  const reviewMs = APPROVAL_BUFFER_DAYS * 86400000
+  const promoMs  = Math.max(startAt - promoAt, 0)
+  const eventMs  = Math.max(endAt - startAt, 0)
+  const segs = [
+    { label: "Review",    ms: reviewMs, text: `≤ ${APPROVAL_BUFFER_DAYS} days`, color: "#f59e0b" },
+    { label: "Promotion", ms: promoMs,  text: formatDuration(promoMs),         color: t.primaryFull },
+    { label: "Hackathon", ms: eventMs,  text: formatDuration(eventMs),         color: "#10b981" },
+  ]
+  return (
+    <div className="mt-5 p-3 rounded-xl" style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)", border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}` }}>
+      <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
+        {segs.map(s => <div key={s.label} style={{ flex: Math.max(s.ms, 1), background: s.color }} />)}
+      </div>
+      <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5">
+        {segs.map(s => (
+          <span key={s.label} className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: uiT?.mutedText }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: s.color }} />
+            {s.label}: <span style={{ color: uiT?.headingText }} className="font-semibold">{s.text}</span>
+          </span>
+        ))}
+      </div>
     </div>
   )
 }
@@ -278,7 +310,6 @@ function CountrySelector({ value, onChange, hasError, uiT }) {
 
   return (
     <div className="space-y-3">
-      {/* Mode selector */}
       <div className="grid grid-cols-3 gap-2">
         {Object.entries(COUNTRY_MODE_CONFIG).map(([key, cfg]) => {
           const Icon = cfg.icon
@@ -288,9 +319,7 @@ function CountrySelector({ value, onChange, hasError, uiT }) {
               key={key} type="button"
               onClick={() => setMode(key)}
               className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border text-center transition-all ${
-                active
-                  ? `${cfg.activeBg} ring-1 ${cfg.ring} border-transparent`
-                  : "border-transparent"
+                active ? `${cfg.activeBg} ring-1 ${cfg.ring} border-transparent` : "border-transparent"
               }`}
               style={!active ? { background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)", borderColor: uiT?.borderSubtle ?? "rgba(255,255,255,0.08)" } : {}}
             >
@@ -307,7 +336,6 @@ function CountrySelector({ value, onChange, hasError, uiT }) {
         })}
       </div>
 
-      {/* Country picker */}
       {needsCountries && (
         <div className="space-y-2">
           {list.length > 0 && (
@@ -415,22 +443,11 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded,
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-
-          <Label
-            style={{ color: uiT?.headingText }}
-            className="font-semibold"
-          >
+          <Label style={{ color: uiT?.headingText }} className="font-semibold">
             Links <span className="text-red-400">*</span>
           </Label>
-
           {links.length > 0 && (
-            <span
-              className="
-                text-xs px-1.5 py-0.5 rounded-full
-                bg-blue-100 text-blue-700 border border-blue-300
-                dark:bg-white/5 dark:text-white/70 dark:border-white/10
-              "
-            >
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 dark:bg-white/5 dark:text-white/70 dark:border-white/10">
               {links.length}
             </span>
           )}
@@ -439,65 +456,35 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded,
         <div className="relative">
           <button
             type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              setShowDropdown((p) => !p)
-            }}
+            onClick={(e) => { e.preventDefault(); setShowDropdown((p) => !p) }}
             className="
               flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all
-
               bg-blue-50 border-blue-300 text-blue-700
               hover:bg-blue-100 hover:border-blue-400 hover:text-blue-800
-
               dark:bg-white/5 dark:border-white/10 dark:text-white/70
               dark:hover:bg-white/10 dark:hover:text-white
             "
           >
             <Plus className="w-3.5 h-3.5" />
             Add Link
-            <ChevronDown
-              className={`w-3 h-3 transition-transform ${
-                showDropdown ? "rotate-180" : ""
-              }`}
-            />
+            <ChevronDown className={`w-3 h-3 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
           </button>
 
           {showDropdown && (
-            <div
-              className="
-                absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden min-w-[180px]
-                bg-white border border-slate-300 shadow-xl
-
-                dark:bg-[rgba(15,15,25,0.95)]
-                dark:border-white/10
-              "
-            >
+            <div className="absolute right-0 top-full mt-1.5 z-50 rounded-xl overflow-hidden min-w-[180px] bg-white border border-slate-300 shadow-xl dark:bg-[rgba(15,15,25,0.95)] dark:border-white/10">
               {LINK_TYPES.map((lt) => {
                 const Icon = lt.icon
-
                 return (
                   <button
                     key={lt.key}
                     type="button"
                     onClick={(e) => addLink(e, lt.key)}
-                    className={`
-                      w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left transition-all
-                      hover:bg-slate-100
-                      dark:hover:bg-white/5
-                      ${lt.color}
-                    `}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-left transition-all hover:bg-slate-100 dark:hover:bg-white/5 ${lt.color}`}
                   >
-                    <span
-                      className={`w-6 h-6 rounded-md flex items-center justify-center ${lt.bg}`}
-                    >
+                    <span className={`w-6 h-6 rounded-md flex items-center justify-center ${lt.bg}`}>
                       <Icon className="w-3.5 h-3.5" />
                     </span>
-
-                    <span
-                      className="text-slate-700 dark:text-white/80"
-                    >
-                      {lt.label}
-                    </span>
+                    <span className="text-slate-700 dark:text-white/80">{lt.label}</span>
                   </button>
                 )
               })}
@@ -508,113 +495,56 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded,
 
       {links.length === 0 ? (
         <div
-          className="
-            flex flex-col items-center justify-center py-6 rounded-xl border-dashed border text-center transition-all
-          "
+          className="flex flex-col items-center justify-center py-6 rounded-xl border-dashed border text-center transition-all"
           style={{
-            background: hasError
-              ? "rgba(239,68,68,0.06)"
-              : undefined,
-            borderColor: hasError
-              ? "rgba(239,68,68,0.35)"
-              : undefined,
+            background: hasError ? "rgba(239,68,68,0.06)" : undefined,
+            borderColor: hasError ? "rgba(239,68,68,0.35)" : undefined,
           }}
         >
-          <Link2
-            className={`w-5 h-5 mb-2 ${
-              hasError
-                ? "text-red-400"
-                : "text-slate-500 dark:text-slate-400"
-            }`}
-          />
-
-          <p
-            className={`text-xs ${
-              hasError
-                ? "text-red-500"
-                : "text-slate-600 dark:text-slate-400"
-            }`}
-          >
-            {hasError
-              ? "At least one link is required."
-              : 'No links added yet. Click "Add Link" to get started.'}
+          <Link2 className={`w-5 h-5 mb-2 ${hasError ? "text-red-400" : "text-slate-500 dark:text-slate-400"}`} />
+          <p className={`text-xs ${hasError ? "text-red-500" : "text-slate-600 dark:text-slate-400"}`}>
+            {hasError ? "At least one link is required." : 'No links added yet. Click "Add Link" to get started.'}
           </p>
         </div>
       ) : (
         <div className="space-y-2">
           {links.map((link) => {
-            const cfg =
-              LINK_TYPES.find((lt) => lt.key === link.typeKey) ||
-              LINK_TYPES[0]
-
+            const cfg = LINK_TYPES.find((lt) => lt.key === link.typeKey) || LINK_TYPES[0]
             const Icon = cfg.icon
-
             return (
               <div
                 key={link.id}
-                className={`
-                  flex items-center gap-2 px-3 py-2 rounded-xl border
-                  ${cfg.border}
-                  transition-all
-                `}
-                style={{
-                  background:
-                    uiT?.surfaceBg2 ??
-                    "rgba(255,255,255,0.03)",
-                }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${cfg.border} transition-all`}
+                style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)" }}
               >
-                <span
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}
-                >
-                  <Icon
-                    className={`w-3.5 h-3.5 ${cfg.color}`}
-                  />
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${cfg.bg}`}>
+                  <Icon className={`w-3.5 h-3.5 ${cfg.color}`} />
                 </span>
-
                 <div className="flex-1 min-w-0">
-                  <p
-                    className={`text-[10px] font-medium mb-0.5 ${cfg.color}`}
-                  >
-                    {cfg.label}
-                  </p>
-
+                  <p className={`text-[10px] font-medium mb-0.5 ${cfg.color}`}>{cfg.label}</p>
                   <Input
                     onFocus={onFocus}
                     onBlur={onBlur}
                     type="url"
                     value={link.value}
-                    onChange={(e) =>
-                      updateLink(link.id, e.target.value)
-                    }
+                    onChange={(e) => updateLink(link.id, e.target.value)}
                     placeholder={cfg.placeholder}
                     className="
                       h-7 text-xs px-0 border-0 bg-transparent
                       text-slate-900 placeholder:text-slate-400
                       focus-visible:ring-0 focus-visible:ring-offset-0
-
-                      dark:text-white
-                      dark:placeholder:text-white/25
+                      dark:text-white dark:placeholder:text-white/25
                     "
-                    style={{
-                      color: uiT?.headingText,
-                      boxShadow: "none",
-                    }}
+                    style={{ color: uiT?.headingText, boxShadow: "none" }}
                   />
                 </div>
-
                 <button
                   type="button"
                   onClick={(e) => removeLink(e, link.id)}
                   className="
                     shrink-0 w-6 h-6 rounded-lg flex items-center justify-center
-                    text-slate-500
-                    hover:text-red-500
-                    hover:bg-red-100
-
-                    dark:text-white/60
-                    dark:hover:text-red-400
-                    dark:hover:bg-red-400/10
-
+                    text-slate-500 hover:text-red-500 hover:bg-red-100
+                    dark:text-white/60 dark:hover:text-red-400 dark:hover:bg-red-400/10
                     transition-all
                   "
                 >
@@ -630,237 +560,208 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded,
 }
 
 // ─── PrizePool ────────────────────────────────────────────────────────────────
-function PrizePool({ prizes, setPrizes, onFocus, onBlur, uiT }) {
-  const addPrize      = (e)              => { e.preventDefault(); setPrizes(prev => [...prev, { id: Date.now(), name: "", value: "" }]) }
+function PrizePool({ prizes, setPrizes, currency, setCurrency, onFocus, onBlur, uiT }) {
+  const cur = getCurrency(currency)
+  const addPrize      = (e)              => { e.preventDefault(); setPrizes(prev => [...prev, newPrize()]) }
   const removePrize   = (e, id)          => { e.preventDefault(); prizes.length > 1 && setPrizes(prev => prev.filter(p => p.id !== id)) }
-  const updatePrize   = (id, field, val) => setPrizes(prev => prev.map(p => p.id === id ? { ...p, [field]: val } : p))
+  const updatePrize   = (id, patch)      => setPrizes(prev => prev.map(p => p.id === id ? { ...p, ...patch } : p))
+  const setType       = (id, type)       => setPrizes(prev => prev.map(p => p.id === id && p.type !== type ? { ...p, type, value: "" } : p))
   const applyTemplate = (e, tmpl)        => {
     e.preventDefault()
+    const filled = { type: tmpl.value ? "non_cash" : "cash", name: tmpl.name, value: tmpl.value ?? "" }
     const emptyIdx = prizes.findIndex(p => !p.name && !p.value)
-    if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...tmpl } : p))
-    else setPrizes(prev => [...prev, { id: Date.now(), ...tmpl }])
+    if (emptyIdx !== -1) setPrizes(prev => prev.map((p, i) => i === emptyIdx ? { ...p, ...filled } : p))
+    else setPrizes(prev => [...prev, newPrize(filled)])
   }
-  const total = prizes.reduce((acc, p) => {
-    const num = parseFloat((p.value || "").replace(/[^0-9.]/g, ""))
-    return isNaN(num) ? acc : acc + num
-  }, 0)
+
+  const cashTotal = prizes.reduce((acc, p) => p.type === "cash" ? acc + (parseAmount(p.value) ?? 0) : acc, 0)
+  const itemCount = prizes.filter(p => p.type === "non_cash" && p.value.trim()).length
+
+  const chipCls = `
+    flex items-center gap-1 px-2 py-1 rounded-md text-[11px]
+    border border-amber-300 bg-amber-50 text-amber-800 transition-all
+    hover:bg-amber-200 hover:text-amber-900 hover:border-amber-500
+    dark:border-white/10 dark:bg-white/5 dark:text-white
+    dark:hover:bg-amber-400/10 dark:hover:text-amber-300 dark:hover:border-amber-400/25
+  `
 
   return (
-   <div className="space-y-4">
-    <div className="flex items-center gap-2">
-      <div className="w-7 h-7 rounded-lg bg-amber-200 dark:bg-amber-400/15 border border-amber-500 dark:border-amber-400/25 flex items-center justify-center">
-        <Trophy className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
-      </div>
+    <div className="space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-amber-200 dark:bg-amber-400/15 border border-amber-500 dark:border-amber-400/25 flex items-center justify-center">
+            <Trophy className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+          </div>
+          <div>
+            <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>
+              Prize Pool <span className="text-red-400">*</span>
+            </Label>
+            {(cashTotal > 0 || itemCount > 0) && (
+              <p className="text-xs text-amber-700 dark:text-amber-400/70 mt-0.5">
+                {cashTotal > 0 && <>≈ {formatMoney(cashTotal, currency)} cash</>}
+                {cashTotal > 0 && itemCount > 0 && " + "}
+                {itemCount > 0 && <>{itemCount} non-cash prize{itemCount !== 1 ? "s" : ""}</>}
+              </p>
+            )}
+          </div>
+        </div>
 
-      <div>
-        <Label
-          className="font-semibold leading-none"
-          style={{ color: uiT?.headingText }}
-        >
-          Prize Pool <span className="text-red-400">*</span>
-        </Label>
-
-        {total > 0 && (
-          <p className="text-xs text-amber-700 dark:text-amber-400/70 mt-0.5">
-            ≈ ${total.toLocaleString()} total
-          </p>
-        )}
-      </div>
-    </div>
-
-    <div
-      className="p-3 rounded-xl"
-      style={{
-        background:
-          uiT?.surfaceBg2 ??
-          "rgba(255,255,255,0.03)",
-        border: `1px solid ${
-          uiT?.borderBase ?? "rgba(255,255,255,0.07)"
-        }`,
-      }}
-    >
-      <div className="flex items-center gap-1.5 mb-2">
-        <Sparkles className="w-3 h-3 text-amber-700 dark:text-amber-400" />
-        <span
-          className="text-[10px] font-medium uppercase tracking-widest"
-          style={{ color: uiT?.mutedText }}
-        >
-          Quick templates
-        </span>
-      </div>
-
-      <div className="flex flex-wrap gap-1.5">
-        {PRIZE_TEMPLATES.map((tmpl) => (
-          <button
-            key={tmpl.name}
-            type="button"
-            onClick={(e) => applyTemplate(e, tmpl)}
-            className="
-              flex items-center gap-1 px-2 py-1 rounded-md text-[11px]
-              border border-amber-300 bg-amber-50 text-amber-800
-              transition-all
-
-              hover:bg-amber-200
-              hover:text-amber-900
-              hover:border-amber-500
-
-              dark:border-white/10
-              dark:bg-white/5
-              dark:text-white
-              dark:hover:bg-amber-400/10
-              dark:hover:text-amber-300
-              dark:hover:border-amber-400/25
-            "
+        <div className="shrink-0">
+          <p className="text-[9px] font-medium uppercase tracking-widest mb-1 text-right" style={{ color: uiT?.mutedText }}>Currency</p>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="text-xs rounded-lg px-2 py-1.5 outline-none cursor-pointer max-w-[170px]"
+            style={{
+              background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+              border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+              color: uiT?.headingText ?? "#fff",
+            }}
           >
-            {tmpl.name}
-            <span
-              className="text-[10px] opacity-70"
-            >
-              {tmpl.value}
-            </span>
-          </button>
-        ))}
+            {CURRENCIES.map(c => (
+              <option key={c.code} value={c.code} style={{ background: uiT?.inputBg ?? "#1a1a2e" }}>
+                {c.code} — {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-    </div>
 
-    <div className="space-y-2">
-      {prizes.map((prize, index) => {
-        const rank = RANK_STYLES[index] || DEFAULT_RANK
+      <div className="p-3 rounded-xl space-y-2.5"
+        style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)", border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}` }}>
+        <div className="flex items-center gap-1.5">
+          <Sparkles className="w-3 h-3 text-amber-700 dark:text-amber-400" />
+          <span className="text-[10px] font-medium uppercase tracking-widest" style={{ color: uiT?.mutedText }}>Quick templates</span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {CASH_TEMPLATES.map(tmpl => (
+            <button key={tmpl.name} type="button" onClick={(e) => applyTemplate(e, tmpl)} className={chipCls}>
+              <Banknote className="w-3 h-3 opacity-60" />{tmpl.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {ITEM_TEMPLATES.map(tmpl => (
+            <button key={tmpl.name} type="button" onClick={(e) => applyTemplate(e, tmpl)} className={chipCls}>
+              <Gift className="w-3 h-3 opacity-60" />{tmpl.name}
+              <span className="text-[10px] opacity-70">{tmpl.value}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
-        return (
-          <div
-            key={prize.id}
-            className={`rounded-xl overflow-hidden ${rank.ring} ${rank.glow} transition-all`}
-          >
-            <div className={`px-4 py-3 ${rank.bg}`}>
-              <div className="flex items-start gap-3">
-                <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 mt-1 ${rank.badge}`}
-                >
-                  {rank.medal ?? `#${index + 1}`}
-                </span>
+      <div className="space-y-2">
+        {prizes.map((prize, index) => {
+          const rank   = RANK_STYLES[index] || DEFAULT_RANK
+          const isCash = prize.type === "cash"
+          return (
+            <div key={prize.id} className={`rounded-xl overflow-hidden ${rank.ring} ${rank.glow} transition-all`}>
+              <div className={`px-4 py-3 ${rank.bg}`}>
+                <div className="flex items-start gap-3">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 mt-1 ${rank.badge}`}>
+                    {rank.medal ?? `#${index + 1}`}
+                  </span>
 
-                <div className="flex-1 grid grid-cols-2 gap-2">
-                  <div>
-                    <p
-                      className="text-[9px] font-medium uppercase tracking-widest mb-1"
-                      style={{ color: uiT?.mutedText }}
-                    >
-                      Prize Name
-                    </p>
+                  <div className="flex-1 space-y-2">
+                    {/* type toggle */}
+                    <div className="inline-flex rounded-lg p-0.5 gap-0.5" style={{ background: uiT?.inlineBg ?? "rgba(255,255,255,0.05)" }}>
+                      {[["cash", Banknote, "Cash"], ["non_cash", Gift, "Item / voucher"]].map(([key, Icon, label]) => (
+                        <button
+                          key={key} type="button"
+                          onClick={() => setType(prize.id, key)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-all ${
+                            prize.type === key
+                              ? "bg-amber-400/20 text-amber-700 dark:text-amber-300"
+                              : "text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white/80"
+                          }`}
+                        >
+                          <Icon className="w-3 h-3" />{label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="text-[9px] font-medium uppercase tracking-widest mb-1" style={{ color: uiT?.mutedText }}>Prize Name</p>
+                        <Input
+                          onFocus={onFocus} onBlur={onBlur}
+                          value={prize.name}
+                          onChange={(e) => updatePrize(prize.id, { name: e.target.value.slice(0, LIMITS.prize_name) })}
+                          placeholder="e.g. 1st Place"
+                          maxLength={LIMITS.prize_name}
+                          className={PRIZE_INPUT_CLS}
+                          style={{ borderRadius: "0.5rem", color: uiT?.headingText }}
+                        />
+                        <CharCount current={prize.name.length} max={LIMITS.prize_name} uiT={uiT} />
+                      </div>
+
+                      <div>
+                        <p className="text-[9px] font-medium uppercase tracking-widest mb-1" style={{ color: uiT?.mutedText }}>
+                          {isCash ? `Amount (${cur.code})` : "Prize"}
+                        </p>
+                        <div className="relative">
+                          {isCash && (
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs pointer-events-none" style={{ color: uiT?.mutedText }}>
+                              {cur.symbol}
+                            </span>
+                          )}
+                          <Input
+                            onFocus={onFocus} onBlur={onBlur}
+                            value={prize.value}
+                            inputMode={isCash ? "decimal" : "text"}
+                            onChange={(e) => updatePrize(prize.id, {
+                              value: isCash
+                                ? e.target.value.replace(/[^0-9.]/g, "").slice(0, 15)
+                                : e.target.value.slice(0, LIMITS.prize_item),
+                            })}
+                            placeholder={isCash ? "5000" : "e.g. MacBook Air, $50 Steam voucher"}
+                            className={PRIZE_INPUT_CLS}
+                            style={{
+                              borderRadius: "0.5rem", color: uiT?.headingText,
+                              paddingLeft: isCash ? `${0.7 + cur.symbol.length * 0.6}rem` : undefined,
+                            }}
+                          />
+                        </div>
+                        {!isCash && <CharCount current={prize.value.length} max={LIMITS.prize_item} uiT={uiT} />}
+                      </div>
+                    </div>
 
                     <Input
-                      onFocus={onFocus}
-                      onBlur={onBlur}
-                      value={prize.name}
-                      onChange={(e) =>
-                        updatePrize(
-                          prize.id,
-                          "name",
-                          e.target.value.slice(0, LIMITS.prize_name)
-                        )
-                      }
-                      placeholder="e.g. 1st Place"
-                      maxLength={LIMITS.prize_name}
-                      className="
-                        h-8 text-sm
-                        bg-white
-                        border-slate-400
-                        text-slate-900
-                        placeholder:text-slate-500
-                        focus-visible:border-amber-500
-
-                        dark:bg-white/5
-                        dark:border-white/10
-                        dark:text-white
-                        dark:placeholder:text-white/20
-                        dark:focus-visible:border-white/30
-                      "
-                      style={{
-                        borderRadius: "0.5rem",
-                        color: uiT?.headingText,
-                      }}
-                    />
-
-                    <CharCount
-                      current={prize.name.length}
-                      max={LIMITS.prize_name}
-                      uiT={uiT}
+                      onFocus={onFocus} onBlur={onBlur}
+                      value={prize.description ?? ""}
+                      onChange={(e) => updatePrize(prize.id, { description: e.target.value.slice(0, LIMITS.prize_desc) })}
+                      placeholder="Optional note (e.g. “shipped worldwide”, “redeemable on any store”)"
+                      className={PRIZE_INPUT_CLS}
+                      style={{ borderRadius: "0.5rem", color: uiT?.headingText }}
                     />
                   </div>
 
-                  <div>
-                    <p
-                      className="text-[9px] font-medium uppercase tracking-widest mb-1"
-                      style={{ color: uiT?.mutedText }}
-                    >
-                      Value
-                    </p>
-
-                    <Input
-                      onFocus={onFocus}
-                      onBlur={onBlur}
-                      value={prize.value}
-                      onChange={(e) =>
-                        updatePrize(prize.id, "value", e.target.value)
-                      }
-                      placeholder="$5,000"
+                  {prizes.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => removePrize(e, prize.id)}
                       className="
-                        h-8 text-sm
-                        bg-white
-                        border-slate-400
-                        text-slate-900
-                        placeholder:text-slate-500
-                        focus-visible:border-amber-500
-
-                        dark:bg-white/5
-                        dark:border-white/10
-                        dark:text-white
-                        dark:placeholder:text-white/20
-                        dark:focus-visible:border-white/30
+                        shrink-0 w-7 h-7 rounded-lg flex items-center justify-center mt-0.5
+                        text-slate-500 hover:text-red-500 hover:bg-red-100 transition-all
+                        dark:text-white/60 dark:hover:text-red-400 dark:hover:bg-red-400/10
                       "
-                      style={{
-                        borderRadius: "0.5rem",
-                        color: uiT?.headingText,
-                      }}
-                    />
-                  </div>
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-
-                {prizes.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={(e) => removePrize(e, prize.id)}
-                    className="
-                      shrink-0 w-7 h-7 rounded-lg flex items-center justify-center
-                      text-slate-500
-                      hover:text-red-500
-                      hover:bg-red-100
-                      transition-all
-                      mt-0.5
-
-                      dark:text-white/60
-                      dark:hover:text-red-400
-                      dark:hover:bg-red-400/10
-                    "
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
             </div>
-          </div>
-        )
-      })}
-    </div>
+          )
+        })}
+      </div>
 
       <button
         type="button"
         onClick={addPrize}
         className="
           w-full flex items-center justify-center gap-2 py-2.5 rounded-xl
-          border border-dashed
-          border-amber-300 dark:border-amber-500/25
+          border border-dashed border-amber-300 dark:border-amber-500/25
           text-amber-600 dark:text-amber-400/60
           hover:text-amber-700 dark:hover:text-amber-300
           hover:bg-amber-100 dark:hover:bg-amber-500/8
@@ -875,11 +776,89 @@ function PrizePool({ prizes, setPrizes, onFocus, onBlur, uiT }) {
   )
 }
 
+// ─── InviteOnlySection ────────────────────────────────────────────────────────
+function InviteOnlySection({ enabled, code, onToggle, onCode, hasError, uiT }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(code); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch {}
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-indigo-400/15 border border-indigo-400/25">
+            <Lock className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-300" />
+          </div>
+          <div>
+            <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>Invite only</Label>
+            <p className="text-[11px] mt-0.5" style={{ color: uiT?.mutedText }}>
+              Participants must enter an invite code before they can see your registration links.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button" role="switch" aria-checked={enabled}
+          onClick={() => onToggle(!enabled)}
+          className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${enabled ? "bg-indigo-500" : "bg-slate-300 dark:bg-white/15"}`}
+        >
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-4" : ""}`} />
+        </button>
+      </div>
+
+      {enabled && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Input
+              value={code}
+              onChange={(e) => onCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 17))}
+              placeholder="Invite code"
+              spellCheck={false}
+              autoComplete="off"
+              className="rounded-xl font-mono tracking-widest text-sm"
+              style={{
+                background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+                borderColor: hasError ? "rgba(239,68,68,0.5)" : (uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"),
+                color: uiT?.headingText ?? "#fff",
+              }}
+            />
+            <button
+              type="button" onClick={() => onCode(generateInviteCode())} title="Generate a random code"
+              className="shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs border transition-all hover:opacity-80"
+              style={{ borderColor: uiT?.borderSubtle ?? "rgba(255,255,255,0.12)", color: uiT?.headingText, background: uiT?.surfaceBg2 }}
+            >
+              <RefreshCw className="w-3.5 h-3.5" /> Generate
+            </button>
+            <button
+              type="button" onClick={copy} disabled={!code} title="Copy code"
+              className="shrink-0 h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs border transition-all hover:opacity-80 disabled:opacity-40"
+              style={{ borderColor: uiT?.borderSubtle ?? "rgba(255,255,255,0.12)", color: uiT?.headingText, background: uiT?.surfaceBg2 }}
+            >
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? "Copied" : "Copy"}
+            </button>
+          </div>
+          {hasError && (
+            <p className="text-xs text-red-400/80 flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-red-400 inline-block" />
+              Use 6–16 letters or numbers (dashes are ignored).
+            </p>
+          )}
+          <p className="text-[11px] leading-relaxed" style={{ color: uiT?.mutedText }}>
+            Save this code now and share it only with the people you invite. Once your announcement is approved
+            it is stored encrypted, so it can’t be shown to you again.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── TermsCheckbox ────────────────────────────────────────────────────────────
 function TermsCheckbox({ checked, onChange, hasError, addToast, uiT }) {
   return (
     <div
-      className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer select-none`}
+      className="flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer select-none"
       style={{
         background: hasError
           ? "rgba(239,68,68,0.05)"
@@ -954,17 +933,16 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   const [countries, setCountries]           = useState(() => loadCountries())
   const [linkError, setLinkError]           = useState(false)
   const [countriesError, setCountriesError] = useState(false)
+  const [inviteError, setInviteError]       = useState(false)
   const [termsAccepted, setTermsAccepted]   = useState(false)
   const [termsError, setTermsError]         = useState(false)
 
-  const [startDate,   setStartDate]   = useState(null)
-  const [endDate,     setEndDate]     = useState(null)
-  const [startHour12, setStartHour12] = useState("12")
-  const [startMinute, setStartMinute] = useState("00")
-  const [startPeriod, setStartPeriod] = useState("AM")
-  const [endHour12,   setEndHour12]   = useState("12")
-  const [endMinute,   setEndMinute]   = useState("00")
-  const [endPeriod,   setEndPeriod]   = useState("AM")
+  // Schedule: review (fixed buffer) → promotion → hackathon
+  const [promoDate, setPromoDate] = useState(null)
+  const [startDate, setStartDate] = useState(null)
+  const [endDate,   setEndDate]   = useState(null)
+  const [times, setTimes] = useState({ promo: DEFAULT_TIME, start: DEFAULT_TIME, end: DEFAULT_TIME })
+  const setTime = (key, patch) => setTimes(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }))
 
   useEffect(() => {
     saveDraft(formData)
@@ -977,18 +955,47 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   const resetForm = () => {
     clearDraft()
     setFormData({ ...EMPTY_FORM })
-    setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
+    setPrizes([newPrize()])
     setLinks([])
     setCountries({ ...EMPTY_COUNTRIES })
-    setStartDate(null); setEndDate(null)
+    setPromoDate(null); setStartDate(null); setEndDate(null)
+    setTimes({ promo: DEFAULT_TIME, start: DEFAULT_TIME, end: DEFAULT_TIME })
     setHasDraft(false); setDraftDismissed(false)
     setTermsAccepted(false)
+    setLinkError(false); setCountriesError(false); setInviteError(false)
   }
 
   const setField = (field, raw) => {
     const limit = LIMITS[field]
     setFormData(prev => ({ ...prev, [field]: limit ? raw.slice(0, limit) : raw }))
   }
+
+  const setInviteOnly = (on) => setFormData(prev => ({
+    ...prev,
+    is_invite_only: on,
+    invite_code: on ? (prev.invite_code || generateInviteCode()) : "",
+  }))
+  const setInviteCode = (code) => { setFormData(prev => ({ ...prev, invite_code: code })); setInviteError(false) }
+
+  // ── Schedule handlers (later dates are cleared if they stop being valid) ──
+  const onPromoChange = (d) => {
+    setPromoDate(d)
+    if (d && startDate && startOfDay(startDate) < addDays(startOfDay(d), MIN_PROMO_DAYS)) {
+      setStartDate(null); setEndDate(null)
+      addToast("error", `Hackathon dates were cleared — the start must be at least ${MIN_PROMO_DAYS} days after promotion begins.`)
+    }
+  }
+  const onStartChange = (d) => {
+    setStartDate(d)
+    if (d && endDate && startOfDay(endDate) < addDays(startOfDay(d), MIN_EVENT_DAYS)) {
+      setEndDate(null)
+      addToast("error", "End date was cleared — it must be after the new start date.")
+    }
+  }
+
+  const promoAt = promoDate ? toDateTime(promoDate, times.promo) : null
+  const startAt = startDate ? toDateTime(startDate, times.start) : null
+  const endAt   = endDate   ? toDateTime(endDate,   times.end)   : null
 
   // Input style — adapts to uiT when provided
   const inputStyle = {
@@ -1014,55 +1021,75 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   }
 
   const handleSubmit = async () => {
-    let hasErrors = false
+    if (!currentOrg || !authUserId) { addToast("error", "Organization not found. Please refresh."); return }
 
-    if (!startDate || !endDate)                               { addToast("error", "Please select start and end dates."); hasErrors = true }
-    if (!formData.title || !formData.des || !formData.author || !formData.open_to) { addToast("error", "Please fill in all required fields."); hasErrors = true }
-    if (!currentOrg || !authUserId)                           { addToast("error", "Organization not found. Please refresh."); return }
+    const errors = []
+    const currency = formData.prize_currency
 
-    const validPrizes = prizes.filter(p => p.name.trim() && p.value.trim())
-    if (validPrizes.length === 0) { addToast("error", "Please add at least one prize with a name and value."); hasErrors = true }
+    // required text
+    if (!formData.title || !formData.des || !formData.author || !formData.open_to)
+      errors.push("Please fill in all required fields.")
 
+    // schedule
+    if (!promoAt || !startAt || !endAt) errors.push("Please set the promotion, start and end dates.")
+    else {
+      const timelineError = validateTimeline(promoAt, startAt, endAt)
+      if (timelineError) errors.push(timelineError)
+    }
+
+    // prizes
+    const validPrizes = prizes.filter(p => p.name.trim() && String(p.value).trim())
+    if (validPrizes.length === 0) errors.push("Please add at least one prize with a name and value.")
+    else if (validPrizes.some(p => p.type === "cash" && !(parseAmount(p.value) > 0)))
+      errors.push("Cash prizes need an amount greater than zero.")
+
+    // links
     const filledLinks = links.filter(l => l.value.trim())
-    if (filledLinks.length === 0) { setLinkError(true); hasErrors = true }
+    if (filledLinks.length === 0) { setLinkError(true); errors.push("Please add at least one link.") }
     else setLinkError(false)
 
-    if (countries.mode !== "global" && countries.list.length === 0) {
-      setCountriesError(true); hasErrors = true
-    } else { setCountriesError(false) }
+    const badCommunityLink = filledLinks.find(l => l.typeKey === "community_link" && !isValidCommunityLink(l.value.trim()))
+    if (badCommunityLink) errors.push("Community link must be a Discord, Telegram, or WhatsApp link.")
 
-    if (!termsAccepted) { setTermsError(true); hasErrors = true }
+    // countries
+    if (countries.mode !== "global" && countries.list.length === 0) { setCountriesError(true); errors.push("Please select at least one country.") }
+    else setCountriesError(false)
+
+    // invite code
+    if (formData.is_invite_only && !isValidInviteCode(formData.invite_code)) { setInviteError(true); errors.push("Please set a valid invite code (6–16 letters or numbers).") }
+    else setInviteError(false)
+
+    // terms
+    if (!termsAccepted) { setTermsError(true); errors.push("Please accept the terms and conditions.") }
     else setTermsError(false)
 
-    if (hasErrors) {
-      if (filledLinks.length === 0) addToast("error", "Please add at least one link.")
-      if (!termsAccepted)           addToast("error", "Please accept the terms and conditions.")
-      return
-    }
-
-    const badCommunityLink = filledLinks.find(l => l.typeKey === "community_link" && !isValidCommunityLink(l.value.trim()))
-      if (badCommunityLink) {
-        addToast("error", "Community link must be a Discord, Telegram, or WhatsApp link.")
-        hasErrors = true
-    }
-
-    const startTime24 = convertTo24Hour(startHour12, startMinute, startPeriod)
-    const endTime24   = convertTo24Hour(endHour12, endMinute, endPeriod)
-    const startISO    = createUTCISOString(startDate, startTime24)
-    const endISO      = createUTCISOString(endDate, endTime24)
+    if (errors.length) { errors.slice(0, 3).forEach(m => addToast("error", m)); return }
 
     const linkFields = {}
-    links.filter(l => l.value.trim()).forEach(l => { linkFields[l.typeKey] = l.value.trim() })
+    filledLinks.forEach(l => { linkFields[l.typeKey] = l.value.trim() })
+
+    const payloadPrizes = validPrizes.map(p => {
+      const base = { name: p.name.trim(), description: (p.description || "").trim() }
+      if (p.type === "cash") {
+        const amount = parseAmount(p.value)
+        return { ...base, type: "cash", amount, currency, value: formatMoney(amount, currency) }
+      }
+      return { ...base, type: "non_cash", value: p.value.trim() }
+    })
 
     const payload = {
       title:                formData.title.trim(),
       des:                  formData.des.trim(),
       author:               formData.author.trim(),
-      date_begin:           startISO,
-      date_end:             endISO,
+      promo_begin:          promoAt.toISOString(),
+      date_begin:           startAt.toISOString(),
+      date_end:             endAt.toISOString(),
       open_to:              formData.open_to.trim(),
       countries:            serializeCountries(),
-      prizes:               validPrizes.map(({ id, ...p }) => ({ name: p.name.trim(), value: p.value.trim(), description: (p.description || "").trim() })),
+      prizes:               payloadPrizes,
+      prize_currency:       currency,
+      is_invite_only:       formData.is_invite_only,
+      invite_code:          formData.is_invite_only ? normalizeInviteCode(formData.invite_code) : null,
       website_link:         linkFields.website_link         || null,
       dev_link:             linkFields.dev_link             || null,
       community_link:       linkFields.community_link       || null,
@@ -1088,14 +1115,8 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         }
         const { error } = await supabase.from("pending_announcements").insert([payload]).select()
         if (error) throw error
-        clearDraft()
+        resetForm()
         addToast("success", "Submitted for approval! The super admin will review your announcement.")
-        setFormData({ ...EMPTY_FORM })
-        setPrizes([{ id: Date.now(), name: "", value: "", description: "" }])
-        setLinks([])
-        setCountries({ ...EMPTY_COUNTRIES })
-        setTermsAccepted(false)
-        setHasDraft(false); setLinkError(false); setCountriesError(false)
         setIsLoading(false); setRetryCount(0)
         if (onSuccess) onSuccess()
         return
@@ -1119,25 +1140,19 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   }
 
   const labelColor = uiT?.mutedText ?? "rgba(255,255,255,0.6)"
-  const headingColor = uiT?.headingText ?? "#ffffff"
 
   return (
     <div style={t.cssVars} className="space-y-4">
       {/* ── Pending notice ── */}
       <div
         className="flex items-start gap-2.5 p-3.5 rounded-xl"
-        style={{
-          background: "rgba(245,158,11,0.08)",
-          border: "1px solid rgba(245,158,11,0.18)",
-        }}
+        style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.18)" }}
       >
         <Clock className="w-4 h-4 text-amber-800 dark:text-amber-300 shrink-0 mt-0.5" />
         <p className="text-amber-800 dark:text-amber-300 text-sm leading-relaxed">
           This submission will be{" "}
-          <span className="text-amber-800 dark:text-amber-300 font-medium">
-            reviewed by the super admin
-          </span>{" "}
-          before going live.
+          <span className="font-medium">reviewed by the super admin</span>{" "}
+          before going live. Allow up to {APPROVAL_BUFFER_DAYS} days for approval — your promotion can’t start sooner.
         </p>
       </div>
 
@@ -1145,30 +1160,22 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       {hasDraft && !draftDismissed && (
         <div
           className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl"
-          style={{
-            background: "rgba(245,158,11,0.06)",
-            border: "1px solid rgba(245,158,11,0.22)",
-          }}
+          style={{ background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.22)" }}
         >
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
-            <span className="text-amber-800 dark:text-amber-300 text-xs">
-              Draft auto-saved
-            </span>
+            <span className="text-amber-800 dark:text-amber-300 text-xs">Draft auto-saved</span>
           </div>
           <div className="flex items-center gap-1">
             <button
-              type="button"
-              onClick={() => resetForm()}
+              type="button" onClick={() => resetForm()}
               className="text-xs text-amber-400/60 hover:text-amber-300 hover:bg-amber-400/10 px-2.5 py-1 rounded-lg transition-all"
             >
               Clear
             </button>
             <button
-              type="button"
-              onClick={() => setDraftDismissed(true)}
+              type="button" onClick={() => setDraftDismissed(true)} title="Dismiss"
               className="w-6 h-6 flex items-center justify-center rounded-lg text-amber-400/40 hover:text-amber-300 hover:bg-amber-400/10 transition-all"
-              title="Dismiss"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -1184,58 +1191,33 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
           border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.1)"}`,
         }}
       >
-        <div
-          className="w-2 h-2 rounded-full animate-pulse"
-          style={{ background: t.primaryFull }}
-        />
-        <span className="text-sm" style={{ color: uiT?.mutedText }}>
-          Submitting as
-        </span>
-        <span
-          className="font-semibold text-sm"
-          style={{ color: t.primaryText }}
-        >
-          {currentOrg.name}
-        </span>
+        <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: t.primaryFull }} />
+        <span className="text-sm" style={{ color: uiT?.mutedText }}>Submitting as</span>
+        <span className="font-semibold text-sm" style={{ color: t.primaryText }}>{currentOrg.name}</span>
       </div>
 
       {/* ── Basic Info ── */}
       <Section uiT={uiT}>
-        <p
-          className="text-xs font-semibold uppercase tracking-widest mb-4"
-          style={{ color: labelColor }}
-        >
-          Basic Info
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: labelColor }}>Basic Info</p>
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-sm" style={{ color: labelColor }}>
-              Title <span className="text-red-400">*</span>
-            </Label>
+            <Label className="text-sm" style={{ color: labelColor }}>Title <span className="text-red-400">*</span></Label>
             <Input
-              onFocus={handleFocus}
-              onBlur={handleBlur}
+              onFocus={handleFocus} onBlur={handleBlur}
               value={formData.title}
               onChange={(e) => setField("title", e.target.value)}
               maxLength={LIMITS.title}
               style={inputStyle}
               className="rounded-xl placeholder:opacity-30"
-              placeholder="AI Hackathon 2025"
+              placeholder="AI Hackathon 2026"
             />
-            <CharCount
-              current={formData.title.length}
-              max={LIMITS.title}
-              uiT={uiT}
-            />
+            <CharCount current={formData.title.length} max={LIMITS.title} uiT={uiT} />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-sm" style={{ color: labelColor }}>
-              Description <span className="text-red-400">*</span>
-            </Label>
+            <Label className="text-sm" style={{ color: labelColor }}>Description <span className="text-red-400">*</span></Label>
             <Textarea
-              onFocus={handleFocus}
-              onBlur={handleBlur}
+              onFocus={handleFocus} onBlur={handleBlur}
               value={formData.des}
               onChange={(e) => setField("des", e.target.value)}
               maxLength={LIMITS.des}
@@ -1244,21 +1226,14 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
               rows={4}
               placeholder="Describe your competition…"
             />
-            <CharCount
-              current={formData.des.length}
-              max={LIMITS.des}
-              uiT={uiT}
-            />
+            <CharCount current={formData.des.length} max={LIMITS.des} uiT={uiT} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <Label className="text-sm" style={{ color: labelColor }}>
-                Author <span className="text-red-400">*</span>
-              </Label>
+              <Label className="text-sm" style={{ color: labelColor }}>Author <span className="text-red-400">*</span></Label>
               <Input
-                onFocus={handleFocus}
-                onBlur={handleBlur}
+                onFocus={handleFocus} onBlur={handleBlur}
                 value={formData.author}
                 onChange={(e) => setField("author", e.target.value)}
                 maxLength={LIMITS.author}
@@ -1266,19 +1241,12 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
                 className="rounded-xl placeholder:opacity-30"
                 placeholder="First Name, Last Name"
               />
-              <CharCount
-                current={formData.author.length}
-                max={LIMITS.author}
-                uiT={uiT}
-              />
+              <CharCount current={formData.author.length} max={LIMITS.author} uiT={uiT} />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm" style={{ color: labelColor }}>
-                Open To <span className="text-red-400">*</span>
-              </Label>
+              <Label className="text-sm" style={{ color: labelColor }}>Open To <span className="text-red-400">*</span></Label>
               <Input
-                onFocus={handleFocus}
-                onBlur={handleBlur}
+                onFocus={handleFocus} onBlur={handleBlur}
                 value={formData.open_to}
                 onChange={(e) => setField("open_to", e.target.value)}
                 maxLength={LIMITS.open_to}
@@ -1286,154 +1254,59 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
                 className="rounded-xl placeholder:opacity-30"
                 placeholder="Students, Everyone, 18+"
               />
-              <CharCount
-                current={formData.open_to.length}
-                max={LIMITS.open_to}
-                uiT={uiT}
-              />
+              <CharCount current={formData.open_to.length} max={LIMITS.open_to} uiT={uiT} />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm" style={{ color: labelColor }}>
-              Countries <span className="text-red-400">*</span>
-            </Label>
-            <CountrySelector
-              value={countries}
-              onChange={setCountries}
-              hasError={countriesError}
-              uiT={uiT}
-            />
+            <Label className="text-sm" style={{ color: labelColor }}>Countries <span className="text-red-400">*</span></Label>
+            <CountrySelector value={countries} onChange={setCountries} hasError={countriesError} uiT={uiT} />
           </div>
         </div>
       </Section>
 
-      {/* ── Date & Time ── */}
+      {/* ── Schedule ── */}
       <Section uiT={uiT}>
-        <p
-          className="text-xs font-semibold uppercase tracking-widest mb-4"
-          style={{ color: labelColor }}
-        >
-          Date & Time
+        <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: labelColor }}>Schedule</p>
+        <p className="text-xs mb-4 leading-relaxed" style={{ color: labelColor }}>
+          Your announcement is reviewed first, then promoted to gather participants, then the hackathon runs.
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <Label
-              className="text-sm block mb-1.5"
-              style={{ color: labelColor }}
-            >
-              Start Date <span className="text-red-400">*</span>
-            </Label>
-            <DatePicker
-              selected={startDate}
-              onChange={(date) => {
-                if (date && endDate) {
-                  const diffTime = endDate.getTime() - date.getTime();
-                  const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-                  if (diffDays < 3) {
-                    addToast(
-                      "error",
-                      "Start date must be at least 3 days prior to the end date.",
-                    );
-                    return;
-                  }
-                }
-
-                setStartDate(date);
-              }}
-              minDate={getMinHackathonDate()}
-              dateFormat="yyyy/MM/dd"
-              customInput={<CalendarInput uiT={uiT} />}
-            />
-            <TimeSelect
-              hour={startHour12}
-              minute={startMinute}
-              period={startPeriod}
-              onHour={setStartHour12}
-              onMinute={setStartMinute}
-              onPeriod={setStartPeriod}
-              uiT={uiT}
-            />
-          </div>
-          <div>
-            <Label
-              className="text-sm block mb-1.5"
-              style={{ color: labelColor }}
-            >
-              End Date <span className="text-red-400">*</span>
-            </Label>
-            <div
-              onClick={() => {
-                if (!startDate) {
-                  addToast("error", "Please select the start date first.");
-                }
-              }}
-            >
-              <DatePicker
-                selected={endDate}
-                onChange={(date) => {
-                  if (!startDate) {
-                    addToast("error", "Please select the start date first.");
-                    return;
-                  }
-
-                  const minEndDate = new Date(startDate);
-                  minEndDate.setHours(0, 0, 0, 0);
-                  minEndDate.setDate(minEndDate.getDate() + 3);
-
-                  const selectedDate = new Date(date);
-                  selectedDate.setHours(0, 0, 0, 0);
-
-                  if (selectedDate < minEndDate) {
-                    addToast(
-                      "error",
-                      "End date must be at least 3 days after the start date.",
-                    );
-                    return;
-                  }
-
-                  setEndDate(date);
-                }}
-                minDate={
-                  startDate
-                    ? new Date(
-                        startDate.getFullYear(),
-                        startDate.getMonth(),
-                        startDate.getDate() + 3,
-                      )
-                    : undefined
-                }
-                dateFormat="yyyy/MM/dd"
-                customInput={
-                  <CalendarInput
-                    uiT={uiT}
-                    onInputClick={() => {
-                      if (!startDate) {
-                        addToast(
-                          "error",
-                          "Please select the start date first.",
-                        );
-                        return false;
-                      }
-
-                      return true;
-                    }}
-                  />
-                }
-              />
-            </div>
-            <TimeSelect
-              hour={endHour12}
-              minute={endMinute}
-              period={endPeriod}
-              onHour={setEndHour12}
-              onMinute={setEndMinute}
-              onPeriod={setEndPeriod}
-              uiT={uiT}
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <StageField
+            icon={Megaphone} title="Promotion starts" accent="#f59e0b"
+            hint={`When your announcement goes public and you start gathering participants. At least ${APPROVAL_BUFFER_DAYS} days from today (approval time).`}
+            selected={promoDate}
+            onChange={onPromoChange}
+            minDate={addDays(startOfDay(new Date()), APPROVAL_BUFFER_DAYS)}
+            time={times.promo} onTime={(p) => setTime("promo", p)}
+            addToast={addToast} uiT={uiT}
+          />
+          <StageField
+            icon={Calendar} title="Hackathon starts" accent={t.primaryFull}
+            hint={`At least ${MIN_PROMO_DAYS} days after promotion starts, so people have time to sign up.`}
+            selected={startDate}
+            onChange={onStartChange}
+            minDate={promoDate ? addDays(startOfDay(promoDate), MIN_PROMO_DAYS) : undefined}
+            time={times.start} onTime={(p) => setTime("start", p)}
+            gate={!promoDate ? "Please select the promotion start date first." : null}
+            addToast={addToast} uiT={uiT}
+          />
+          <StageField
+            icon={Trophy} title="Hackathon ends" accent="#10b981"
+            hint="When submissions close and the event wraps up."
+            selected={endDate}
+            onChange={setEndDate}
+            minDate={startDate ? addDays(startOfDay(startDate), MIN_EVENT_DAYS) : undefined}
+            time={times.end} onTime={(p) => setTime("end", p)}
+            gate={!startDate ? "Please select the hackathon start date first." : null}
+            addToast={addToast} uiT={uiT}
+          />
         </div>
+
+        {promoAt && startAt && endAt && (
+          <TimelineSummary promoAt={promoAt} startAt={startAt} endAt={endAt} uiT={uiT} />
+        )}
       </Section>
 
       {/* ── Prize Pool ── */}
@@ -1441,8 +1314,22 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         <PrizePool
           prizes={prizes}
           setPrizes={setPrizes}
+          currency={formData.prize_currency}
+          setCurrency={(c) => setFormData(prev => ({ ...prev, prize_currency: c }))}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          uiT={uiT}
+        />
+      </Section>
+
+      {/* ── Access ── */}
+      <Section uiT={uiT}>
+        <InviteOnlySection
+          enabled={formData.is_invite_only}
+          code={formData.invite_code}
+          onToggle={setInviteOnly}
+          onCode={setInviteCode}
+          hasError={inviteError}
           uiT={uiT}
         />
       </Section>
@@ -1464,20 +1351,12 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1">
           <ShieldCheck className="w-4 h-4" style={{ color: labelColor }} />
-          <Label
-            className="text-xs uppercase tracking-widest font-semibold"
-            style={{ color: labelColor }}
-          >
-            Agreement
-          </Label>
+          <Label className="text-xs uppercase tracking-widest font-semibold" style={{ color: labelColor }}>Agreement</Label>
         </div>
         <TermsCheckbox
           addToast={addToast}
           checked={termsAccepted}
-          onChange={(v) => {
-            setTermsAccepted(v);
-            if (v) setTermsError(false);
-          }}
+          onChange={(v) => { setTermsAccepted(v); if (v) setTermsError(false) }}
           hasError={termsError}
           uiT={uiT}
         />
@@ -1498,9 +1377,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         {isLoading ? (
           <span className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            {retryCount > 1
-              ? `Retrying… (${retryCount}/${MAX_RETRIES})`
-              : "Submitting…"}
+            {retryCount > 1 ? `Retrying… (${retryCount}/${MAX_RETRIES})` : "Submitting…"}
           </span>
         ) : (
           <span className="flex items-center gap-2">
@@ -1510,5 +1387,5 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         )}
       </Button>
     </div>
-  );
+  )
 }

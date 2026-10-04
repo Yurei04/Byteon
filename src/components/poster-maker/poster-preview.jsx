@@ -1,6 +1,7 @@
 "use client"
 
-import { Download } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Download, Wand2, Loader2 } from "lucide-react"
 
 const RATIO_CLASS = {
   "1:1": "aspect-square",
@@ -11,206 +12,147 @@ const RATIO_CLASS = {
   "9:16": "aspect-[9/16]",
 }
 
-export default function PosterPreview({
-  images = [],
-  isLoading,
-  prompt,
-  aspectRatio,
-}) {
+const SUGGESTIONS = ["Make the title bigger", "Darker background", "Move logo slightly smaller", "Add more glow"]
+
+export default function PosterPreview({ images = [], ids = [], isLoading, prompt, aspectRatio, onModify }) {
   const ratioClass = RATIO_CLASS[aspectRatio] ?? "aspect-[2/3]"
+  const [selected, setSelected] = useState(0)
+  const [instruction, setInstruction] = useState("")
+
+  const hasImages = images.length > 0
+  const slots = hasImages ? images : isLoading ? [null, null, null] : [null, null, null]
+  const selectedId = ids[selected] ?? null
+  const canModify = hasImages && selectedId && onModify
+
+  // New results arrive at index 0 after a modify, so keep that one selected.
+  useEffect(() => { setSelected(0) }, [images.length, images[0]])
 
   const download = (image, index) => {
     if (!image) return
     const a = document.createElement("a")
     a.href = image
-    a.download = `poster-${index + 1}-${Date.now()}.jpg`
+    a.download = `poster-${index + 1}-${Date.now()}.png`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
   }
 
+  const submit = async () => {
+    if (!canModify || !instruction.trim() || isLoading) return
+    const ok = await onModify(selectedId, instruction.trim())
+    if (ok) setInstruction("")
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Poster Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(isLoading ? [null, null, null] : images.length ? images : [null, null, null]).map(
-          (image, index) => (
+        {slots.map((image, index) => {
+          const active = hasImages && index === selected
+          return (
             <div
               key={index}
-              className={`relative ${ratioClass} w-full rounded-xl overflow-hidden group transition-all duration-300`}
+              role={image ? "button" : undefined}
+              tabIndex={image ? 0 : undefined}
+              onClick={() => image && setSelected(index)}
+              onKeyDown={(e) => image && e.key === "Enter" && setSelected(index)}
+              className={`relative ${ratioClass} w-full rounded-xl overflow-hidden group transition-all duration-200 ${image ? "cursor-pointer" : ""}`}
               style={{
-                border: "1px solid rgb(var(--surface-border) / 0.4)",
+                border: active ? "2px solid rgb(var(--brand-500))" : "1px solid rgb(var(--surface-border) / 0.4)",
                 background: "rgb(var(--surface))",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
               }}
             >
-              {/* Loading State */}
-              {isLoading ? (
-                <div
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10 p-4"
-                  style={{ background: "rgb(var(--bg-base))" }}
-                >
-                  <div className="relative w-12 h-12">
-                    <div
-                      className="absolute inset-0 rounded-full border-2"
-                      style={{ borderColor: "rgb(var(--brand-500) / 0.15)" }}
-                    />
-                    <div
-                      className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                      style={{ borderTopColor: "rgb(var(--brand-500))" }}
-                    />
-                  </div>
-                  <div className="text-center">
-                    <p
-                      className="text-xs font-medium"
-                      style={{ color: "rgb(var(--text-secondary))" }}
-                    >
-                      Generating {index + 1}…
-                    </p>
-                    <p
-                      className="text-[10px] mt-0.5"
-                      style={{ color: "rgb(var(--text-faint))" }}
-                    >
-                      10–40 seconds
-                    </p>
-                  </div>
-                </div>
-              ) : image ? (
-                /* Loaded Image */
+              {image ? (
                 <>
-                  <img
-                    src={image}
-                    alt={`Generated poster ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Hover Overlay with Download */}
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center backdrop-blur-sm"
-                    style={{
-                      background: "rgba(0,0,0,0.3)",
-                    }}
+                  <img src={image} alt={`Generated poster ${index + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); download(image, index) }}
+                    aria-label={`Download poster ${index + 1}`}
+                    className="absolute bottom-2 right-2 p-2 rounded-lg text-white opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                    style={{ background: "rgba(0,0,0,0.6)" }}
                   >
-                    <button
-                      onClick={() => download(image, index)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-xs font-medium transition-all duration-150 hover:scale-105"
-                      style={{
-                        background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))",
-                        boxShadow: "0 4px 12px rgb(var(--accent-500) / 0.3)",
-                      }}
-                    >
-                      <Download size={12} />
-                      Download
-                    </button>
-                  </div>
+                    <Download size={14} />
+                  </button>
                 </>
               ) : (
-                /* Empty State */
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center p-4">
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                    style={{
-                      background: "rgb(var(--surface-raised))",
-                      border: "1px solid rgb(var(--surface-border) / 0.5)",
-                    }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 28 28"
-                      fill="none"
-                    >
-                      <rect
-                        x="3"
-                        y="3"
-                        width="22"
-                        height="22"
-                        rx="4"
-                        stroke="rgb(var(--text-faint))"
-                        strokeWidth="1.5"
-                      />
-                      <circle
-                        cx="10"
-                        cy="10"
-                        r="2.5"
-                        stroke="rgb(var(--text-muted))"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M3 19l6-5 4 4 4-4 8 7"
-                        stroke="rgb(var(--text-muted))"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <p
-                      className="text-xs font-medium"
-                      style={{ color: "rgb(var(--text-muted))" }}
-                    >
-                      Poster {index + 1}
-                    </p>
-                    <p
-                      className="text-[10px] mt-0.5"
-                      style={{ color: "rgb(var(--text-faint))" }}
-                    >
-                      Fill form & generate
-                    </p>
-                  </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center p-4">
+                  {isLoading ? (
+                    <>
+                      <Loader2 size={20} className="animate-spin" style={{ color: "rgb(var(--brand-500))" }} />
+                      <p className="text-xs" style={{ color: "rgb(var(--text-secondary))" }}>Generating {index + 1}… up to 40s</p>
+                    </>
+                  ) : (
+                    <p className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>Poster {index + 1}: fill the form and generate</p>
+                  )}
+                </div>
+              )}
+
+              {isLoading && image && (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.55)" }}>
+                  <Loader2 size={20} className="animate-spin text-white" />
                 </div>
               )}
             </div>
           )
-        )}
+        })}
       </div>
 
-      {/* Download All Buttons */}
-      {images.length > 0 && !isLoading && (
-        <div className="flex flex-wrap gap-2 justify-start sm:justify-between">
-          {images.map((image, index) => (
+      {/* Modify the selected poster */}
+      {hasImages && (
+        <div className="rounded-xl p-4 space-y-3" style={{ border: "1px solid rgb(var(--surface-border) / 0.4)", background: "rgb(var(--surface))" }}>
+          <div>
+            <p className="text-sm font-medium" style={{ color: "rgb(var(--text-primary))" }}>
+              Adjust poster {selected + 1}
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
+              {canModify
+                ? "Describe one small change. The rest of the poster stays the same."
+                : "This poster wasn't saved, so it can't be adjusted. Generate again to enable edits."}
+            </p>
+          </div>
+
+          <textarea
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit() }}
+            disabled={!canModify || isLoading}
+            rows={2}
+            maxLength={300}
+            placeholder="e.g. Make the venue text easier to read"
+            className="w-full rounded-lg p-3 text-sm outline-none resize-none bg-transparent disabled:opacity-50"
+            style={{ border: "1px solid rgb(var(--surface-border) / 0.5)", color: "rgb(var(--text-primary))" }}
+          />
+
+          <div className="flex flex-wrap items-center gap-2">
+            {SUGGESTIONS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                disabled={!canModify || isLoading}
+                onClick={() => setInstruction(s)}
+                className="text-[11px] px-2.5 py-1 rounded-full disabled:opacity-40"
+                style={{ border: "1px solid rgb(var(--surface-border) / 0.5)", color: "rgb(var(--text-muted))" }}
+              >
+                {s}
+              </button>
+            ))}
             <button
-              key={index}
-              onClick={() => download(image, index)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium transition-all duration-150 hover:shadow-lg"
-              style={{
-                background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))",
-                boxShadow: "0 0 12px rgb(var(--accent-500) / 0.25)",
-              }}
+              type="button"
+              onClick={submit}
+              disabled={!canModify || !instruction.trim() || isLoading}
+              className="ml-auto flex items-center gap-2 h-9 px-4 rounded-lg text-white text-sm font-medium disabled:opacity-40"
+              style={{ background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))" }}
             >
-              <Download size={14} />
-              Download {index + 1}
+              {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+              Apply change
             </button>
-          ))}
+          </div>
         </div>
       )}
 
-      {/* Prompt Details */}
       {prompt && !isLoading && (
-        <details
-          className="text-xs cursor-pointer group"
-          style={{ color: "rgb(var(--text-faint))" }}
-        >
-          <summary
-            className="transition-colors select-none font-medium py-2"
-            style={{ color: "rgb(var(--text-faint))" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "rgb(var(--text-muted))")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "rgb(var(--text-faint))")
-            }
-          >
-            📋 View AI prompt used
-          </summary>
-          <p
-            className="mt-3 p-3 rounded-lg leading-relaxed"
-            style={{
-              background: "rgb(var(--surface))",
-              border: "1px solid rgb(var(--surface-border) / 0.4)",
-              color: "rgb(var(--text-secondary))",
-            }}
-          >
+        <details className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>
+          <summary className="cursor-pointer select-none font-medium py-2">View AI prompt used</summary>
+          <p className="mt-2 p-3 rounded-lg leading-relaxed" style={{ background: "rgb(var(--surface))", color: "rgb(var(--text-secondary))" }}>
             {prompt}
           </p>
         </details>
