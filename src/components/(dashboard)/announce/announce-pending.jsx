@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { PostingTermsDialog } from "@/components/terms-and-condition/posting-condition"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -919,6 +920,117 @@ function Section({ children, className = "", uiT }) {
   )
 }
 
+// ─── ReviewDialog (pre-submission checklist) ─────────────────────────────────
+const fmtLocal = (iso) => new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+const fmtUTC   = (iso) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", hour12: false, timeZone: "UTC" }).format(new Date(iso)) + " UTC"
+
+function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfirm, uiT }) {
+  if (!payload) return null
+  const checklist = [
+    { key: "info",   label: "The title, description, author and eligibility are accurate." },
+    { key: "dates",  label: `The dates and times are correct. I understand promotion can’t go live until approved (up to ${APPROVAL_BUFFER_DAYS} days).` },
+    { key: "prizes", label: "The prizes (amounts, currency and items) are real and will be honored." },
+    { key: "links",  label: "My links work and point to the right pages." },
+    ...(payload.is_invite_only ? [{ key: "invite", label: "I’ve saved the invite code and know who I’ll share it with." }] : []),
+    { key: "review", label: "I understand the super admin may approve, reject or ask for changes." },
+  ]
+  const done = checklist.filter(c => checks[c.key]).length
+  const allChecked = done === checklist.length
+  const linkCount = ["website_link", "dev_link", "community_link", "google_sheet_csv_url", "google_forms_url"].filter(k => payload[k]).length
+
+  const row = (label, value) => (
+    <div className="flex gap-3 py-2 text-sm">
+      <span className="w-28 shrink-0 text-xs pt-0.5" style={{ color: uiT?.mutedText ?? "rgba(255,255,255,0.5)" }}>{label}</span>
+      <span className="min-w-0 break-words" style={{ color: uiT?.headingText ?? "#fff" }}>{value}</span>
+    </div>
+  )
+  const when = (iso) => (<>{fmtLocal(iso)} <span className="text-xs opacity-60">· {fmtUTC(iso)}</span></>)
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="max-w-xl max-h-[90vh] overflow-y-auto"
+        style={{ background: uiT?.cardBg ?? "#12121c", border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`, borderRadius: "20px" }}
+      >
+        <DialogHeader>
+          <DialogTitle style={{ color: uiT?.headingText ?? "#fff" }}>Review before sending</DialogTitle>
+          <DialogDescription style={{ color: uiT?.mutedText }}>
+            Confirm everything below. Once submitted, the super admin reviews it and you can’t edit it while pending.
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Summary */}
+        <div className="rounded-xl px-4 py-2 divide-y"
+          style={{ background: uiT?.surfaceBg2 ?? "rgba(255,255,255,0.03)", border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}` }}>
+          {row("Title", <span className="font-semibold">{payload.title}</span>)}
+          {row("Organization", payload.organization)}
+          {row("Open to", `${payload.open_to} · ${payload.countries}`)}
+          {row("Promotion", when(payload.promo_begin))}
+          {row("Hackathon", <>{when(payload.date_begin)}<br />→ {when(payload.date_end)}</>)}
+          {row("Prizes", (
+            <ul className="space-y-0.5">
+              {payload.prizes.map((p, i) => (
+                <li key={i}>
+                  {p.name}: <span className="font-semibold">{p.value}</span>
+                  {p.type === "non_cash" && <span className="text-xs opacity-60"> (item)</span>}
+                </li>
+              ))}
+            </ul>
+          ))}
+          {row("Access", payload.is_invite_only
+            ? <>Invite only · code <span className="font-mono tracking-widest font-semibold">{payload.invite_code}</span></>
+            : "Public")}
+          {row("Links", `${linkCount} added`)}
+        </div>
+
+        {/* Checklist */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: uiT?.mutedText }}>Checklist</p>
+            <span className="text-xs tabular-nums" style={{ color: allChecked ? "#10b981" : uiT?.mutedText }}>{done}/{checklist.length}</span>
+          </div>
+          {checklist.map(c => {
+            const on = !!checks[c.key]
+            return (
+              <button
+                key={c.key} type="button"
+                onClick={() => setChecks(prev => ({ ...prev, [c.key]: !prev[c.key] }))}
+                className="w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all"
+                style={{
+                  background: on ? (uiT?.surfaceBg2 ?? "rgba(255,255,255,0.04)") : "transparent",
+                  borderColor: on ? "rgba(16,185,129,0.4)" : (uiT?.borderBase ?? "rgba(255,255,255,0.08)"),
+                }}
+              >
+                <span className={`w-5 h-5 rounded-md shrink-0 mt-0.5 flex items-center justify-center border ${on ? "bg-emerald-500 border-emerald-500" : ""}`}
+                  style={!on ? { borderColor: uiT?.borderMid ?? "rgba(255,255,255,0.25)" } : {}}>
+                  {on && <Check className="w-3 h-3 text-white" strokeWidth={3} />}
+                </span>
+                <span className="text-sm leading-relaxed" style={{ color: on ? (uiT?.bodyText ?? "rgba(255,255,255,0.85)") : (uiT?.mutedText ?? "rgba(255,255,255,0.55)") }}>
+                  {c.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="flex flex-col-reverse sm:flex-row gap-2 pt-1">
+          <Button type="button" variant="outline" className="flex-1 rounded-xl h-10" onClick={() => onOpenChange(false)}>
+            Back to edit
+          </Button>
+          <Button
+            type="button" disabled={!allChecked} onClick={onConfirm}
+            className="flex-1 text-white border-0 rounded-xl h-10 font-semibold disabled:opacity-40"
+            style={{ background: t.buttonGradient, boxShadow: allChecked ? t.buttonShadow : "none" }}
+          >
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            Confirm &amp; send to super admin
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 // uiT is the UI theme token object from the parent dashboard (buildUiTheme(isDark)).
 // It is optional — when omitted the component falls back to original dark-mode styling.
@@ -936,6 +1048,9 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   const [inviteError, setInviteError]       = useState(false)
   const [termsAccepted, setTermsAccepted]   = useState(false)
   const [termsError, setTermsError]         = useState(false)
+  const [reviewOpen, setReviewOpen]         = useState(false)
+  const [checks, setChecks]                 = useState({})
+  const [pendingPayload, setPendingPayload] = useState(null)
 
   // Schedule: review (fixed buffer) → promotion → hackathon
   const [promoDate, setPromoDate] = useState(null)
@@ -1103,6 +1218,16 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       submitted_by:         authUserId,
     }
 
+    // Validation passed — open the review dialog; the insert happens in confirmSubmit().
+    setPendingPayload(payload)
+    setChecks({})
+    setReviewOpen(true)
+  }
+
+  const confirmSubmit = async () => {
+    const payload = pendingPayload
+    if (!payload) return
+    setReviewOpen(false)
     setIsLoading(true)
     let lastError = null
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -1382,10 +1507,20 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         ) : (
           <span className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
-            Submit for Approval
+            Review &amp; Submit
           </span>
         )}
       </Button>
+
+      <ReviewDialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        payload={pendingPayload}
+        checks={checks}
+        setChecks={setChecks}
+        onConfirm={confirmSubmit}
+        uiT={uiT}
+      />
     </div>
   )
 }

@@ -1061,9 +1061,11 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
           {/* ── Announcements ── */}
           {type === "announcements" && (
             <>
-              {(item.date_begin || item.date_end) && (
+              {(item.date_begin || item.date_end || item.promo_begin) && (
                 <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Event Dates">
                   <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>
+                    {item.promo_begin ? formatUTCDateTime(item.promo_begin) : "—"}
+                    <span className="mx-2" style={{ color: "rgb(var(--text-faint) / 0.4)" }}>→</span>
                     {item.date_begin ? formatUTCDateTime(item.date_begin) : "—"}
                     <span className="mx-2" style={{ color: "rgb(var(--text-faint) / 0.4)" }}>→</span>
                     {item.date_end ? formatUTCDateTime(item.date_end) : "—"}
@@ -1071,9 +1073,15 @@ function DetailPanel({ item, type, actionLoading, onClose, onApprove, onReject }
                 </DetailBlock>
               )}
 
-              {item.open_to && (
-                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Open To">
-                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.open_to}</p>
+              {item.is_invite_only && (
+                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Accessibility">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.is_invite_only}</p>
+                </DetailBlock>
+              )}
+
+              {item.invite_code && (
+                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Invitation Code">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.invite_code}</p>
                 </DetailBlock>
               )}
 

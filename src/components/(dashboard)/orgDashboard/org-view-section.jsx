@@ -947,10 +947,11 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
           {/* ── Announcements ── */}
           {type === "announcements" && (
             <>
-              {(item.date_begin || item.date_end) && (
+              {(item.date_begin || item.date_end || item.promo_begin) && (
                 <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Schedule" ac={ac} uiT={uiT}>
                   <div className="flex gap-3">
                     {[
+                      { label: "Promo", val: item.promo_begin, expired: false },
                       { label: "Start", val: item.date_begin, expired: false },
                       { label: "End",   val: item.date_end,   expired: isExpired },
                     ].filter(({ val }) => val).map(({ label, val, expired }) => (
@@ -973,6 +974,18 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
               {item.open_to && (
                 <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Open To" ac={ac} uiT={uiT}>
                   <p className="text-sm" style={{ color: uiT?.bodyText ?? "#701976" }}>{item.open_to}</p>
+                </DetailBlock>
+              )}
+
+              {item.is_invite_only && (
+                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Accessibility">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.is_invite_only}</p>
+                </DetailBlock>
+              )}
+
+              {item.invite_code && (
+                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Invitation Code">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.invite_code}</p>
                 </DetailBlock>
               )}
 
