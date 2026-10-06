@@ -569,7 +569,7 @@ function SuperAdminDashboardPage() {
                       <motion.div
                         key={label}
                         initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                        className="relative h-48 flex flex-col items-center text-center gap-2 p-4 rounded-2xl group cursor-default"
+                        className="relative h-48 flex flex-col items-center justify-center text-center gap-2 p-4 rounded-2xl group cursor-default"
                         style={{
                           background: "rgb(var(--surface-raised) / 0.4)",
                           border: `1px solid ${accent}28`,
@@ -581,15 +581,18 @@ function SuperAdminDashboardPage() {
                         >
                           <Icon className="w-4 h-4" style={{ color: accent }} />
                         </div>
-                        <span className="text-2xl font-bold leading-none" style={{ color: accent }}>
-                          {statsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : value}
-                        </span>
-                        <span className="text-[10px] leading-tight" style={{ color: "rgb(var(--text-faint))" }}>
-                          {label}
-                        </span>
-                        {pulse && pendingCount > 0 && (
-                          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accent }} />
-                        )}
+
+                        <div className="flex flex-col gap-2">
+                          <span className="text-2xl font-bold leading-none" style={{ color: accent }}>
+                            {statsLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : value}
+                          </span>
+                          <span className="text-[10px] leading-tight" style={{ color: "rgb(var(--text-faint))" }}>
+                            {label}
+                          </span>
+                          {pulse && pendingCount > 0 && (
+                            <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: accent }} />
+                          )}
+                        </div>
                         <div
                           className="absolute bottom-0 left-4 right-4 h-px"
                           style={{ background: `linear-gradient(to right, transparent, ${accent}40, transparent)` }}

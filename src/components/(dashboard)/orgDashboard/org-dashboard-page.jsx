@@ -13,6 +13,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { supabase } from "@/lib/supabase"
+import { useTheme } from "next-themes"
 import { buildTheme } from "@/lib/blog-color"
 import { useRouter } from "next/navigation"
 import {
@@ -454,48 +455,21 @@ export default function OrgDashboardPage() {
   const router = useRouter()
   const { profile, role, loading: authLoading, isLoggedIn, session, refreshProfile, logout } = useAuth()
   
+// -Theme Mode here =================================================================
+const { resolvedTheme, setTheme } = useTheme()
 
-// ── Theme mode ──────────────────────────────────────────────────────────────
-// Syncs BOTH our custom uiT tokens AND the global .dark class on <html>
-// so components using CSS variables (--text-faint, --brand-400, etc.) also respond.
+// next-themes can't know the theme until after mount (avoids hydration mismatch)
+const [mounted, setMounted] = useState(false)
+useEffect(() => setMounted(true), [])
 
-const [isDark, setIsDark] = useState(() => {
-  if (typeof window === "undefined") return true
-  const stored = localStorage.getItem("orgDashboardTheme")
-  // If no preference stored yet, read the current <html> class as the source of truth
-  if (stored === null) {
-    return document.documentElement.classList.contains("dark")
-  }
-  return stored === "dark"
-})
+// Before mount, fall back to dark (or whatever your site's default is)
+const isDark = mounted ? resolvedTheme === "dark" : true
+
+const toggleTheme = () => setTheme(isDark ? "light" : "dark")
+
+const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
+
 const [tick, setTick] = useState(0)
-// Apply on first render so the HTML class matches state immediately
-useEffect(() => {
-  if (isDark) {
-    document.documentElement.classList.add("dark")
-  } else {
-    document.documentElement.classList.remove("dark")
-  }
-}, [isDark])
-
-const toggleTheme = () => {
-  setIsDark(prev => {
-    const next = !prev
-    // 1. Persist preference
-    try { localStorage.setItem("orgDashboardTheme", next ? "dark" : "light") } catch {}
-    // 2. Flip the global CSS class — this makes ALL css vars update instantly
-    if (next) {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
-    return next
-  })
-}
-
-  const uiT = useMemo(() => buildUiTheme(isDark), [isDark])
-
-
   const [activeTab, setActiveTab]             = useState("overview")
   const [activeCreateTab, setActiveCreateTab] = useState("createAnnouncement")
   const [sidebarOpen, setSidebarOpen]         = useState(false)
