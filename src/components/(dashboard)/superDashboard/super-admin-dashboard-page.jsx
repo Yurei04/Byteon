@@ -714,7 +714,7 @@ function SuperAdminDashboardPage() {
                     className="rounded-2xl p-5"
                     style={{ background: "rgb(var(--surface-raised) / 0.3)", border: "1px solid rgb(var(--brand-500) / 0.18)" }}
                   >
-                    <ApprovalSection addToast={addToast} onApprovalChange={(count) => setPendingCount(count)} />
+                    <ApprovalSection addToast={addToast} onApprovalChange={setPendingCount} />
                   </div>
                 </motion.div>
               )}

@@ -381,6 +381,14 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
 
   const allChecked = Object.values(approvalChecks).every(Boolean)
 
+  const removeFromQueue = (type, id) => {
+  const nextList = pending[type].filter((i) => i.id !== id)
+  const next = { ...pending, [type]: nextList }
+  setPending(next)
+  setSelectedItem(nextList.length > 0 ? { item: nextList[0], type } : null)
+  onApprovalChange?.(next.announcements.length + next.blogs.length + next.resources.length)
+}
+
   // ── Approve ────────────────────────────────────────────────────────────────
   const confirmApprove = async () => {
     const item = approveDialog
@@ -388,46 +396,28 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
     setApproveDialog(null)
     setActionLoading(item.id)
     try {
-      const { status, submitted_by, reviewed_by, reviewed_at, rejection_reason, ...payload } = item
-      let mainTable, countField
-
-      if (type === "announcements") {
-        mainTable = "announcements"; countField = "total_announcements"
-        const { error } = await supabase.from(mainTable).insert([payload])
-        if (error) throw error
-      } else if (type === "blogs") {
-        mainTable = "blogs"; countField = "total_blogs"
-        const { id: _id, ...blogPayload } = payload
-        const { error } = await supabase.from(mainTable).insert([blogPayload])
-        if (error) throw error
-      } else {
-        mainTable = "resource_hub"; countField = "total_resources"
-        const { error } = await supabase.from(mainTable).insert([payload])
-        if (error) throw error
-      }
-
-      await supabase.from(`pending_${type}`).update({
-        status: "approved", reviewed_by: session?.user?.id, reviewed_at: new Date().toISOString(),
-      }).eq("id", item.id)
-
-      if (item.organization_id && countField) {
-        const { data: orgRow } = await supabase.from("organizations").select(countField).eq("id", item.organization_id).single()
-        if (orgRow) {
-          await supabase.from("organizations").update({ [countField]: (orgRow[countField] || 0) + 1 }).eq("id", item.organization_id)
-        }
-      }
-
-      await notifyPostApproved({ submittedBy: item.submitted_by, contentType: type.replace(/s$/, ""), title: item.title })
-
-      setPending((prev) => {
-        const next = { ...prev, [type]: prev[type].filter((i) => i.id !== item.id) }
-        setSelectedItem(next[type].length > 0 ? { item: next[type][0], type } : null)
-        onApprovalChange?.(next.announcements.length + next.blogs.length + next.resources.length)
-        return next
+      const { error } = await supabase.rpc("approve_pending_submission", {
+        p_type: type,
+        p_id: String(item.id),
       })
+      if (error) throw error
+
+      // A notification failure must not make a successful approval look failed
+      try {
+        await notifyPostApproved({
+          submittedBy: item.submitted_by,
+          contentType: type.replace(/s$/, ""),
+          title: item.title,
+        })
+      } catch (e) {
+        console.error("Notification failed:", e)
+      }
+
+      removeFromQueue(type, item.id)
       addToast("success", "Approved and published!")
     } catch (err) {
-      addToast("error", "Post Approval Error")
+      console.error("Approve failed:", err)
+      addToast("error", err?.message || "Post Approval Error")
     } finally {
       setActionLoading(null)
     }
@@ -440,12 +430,13 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
     setRejectDialog(null)
     setActionLoading(item.id)
     try {
-      await supabase.from(`pending_${type}`).update({
+      const { error } = await supabase.from(`pending_${type}`).update({
         status: "rejected",
         rejection_reason: rejectionReason.trim() || "No reason provided",
         reviewed_by: session?.user?.id,
         reviewed_at: new Date().toISOString(),
       }).eq("id", item.id)
+      if (error) throw error
 
       await notifyPostRejected({
         submittedBy: item.submitted_by,
@@ -454,12 +445,7 @@ export default function ApprovalSection({ onApprovalChange, addToast }) {
         reason: rejectionReason.trim() || "No reason provided",
       })
 
-      setPending((prev) => {
-        const next = { ...prev, [type]: prev[type].filter((i) => i.id !== item.id) }
-        setSelectedItem(next[type].length > 0 ? { item: next[type][0], type } : null)
-        onApprovalChange?.(next.announcements.length + next.blogs.length + next.resources.length)
-        return next
-      })
+      removeFromQueue(type, item.id)
       addToast("success", "Post Rejected")
     } catch (err) {
       addToast("error", "Error in rejection")
