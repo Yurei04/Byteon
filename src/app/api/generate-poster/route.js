@@ -7,6 +7,9 @@ import OpenAI, { toFile } from "openai"
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
+// "medium" is much faster than "high". Switch to "high" if you can afford the wait.
+const QUALITY = "medium"
+
 const SIZE_MAP = {
   "1:1": "1024x1024", "2:3": "1024x1536", "3:4": "1024x1536",
   "4:5": "1024x1536", "16:9": "1536x1024", "9:16": "1024x1536",
@@ -76,6 +79,7 @@ function toDataUrls(response) {
   return images
 }
 
+// Generates only. Nothing is saved here: the client bookmarks via /api/poster-history.
 export async function POST(req) {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -91,81 +95,39 @@ export async function POST(req) {
     if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const body = await req.json()
-    const { logo, baseId, instruction } = body
+    const { logo, baseImage, instruction } = body
 
-    const { data: org } = await supabase
-      .from("organizations").select("id").eq("user_id", user.id).single()
+    let prompt, response
 
-    let images, prompt, meta
-
-    if (baseId) {
-      // ---- Modify an already generated poster ----
+    if (baseImage) {
+      // ---- Tweak: edit a poster the client already has ----
       if (!instruction?.trim()) return NextResponse.json({ error: "Describe the change you want" }, { status: 400 })
-      if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 })
 
-      const { data: base } = await supabase
-        .from("generated_posters").select("*")
-        .eq("id", baseId).eq("org_id", org.id).single()
-      if (!base) return NextResponse.json({ error: "Base poster not found" }, { status: 404 })
-
-      const files = [await urlToFile(base.image_url, "poster.png")]
+      const files = [await urlToFile(baseImage, "poster.png")]
       if (logo) files.push(await dataUrlToFile(logo, "logo.png"))
 
       prompt = buildModifyPrompt(instruction.trim(), !!logo)
-      const response = await openai.images.edit({
+      response = await openai.images.edit({
         model: "gpt-image-1", image: files, prompt,
-        size: SIZE_MAP[base.aspect_ratio] ?? "1024x1536",
-        quality: "high", input_fidelity: "high", n: 1,
+        size: SIZE_MAP[body.ratio] ?? "1024x1536",
+        quality: QUALITY, input_fidelity: "high", n: 1,
       })
-      images = toDataUrls(response)
-      meta = {
-        title: base.title, subtitle: base.subtitle, description: base.description,
-        style: base.style, mood: base.mood, color_scheme: base.color_scheme,
-        background_type: base.background_type, aspect_ratio: base.aspect_ratio,
-        font_style: base.font_style, title_placement: base.title_placement,
-        extra_details: base.extra_details,
-        form_data: { ...(base.form_data || {}), parentId: baseId, instruction: instruction.trim() },
-      }
     } else {
-      // ---- Generate new posters ----
+      // ---- Generate new posters (count 1 = regenerate a single one) ----
       if (!body.eventName?.trim()) return NextResponse.json({ error: "Event name is required" }, { status: 400 })
 
+      const n = Math.min(3, Math.max(1, Number(body.count) || 3))
       prompt = buildPrompt(body)
       const size = SIZE_MAP[body.ratio] ?? "1024x1536"
-      const response = logo
+      response = logo
         ? await openai.images.edit({
             model: "gpt-image-1", image: [await dataUrlToFile(logo, "logo.png")],
-            prompt, size, quality: "high", input_fidelity: "high", n: 3,
+            prompt, size, quality: QUALITY, input_fidelity: "high", n,
           })
-        : await openai.images.generate({ model: "gpt-image-1", prompt, size, quality: "high", n: 3 })
-      images = toDataUrls(response)
-
-      const { logo: _omit, ...formData } = body
-      meta = {
-        title: body.eventName, subtitle: body.description || null, description: body.description || null,
-        style: body.style || null, mood: body.mood || null, color_scheme: body.theme || null,
-        background_type: body.backgroundType || null, aspect_ratio: body.ratio || null,
-        font_style: body.fontStyle || null, title_placement: body.titlePlacement || null,
-        extra_details: body.extraDetails || null,
-        form_data: { ...formData, hasLogo: !!logo },
-      }
+        : await openai.images.generate({ model: "gpt-image-1", prompt, size, quality: QUALITY, n })
     }
 
-    let ids = images.map(() => null)
-    if (org) {
-      ids = await Promise.all(
-        images.map(async (image) => {
-          const { data, error } = await supabase
-            .from("generated_posters")
-            .insert({ org_id: org.id, user_id: user.id, image_url: image, prompt, ...meta })
-            .select("id").single()
-          if (error) console.error("Failed to save generated poster:", error)
-          return data?.id ?? null
-        })
-      )
-    }
-
-    return NextResponse.json({ images, ids, prompt })
+    return NextResponse.json({ images: toDataUrls(response), prompt })
   } catch (err) {
     console.error("DETAILED_ERROR_LOG:", err)
     return NextResponse.json({ error: err?.message || "Failed to generate poster" }, { status: 500 })

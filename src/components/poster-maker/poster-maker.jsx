@@ -12,7 +12,15 @@ const OPTIONS = {
   backgroundType: ["abstract gradient", "circuit board tech", "geometric shapes", "city skyline", "space and stars", "solid minimal"],
   fontStyle: ["serif elegant", "sans-serif modern", "display bold", "handwritten script", "monospace", "condensed tall"],
   titlePlacement: ["top-left", "top-center", "top-right", "middle-left", "center", "middle-right", "bottom-left", "bottom-center", "bottom-right"],
-  ratio: ["1:1", "2:3", "3:4", "4:5", "16:9", "9:16"],
+  // value is sent to the API; label is what the user sees
+  ratio: [
+    { value: "1:1", label: "1:1 · Instagram post, profile" },
+    { value: "2:3", label: "2:3 · Pinterest, standard poster" },
+    { value: "3:4", label: "3:4 · Portrait print, flyer" },
+    { value: "4:5", label: "4:5 · Instagram and Facebook feed" },
+    { value: "16:9", label: "16:9 · YouTube, Facebook cover, slides" },
+    { value: "9:16", label: "9:16 · Instagram Reels and Stories" },
+  ],
   logoPosition: ["top-left", "top-right", "bottom-left", "bottom-right", "bottom-center"],
 }
 
@@ -53,12 +61,17 @@ function Label({ children }) {
   return <label className="block text-xs mb-1.5" style={{ color: "rgb(var(--text-muted))" }}>{children}</label>
 }
 
+// options can be plain strings or { value, label }
 function Select({ label, value, onChange, options }) {
   return (
-    <div>
+    <div className="w-full">
       <Label>{label}</Label>
       <select className={`${box} capitalize`} style={boxStyle} value={value} onChange={onChange}>
-        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o) => {
+          const v = typeof o === "string" ? o : o.value
+          const l = typeof o === "string" ? o : o.label
+          return <option key={v} value={v}>{l}</option>
+        })}
       </select>
     </div>
   )
@@ -73,39 +86,53 @@ function Input({ label, ...props }) {
   )
 }
 
+let keyCounter = 0
+const newKey = () => `poster-${++keyCounter}`
+
 export default function PosterMaker({ onSaved }) {
   const { session } = useAuth()
   const fileRef = useRef(null)
   const [form, setForm] = useState(EMPTY)
   const [logo, setLogo] = useState(null)
-  const [results, setResults] = useState([]) // [{ id, image }]
+  // [{ key, image, ratio, form, prompt, savedId, busy }]
+  // busy: null | "tweak" | "regenerate" | "save"
+  const [results, setResults] = useState([])
   const [prompt, setPrompt] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
-  const call = async (payload) => {
+  const api = async (url, method, body) => {
     if (!session?.access_token) throw new Error("Please sign in again")
-    const res = await fetch("/api/generate-poster", {
-      method: "POST",
+    const res = await fetch(url, {
+      method,
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     })
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error || "Generation failed")
+    if (!res.ok) throw new Error(data.error || "Request failed")
     return data
   }
 
+  const patch = (key, changes) =>
+    setResults((prev) => prev.map((r) => (r.key === key ? { ...r, ...changes } : r)))
+
+  // Generate 3 new posters. Nothing is saved until the user bookmarks one.
   const generate = async () => {
     if (!form.eventName.trim()) return setError("Add an event name first")
     setLoading(true)
     setError(null)
     try {
-      const data = await call({ ...form, logo })
-      setResults(data.images.map((image, i) => ({ id: data.ids?.[i] ?? null, image })))
+      const data = await api("/api/generate-poster", "POST", { ...form, logo })
+      const snapshot = { ...form }
+      setResults(
+        data.images.map((image) => ({
+          key: newKey(), image, ratio: snapshot.ratio, form: snapshot,
+          prompt: data.prompt, savedId: null, busy: null,
+        }))
+      )
       setPrompt(data.prompt)
-      onSaved?.()
     } catch (e) {
       setError(e.message)
     } finally {
@@ -113,23 +140,62 @@ export default function PosterMaker({ onSaved }) {
     }
   }
 
-  // Minor adjustment on one generated poster; the edited version replaces it.
-  const modify = async (baseId, instruction) => {
-    setLoading(true)
+  // Replace one poster with a fresh take using the same settings.
+  const regenerate = async (key) => {
+    const r = results.find((x) => x.key === key)
+    if (!r) return
+    patch(key, { busy: "regenerate" })
     setError(null)
     try {
-      const data = await call({ baseId, instruction, logo })
-      setResults((prev) =>
-        prev.map((r) => (r.id === baseId ? { id: data.ids?.[0] ?? null, image: data.images[0] } : r))
-      )
+      const data = await api("/api/generate-poster", "POST", { ...r.form, logo, count: 1 })
+      patch(key, { image: data.images[0], prompt: data.prompt, savedId: null, busy: null })
       setPrompt(data.prompt)
-      onSaved?.()
+    } catch (e) {
+      setError(e.message)
+      patch(key, { busy: null })
+    }
+  }
+
+  // Small change on one poster. The edited version replaces it (unsaved until bookmarked).
+  const tweak = async (key, instruction) => {
+    const r = results.find((x) => x.key === key)
+    if (!r) return false
+    patch(key, { busy: "tweak" })
+    setError(null)
+    try {
+      const data = await api("/api/generate-poster", "POST", {
+        baseImage: r.image, instruction, ratio: r.ratio, logo,
+      })
+      patch(key, { image: data.images[0], prompt: data.prompt, savedId: null, busy: null })
+      setPrompt(data.prompt)
       return true
     } catch (e) {
       setError(e.message)
+      patch(key, { busy: null })
       return false
-    } finally {
-      setLoading(false)
+    }
+  }
+
+  // Bookmark adds the poster to history; clicking again removes it.
+  const toggleSave = async (key) => {
+    const r = results.find((x) => x.key === key)
+    if (!r || r.busy) return
+    patch(key, { busy: "save" })
+    setError(null)
+    try {
+      if (r.savedId) {
+        await api("/api/poster-history", "DELETE", { id: r.savedId })
+        patch(key, { savedId: null, busy: null })
+      } else {
+        const data = await api("/api/poster-history", "POST", {
+          image: r.image, prompt: r.prompt, form: r.form,
+        })
+        patch(key, { savedId: data.id, busy: null })
+      }
+      onSaved?.()
+    } catch (e) {
+      setError(e.message)
+      patch(key, { busy: null })
     }
   }
 
@@ -166,7 +232,7 @@ export default function PosterMaker({ onSaved }) {
           <Select label="Background" value={form.backgroundType} onChange={set("backgroundType")} options={OPTIONS.backgroundType} />
           <Select label="Font style" value={form.fontStyle} onChange={set("fontStyle")} options={OPTIONS.fontStyle} />
           <Select label="Title placement" value={form.titlePlacement} onChange={set("titlePlacement")} options={OPTIONS.titlePlacement} />
-          <Select label="Aspect ratio" value={form.ratio} onChange={set("ratio")} options={OPTIONS.ratio} />
+          <Select label="Aspect ratio" className="w-full" value={form.ratio} onChange={set("ratio")} options={OPTIONS.ratio} />
         </div>
 
         <div>
@@ -182,7 +248,7 @@ export default function PosterMaker({ onSaved }) {
         </div>
 
         {/* Logo */}
-        <div className="rounded-lg p-3" style={{ border: "1px dashed rgb(var(--surface-border) / 0.6)" }}>
+        <div className="rounded-lg p-3 hover:bg-primary/10" style={{ border: "1px dashed rgb(var(--surface-border) / 0.6)" }}>
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={pickLogo} />
           {logo ? (
             <div className="flex flex-wrap items-end gap-4">
@@ -197,7 +263,7 @@ export default function PosterMaker({ onSaved }) {
             </div>
           ) : (
             <button type="button" onClick={() => fileRef.current?.click()}
-              className="w-full flex items-center justify-center gap-2 h-10 text-sm"
+              className="w-full cursor-pointer flex items-center justify-center  gap-2 h-10 text-sm"
               style={{ color: "rgb(var(--text-muted))" }}>
               <Upload size={14} /> Upload organization logo
             </button>
@@ -210,18 +276,19 @@ export default function PosterMaker({ onSaved }) {
           className="h-11 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
           style={{ background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))" }}>
           {loading && <Loader2 size={14} className="animate-spin" />}
-          {loading ? "Working…" : "Generate 3 posters"}
+          {loading ? "Generating…" : "Generate 3 posters"}
         </button>
       </div>
 
       {/* Preview */}
       <PosterPreview
-        images={results.map((r) => r.image)}
-        ids={results.map((r) => r.id)}
+        results={results}
         isLoading={loading}
         prompt={prompt}
         aspectRatio={form.ratio}
-        onModify={modify}
+        onToggleSave={toggleSave}
+        onRegenerate={regenerate}
+        onTweak={tweak}
       />
     </div>
   )

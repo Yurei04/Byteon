@@ -18,6 +18,7 @@ import {
   Globe, User, ShieldAlert, XCircle, CheckCircle, Inbox,
   ChevronRight, ChevronLeft, PauseCircle, PlayCircle, Filter,
   MapPin, BarChart2, Sheet, Info,
+  Lock, Unlock, MessageCircle, Send, Phone, FileSpreadsheet, RefreshCw, Eye, UserCheck,
 } from "lucide-react"
 
 import { notifyContentDeletedByOrg } from "@/lib/notification"
@@ -812,6 +813,13 @@ function ListRow({ item, type, ac, isSelected, onClick, uiT }) {
   )
 }
 
+function getCommunityMeta(url = "") {
+  if (/discord\.(gg|com)/i.test(url))         return { Icon: MessageCircle, label: "Discord" }
+  if (/t\.me|telegram\.me/i.test(url))        return { Icon: Send,          label: "Telegram" }
+  if (/wa\.me|chat\.whatsapp\.com/i.test(url)) return { Icon: Phone,         label: "WhatsApp" }
+  return { Icon: Link2, label: "Community" }
+}
+
 // ─── Detail pane ──────────────────────────────────────────────────────────────
 function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoading, onDelete, uiT }) {
   const isExpired   = item.date_end && new Date(item.date_end) < new Date()
@@ -977,18 +985,59 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
                 </DetailBlock>
               )}
 
-              {item.is_invite_only && (
-                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Accessibility">
-                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.is_invite_only}</p>
+              {item.author && (
+                <DetailBlock icon={<User className="w-3.5 h-3.5" />} label="Author" ac={ac} uiT={uiT}>
+                  <p className="text-sm" style={{ color: uiT?.bodyText ?? "#701976" }}>{item.author}</p>
                 </DetailBlock>
               )}
 
-              {item.invite_code && (
-                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Invitation Code">
-                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.invite_code}</p>
-                </DetailBlock>
-              )}
+              {item.invite_code || item.is_invite_only && (
+              <DetailBlock
+                icon={
+                  item.is_invite_only
+                    ? <Lock className="w-3.5 h-3.5" />
+                    : <Unlock className="w-3.5 h-3.5" />
+                }
+                label="Accessibility"
+                ac={ac}
+                uiT={uiT}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className="text-[11px] px-2 py-0.5 rounded-full border font-medium"
+                    style={{
+                      background: item.is_invite_only
+                        ? sp.suspended.bg
+                        : sp.active.bg,
+                      borderColor: item.is_invite_only
+                        ? sp.suspended.border
+                        : sp.active.border,
+                      color: item.is_invite_only
+                        ? sp.suspended.text
+                        : sp.active.text,
+                    }}
+                  >
+                    {item.is_invite_only ? "Invite only" : "Open to everyone"} 
+                  </span>
 
+                  {item.is_invite_only && item.invite_code && (
+                    <span
+                      className="text-xs font-mono px-2 py-0.5 rounded-md"
+                      style={{
+                        background: uiT?.surfaceBg2 ?? "rgba(220,150,240,0.25)",
+                        border: `1px solid ${
+                          uiT?.borderBase ?? "rgba(220,150,240,0.35)"
+                        }`,
+                        color: uiT?.headingText ?? "#320a37",
+                      }}
+                    >
+                      Code: {item.invite_code}
+                    </span>
+                  )}
+                </div>
+              </DetailBlock>
+              )}
+            
               {item.countries && (
                 <DetailBlock icon={<MapPin className="w-3.5 h-3.5" />} label="Countries" ac={ac} uiT={uiT}>
                   <p className="text-sm" style={{ color: uiT?.bodyText ?? "#320a37" }}>{item.countries}</p>
@@ -1070,6 +1119,29 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
                   </a>
                 </DetailBlock>
               )}
+
+              {item.google_forms_url && (
+                  <DetailBlock icon={<FileSpreadsheet className="w-3.5 h-3.5" />} label="Google Form" ac={ac} uiT={uiT}>
+                    <a href={item.google_forms_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
+                      style={{ color: ac.tagColor }}>
+                      {item.google_forms_url}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                    </a>
+                  </DetailBlock>
+                )}
+
+                {item.community_link && (() => {
+                  const { Icon, label } = getCommunityMeta(item.community_link)
+                  return (
+                    <DetailBlock icon={<Icon className="w-3.5 h-3.5" />} label={`${label} Group`} ac={ac} uiT={uiT}>
+                      <a href={item.community_link} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
+                        style={{ color: ac.tagColor }}>
+                        {item.community_link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                      </a>
+                    </DetailBlock>
+                  )
+                })()}
 
               {item.tracking_method && (
                 <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Tracking Method" ac={ac} uiT={uiT}>
