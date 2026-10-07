@@ -4,14 +4,16 @@ export const dynamic = "force-dynamic"
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
+// Server-only client. The service role key bypasses RLS, so storage uploads and
+// inserts work regardless of policies. Never expose it with a NEXT_PUBLIC_ prefix.
+// Ownership is enforced below by always filtering on the caller's org_id.
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false, autoRefreshToken: false } }
 )
 
-// Optional: create a PUBLIC storage bucket with this name to store files instead
-// of base64 in the table. If the upload fails, the data URL is saved as before.
-const BUCKET = "posters"
+const BUCKET = "generated-posters"
 
 async function getAuthedUser(req) {
   const authHeader = req.headers.get("authorization") || ""
@@ -28,20 +30,11 @@ async function getOrg(userId) {
   return data
 }
 
-async function toStoredUrl(image, orgId) {
-  const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/.exec(image || "")
-  if (!m) return image // already a normal URL
-  try {
-    const path = `${orgId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`
-    const { error } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .upload(path, Buffer.from(m[2], "base64"), { contentType: m[1] })
-    if (error) throw error
-    return supabaseAdmin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
-  } catch (e) {
-    console.warn("Storage upload failed, saving data URL instead:", e?.message)
-    return image
-  }
+// "https://xxx.supabase.co/storage/v1/object/public/generated-posters/12/abc.png" -> "12/abc.png"
+function pathFromUrl(url) {
+  const marker = `/${BUCKET}/`
+  const i = (url || "").indexOf(marker)
+  return i === -1 ? null : url.slice(i + marker.length)
 }
 
 export async function GET(req) {
@@ -70,21 +63,34 @@ export async function GET(req) {
   }
 }
 
-// Bookmark: save one generated poster to history.
+// Bookmark: upload the image to the bucket, then save a row pointing at it.
 export async function POST(req) {
+  let uploadedPath = null
   try {
     const user = await getAuthedUser(req)
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
     const { image, prompt, form } = await req.json()
-    if (!image) return NextResponse.json({ error: "Image is required" }, { status: 400 })
+    const m = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/.exec(image || "")
+    if (!m) return NextResponse.json({ error: "A base64 image is required" }, { status: 400 })
 
     const org = await getOrg(user.id)
     if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 })
 
-    const f = form || {}
-    const imageUrl = await toStoredUrl(image, org.id)
+    // 1. Upload to the bucket
+    uploadedPath = `${org.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.png`
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(uploadedPath, Buffer.from(m[2], "base64"), { contentType: m[1] })
+    if (upErr) {
+      console.error("Storage upload error:", upErr)
+      uploadedPath = null
+      return NextResponse.json({ error: `Upload failed: ${upErr.message}` }, { status: 500 })
+    }
+    const imageUrl = supabaseAdmin.storage.from(BUCKET).getPublicUrl(uploadedPath).data.publicUrl
 
+    // 2. Save the row
+    const f = form || {}
     const { data, error } = await supabaseAdmin
       .from("generated_posters")
       .insert({
@@ -108,11 +114,16 @@ export async function POST(req) {
       .select("id")
       .single()
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (error) {
+      console.error("Insert error:", error)
+      await supabaseAdmin.storage.from(BUCKET).remove([uploadedPath]) // don't leave orphan files
+      return NextResponse.json({ error: `Save failed: ${error.message}` }, { status: 500 })
+    }
     return NextResponse.json({ id: data.id })
   } catch (error) {
     console.error("POST poster-history error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    if (uploadedPath) await supabaseAdmin.storage.from(BUCKET).remove([uploadedPath]).catch(() => {})
+    return NextResponse.json({ error: error?.message || "Internal server error" }, { status: 500 })
   }
 }
 
@@ -127,13 +138,21 @@ export async function DELETE(req) {
     const org = await getOrg(user.id)
     if (!org) return NextResponse.json({ error: "Organization not found" }, { status: 404 })
 
+    const { data: row } = await supabaseAdmin
+      .from("generated_posters").select("image_url")
+      .eq("id", id).eq("org_id", org.id).single()
+
     const { error } = await supabaseAdmin
       .from("generated_posters")
       .delete()
       .eq("id", id)
       .eq("org_id", org.id)
-
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    // Remove the file too (rows saved before the bucket existed have no file to remove)
+    const path = pathFromUrl(row?.image_url)
+    if (path) await supabaseAdmin.storage.from(BUCKET).remove([path])
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("DELETE poster-history error:", error)

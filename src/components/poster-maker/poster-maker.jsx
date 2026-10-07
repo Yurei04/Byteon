@@ -64,9 +64,9 @@ function Label({ children }) {
 // options can be plain strings or { value, label }
 function Select({ label, value, onChange, options }) {
   return (
-    <div className="w-full">
+    <div>
       <Label>{label}</Label>
-      <select className={`${box} capitalize`} style={boxStyle} value={value} onChange={onChange}>
+      <select className={`${box} capitalize cursor-pointer`} style={boxStyle} value={value} onChange={onChange}>
         {options.map((o) => {
           const v = typeof o === "string" ? o : o.value
           const l = typeof o === "string" ? o : o.label
@@ -232,7 +232,7 @@ export default function PosterMaker({ onSaved }) {
           <Select label="Background" value={form.backgroundType} onChange={set("backgroundType")} options={OPTIONS.backgroundType} />
           <Select label="Font style" value={form.fontStyle} onChange={set("fontStyle")} options={OPTIONS.fontStyle} />
           <Select label="Title placement" value={form.titlePlacement} onChange={set("titlePlacement")} options={OPTIONS.titlePlacement} />
-          <Select label="Aspect ratio" className="w-full" value={form.ratio} onChange={set("ratio")} options={OPTIONS.ratio} />
+          <Select label="Aspect ratio" value={form.ratio} onChange={set("ratio")} options={OPTIONS.ratio} />
         </div>
 
         <div>
@@ -248,7 +248,11 @@ export default function PosterMaker({ onSaved }) {
         </div>
 
         {/* Logo */}
-        <div className="rounded-lg p-3 hover:bg-primary/10" style={{ border: "1px dashed rgb(var(--surface-border) / 0.6)" }}>
+        <div
+          className="group rounded-lg p-3 border border-dashed transition-colors
+                    border-[rgb(var(--surface-border)/0.6)]
+                    hover:border-[rgb(var(--surface-border))]"
+        >
           <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={pickLogo} />
           {logo ? (
             <div className="flex flex-wrap items-end gap-4">
@@ -256,16 +260,29 @@ export default function PosterMaker({ onSaved }) {
               <div className="w-48">
                 <Select label="Logo position" value={form.logoPosition} onChange={set("logoPosition")} options={OPTIONS.logoPosition} />
               </div>
-              <button type="button" onClick={() => setLogo(null)} aria-label="Remove logo"
-                className="ml-auto p-2 rounded-md" style={{ color: "rgb(var(--text-faint))" }}>
+              <button
+                type="button"
+                onClick={() => setLogo(null)}
+                aria-label="Remove logo"
+                className="ml-auto p-2 rounded-md cursor-pointer transition-colors
+                          text-[rgb(var(--text-faint))]
+                          hover:bg-white/10 hover:text-[rgb(var(--text-muted))]"
+              >
                 <X size={14} />
               </button>
             </div>
           ) : (
-            <button type="button" onClick={() => fileRef.current?.click()}
-              className="w-full cursor-pointer flex items-center justify-center  gap-2 h-10 text-sm"
-              style={{ color: "rgb(var(--text-muted))" }}>
-              <Upload size={14} /> Upload organization logo
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full flex items-center justify-center gap-2 h-10 text-sm rounded-lg cursor-pointer transition-colors
+                        text-[rgb(var(--text-muted))]
+                        hover:bg-primary/20 hover:text-[rgb(var(--text-primary))]
+                        active:bg-white/15
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20"
+            >
+              <Upload size={14} className="transition-transform group-hover:-translate-y-0.5" />
+              Upload organization logo
             </button>
           )}
         </div>
@@ -273,7 +290,7 @@ export default function PosterMaker({ onSaved }) {
         {error && <p className="text-xs text-red-400">{error}</p>}
 
         <button type="button" onClick={generate} disabled={loading}
-          className="h-11 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          className="h-11 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 transition"
           style={{ background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))" }}>
           {loading && <Loader2 size={14} className="animate-spin" />}
           {loading ? "Generating…" : "Generate 3 posters"}

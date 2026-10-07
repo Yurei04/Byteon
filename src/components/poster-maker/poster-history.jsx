@@ -1,9 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "../(auth)/authContext"
+import PosterViewer from "./poster-viewer"
 
 function timeAgo(dateStr) {
   const diff  = Date.now() - new Date(dateStr).getTime()
@@ -25,12 +27,59 @@ const RATIO_CLASS = {
   "9:16": "aspect-[9/16]",
 }
 
+const ROWS_PER_PAGE = 2
+
+// Matches the grid: 2 cols, sm 3, lg 4, xl 5 (Tailwind default breakpoints)
+function columnsFor(width) {
+  if (width >= 1280) return 5
+  if (width >= 1024) return 4
+  if (width >= 640) return 3
+  return 2
+}
+
+// [0, 1, "gap-4", 5, 6, 7, "gap-9", 12] style list: first, last, and neighbours of current
+function pageList(current, total) {
+  const keep = [...new Set([0, total - 1, current - 1, current, current + 1])]
+    .filter((n) => n >= 0 && n < total)
+    .sort((a, b) => a - b)
+  const out = []
+  keep.forEach((n, i) => {
+    if (i > 0 && n - keep[i - 1] > 1) out.push(`gap-${n}`)
+    out.push(n)
+  })
+  return out
+}
+
+const pageBtn =
+  "h-8 min-w-8 px-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-1 cursor-pointer " +
+  "border border-[rgb(var(--surface-border)/0.5)] text-[rgb(var(--text-muted))] " +
+  "enabled:hover:text-[rgb(var(--text-primary))] enabled:hover:border-[rgb(var(--brand-500)/0.6)] " +
+  "enabled:hover:bg-[rgb(var(--brand-500)/0.08)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+
 export default function PosterHistory({ refreshTrigger }) {
   const { session } = useAuth()
   const [posters, setPosters] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [full, setFull] = useState(false)
+  const [cols, setCols] = useState(2)
+  const [page, setPage] = useState(0)
+
+  useEffect(() => {
+    const update = () => setCols(columnsFor(window.innerWidth))
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
+  }, [])
+
+  // Two full rows per page, whatever the current column count is
+  const pageSize = cols * ROWS_PER_PAGE
+  const totalPages = Math.max(1, Math.ceil(posters.length / pageSize))
+  const currentPage = Math.min(page, totalPages - 1) // stays valid after deletes or resizes
+  const visible = posters.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+  const rangeStart = posters.length ? currentPage * pageSize + 1 : 0
+  const rangeEnd = Math.min((currentPage + 1) * pageSize, posters.length)
 
   const fetchPosters = async () => {
     if (!session?.access_token) { setLoading(false); return }
@@ -64,7 +113,7 @@ export default function PosterHistory({ refreshTrigger }) {
         body: JSON.stringify({ id }),
       })
       setPosters((prev) => prev.filter((p) => p.id !== id))
-      if (selected?.id === id) setSelected(null)
+      if (selected?.id === id) { setSelected(null); setFull(false) }
     } finally {
       setDeleting(null)
     }
@@ -73,7 +122,7 @@ export default function PosterHistory({ refreshTrigger }) {
   const download = (url, title) => {
     const a = document.createElement("a")
     a.href = url
-    a.download = `${title || "poster"}.jpg`
+    a.download = `${title || "poster"}.png`
     a.target = "_blank"
     a.click()
   }
@@ -81,7 +130,7 @@ export default function PosterHistory({ refreshTrigger }) {
   if (loading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: pageSize }).map((_, i) => (
           <div
             key={i}
             className="aspect-[2/3] rounded-xl animate-pulse"
@@ -113,7 +162,7 @@ export default function PosterHistory({ refreshTrigger }) {
             No posters yet
           </p>
           <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint))" }}>
-            Generate your first poster to see it here
+            Bookmark a generated poster to see it here
           </p>
         </div>
       </div>
@@ -124,7 +173,7 @@ export default function PosterHistory({ refreshTrigger }) {
     <>
       {/* Gallery grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-        {posters.map((poster) => (
+        {visible.map((poster) => (
           <div
             key={poster.id}
             onClick={() => setSelected(poster)}
@@ -165,7 +214,8 @@ export default function PosterHistory({ refreshTrigger }) {
                   <button
                     onClick={(e) => handleDelete(poster.id, e)}
                     disabled={deleting === poster.id}
-                    className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors"
+                    aria-label="Delete poster"
+                    className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center transition-colors cursor-pointer disabled:cursor-not-allowed"
                     style={{
                       background: "rgba(239,68,68,0.15)",
                       border: "1px solid rgba(239,68,68,0.3)",
@@ -202,6 +252,58 @@ export default function PosterHistory({ refreshTrigger }) {
         ))}
       </div>
 
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <nav aria-label="Poster history pages" className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>
+            Showing {rangeStart}–{rangeEnd} of {posters.length}
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setPage(currentPage - 1)}
+              disabled={currentPage === 0}
+              aria-label="Previous page"
+              className={pageBtn}
+            >
+              <ChevronLeft size={14} /> <span className="hidden sm:inline">Prev</span>
+            </button>
+
+            {pageList(currentPage, totalPages).map((n) =>
+              typeof n === "number" ? (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setPage(n)}
+                  aria-label={`Page ${n + 1}`}
+                  aria-current={n === currentPage ? "page" : undefined}
+                  className={n === currentPage
+                    ? "h-8 min-w-8 px-2.5 rounded-lg text-xs font-semibold text-white cursor-pointer hover:brightness-110 transition"
+                    : pageBtn}
+                  style={n === currentPage
+                    ? { background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))" }
+                    : undefined}
+                >
+                  {n + 1}
+                </button>
+              ) : (
+                <span key={n} className="px-1 text-xs" style={{ color: "rgb(var(--text-faint))" }}>…</span>
+              )
+            )}
+
+            <button
+              type="button"
+              onClick={() => setPage(currentPage + 1)}
+              disabled={currentPage >= totalPages - 1}
+              aria-label="Next page"
+              className={pageBtn}
+            >
+              <span className="hidden sm:inline">Next</span> <ChevronRight size={14} />
+            </button>
+          </div>
+        </nav>
+      )}
+
       {/* Lightbox */}
       {selected && (
         <div
@@ -220,14 +322,26 @@ export default function PosterHistory({ refreshTrigger }) {
           >
             {/* Image panel */}
             <div
-              className="lg:flex-1 flex items-center justify-center p-4 min-h-[300px]"
+              className="relative lg:flex-1 flex items-center justify-center p-4 min-h-[300px]"
               style={{ background: "rgb(var(--surface))" }}
             >
               <img
                 src={selected.image_url}
                 alt={selected.title || "Poster"}
-                className="max-h-[70vh] max-w-full rounded-xl object-contain shadow-lg"
+                className="max-h-[70vh] max-w-full rounded-xl object-contain shadow-lg cursor-zoom-in"
+                onClick={() => setFull(true)}
               />
+              <button
+                type="button"
+                onClick={() => setFull(true)}
+                aria-label="View full screen"
+                title="Full screen"
+                className="absolute top-6 right-6 p-2 rounded-lg text-white cursor-pointer bg-black/50 hover:bg-black/80 transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M8.5 1.5h4v4M5.5 12.5h-4v-4M12.5 1.5L8 6M1.5 12.5L6 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             </div>
 
             {/* Info panel */}
@@ -248,7 +362,8 @@ export default function PosterHistory({ refreshTrigger }) {
                 </div>
                 <button
                   onClick={() => setSelected(null)}
-                  className="p-1.5 rounded-lg flex-shrink-0 transition-colors"
+                  aria-label="Close"
+                  className="p-1.5 rounded-lg flex-shrink-0 transition-colors cursor-pointer"
                   style={{ color: "rgb(var(--text-faint))" }}
                   onMouseEnter={e => {
                     e.currentTarget.style.color = "rgb(var(--text-primary))"
@@ -318,7 +433,7 @@ export default function PosterHistory({ refreshTrigger }) {
               <div className="flex gap-2 mt-auto">
                 <Button
                   onClick={() => download(selected.image_url, selected.title)}
-                  className="flex-1 h-9 text-xs font-medium rounded-lg text-white"
+                  className="flex-1 h-9 text-xs font-medium rounded-lg text-white cursor-pointer hover:brightness-110 transition"
                   style={{
                     background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))",
                     boxShadow: "0 0 12px rgb(var(--accent-500) / 0.3)",
@@ -333,7 +448,7 @@ export default function PosterHistory({ refreshTrigger }) {
                 <Button
                   variant="outline"
                   onClick={() => handleDelete(selected.id, { stopPropagation: () => {} })}
-                  className="h-9 px-3 rounded-lg"
+                  className="h-9 px-3 rounded-lg cursor-pointer"
                   style={{ borderColor: "rgba(239,68,68,0.3)", color: "#f87171", background: "transparent" }}
                   onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}
@@ -346,6 +461,15 @@ export default function PosterHistory({ refreshTrigger }) {
             </div>
           </div>
         </div>
+      )}
+
+      {selected && full && (
+        <PosterViewer
+          src={selected.image_url}
+          alt={selected.title || "Poster"}
+          onClose={() => setFull(false)}
+          onDownload={() => download(selected.image_url, selected.title)}
+        />
       )}
     </>
   )

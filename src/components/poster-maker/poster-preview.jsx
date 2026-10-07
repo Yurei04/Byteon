@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Download, Wand2, Loader2, Bookmark, BookmarkCheck, RefreshCw, X } from "lucide-react"
+import { Download, Wand2, Loader2, Bookmark, BookmarkCheck, RefreshCw, X, Maximize2 } from "lucide-react"
+import PosterViewer from "./poster-viewer"
 
 const RATIO_CLASS = {
   "1:1": "aspect-square",
@@ -16,8 +17,17 @@ const SUGGESTIONS = ["Make the title bigger", "Darker background", "Make the log
 
 const BUSY_LABEL = { tweak: "Applying change…", regenerate: "Regenerating…" }
 
-const iconBtn = "p-2 rounded-lg disabled:opacity-40 transition-colors"
-const iconBtnStyle = { color: "rgb(var(--text-muted))" }
+// Shared button looks. `enabled:` keeps hover effects off disabled buttons.
+const GRADIENT = "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))"
+const outlineBtn =
+  "cursor-pointer border border-[rgb(var(--surface-border)/0.5)] text-[rgb(var(--text-muted))] " +
+  "enabled:hover:text-[rgb(var(--text-primary))] enabled:hover:border-[rgb(var(--brand-500)/0.6)] " +
+  "enabled:hover:bg-[rgb(var(--brand-500)/0.08)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+const ghostBtn =
+  "cursor-pointer p-2 rounded-lg text-[rgb(var(--text-muted))] enabled:hover:text-[rgb(var(--text-primary))] " +
+  "enabled:hover:bg-[rgb(var(--brand-500)/0.12)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+const primaryBtn =
+  "cursor-pointer text-white enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 transition"
 
 function download(image, index) {
   if (!image) return
@@ -73,10 +83,7 @@ function TweakDialog({ result, index, onClose, onApply }) {
               Describe one small change. The rest of the poster stays the same.
             </p>
           </div>
-          <button
-            type="button" onClick={onClose} disabled={working} aria-label="Close"
-            className="p-1.5 rounded-lg disabled:opacity-40" style={{ color: "rgb(var(--text-faint))" }}
-          >
+          <button type="button" onClick={onClose} disabled={working} aria-label="Close" className={ghostBtn}>
             <X size={14} />
           </button>
         </div>
@@ -104,8 +111,7 @@ function TweakDialog({ result, index, onClose, onApply }) {
           {SUGGESTIONS.map((s) => (
             <button
               key={s} type="button" disabled={working} onClick={() => setInstruction(s)}
-              className="text-[11px] px-2.5 py-1 rounded-full disabled:opacity-40"
-              style={{ border: "1px solid rgb(var(--surface-border) / 0.5)", color: "rgb(var(--text-muted))" }}
+              className={`text-[11px] px-2.5 py-1 rounded-full ${outlineBtn}`}
             >
               {s}
             </button>
@@ -117,17 +123,13 @@ function TweakDialog({ result, index, onClose, onApply }) {
             {instruction.length}/300
           </span>
           <div className="flex gap-2">
-            <button
-              type="button" onClick={onClose} disabled={working}
-              className="h-9 px-4 rounded-lg text-sm disabled:opacity-40"
-              style={{ border: "1px solid rgb(var(--surface-border) / 0.5)", color: "rgb(var(--text-muted))" }}
-            >
+            <button type="button" onClick={onClose} disabled={working} className={`h-9 px-4 rounded-lg text-sm ${outlineBtn}`}>
               Cancel
             </button>
             <button
               type="button" onClick={submit} disabled={!instruction.trim() || working}
-              className="flex items-center gap-2 h-9 px-4 rounded-lg text-white text-sm font-medium disabled:opacity-40"
-              style={{ background: "linear-gradient(135deg, rgb(var(--accent-500)), rgb(var(--brand-500)))" }}
+              className={`flex items-center gap-2 h-9 px-4 rounded-lg text-sm font-medium ${primaryBtn}`}
+              style={{ background: GRADIENT }}
             >
               {working ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
               Apply change
@@ -144,13 +146,15 @@ export default function PosterPreview({
   onToggleSave, onRegenerate, onTweak,
 }) {
   const [tweakKey, setTweakKey] = useState(null)
+  const [fullKey, setFullKey] = useState(null)
   const hasResults = results.length > 0
   const placeholderRatio = RATIO_CLASS[aspectRatio] ?? "aspect-[2/3]"
 
   const tweakIndex = results.findIndex((r) => r.key === tweakKey)
   const tweakResult = tweakIndex >= 0 ? results[tweakIndex] : null
+  const fullIndex = results.findIndex((r) => r.key === fullKey)
+  const fullResult = fullIndex >= 0 ? results[fullIndex] : null
 
-  // Show placeholders while generating a fresh batch, or before the first one.
   const showPlaceholders = !hasResults || isLoading
 
   return (
@@ -182,13 +186,27 @@ export default function PosterPreview({
               return (
                 <div key={r.key} className="flex flex-col gap-2">
                   <div
-                    className={`relative ${RATIO_CLASS[r.ratio] ?? "aspect-[2/3]"} w-full rounded-xl overflow-hidden`}
+                    className={`group relative ${RATIO_CLASS[r.ratio] ?? "aspect-[2/3]"} w-full rounded-xl overflow-hidden`}
                     style={{
                       border: saved ? "2px solid rgb(var(--brand-500))" : "1px solid rgb(var(--surface-border) / 0.4)",
                       background: "rgb(var(--surface))",
                     }}
                   >
-                    <img src={r.image} alt={`Generated poster ${index + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={r.image}
+                      alt={`Generated poster ${index + 1}`}
+                      className="w-full h-full object-cover cursor-zoom-in"
+                      onClick={() => setFullKey(r.key)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFullKey(r.key)}
+                      aria-label={`View poster ${index + 1} full screen`}
+                      title="Full screen"
+                      className="absolute top-2 right-2 p-2 rounded-lg text-white cursor-pointer bg-black/50 hover:bg-black/80 transition-colors"
+                    >
+                      <Maximize2 size={14} />
+                    </button>
                     {overlayText && (
                       <div
                         className="absolute inset-0 flex flex-col items-center justify-center gap-2"
@@ -207,12 +225,11 @@ export default function PosterPreview({
                       onClick={() => onToggleSave?.(r.key)}
                       disabled={busy}
                       aria-pressed={saved}
-                      className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium disabled:opacity-40 transition-colors"
-                      style={{
-                        border: "1px solid rgb(var(--surface-border) / 0.5)",
-                        color: saved ? "rgb(var(--brand-400))" : "rgb(var(--text-muted))",
-                        background: saved ? "rgb(var(--brand-500) / 0.1)" : "transparent",
-                      }}
+                      className={`flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium ${
+                        saved
+                          ? "cursor-pointer border border-[rgb(var(--brand-500)/0.5)] bg-[rgb(var(--brand-500)/0.1)] text-[rgb(var(--brand-400))] enabled:hover:bg-[rgb(var(--brand-500)/0.2)] disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                          : outlineBtn
+                      }`}
                     >
                       {r.busy === "save"
                         ? <Loader2 size={14} className="animate-spin" />
@@ -224,8 +241,7 @@ export default function PosterPreview({
                       type="button"
                       onClick={() => setTweakKey(r.key)}
                       disabled={busy}
-                      className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium disabled:opacity-40"
-                      style={{ border: "1px solid rgb(var(--surface-border) / 0.5)", color: "rgb(var(--text-muted))" }}
+                      className={`flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium ${outlineBtn}`}
                     >
                       <Wand2 size={14} /> Tweak
                     </button>
@@ -237,8 +253,7 @@ export default function PosterPreview({
                         disabled={busy}
                         aria-label={`Regenerate poster ${index + 1}`}
                         title="Regenerate this poster"
-                        className={iconBtn}
-                        style={iconBtnStyle}
+                        className={ghostBtn}
                       >
                         <RefreshCw size={14} />
                       </button>
@@ -248,8 +263,7 @@ export default function PosterPreview({
                         disabled={busy}
                         aria-label={`Download poster ${index + 1}`}
                         title="Save image to your device"
-                        className={iconBtn}
-                        style={iconBtnStyle}
+                        className={ghostBtn}
                       >
                         <Download size={14} />
                       </button>
@@ -281,6 +295,15 @@ export default function PosterPreview({
           index={tweakIndex}
           onClose={() => setTweakKey(null)}
           onApply={onTweak}
+        />
+      )}
+
+      {fullResult && (
+        <PosterViewer
+          src={fullResult.image}
+          alt={`Poster ${fullIndex + 1}`}
+          onClose={() => setFullKey(null)}
+          onDownload={() => download(fullResult.image, fullIndex)}
         />
       )}
     </div>

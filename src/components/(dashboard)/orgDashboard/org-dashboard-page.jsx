@@ -1004,16 +1004,6 @@ const [tick, setTick] = useState(0)
                           boxShadow: `inset 0 1px 0 ${uiT.borderBase}`,
                           transition: "border-color 0.2s, box-shadow 0.2s, transform 0.2s",
                         }}
-                        onMouseEnter={e => {
-                          e.currentTarget.style.borderColor = `${p}60`
-                          e.currentTarget.style.transform = "translateY(-2px)"
-                          e.currentTarget.style.boxShadow = `0 8px 28px ${p}20, inset 0 1px 0 ${uiT.borderBase}`
-                        }}
-                        onMouseLeave={e => {
-                          e.currentTarget.style.borderColor = `${p}25`
-                          e.currentTarget.style.transform = "translateY(0)"
-                          e.currentTarget.style.boxShadow = `inset 0 1px 0 ${uiT.borderBase}`
-                        }}
                       >
                         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                           style={{ background: `radial-gradient(circle at 70% 10%, ${p}12, transparent 65%)` }} />
