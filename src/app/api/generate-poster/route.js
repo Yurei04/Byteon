@@ -24,12 +24,21 @@ const LOGO_POS = {
 const STRICT =
   "STRICT RULE: Only include text and details explicitly listed. Do NOT invent or add any names, dates, logos, sponsors, prizes, or other information not provided."
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+// "2026-10-12" -> "Oct 12, 2026". Parsed manually to avoid timezone shifts from new Date().
+function formatDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "")
+  if (!m) return iso
+  return `${MONTHS[Number(m[2]) - 1]} ${Number(m[3])}, ${m[1]}`
+}
+
 function buildPrompt(b) {
   const l = [`Generate a professional hackathon event poster.`, `Title: "${b.eventName}" in large bold typography.`]
   if (b.description) l.push(`Tagline: "${b.description}".`)
   if (b.prize) l.push(`Prize: ${b.prize}.`)
-  if (b.startDate && b.endDate) l.push(`Date: ${b.startDate} to ${b.endDate}.`)
-  else if (b.startDate) l.push(`Date: ${b.startDate}.`)
+  if (b.startDate && b.endDate) l.push(`Date: ${formatDate(b.startDate)} to ${formatDate(b.endDate)}.`)
+  else if (b.startDate) l.push(`Date: ${formatDate(b.startDate)}.`)
   if (b.venue) l.push(`Venue: ${b.venue}.`)
   if (b.style) l.push(`Visual style: ${b.style}.`)
   if (b.mood) l.push(`Mood: ${b.mood}.`)

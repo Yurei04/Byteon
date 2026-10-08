@@ -4,11 +4,12 @@ import { NextResponse } from "next/server"
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 export const MODELS = {
-  "llama-3.3-70b": { id: "llama-3.3-70b-versatile",  label: "Llama 3.3 70B", badge: "Smart"    },
-  "llama-3.1-8b":  { id: "llama-3.1-8b-instant",      label: "Llama 3.1 8B",  badge: "Fast ⚡"  },
-  "mixtral-8x7b":  { id: "mixtral-8x7b-32768",         label: "Mixtral 8×7B", badge: "Long ctx" },
-  "gemma2-9b":     { id: "gemma2-9b-it",               label: "Gemma 2 9B",    badge: "Google"   },
+  "gpt-oss-120b": { id: "openai/gpt-oss-120b", label: "GPT-OSS 120B", badge: "Smart"   },
+  "gpt-oss-20b":  { id: "openai/gpt-oss-20b",  label: "GPT-OSS 20B",  badge: "Fast ⚡" },
+  "qwen3.6-27b":  { id: "qwen/qwen3.6-27b",    label: "Qwen 3.6 27B", badge: "Balanced" },
 }
+
+const DEFAULT_MODEL = "gpt-oss-120b"
 
 const BASE_PROMPT = `
 You are Nova, the AI assistant for Byteon — an AI-powered, gamified hackathon ecosystem designed for beginner and first-time hackathon participants.
@@ -65,9 +66,8 @@ export async function POST(req) {
       )
     }
 
-    const { messages, model = "llama-3.3-70b", systemPrompt } = await req.json()
-    const modelId = MODELS[model]?.id ?? MODELS["llama-3.3-70b"].id
-
+    const { messages, model = DEFAULT_MODEL, systemPrompt } = await req.json()
+    const modelId = MODELS[model]?.id ?? MODELS[DEFAULT_MODEL].id
     const completion = await groq.chat.completions.create({
       model: modelId,
       max_tokens: 1024,

@@ -6,9 +6,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
 import {
-  Calendar, ExternalLink, Award, Users, AlertCircle,
-  MousePointerClick, Trophy, Clock, ChevronRight,
-  MapPin, Sparkles, Megaphone, Lock,
+  Calendar, Award, Users, AlertCircle, MousePointerClick, Trophy, Clock,
+  ChevronRight, MapPin, Sparkles, Megaphone, Lock,
+  Globe, Code2, MessageCircle, FileText, ArrowUpRight, Activity,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
@@ -44,6 +44,35 @@ function formatUTCDateShort(dateString) {
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
 const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
+
+/**
+ * Public links. google_sheet_csv_url is intentionally NOT here — it is an
+ * internal tracking source and must never be shown to visitors.
+ * `rgb` is a space-separated triple so we can build tinted backgrounds/borders.
+ */
+const LINK_DEFS = [
+  {
+    key: "website_link", Icon: Globe, rgb: "139 92 246",
+    sm: (manual) => (manual ? "Register" : "Website"),
+    lg: (manual) => (manual ? "Register Now" : "Visit Website"),
+    hint: "Official event page",
+  },
+  {
+    key: "dev_link", Icon: Code2, rgb: "59 130 246",
+    sm: () => "DevPost", lg: () => "View on DevPost",
+    hint: "Submissions & project gallery",
+  },
+  {
+    key: "community_link", Icon: MessageCircle, rgb: "16 185 129",
+    sm: () => "Community", lg: () => "Join Community",
+    hint: "Chat with organizers & teammates",
+  },
+  {
+    key: "google_forms_url", Icon: FileText, rgb: "245 158 11",
+    sm: () => "Form", lg: () => "Open Form",
+    hint: "Registration / application form",
+  },
+]
 
 const getPrizeColorScheme = (prizeName, prizeType) => {
   const name = prizeName.toLowerCase()
@@ -129,13 +158,6 @@ function DetailRow({ icon, label, value, iconColor }) {
   )
 }
 
-const LINK_BTN_CLS = `
-  w-full cursor-pointer flex items-center justify-center gap-1.5
-  px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
-  text-text-primary bg-[rgb(var(--bg-overlay))] border border-surface-border
-  hover:text-text-secondary hover:border-surface-border hover:bg-[rgb(var(--bg-overlay))]
-`
-
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 
 export default function AnnouncementPublicCard({ item, theme, onDelete }) {
@@ -146,18 +168,29 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const phase    = getPhase(item)
   const prizes   = item.prizes || []
   const isInvite = !!item.is_invite_only
+  const isManual = (item.tracking_method || "manual") === "manual"
+  const isAuto   = item.tracking_method === "automatic"
 
   // Links are only exposed once the schedule allows it and, for invite-only events, once the code is verified.
+  // NOTE: for invite-only events, the unlock RPC should return
+  // { website_link, dev_link, community_link, google_forms_url }.
   const links = isInvite
     ? (unlockedLinks ?? {})
-    : { website_link: item.website_link, dev_link: item.dev_link }
-  const registrationClosedYet = phase === "upcoming"
-  const showLinks   = !registrationClosedYet && (links.website_link || links.dev_link)
-  const needsCode   = isInvite && !unlockedLinks && !registrationClosedYet
+    : {
+        website_link:     item.website_link,
+        dev_link:         item.dev_link,
+        community_link:   item.community_link,
+        google_forms_url: item.google_forms_url,
+      }
+  const activeLinks = LINK_DEFS.filter((d) => links[d.key])
 
-  const handleWebsiteLinkClick = async (e) => {
+  const registrationClosedYet = phase === "upcoming"
+  const showLinks = !registrationClosedYet && activeLinks.length > 0
+  const needsCode = isInvite && !unlockedLinks && !registrationClosedYet
+
+  const handleLinkClick = async (e, key) => {
     e.stopPropagation()
-    if (item.tracking_method === "manual" && links.website_link) {
+    if (key === "website_link" && isManual && links.website_link) {
       try {
         await supabase.from("announcements").update({
           website_clicks:    (item.website_clicks    || 0) + 1,
@@ -169,45 +202,89 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
 
   const getTrackingStats = () => {
     if (registrationClosedYet) return null // nothing to track before promotion starts
-    const method = item.tracking_method || "manual"
-    if (method === "manual")
-      return { icon: <MousePointerClick className="w-3.5 h-3.5" />, label: "Clicks", count: item.website_clicks || 0 }
-    if (method === "automatic")
-      return { icon: <Users className="w-3.5 h-3.5" />, label: "Registrants", count: item.registrants_count || 0, hasError: item.sync_error }
+    if (isManual)
+      return {
+        Icon: MousePointerClick, label: "Clicks", rgb: "139 92 246",
+        count: item.website_clicks || 0,
+        note: "Counted each time someone taps Register",
+      }
+    if (isAuto)
+      return {
+        Icon: Users, label: "Registrants", rgb: "16 185 129",
+        count: item.registrants_count || 0, hasError: item.sync_error,
+        note: "Updated automatically from registrations",
+      }
     return null
   }
 
   const trackingStats = getTrackingStats()
 
-  const renderLinkButtons = (size) => (
-    <div className={`flex ${size === "lg" ? "gap-3" : "gap-2"} pt-1`}
-      style={size === "lg" ? undefined : { borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-      {links.website_link && (
-        <a
-          href={links.website_link} target="_blank" rel="noopener noreferrer" className="flex-1"
-          onClick={handleWebsiteLinkClick}
-        >
-          <button className={LINK_BTN_CLS}>
-            <ExternalLink className={size === "lg" ? "w-4 h-4" : "w-3.5 h-3.5"} />
-            {item.tracking_method === "manual"
-              ? (size === "lg" ? "Register Now" : "Register")
-              : (size === "lg" ? "Visit Website" : "Website")}
-          </button>
-        </a>
-      )}
-      {links.dev_link && (
-        <a
-          href={links.dev_link} target="_blank" rel="noopener noreferrer" className="flex-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button className={LINK_BTN_CLS}>
-            <ExternalLink className={size === "lg" ? "w-4 h-4" : "w-3.5 h-3.5"} />
-            {size === "lg" ? "View on DevPost" : "DevPost"}
-          </button>
-        </a>
-      )}
-    </div>
-  )
+  /* ── Link buttons: each type has its own icon + color ── */
+  const renderLinkButtons = (size) => {
+    if (size === "lg") {
+      return (
+        <div>
+          <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+            Links
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {activeLinks.map(({ key, Icon, rgb, lg, hint }, i) => (
+              <a
+                key={key} href={links[key]} target="_blank" rel="noopener noreferrer"
+                onClick={(e) => handleLinkClick(e, key)}
+                className={`group/link flex items-center gap-3 rounded-xl p-3.5 transition-all duration-200 hover:-translate-y-0.5 ${
+                  activeLinks.length % 2 === 1 && i === activeLinks.length - 1 ? "sm:col-span-2" : ""
+                }`}
+                style={{ background: `rgb(${rgb} / 0.08)`, border: `1px solid rgb(${rgb} / 0.28)` }}
+              >
+                <span
+                  className="flex items-center justify-center w-10 h-10 rounded-lg shrink-0"
+                  style={{ background: `rgb(${rgb} / 0.18)`, color: `rgb(${rgb})` }}
+                >
+                  <Icon className="w-5 h-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold truncate" style={{ color: "rgb(var(--text-primary))" }}>
+                    {lg(isManual)}
+                  </span>
+                  <span className="block text-xs truncate" style={{ color: "rgb(var(--text-muted))" }}>{hint}</span>
+                </span>
+                <ArrowUpRight
+                  className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
+                  style={{ color: `rgb(${rgb})` }}
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div
+        className="grid grid-cols-2 gap-2 pt-3"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        {activeLinks.map(({ key, Icon, rgb, sm }, i) => (
+          <a
+            key={key} href={links[key]} target="_blank" rel="noopener noreferrer"
+            onClick={(e) => handleLinkClick(e, key)}
+            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 hover:-translate-y-px ${
+              activeLinks.length % 2 === 1 && i === activeLinks.length - 1 ? "col-span-2" : ""
+            }`}
+            style={{
+              background: `rgb(${rgb} / 0.12)`,
+              border: `1px solid rgb(${rgb} / 0.30)`,
+              color: `rgb(${rgb})`,
+            }}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {sm(isManual)}
+          </a>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -293,7 +370,8 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                 {prizes.length} Prize{prizes.length !== 1 ? "s" : ""}
               </span>
             )}
-            {item.google_sheet_csv_url && !registrationClosedYet && (
+            {/* Gate on tracking method, not on the sheet URL (which is not public) */}
+            {isAuto && !registrationClosedYet && (
               <AnnouncementTrackingBadge announcementId={item.id} />
             )}
             {trackingStats?.hasError && (
@@ -305,14 +383,27 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
           </div>
 
           {/* ── Author + tracking ── */}
-          <div className="flex items-center justify-between text-xs">
-            <span style={{ color: "rgb(var(--text-faint))" }}>
-              By <span className="font-medium" style={{ color: "rgb(var(--text-faint))" }}>{item.author}</span>
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="truncate" style={{ color: "rgb(var(--text-faint))" }}>
+              By <span className="font-medium">{item.author}</span>
             </span>
             {trackingStats && (
-              <span className="flex items-center gap-1" style={{ color: "rgb(var(--text-faint))" }}>
-                {trackingStats.icon}
-                <span className="font-semibold" style={{ color: "rgb(var(--text-primary))" }}>{trackingStats.count}</span>
+              <span
+                className="inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0"
+                style={{
+                  background: `rgb(${trackingStats.rgb} / 0.10)`,
+                  border: `1px solid rgb(${trackingStats.rgb} / 0.25)`,
+                }}
+              >
+                <span
+                  className="flex items-center justify-center w-5 h-5 rounded-full"
+                  style={{ background: `rgb(${trackingStats.rgb} / 0.22)`, color: `rgb(${trackingStats.rgb})` }}
+                >
+                  <trackingStats.Icon className="w-3 h-3" />
+                </span>
+                <span className="font-bold tabular-nums" style={{ color: "rgb(var(--text-primary))" }}>
+                  {trackingStats.count.toLocaleString()}
+                </span>
                 <span style={{ color: "rgb(var(--text-muted))" }}>{trackingStats.label.toLowerCase()}</span>
               </span>
             )}
@@ -378,19 +469,6 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                     {prizes.length} Prize{prizes.length !== 1 ? "s" : ""} Available
                   </span>
                 )}
-                {trackingStats && (
-                  <span
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                    style={{
-                      background: "rgb(var(--surface-raised))",
-                      border: "1px solid rgb(var(--surface-border) / 0.15)",
-                      color: "rgb(var(--text-faint))",
-                    }}
-                  >
-                    {trackingStats.icon}
-                    {trackingStats.count} {trackingStats.label}
-                  </span>
-                )}
               </div>
             </DialogHeader>
           </div>
@@ -435,6 +513,41 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                       </div>
                     )
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* ── Live tracking panel ── */}
+            {trackingStats && (
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+                  Live Tracking
+                </p>
+                <div
+                  className="relative overflow-hidden flex items-center gap-4 rounded-xl p-4"
+                  style={{
+                    background: `linear-gradient(135deg, rgb(${trackingStats.rgb} / 0.14), rgb(${trackingStats.rgb} / 0.03))`,
+                    border: `1px solid rgb(${trackingStats.rgb} / 0.28)`,
+                  }}
+                >
+                  <span
+                    className="flex items-center justify-center w-12 h-12 rounded-xl shrink-0"
+                    style={{ background: `rgb(${trackingStats.rgb} / 0.2)`, color: `rgb(${trackingStats.rgb})` }}
+                  >
+                    <trackingStats.Icon className="w-6 h-6" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-extrabold tabular-nums leading-none" style={{ color: "rgb(var(--text-primary))" }}>
+                        {trackingStats.count.toLocaleString()}
+                      </span>
+                      <span className="text-sm font-semibold" style={{ color: `rgb(${trackingStats.rgb})` }}>
+                        {trackingStats.label}
+                      </span>
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: "rgb(var(--text-muted))" }}>{trackingStats.note}</p>
+                  </div>
+                  <Activity className="w-14 h-14 absolute -right-2 -bottom-2 opacity-[0.07]" style={{ color: `rgb(${trackingStats.rgb})` }} />
                 </div>
               </div>
             )}

@@ -950,7 +950,7 @@ function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfir
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-xl max-h-[90vh] overflow-y-auto"
-        style={{ background: uiT?.cardBg ?? "#12121c", border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`, borderRadius: "20px" }}
+        style={{ background: "rgb(var(--bg-base))", border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`, borderRadius: "20px" }}
       >
         <DialogHeader>
           <DialogTitle style={{ color: uiT?.headingText ?? "#fff" }}>Review before sending</DialogTitle>

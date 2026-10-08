@@ -27,7 +27,7 @@ export default function InviteCodeGate({ announcementId, onUnlock }) {
       if (!data) { setError("That code isn't valid for this hackathon."); return }
       onUnlock(data)
     } catch (err) {
-      console.error("Invite code check failed:", err)
+      console.error("Invite code check failed:", err.code, err.message, err.details, err.hint)
       setError("Couldn't verify the code. Please try again.")
     } finally {
       setLoading(false)
