@@ -353,12 +353,6 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
             <span className="text-xs font-medium" style={{ color: "rgb(var(--text-secondary))" }}>{formatUTCDateShort(item.date_end)}</span>
           </div>
 
-          {registrationClosedYet && (
-            <div className="flex items-center gap-2 text-xs" style={{ color: "rgb(var(--text-muted))" }}>
-              <Megaphone className="w-3.5 h-3.5 shrink-0" />
-              Promotion starts {formatUTCDateShort(item.promo_begin)}
-            </div>
-          )}
 
           {/* ── Meta chips ── */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -647,16 +641,6 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   <p className="font-semibold text-xs uppercase tracking-wide mb-0.5">Sync Error</p>
                   <p className="text-xs text-red-400/70">{item.sync_error}</p>
                 </div>
-              </div>
-            )}
-
-            {/* ── Registration: not open yet / invite gate / join on Byteon / links ── */}
-            {registrationClosedYet && (
-              <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-500 text-sm">
-                <Megaphone className="w-4 h-4 shrink-0 mt-0.5" />
-                <p className="text-xs leading-relaxed">
-                  Registration opens on {formatUTCDateTime(item.promo_begin)}. Check back then to join.
-                </p>
               </div>
             )}
             {needsCode && <InviteCodeGate announcementId={item.id} onUnlock={setUnlockedLinks} />}
