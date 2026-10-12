@@ -2,7 +2,7 @@
 // Shared rules + helpers for the announcement form and the public card.
 
 // ─── Schedule rules ───────────────────────────────────────────────────────────
-export const APPROVAL_BUFFER_DAYS = 3 // super-admin review window
+export const APPROVAL_BUFFER_DAYS = 6 // super-admin review window
 export const MIN_PROMO_DAYS = 3       // min time between promo start and hackathon start
 export const MIN_EVENT_DAYS = 1       // min hackathon length
 export const DAY_MS = 24 * 60 * 60 * 1000

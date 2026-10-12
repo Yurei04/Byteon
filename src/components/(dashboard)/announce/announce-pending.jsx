@@ -8,6 +8,7 @@ import {
   Globe, Code2, FileSpreadsheet, ClipboardList,
   Search, Check, ChevronUp, ShieldCheck,
   MessageCircle, Megaphone, Gift, Banknote, Lock, Copy, RefreshCw,
+  Users, Rocket,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
@@ -54,6 +55,9 @@ const EMPTY_FORM = {
   prize_currency: "USD",
   is_invite_only: false,
   invite_code: "",
+  native_registration: true,
+  allow_teams: true,
+  max_team_size: 4,
 }
 
 const newPrize = (over = {}) => ({ id: Date.now() + Math.random(), type: "cash", name: "", value: "", description: "", ...over })
@@ -433,7 +437,7 @@ function CountrySelector({ value, onChange, hasError, uiT }) {
 }
 
 // ─── LinksSection ─────────────────────────────────────────────────────────────
-function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded, uiT }) {
+function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded, required = true, uiT }) {
   const [showDropdown, setShowDropdown] = useState(false)
   const addLink    = (e, typeKey) => { e.preventDefault(); setLinks(prev => [...prev, { id: Date.now(), typeKey, value: "" }]); setShowDropdown(false); if (onLinkAdded) onLinkAdded() }
   const removeLink = (e, id)      => { e.preventDefault(); setLinks(prev => prev.filter(l => l.id !== id)) }
@@ -445,7 +449,9 @@ function LinksSection({ links, setLinks, onFocus, onBlur, hasError, onLinkAdded,
         <div className="flex items-center gap-2">
           <Link2 className="w-4 h-4 text-slate-600 dark:text-slate-400" />
           <Label style={{ color: uiT?.headingText }} className="font-semibold">
-            Links <span className="text-red-400">*</span>
+            Links {required
+              ? <span className="text-red-400">*</span>
+              : <span className="text-[11px] font-normal" style={{ color: uiT?.mutedText }}>(optional — Google Form, website, etc.)</span>}
           </Label>
           {links.length > 0 && (
             <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-300 dark:bg-white/5 dark:text-white/70 dark:border-white/10">
@@ -855,6 +861,85 @@ function InviteOnlySection({ enabled, code, onToggle, onCode, hasError, uiT }) {
   )
 }
 
+// ─── RegistrationSection ──────────────────────────────────────────────────────
+// Lets participants join directly on Byteon. External links (Google Form, website…) become optional.
+function RegistrationSection({ enabled, onToggle, uiT }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-fuchsia-400/15 border border-fuchsia-400/25">
+          <Rocket className="w-3.5 h-3.5 text-fuchsia-500" />
+        </div>
+        <div>
+          <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>Join directly on Byteon</Label>
+          <p className="text-[11px] mt-0.5" style={{ color: uiT?.mutedText }}>
+            Participants register on Byteon (solo, with a team code, or looking for a team) and see your community link.
+            A Google Form or other link is then optional.
+          </p>
+        </div>
+      </div>
+      <button
+        type="button" role="switch" aria-checked={enabled}
+        onClick={() => onToggle(!enabled)}
+        className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${enabled ? "bg-fuchsia-500" : "bg-slate-300 dark:bg-white/15"}`}
+      >
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-4" : ""}`} />
+      </button>
+    </div>
+  )
+}
+
+// ─── TeamSettingsSection ──────────────────────────────────────────────────────
+// Lets the organizer allow solo/group participation. Participants then register
+// solo or create/join a team with a 6-digit code (see ParticipationPanel).
+function TeamSettingsSection({ enabled, size, onToggle, onSize, uiT }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-emerald-400/15 border border-emerald-400/25">
+            <Users className="w-3.5 h-3.5 text-emerald-500" />
+          </div>
+          <div>
+            <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>Team participation</Label>
+            <p className="text-[11px] mt-0.5" style={{ color: uiT?.mutedText }}>
+              Let participants join solo or as a group. A project leader creates the team and shares a 6-digit code with groupmates.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button" role="switch" aria-checked={enabled}
+          onClick={() => onToggle(!enabled)}
+          className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${enabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-white/15"}`}
+        >
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-4" : ""}`} />
+        </button>
+      </div>
+
+      {enabled && (
+        <div className="flex items-center gap-3">
+          <Label className="text-sm" style={{ color: uiT?.mutedText }}>Max team size</Label>
+          <select
+            value={size}
+            onChange={(e) => onSize(Number(e.target.value))}
+            className="text-sm rounded-lg px-2 py-1.5 outline-none cursor-pointer"
+            style={{
+              background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+              border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+              color: uiT?.headingText ?? "#fff",
+            }}
+          >
+            {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+              <option key={n} value={n} style={{ background: uiT?.inputBg ?? "#1a1a2e" }}>{n}</option>
+            ))}
+          </select>
+          <span className="text-[11px]" style={{ color: uiT?.mutedText }}>members including the leader</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── TermsCheckbox ────────────────────────────────────────────────────────────
 function TermsCheckbox({ checked, onChange, hasError, addToast, uiT }) {
   return (
@@ -980,6 +1065,12 @@ function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfir
           {row("Access", payload.is_invite_only
             ? <>Invite only · code <span className="font-mono tracking-widest font-semibold">{payload.invite_code}</span></>
             : "Public")}
+          {row("Registration", payload.native_registration
+            ? `Join on Byteon${linkCount ? " + external links" : ""}`
+            : "External links only")}
+          {row("Teams", payload.allow_teams
+            ? `Solo or group · up to ${payload.max_team_size} per team`
+            : "Solo only")}
           {row("Links", `${linkCount} added`)}
         </div>
 
@@ -1160,7 +1251,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
 
     // links
     const filledLinks = links.filter(l => l.value.trim())
-    if (filledLinks.length === 0) { setLinkError(true); errors.push("Please add at least one link.") }
+    if (filledLinks.length === 0 && !formData.native_registration) { setLinkError(true); errors.push("Add at least one link, or let people join directly on Byteon.") }
     else setLinkError(false)
 
     const badCommunityLink = filledLinks.find(l => l.typeKey === "community_link" && !isValidCommunityLink(l.value.trim()))
@@ -1205,6 +1296,9 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       prize_currency:       currency,
       is_invite_only:       formData.is_invite_only,
       invite_code:          formData.is_invite_only ? normalizeInviteCode(formData.invite_code) : null,
+      native_registration:  !!formData.native_registration,
+      allow_teams:          !!formData.native_registration && !!formData.allow_teams,
+      max_team_size:        formData.native_registration && formData.allow_teams ? Number(formData.max_team_size) || 4 : 4,
       website_link:         linkFields.website_link         || null,
       dev_link:             linkFields.dev_link             || null,
       community_link:       linkFields.community_link       || null,
@@ -1459,6 +1553,28 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
         />
       </Section>
 
+      {/* ── Registration on Byteon ── */}
+      <Section uiT={uiT}>
+        <RegistrationSection
+          enabled={formData.native_registration}
+          onToggle={(v) => { setFormData(prev => ({ ...prev, native_registration: v })); if (v) setLinkError(false) }}
+          uiT={uiT}
+        />
+      </Section>
+
+      {/* ── Teams (only when joining on Byteon) ── */}
+      {formData.native_registration && (
+        <Section uiT={uiT}>
+          <TeamSettingsSection
+            enabled={formData.allow_teams}
+            size={formData.max_team_size}
+            onToggle={(v) => setFormData(prev => ({ ...prev, allow_teams: v }))}
+            onSize={(n) => setFormData(prev => ({ ...prev, max_team_size: n }))}
+            uiT={uiT}
+          />
+        </Section>
+      )}
+
       {/* ── Links ── */}
       <Section uiT={uiT}>
         <LinksSection
@@ -1468,6 +1584,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
           onBlur={handleBlur}
           hasError={linkError}
           onLinkAdded={() => setLinkError(false)}
+          required={!formData.native_registration}
           uiT={uiT}
         />
       </Section>

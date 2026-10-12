@@ -19,18 +19,21 @@ import {
   ChevronRight, ChevronLeft, PauseCircle, PlayCircle, Filter,
   MapPin, BarChart2, Sheet, Info,
   Lock, Unlock, MessageCircle, Send, Phone, FileSpreadsheet, RefreshCw, Eye, UserCheck,
+  UsersRound, Rocket,
 } from "lucide-react"
 
 import { notifyContentDeletedByOrg } from "@/lib/notification"
 import { Input } from "@/components/ui/input"
+import OrgParticipantsTab from "./orgParticipantsTab"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ITEMS_PER_PAGE = 10
 
 const TAB_CONFIG = [
-  { value: "announcements", label: "Announcements", Icon: Megaphone },
-  { value: "blogs",         label: "Blogs",         Icon: FileText  },
-  { value: "resources",     label: "Resources",     Icon: BookOpen  },
+  { value: "announcements", label: "Announcements", Icon: Megaphone  },
+  { value: "blogs",         label: "Blogs",         Icon: FileText   },
+  { value: "resources",     label: "Resources",     Icon: BookOpen   },
+  { value: "participants",  label: "Participants",  Icon: UsersRound },
 ]
 
 const TABLE_MAP = {
@@ -75,7 +78,7 @@ const STATUS_PALETTE = {
 
 // ─── Accent builder ───────────────────────────────────────────────────────────
 function buildAccents(primary, secondary) {
-  const colors = [primary, secondary, secondary]
+  const colors = [primary, secondary, secondary, primary]
   return TAB_CONFIG.map((_, i) => {
     const c = colors[i] || primary
     return {
@@ -413,40 +416,54 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
           <TabsList className="ovs-tab-list p-1 rounded-xl h-auto flex gap-0.5">
             {TAB_CONFIG.map(({ value, label, Icon }, i) => {
               const ac = accents[i]
+              const total = chipCounts[value]?.all   // undefined for the Participants tab (no badge)
               return (
                 <TabsTrigger key={value} value={value}
                   className="ovs-tab flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium">
                   <Icon className="w-3.5 h-3.5" />
                   {label}
-                  <span
-                    className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium"
-                    style={{ background: ac.badgeBg, borderColor: ac.badgeBorder, color: ac.badgeText }}
-                  >
-                    {chipCounts[value].all}
-                  </span>
+                  {total !== undefined && (
+                    <span
+                      className="text-[10px] px-1.5 py-0.5 rounded-full border font-medium"
+                      style={{ background: ac.badgeBg, borderColor: ac.badgeBorder, color: ac.badgeText }}
+                    >
+                      {total}
+                    </span>
+                  )}
                 </TabsTrigger>
               )
             })}
           </TabsList>
 
-          {/* Search */}
-          <div className="relative flex-1 max-w-xs">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
-              style={{ color: uiT?.mutedText ?? "#a11bb0" }} />
-            <input
-              value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by title or author…"
-              className="ovs-search w-full pl-9 pr-3 h-9 rounded-lg text-sm transition-all"
-              style={{
-                background: uiT?.inputBg     ?? "#ffffff",
-                border:     `1px solid ${uiT?.borderBase ?? "rgba(220,150,240,0.35)"}`,
-                color:      uiT?.headingText ?? "#320a37",
-              }}
-            />
-          </div>
+          {/* Search (content tabs only — Participants has its own search) */}
+          {activeTab !== "participants" && (
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none"
+                style={{ color: uiT?.mutedText ?? "#a11bb0" }} />
+              <input
+                value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search by title or author…"
+                className="ovs-search w-full pl-9 pr-3 h-9 rounded-lg text-sm transition-all"
+                style={{
+                  background: uiT?.inputBg     ?? "#ffffff",
+                  border:     `1px solid ${uiT?.borderBase ?? "rgba(220,150,240,0.35)"}`,
+                  color:      uiT?.headingText ?? "#320a37",
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {TAB_CONFIG.map(({ value }, tabIndex) => {
+          // ── Participants tab: who joined solo / in a team, per announcement ──
+          if (value === "participants") {
+            return (
+              <TabsContent key={value} value={value} className="flex-1 min-h-0 mt-0">
+                <OrgParticipantsTab announcements={data.announcements} addToast={addToast} uiT={uiT} />
+              </TabsContent>
+            )
+          }
+
           const ac       = accents[tabIndex]
           const list     = filtered[value]
           const pageList = paginated[value]
@@ -591,7 +608,7 @@ export default function OrgViewableSection({ currentOrg, authUserId, primaryColo
         <AlertDialogContent
           className="backdrop-blur-xl max-w-md"
           style={{
-            background: "rgb(var((--primary-base))",
+            background: "rgb(var(--bg-base))",
             border:     "1px solid rgba(239,68,68,0.25)",
             boxShadow:  "0 24px 64px rgba(239,68,68,0.12)",
           }}
@@ -991,53 +1008,66 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
                 </DetailBlock>
               )}
 
-              {item.invite_code || item.is_invite_only && (
-              <DetailBlock
-                icon={
-                  item.is_invite_only
-                    ? <Lock className="w-3.5 h-3.5" />
-                    : <Unlock className="w-3.5 h-3.5" />
-                }
-                label="Accessibility"
-                ac={ac}
-                uiT={uiT}
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className="text-[11px] px-2 py-0.5 rounded-full border font-medium"
-                    style={{
-                      background: item.is_invite_only
-                        ? sp.suspended.bg
-                        : sp.active.bg,
-                      borderColor: item.is_invite_only
-                        ? sp.suspended.border
-                        : sp.active.border,
-                      color: item.is_invite_only
-                        ? sp.suspended.text
-                        : sp.active.text,
-                    }}
-                  >
-                    {item.is_invite_only ? "Invite only" : "Open to everyone"} 
-                  </span>
-
-                  {item.is_invite_only && item.invite_code && (
+              {/* (fixed: the || / && precedence used to print the raw invite code as text) */}
+              {(item.invite_code || item.is_invite_only) && (
+                <DetailBlock
+                  icon={
+                    item.is_invite_only
+                      ? <Lock className="w-3.5 h-3.5" />
+                      : <Unlock className="w-3.5 h-3.5" />
+                  }
+                  label="Accessibility"
+                  ac={ac}
+                  uiT={uiT}
+                >
+                  <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className="text-xs font-mono px-2 py-0.5 rounded-md"
+                      className="text-[11px] px-2 py-0.5 rounded-full border font-medium"
                       style={{
-                        background: uiT?.surfaceBg2 ?? "rgba(220,150,240,0.25)",
-                        border: `1px solid ${
-                          uiT?.borderBase ?? "rgba(220,150,240,0.35)"
-                        }`,
-                        color: uiT?.headingText ?? "#320a37",
+                        background:  item.is_invite_only ? sp.suspended.bg     : sp.active.bg,
+                        borderColor: item.is_invite_only ? sp.suspended.border : sp.active.border,
+                        color:       item.is_invite_only ? sp.suspended.text   : sp.active.text,
                       }}
                     >
-                      Code: {item.invite_code}
+                      {item.is_invite_only ? "Invite only" : "Open to everyone"}
                     </span>
-                  )}
-                </div>
-              </DetailBlock>
+
+                    {item.is_invite_only && item.invite_code && (
+                      <span
+                        className="text-xs font-mono px-2 py-0.5 rounded-md"
+                        style={{
+                          background: uiT?.surfaceBg2 ?? "rgba(220,150,240,0.25)",
+                          border: `1px solid ${uiT?.borderBase ?? "rgba(220,150,240,0.35)"}`,
+                          color: uiT?.headingText ?? "#320a37",
+                        }}
+                      >
+                        Code: {item.invite_code}
+                      </span>
+                    )}
+                  </div>
+                </DetailBlock>
               )}
-            
+
+              {/* Registration on Byteon + team settings */}
+              {item.native_registration && (
+                <DetailBlock icon={<Rocket className="w-3.5 h-3.5" />} label="Registration" ac={ac} uiT={uiT}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className="text-[11px] px-2 py-0.5 rounded-full border font-medium"
+                      style={{ background: sp.active.bg, borderColor: sp.active.border, color: sp.active.text }}
+                    >
+                      Join on Byteon
+                    </span>
+                    <span className="text-xs" style={{ color: uiT?.mutedText ?? "#a11bb0" }}>
+                      {item.allow_teams === false ? "Solo only" : `Solo or teams of up to ${item.max_team_size ?? 4}`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] mt-1.5" style={{ color: uiT?.mutedText ?? "#a11bb0" }}>
+                    See who joined in the <span className="font-semibold">Participants</span> tab.
+                  </p>
+                </DetailBlock>
+              )}
+
               {item.countries && (
                 <DetailBlock icon={<MapPin className="w-3.5 h-3.5" />} label="Countries" ac={ac} uiT={uiT}>
                   <p className="text-sm" style={{ color: uiT?.bodyText ?? "#320a37" }}>{item.countries}</p>
@@ -1121,27 +1151,27 @@ function DetailPane({ item, type, ac, primaryColor, secondaryColor, actionLoadin
               )}
 
               {item.google_forms_url && (
-                  <DetailBlock icon={<FileSpreadsheet className="w-3.5 h-3.5" />} label="Google Form" ac={ac} uiT={uiT}>
-                    <a href={item.google_forms_url} target="_blank" rel="noopener noreferrer"
+                <DetailBlock icon={<FileSpreadsheet className="w-3.5 h-3.5" />} label="Google Form" ac={ac} uiT={uiT}>
+                  <a href={item.google_forms_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
+                    style={{ color: ac.tagColor }}>
+                    {item.google_forms_url}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+
+              {item.community_link && (() => {
+                const { Icon, label } = getCommunityMeta(item.community_link)
+                return (
+                  <DetailBlock icon={<Icon className="w-3.5 h-3.5" />} label={`${label} Group`} ac={ac} uiT={uiT}>
+                    <a href={item.community_link} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
                       style={{ color: ac.tagColor }}>
-                      {item.google_forms_url}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                      {item.community_link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
                     </a>
                   </DetailBlock>
-                )}
-
-                {item.community_link && (() => {
-                  const { Icon, label } = getCommunityMeta(item.community_link)
-                  return (
-                    <DetailBlock icon={<Icon className="w-3.5 h-3.5" />} label={`${label} Group`} ac={ac} uiT={uiT}>
-                      <a href={item.community_link} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
-                        style={{ color: ac.tagColor }}>
-                        {item.community_link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
-                      </a>
-                    </DetailBlock>
-                  )
-                })()}
+                )
+              })()}
 
               {item.tracking_method && (
                 <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Tracking Method" ac={ac} uiT={uiT}>

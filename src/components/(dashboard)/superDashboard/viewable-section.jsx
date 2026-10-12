@@ -28,10 +28,12 @@ import {
   ShieldCheck,
   ShieldOff,
   Lock, Unlock, MessageCircle, Send, Phone, FileSpreadsheet, Eye,
+  UsersRound, Rocket,
 } from "lucide-react"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog"
+import AdminParticipantsTab from "./super-admin-all-participants"
 
 const ITEMS_PER_PAGE = 10
 
@@ -198,12 +200,30 @@ const ACCENTS = {
     pageActive:   "bg-violet-500/20 border-violet-500/40 text-violet-600 dark:text-violet-300",
     pageHover:    "hover:bg-violet-500/10 hover:border-violet-500/30 hover:text-violet-600 dark:hover:text-violet-300",
   },
+  participants: {
+    color:        "#34d399",
+    colorShadow:  "#047857",
+    tagColor:     "#34d399",
+    dotBg:        "#34d399",
+    badgeBg:      "rgba(52,211,153,0.12)",
+    badgeBorder:  "rgba(52,211,153,0.35)",
+    badgeText:    "#6ee7b7",
+    dot:          "bg-emerald-400",
+    tag:          "text-emerald-400",
+    badge:        "bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border-emerald-500/30",
+    heading:      "text-emerald-600 dark:text-emerald-300",
+    border:       "border-emerald-500/30",
+    tabActive:    "data-[state=active]:from-emerald-600 data-[state=active]:to-teal-600",
+    pageActive:   "bg-emerald-500/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-300",
+    pageHover:    "hover:bg-emerald-500/10 hover:border-emerald-500/30 hover:text-emerald-600 dark:hover:text-emerald-300",
+  },
 }
 
 const TAB_CONFIG = [
-  { value: "announcements", label: "Announcements", Icon: Megaphone },
-  { value: "blogs",         label: "Blogs",         Icon: FileText  },
-  { value: "resources",     label: "Resources",     Icon: BookOpen  },
+  { value: "announcements", label: "Announcements", Icon: Megaphone  },
+  { value: "blogs",         label: "Blogs",         Icon: FileText   },
+  { value: "resources",     label: "Resources",     Icon: BookOpen   },
+  { value: "participants",  label: "Participants",  Icon: UsersRound },
 ]
 
 const TABLE_MAP = {
@@ -619,6 +639,7 @@ export default function ViewableSection({ addToast }) {
           >
             {TAB_CONFIG.map(({ value, label, Icon }) => {
               const ac = ACCENTS[value]
+              const total = filtered[value]?.length   // undefined for the Participants tab (no badge)
               return (
                 <TabsTrigger key={value} value={value}
                   className={`flex cursor-pointer items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
@@ -627,101 +648,115 @@ export default function ViewableSection({ addToast }) {
                   style={{ color: "rgb(var(--text-faint))" }}
                 >
                   <Icon className="w-3.5 h-3.5" />{label}
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${ac.badge}`}>
-                    {filtered[value].length}
-                  </span>
+                  {total !== undefined && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${ac.badge}`}>
+                      {total}
+                    </span>
+                  )}
                 </TabsTrigger>
               )
             })}
           </TabsList>
 
-          {/* Search */}
-          <div className="relative flex-1 max-w-xs group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors"
-              style={{ color: "rgb(var(--text-faint) / 0.6)" }} />
-            <Input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by title or author…"
-              className="pl-9 h-9 text-sm rounded-lg focus:ring-0 transition-colors"
-              style={{
-                background: "rgb(var(--surface-raised) / 0.5)",
-                border: "1px solid rgb(var(--surface-border) / 0.4)",
-                color: "rgb(var(--text-primary))",
-              }}
-            />
-          </div>
+          {/* Search + refresh (content tabs only — Participants has its own search/refresh) */}
+          {activeTab !== "participants" && (
+            <>
+              <div className="relative flex-1 max-w-xs group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-colors"
+                  style={{ color: "rgb(var(--text-faint) / 0.6)" }} />
+                <Input
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Search by title or author…"
+                  className="pl-9 h-9 text-sm rounded-lg focus:ring-0 transition-colors"
+                  style={{
+                    background: "rgb(var(--surface-raised) / 0.5)",
+                    border: "1px solid rgb(var(--surface-border) / 0.4)",
+                    color: "rgb(var(--text-primary))",
+                  }}
+                />
+              </div>
 
-          {/* Refresh */}
-          <Button size="sm" onClick={fetchAll} disabled={loading} variant="ghost"
-            className="h-9 w-9 p-0 cursor-pointer rounded-lg transition-all duration-200"
-            style={{
-              border: "1px solid rgb(var(--surface-border) / 0.4)",
-              color: "rgb(var(--text-faint))",
-              background: "rgb(var(--surface-raised) / 0.3)",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.color = "rgb(var(--text-secondary))"
-              e.currentTarget.style.background = "rgb(var(--surface-raised) / 0.6)"
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.color = "rgb(var(--text-faint))"
-              e.currentTarget.style.background = "rgb(var(--surface-raised) / 0.3)"
-            }}
-          >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          </Button>
+              <Button size="sm" onClick={fetchAll} disabled={loading} variant="ghost"
+                className="h-9 w-9 p-0 cursor-pointer rounded-lg transition-all duration-200"
+                style={{
+                  border: "1px solid rgb(var(--surface-border) / 0.4)",
+                  color: "rgb(var(--text-faint))",
+                  background: "rgb(var(--surface-raised) / 0.3)",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = "rgb(var(--text-secondary))"
+                  e.currentTarget.style.background = "rgb(var(--surface-raised) / 0.6)"
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = "rgb(var(--text-faint))"
+                  e.currentTarget.style.background = "rgb(var(--surface-raised) / 0.3)"
+                }}
+              >
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              </Button>
 
-          {/* Guidelines buttons */}
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={() => setGuidelinesMode("suspension")}
-              className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-              style={{
-                border: "1px solid rgba(217,119,6,0.25)",
-                background: "rgba(217,119,6,0.06)",
-                color: "rgb(var(--text-secondary))",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "rgba(217,119,6,0.12)"
-                e.currentTarget.style.borderColor = "rgba(217,119,6,0.4)"
-                e.currentTarget.style.color = "#d97706"
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "rgba(217,119,6,0.06)"
-                e.currentTarget.style.borderColor = "rgba(217,119,6,0.25)"
-                e.currentTarget.style.color = "rgb(var(--text-secondary))"
-              }}
-            >
-              <BookOpenCheck className="w-3.5 h-3.5" />
-              Suspension Guide
-            </button>
-            <button
-              onClick={() => setGuidelinesMode("deletion")}
-              className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-              style={{
-                border: "1px solid rgba(239,68,68,0.25)",
-                background: "rgba(239,68,68,0.06)",
-                color: "rgb(var(--text-secondary))",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "rgba(239,68,68,0.12)"
-                e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"
-                e.currentTarget.style.color = "#ef4444"
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "rgba(239,68,68,0.06)"
-                e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"
-                e.currentTarget.style.color = "rgb(var(--text-secondary))"
-              }}
-            >
-              <ScrollText className="w-3.5 h-3.5" />
-              Deletion Rules
-            </button>
-          </div>
+              {/* Guidelines buttons */}
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  onClick={() => setGuidelinesMode("suspension")}
+                  className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    border: "1px solid rgba(217,119,6,0.25)",
+                    background: "rgba(217,119,6,0.06)",
+                    color: "rgb(var(--text-secondary))",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(217,119,6,0.12)"
+                    e.currentTarget.style.borderColor = "rgba(217,119,6,0.4)"
+                    e.currentTarget.style.color = "#d97706"
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(217,119,6,0.06)"
+                    e.currentTarget.style.borderColor = "rgba(217,119,6,0.25)"
+                    e.currentTarget.style.color = "rgb(var(--text-secondary))"
+                  }}
+                >
+                  <BookOpenCheck className="w-3.5 h-3.5" />
+                  Suspension Guide
+                </button>
+                <button
+                  onClick={() => setGuidelinesMode("deletion")}
+                  className="flex cursor-pointer items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{
+                    border: "1px solid rgba(239,68,68,0.25)",
+                    background: "rgba(239,68,68,0.06)",
+                    color: "rgb(var(--text-secondary))",
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "rgba(239,68,68,0.12)"
+                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"
+                    e.currentTarget.style.color = "#ef4444"
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "rgba(239,68,68,0.06)"
+                    e.currentTarget.style.borderColor = "rgba(239,68,68,0.25)"
+                    e.currentTarget.style.color = "rgb(var(--text-secondary))"
+                  }}
+                >
+                  <ScrollText className="w-3.5 h-3.5" />
+                  Deletion Rules
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {TAB_CONFIG.map(({ value }) => {
+          // ── Participants tab: every announcement across all organizations ──
+          if (value === "participants") {
+            return (
+              <TabsContent key={value} value={value} className="flex-1 min-h-0 mt-0">
+                <AdminParticipantsTab announcements={data.announcements} addToast={addToast} />
+              </TabsContent>
+            )
+          }
+
           const ac       = ACCENTS[value]
           const list     = filtered[value]
           const pageList = paginated[value]
@@ -1426,6 +1461,12 @@ function DetailPane({ item, type, ac, actionLoading, onDelete, onToggleSuspend }
           {/* ── Announcements ── */}
           {type === "announcements" && (
             <>
+              {item.organization && (
+                <DetailBlock icon={<Users className="w-3.5 h-3.5" />} label="Organization">
+                  <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>{item.organization}</p>
+                </DetailBlock>
+              )}
+
               {(item.date_begin || item.date_end || item.promo_begin) && (
                 <DetailBlock icon={<Calendar className="w-3.5 h-3.5" />} label="Schedule">
                   <div className="flex gap-3">
@@ -1466,7 +1507,6 @@ function DetailPane({ item, type, ac, actionLoading, onDelete, onToggleSuspend }
                       : <Unlock className="w-3.5 h-3.5" />
                   }
                   label="Accessibility"
-                  ac={ac}
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <span
@@ -1499,6 +1539,26 @@ function DetailPane({ item, type, ac, actionLoading, onDelete, onToggleSuspend }
                       </span>
                     )}
                   </div>
+                </DetailBlock>
+              )}
+
+              {/* Registration on Byteon + team settings */}
+              {item.native_registration && (
+                <DetailBlock icon={<Rocket className="w-3.5 h-3.5" />} label="Registration">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className="text-[11px] px-2 py-0.5 rounded-full border font-medium"
+                      style={{ background: "rgba(5,150,105,0.1)", color: "#059669", borderColor: "rgba(5,150,105,0.25)" }}
+                    >
+                      Join on Byteon
+                    </span>
+                    <span className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>
+                      {item.allow_teams === false ? "Solo only" : `Solo or teams of up to ${item.max_team_size ?? 4}`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] mt-1.5" style={{ color: "rgb(var(--text-faint))" }}>
+                    See who joined in the <span className="font-semibold">Participants</span> tab.
+                  </p>
                 </DetailBlock>
               )}
 
@@ -1572,28 +1632,29 @@ function DetailPane({ item, type, ac, actionLoading, onDelete, onToggleSuspend }
                 </DetailBlock>
               )}
 
+              {/* (fixed: these two blocks referenced an undefined `uiT`, which crashed the pane) */}
               {item.google_forms_url && (
-                  <DetailBlock icon={<FileSpreadsheet className="w-3.5 h-3.5" />} label="Google Form" ac={ac} uiT={uiT}>
-                    <a href={item.google_forms_url} target="_blank" rel="noopener noreferrer"
+                <DetailBlock icon={<FileSpreadsheet className="w-3.5 h-3.5" />} label="Google Form">
+                  <a href={item.google_forms_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
+                    style={{ color: ac.tagColor }}>
+                    {item.google_forms_url}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                  </a>
+                </DetailBlock>
+              )}
+
+              {item.community_link && (() => {
+                const { Icon, label } = getCommunityMeta(item.community_link)
+                return (
+                  <DetailBlock icon={<Icon className="w-3.5 h-3.5" />} label={`${label} Group`}>
+                    <a href={item.community_link} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
                       style={{ color: ac.tagColor }}>
-                      {item.google_forms_url}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
+                      {item.community_link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
                     </a>
                   </DetailBlock>
-                )}
-
-                {item.community_link && (() => {
-                  const { Icon, label } = getCommunityMeta(item.community_link)
-                  return (
-                    <DetailBlock icon={<Icon className="w-3.5 h-3.5" />} label={`${label} Group`} ac={ac} uiT={uiT}>
-                      <a href={item.community_link} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-sm hover:underline underline-offset-2 break-all"
-                        style={{ color: ac.tagColor }}>
-                        {item.community_link}<ExternalLink className="w-3 h-3 shrink-0 opacity-60" />
-                      </a>
-                    </DetailBlock>
-                  )
-                })()}
+                )
+              })()}
 
               {item.tracking_method && (
                 <DetailBlock icon={<BarChart2 className="w-3.5 h-3.5" />} label="Tracking Method">

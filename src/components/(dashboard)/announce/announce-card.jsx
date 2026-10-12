@@ -1,232 +1,707 @@
 "use client"
-import { Card, CardContent } from "@/components/ui/card"
-import { Calendar, ExternalLink, Award, Trash2, Edit, Trophy } from "lucide-react"
-import { Button } from "../../ui/button"
-import AnnouncementEdit from "./announce-edit"
-import AnnouncementTrackingBadge from "./announce-tracking-badge"
-import { supabase } from "@/lib/supabase"
+
 import { useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Calendar, Award, Users, AlertCircle, MousePointerClick, Trophy, Clock,
+  ChevronRight, MapPin, Sparkles, Megaphone, Lock,
+  Globe, Code2, MessageCircle, FileText, ArrowUpRight, Activity,
+  Rocket, LogIn,
+} from "lucide-react"
+import { supabase } from "@/lib/supabase"
+import { buildTheme } from "@/lib/blog-color"
+import { getPhase, daysUntil } from "@/lib/announcement-config"
+import { useAuth } from "@/components/(auth)/authContext"
+import AnnouncementTrackingBadge from "./announce-tracking-badge"
+import InviteCodeGate from "./invite-code-gate"
+import ParticipationPanel from "./participationPanel"
 
-export default function AnnouncementCard({ item, onDelete, onUpdate }) {
-  const isExpired = new Date(item.date_end) < new Date()
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isRemoving, setIsRemoving] = useState(false)
+/* ─── Helpers ────────────────────────────────────────────────────────────── */
 
-  // Get prizes from JSONB field
-  const prizes = item.prizes || []
-  
-  const handleDeleteClick = () => {
-    setShowDeleteDialog(true)
+function formatUTCDateTime(dateString) {
+  if (!dateString) return "—"
+  const date = new Date(dateString)
+  if (isNaN(date)) return "—"
+  return (
+    new Intl.DateTimeFormat("en-GB", {
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+      hour12: false, timeZone: "UTC",
+    }).format(date) + " UTC"
+  )
+}
+
+function formatUTCDateShort(dateString) {
+  if (!dateString) return "—"
+  const date = new Date(dateString)
+  if (isNaN(date)) return "—"
+  return new Intl.DateTimeFormat("en-GB", {
+    month: "short", day: "numeric", year: "numeric",
+    timeZone: "UTC",
+  }).format(date)
+}
+
+/* ─── Constants ──────────────────────────────────────────────────────────── */
+
+const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
+
+/**
+ * Public links. google_sheet_csv_url is intentionally NOT here — it is an
+ * internal tracking source and must never be shown to visitors.
+ * `rgb` is a space-separated triple so we can build tinted backgrounds/borders.
+ */
+const LINK_DEFS = [
+  {
+    key: "website_link", Icon: Globe, rgb: "139 92 246",
+    sm: (manual) => (manual ? "Register" : "Website"),
+    lg: (manual) => (manual ? "Register Now" : "Visit Website"),
+    hint: "Official event page",
+  },
+  {
+    key: "dev_link", Icon: Code2, rgb: "59 130 246",
+    sm: () => "DevPost", lg: () => "View on DevPost",
+    hint: "Submissions & project gallery",
+  },
+  {
+    key: "community_link", Icon: MessageCircle, rgb: "16 185 129",
+    sm: () => "Community", lg: () => "Join Community",
+    hint: "Chat with organizers & teammates",
+  },
+  {
+    // Optional alternative to joining on Byteon
+    key: "google_forms_url", Icon: FileText, rgb: "245 158 11",
+    sm: () => "Google Form", lg: () => "Register with Google Form",
+    hint: "Optional — an alternative way to register",
+  },
+]
+
+const getPrizeColorScheme = (prizeName, prizeType) => {
+  const name = prizeName.toLowerCase()
+  const base = { value: "text-foreground", label: "text-muted-foreground" }
+
+  if (name.includes("1st") || name.includes("first") || name.includes("gold"))
+    return { ...base,
+      gradient: "from-yellow-500/40 via-yellow-400/15 to-transparent dark:from-yellow-500/15 dark:to-yellow-500/5",
+      border: "border-yellow-500/20 dark:border-yellow-500/30", glow: "shadow-yellow-500/10",
+      icon: "text-yellow-500 dark:text-yellow-400", rank: "🥇" }
+
+  if (name.includes("2nd") || name.includes("second") || name.includes("silver"))
+    return { ...base,
+      gradient: "from-slate-400/40 via-slate-300/15 to-transparent dark:from-slate-400/15 dark:to-slate-400/5",
+      border: "border-slate-400/20 dark:border-slate-400/30", glow: "shadow-slate-400/10",
+      icon: "text-slate-500 dark:text-slate-300", rank: "🥈" }
+
+  if (name.includes("3rd") || name.includes("third") || name.includes("bronze"))
+    return { ...base,
+      gradient: "from-orange-500/40 via-amber-500/15 to-transparent dark:from-orange-500/15 dark:to-orange-500/5",
+      border: "border-orange-500/20 dark:border-orange-500/30", glow: "shadow-orange-500/10",
+      icon: "text-orange-500 dark:text-orange-400", rank: "🥉" }
+
+  if (name.includes("participation"))
+    return { ...base,
+      gradient: "from-violet-500/10 via-purple-500/5 to-transparent dark:from-violet-500/15 dark:to-violet-500/5",
+      border: "border-violet-500/20 dark:border-violet-500/30", glow: "shadow-violet-500/10",
+      icon: "text-violet-500 dark:text-violet-400", rank: "🎖️" }
+
+  if (prizeType === "non_cash")
+    return { ...base,
+      gradient: "from-teal-500/10 via-emerald-500/5 to-transparent dark:from-teal-500/15 dark:to-teal-500/5",
+      border: "border-teal-500/20 dark:border-teal-500/30", glow: "shadow-teal-500/10",
+      icon: "text-teal-500 dark:text-teal-400", rank: "🎁" }
+
+  return { ...base,
+    gradient: "from-sky-500/10 via-blue-500/5 to-transparent dark:from-sky-500/15 dark:to-sky-500/5",
+    border: "border-sky-500/20 dark:border-sky-500/30", glow: "shadow-sky-500/10",
+    icon: "text-sky-500 dark:text-sky-400", rank: "🏆" }
+}
+
+/* ─── Sub-components ─────────────────────────────────────────────────────── */
+
+// phase: "upcoming" | "open" | "live" | "ended"  (see getPhase)
+function StatusPill({ phase, item, t }) {
+  const fixed = {
+    ended:    { text: "Ended",                                       cls: "bg-red-500/15 border border-red-500/30 text-red-400",             dot: "bg-red-400",     pulse: false },
+    upcoming: { text: `Opens in ${daysUntil(item.promo_begin)}d`,    cls: "bg-amber-500/15 border border-amber-500/30 text-amber-500",       dot: "bg-amber-400",   pulse: false },
+    live:     { text: `Live · ${daysUntil(item.date_end)}d left`,    cls: "bg-emerald-500/15 border border-emerald-500/30 text-emerald-500", dot: "bg-emerald-400", pulse: true  },
+  }[phase]
+
+  if (fixed) {
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide ${fixed.cls}`}>
+        <span className={`w-1.5 h-1.5 rounded-full inline-block ${fixed.dot} ${fixed.pulse ? "animate-pulse" : ""}`} />
+        {fixed.text}
+      </span>
+    )
   }
+  // "open": promotion running, hackathon not started yet
+  const d = daysUntil(item.date_begin)
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide"
+      style={{ background: t.badgeBgPrimary, border: t.borderColorLight, color: t.primaryText }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full inline-block animate-pulse" style={{ background: "currentColor" }} />
+      {d > 0 ? `Starts in ${d}d` : "Starting soon"}
+    </span>
+  )
+}
 
-  const handleConfirmDelete = async () => {
-    setIsDeleting(true)
-    
-    try {
-      const { error } = await supabase
-        .from('announcements')
-        .delete()
-        .eq('id', item.id)
+function DetailRow({ icon, label, value, iconColor }) {
+  if (!value) return null
+  return (
+    <div className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0">
+      <div className="mt-0.5 shrink-0" style={{ color: iconColor }}>{icon}</div>
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-wider font-semibold mb-0.5" style={{ color: "rgb(var(--text-muted))" }}>{label}</p>
+        <p className="text-sm leading-relaxed" style={{ color: "rgb(var(--text-secondary))" }}>{value}</p>
+      </div>
+    </div>
+  )
+}
 
-      if (error) throw error
-      
-      // Start fade out animation
-      setIsRemoving(true)
-      
-      // Wait for animation to complete before calling onDelete
-      setTimeout(() => {
-        if (onDelete) onDelete(item.id)
-      }, 300)
-      
-    } catch (error) {
-      console.error('Error deleting announcement:', error)
-      alert('Failed to delete announcement: ' + error.message)
-      setIsDeleting(false)
-      setIsRemoving(false)
-    } finally {
-      setShowDeleteDialog(false)
+/* ─── Main Component ─────────────────────────────────────────────────────── */
+
+export default function AnnouncementPublicCard({ item, theme, onDelete }) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [unlockedLinks, setUnlockedLinks] = useState(null) // set after a valid invite code
+  const { session, isLoggedIn } = useAuth()
+  const t = theme || FALLBACK_THEME
+
+  const phase    = getPhase(item)
+  const prizes   = item.prizes || []
+  const isInvite = !!item.is_invite_only
+  const isManual = (item.tracking_method || "manual") === "manual"
+  const isAuto   = item.tracking_method === "automatic"
+
+  // Links are only exposed once the schedule allows it and, for invite-only events, once the code is verified.
+  // NOTE: for invite-only events, the unlock RPC should return
+  // { website_link, dev_link, community_link, google_forms_url }.
+  const links = isInvite
+    ? (unlockedLinks ?? {})
+    : {
+        website_link:     item.website_link,
+        dev_link:         item.dev_link,
+        community_link:   item.community_link,
+        google_forms_url: item.google_forms_url,
+      }
+  const activeLinks = LINK_DEFS.filter((d) => links[d.key])
+
+  const registrationClosedYet = phase === "upcoming"
+  const showLinks = !registrationClosedYet && activeLinks.length > 0
+  const needsCode = isInvite && !unlockedLinks && !registrationClosedYet
+
+  // ── Join directly on Byteon (native registration) ──
+  const native     = !!item.native_registration
+  const showNative = native && !registrationClosedYet && phase !== "ended"
+  // For invite-only events the join panel only appears after the code has been accepted.
+  const canJoinNow = showNative && !needsCode
+  const user       = session?.user
+  const displayName =
+    user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || ""
+  // Community link is passed to the panel even for invite-only events once unlocked.
+  const panelAnnouncement = { ...item, community_link: links.community_link ?? item.community_link }
+
+  const handleLinkClick = async (e, key) => {
+    e.stopPropagation()
+    if (key === "website_link" && isManual && links.website_link) {
+      try {
+        await supabase.from("announcements").update({
+          website_clicks:    (item.website_clicks    || 0) + 1,
+          registrants_count: (item.registrants_count || 0) + 1,
+        }).eq("id", item.id)
+      } catch (err) { console.error("Error tracking click:", err) }
     }
   }
-  
+
+  const getTrackingStats = () => {
+    if (registrationClosedYet) return null // nothing to track before promotion starts
+    if (isManual)
+      return {
+        Icon: MousePointerClick, label: "Clicks", rgb: "139 92 246",
+        count: item.website_clicks || 0,
+        note: "Counted each time someone taps Register",
+      }
+    if (isAuto)
+      return {
+        Icon: Users, label: "Registrants", rgb: "16 185 129",
+        count: item.registrants_count || 0, hasError: item.sync_error,
+        note: "Updated automatically from registrations",
+      }
+    return null
+  }
+
+  const trackingStats = getTrackingStats()
+
+  /* ── Link buttons: each type has its own icon + color ── */
+  const renderLinkButtons = (size) => {
+    if (size === "lg") {
+      return (
+        <div>
+          <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+            {native ? "More ways to join & follow" : "Links"}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {activeLinks.map(({ key, Icon, rgb, lg, hint }, i) => (
+              <a
+                key={key} href={links[key]} target="_blank" rel="noopener noreferrer"
+                onClick={(e) => handleLinkClick(e, key)}
+                className={`group/link flex items-center gap-3 rounded-xl p-3.5 transition-all duration-200 hover:-translate-y-0.5 ${
+                  activeLinks.length % 2 === 1 && i === activeLinks.length - 1 ? "sm:col-span-2" : ""
+                }`}
+                style={{ background: `rgb(${rgb} / 0.08)`, border: `1px solid rgb(${rgb} / 0.28)` }}
+              >
+                <span
+                  className="flex items-center justify-center w-10 h-10 rounded-lg shrink-0"
+                  style={{ background: `rgb(${rgb} / 0.18)`, color: `rgb(${rgb})` }}
+                >
+                  <Icon className="w-5 h-5" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold truncate" style={{ color: "rgb(var(--text-primary))" }}>
+                    {lg(isManual)}
+                  </span>
+                  <span className="block text-xs truncate" style={{ color: "rgb(var(--text-muted))" }}>{hint}</span>
+                </span>
+                <ArrowUpRight
+                  className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5"
+                  style={{ color: `rgb(${rgb})` }}
+                />
+              </a>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div
+        className="grid grid-cols-2 gap-2 pt-3"
+        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+      >
+        {activeLinks.map(({ key, Icon, rgb, sm }, i) => (
+          <a
+            key={key} href={links[key]} target="_blank" rel="noopener noreferrer"
+            onClick={(e) => handleLinkClick(e, key)}
+            className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200 hover:-translate-y-px ${
+              activeLinks.length % 2 === 1 && i === activeLinks.length - 1 ? "col-span-2" : ""
+            }`}
+            style={{
+              background: `rgb(${rgb} / 0.12)`,
+              border: `1px solid rgb(${rgb} / 0.30)`,
+              color: `rgb(${rgb})`,
+            }}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {sm(isManual)}
+          </a>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
-      <Card className="group relative bg-gradient-to-br from-fuchsia-950/40 via-purple-950/40 to-slate-950/40 backdrop-blur-xl border border-fuchsia-500/20 hover:border-fuchsia-400/60 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-fuchsia-500/20">
-        <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-600/0 via-purple-600/5 to-fuchsia-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        
-        <CardContent className="relative p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
+      {/* ══════════════ CARD ══════════════ */}
+      <Card
+        className="group relative overflow-hidden cursor-pointer transition-all duration-300"
+        style={{
+          background: "rgb(var(--surface-raised))",
+          border: "1px solid rgb(var(--surface-border) / 0.60)",
+          borderRadius: "16px",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)" }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)" }}
+        onClick={() => setIsDialogOpen(true)}
+      >
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{ background: t.overlayGradient }}
+        />
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px] scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
+          style={{ background: t.bottomBarGradient }}
+        />
+
+        <CardContent className="relative p-5 flex flex-col gap-4">
+
+          {/* ── Header: org + status ── */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
               {item.organization && (
-                <div className="mb-2">
-                  <span className="text-xs font-semibold text-fuchsia-400 uppercase tracking-wider">
+                <p className="text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: "rgb(var(--text-faint))" }}>
+                  {item.organization}
+                </p>
+              )}
+              <h3 className="text-lg font-bold leading-snug line-clamp-2" style={{ color: "rgb(var(--text-primary))" }}>
+                {item.title}
+              </h3>
+            </div>
+            <StatusPill phase={phase} item={item} t={t} />
+          </div>
+
+          {/* ── Date range (hackathon) ── */}
+          <div
+            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm"
+            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            <Calendar className="w-3.5 h-3.5 shrink-0" style={{ color: "rgb(var(--text-secondary))" }} />
+            <span className="text-xs font-medium" style={{ color: "rgb(var(--text-secondary))" }}>{formatUTCDateShort(item.date_begin)}</span>
+            <ChevronRight className="w-3 h-3 shrink-0" style={{ color: "rgb(var(--text-secondary))" }} />
+            <span className="text-xs font-medium" style={{ color: "rgb(var(--text-secondary))" }}>{formatUTCDateShort(item.date_end)}</span>
+          </div>
+
+          {registrationClosedYet && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: "rgb(var(--text-muted))" }}>
+              <Megaphone className="w-3.5 h-3.5 shrink-0" />
+              Promotion starts {formatUTCDateShort(item.promo_begin)}
+            </div>
+          )}
+
+          {/* ── Meta chips ── */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+            {isInvite && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-indigo-100/90 border-indigo-400/50 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/25 dark:text-indigo-300">
+                <Lock className="w-3 h-3" />
+                Invite only
+              </span>
+            )}
+            {native && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-fuchsia-100/90 border-fuchsia-400/50 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:border-fuchsia-500/25 dark:text-fuchsia-300">
+                <Rocket className="w-3 h-3" />
+                Join on Byteon
+              </span>
+            )}
+            {item.open_to && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md" style={{ color: "rgb(var(--text-faint))" }}>
+                <Users className="w-3 h-3" />
+                {item.open_to}
+              </span>
+            )}
+            {item.countries && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md" style={{ color: "rgb(var(--text-faint))" }}>
+                <MapPin className="w-3 h-3" />
+                {item.countries}
+              </span>
+            )}
+            {prizes.length > 0 && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-amber-100/90 border-amber-500/50 text-amber-600 dark:bg-amber-500/10 border dark:border-amber-500/20 dark:text-amber-400/80">
+                <Trophy className="w-3 h-3" />
+                {prizes.length} Prize{prizes.length !== 1 ? "s" : ""}
+              </span>
+            )}
+            {/* Gate on tracking method, not on the sheet URL (which is not public) */}
+            {isAuto && !registrationClosedYet && (
+              <AnnouncementTrackingBadge announcementId={item.id} />
+            )}
+            {trackingStats?.hasError && (
+              <span title={item.sync_error} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-500/10 border border-red-500/20 text-red-400/80 cursor-help">
+                <AlertCircle className="w-3 h-3" />
+                Sync Error
+              </span>
+            )}
+          </div>
+
+          {/* ── Author + tracking ── */}
+          <div className="flex items-center justify-between gap-3 text-xs">
+            <span className="truncate" style={{ color: "rgb(var(--text-faint))" }}>
+              By <span className="font-medium">{item.author}</span>
+            </span>
+            {trackingStats && (
+              <span
+                className="inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full shrink-0"
+                style={{
+                  background: `rgb(${trackingStats.rgb} / 0.10)`,
+                  border: `1px solid rgb(${trackingStats.rgb} / 0.25)`,
+                }}
+              >
+                <span
+                  className="flex items-center justify-center w-5 h-5 rounded-full"
+                  style={{ background: `rgb(${trackingStats.rgb} / 0.22)`, color: `rgb(${trackingStats.rgb})` }}
+                >
+                  <trackingStats.Icon className="w-3 h-3" />
+                </span>
+                <span className="font-bold tabular-nums" style={{ color: "rgb(var(--text-primary))" }}>
+                  {trackingStats.count.toLocaleString()}
+                </span>
+                <span style={{ color: "rgb(var(--text-muted))" }}>{trackingStats.label.toLowerCase()}</span>
+              </span>
+            )}
+          </div>
+
+          {/* ── Actions ── */}
+          {needsCode && (
+            <div
+              className="flex items-center justify-center gap-1.5 pt-3 text-xs font-medium"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.06)", color: "rgb(var(--text-muted))" }}
+            >
+              <Lock className="w-3.5 h-3.5" />
+              Invite code required · tap to enter
+            </div>
+          )}
+          {/* tapping bubbles up to the card, which opens the dialog where the join panel lives */}
+          {canJoinNow && (
+            <div className="pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <span
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-bold text-white"
+                style={{ background: t.buttonGradient ?? "linear-gradient(135deg,#c026d3,#db2777)", boxShadow: t.buttonShadow }}
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                Join on Byteon
+              </span>
+            </div>
+          )}
+          {showLinks && renderLinkButtons("sm")}
+        </CardContent>
+      </Card>
+
+      {/* ══════════════ DIALOG ══════════════ */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent
+          className="max-w-3xl max-h-[92vh] overflow-y-auto p-0"
+          style={{
+            color: "rgb(var(--text-primary))",
+            background: "rgb(var(--bg-muted))",
+            border: "rgb(var(--surface-raised))",
+            borderRadius: "20px",
+          }}
+        >
+          {/* ── Dialog Header ── */}
+          <div
+            className="sticky top-0 z-10 px-7 pt-7 pb-5"
+            style={{
+              color: "rgb(var(--text-primary))",
+              background: "rgb(var(--bg-muted))",
+              borderBottom: "rgb(var(--surface-raised))",
+            }}
+          >
+            <DialogHeader>
+              {item.organization && (
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-3.5 h-3.5" style={{ color: "rgb(var(--text-primary))" }} />
+                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: t.primaryText }}>
                     {item.organization}
                   </span>
                 </div>
               )}
-              
-              <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-300 via-purple-300 to-pink-300 bg-clip-text text-transparent mb-3 group-hover:from-fuchsia-200 group-hover:via-purple-200 group-hover:to-pink-200 transition-all duration-300">
+              <DialogTitle className="text-2xl font-bold leading-tight" style={{ color: "rgb(var(--text-primary))" }}>
                 {item.title}
-              </h3>
-              
-              <p className="text-gray-300 text-sm mb-4 leading-relaxed">{item.des}</p>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
+              </DialogTitle>
+              <div className="flex flex-wrap items-center gap-2 mt-3">
+                <StatusPill phase={phase} item={item} t={t} />
+                {isInvite && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-indigo-100/90 border-indigo-400/50 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/25 dark:text-indigo-300">
+                    <Lock className="w-3 h-3" />
+                    Invite only
+                  </span>
+                )}
+                {native && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-fuchsia-100/90 border-fuchsia-400/50 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:border-fuchsia-500/25 dark:text-fuchsia-300">
+                    <Rocket className="w-3 h-3" />
+                    Join on Byteon
+                  </span>
+                )}
                 {prizes.length > 0 && (
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-400/30 text-emerald-300 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-lg shadow-emerald-500/10">
-                    <Award className="w-3.5 h-3.5" />
-                    {prizes.length} Prize{prizes.length !== 1 ? 's' : ''}
-                  </span>
-                )}
-                
-                {item.google_sheet_csv_url && (
-                  <AnnouncementTrackingBadge announcementId={item.id} />
-                )}
-                
-                {isExpired ? (
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-red-500/20 to-rose-500/20 border border-red-400/30 text-red-300 rounded-full text-xs font-medium shadow-lg shadow-red-500/10">
-                    Expired
-                  </span>
-                ) : (
-                  <span className="px-3 py-1.5 bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20 border border-fuchsia-400/30 text-fuchsia-300 rounded-full text-xs font-medium shadow-lg shadow-fuchsia-500/10 animate-pulse">
-                    Active
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100/90 border-amber-500/50 text-amber-600 dark:bg-amber-500/10 border dark:border-amber-500/20 dark:text-amber-400/80">
+                    <Trophy className="w-3 h-3" />
+                    {prizes.length} Prize{prizes.length !== 1 ? "s" : ""} Available
                   </span>
                 )}
               </div>
+            </DialogHeader>
+          </div>
 
-              {/* Prize Preview */}
-              {prizes.length > 0 && (
-                <div className="mb-4 p-3 bg-gradient-to-r from-amber-950/20 to-yellow-950/20 border border-amber-400/20 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Trophy className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-semibold text-amber-300 uppercase tracking-wide">Prize Pool</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {prizes.slice(0, 3).map((prize, index) => (
-                      <div key={index} className="text-xs bg-amber-900/30 border border-amber-600/30 rounded px-2 py-1">
-                        <span className="text-amber-200 font-medium">{prize.name}:</span>{' '}
-                        <span className="text-amber-100">{prize.value}</span>
+          <div className="px-7 pb-7 space-y-6 pt-5">
+
+            {/* ── Description ── */}
+            <div>
+              <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>About</p>
+              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "rgb(var(--text-secondary))" }}>{item.des}</p>
+            </div>
+
+            {/* ── Prizes ── */}
+            {prizes.length > 0 && (
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>Prize Pool</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {prizes.map((prize, index) => {
+                    const cs = getPrizeColorScheme(prize.name, prize.type)
+                    return (
+                      <div
+                        key={index}
+                        className={`bg-gradient-to-br ${cs.gradient} rounded-xl p-4 border ${cs.border} shadow-lg ${cs.glow} transition-transform duration-200 hover:scale-[1.02]`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-xl leading-none mt-0.5">{cs.rank}</span>
+                          <div className="min-w-0">
+                            <p className={`text-[10px] uppercase tracking-widest font-bold ${cs.label} mb-1`}>
+                              {prize.name}
+                              {prize.type === "non_cash" && <span className="ml-1.5 normal-case tracking-normal font-medium opacity-70">· item</span>}
+                            </p>
+                            <p className={`${prize.type === "non_cash" ? "text-base" : "text-xl"} font-bold ${cs.value} leading-tight break-words`}>
+                              {prize.value}
+                            </p>
+                            {prize.description && (
+                              <p className={`text-xs ${cs.label} mt-1.5 leading-relaxed opacity-80`}>
+                                {prize.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    ))}
-                    {prizes.length > 3 && (
-                      <div className="text-xs text-amber-300/70 px-2 py-1">
-                        +{prizes.length - 3} more
-                      </div>
-                    )}
-                  </div>
+                    )
+                  })}
                 </div>
-              )}
-              
-              <div className="text-sm text-gray-400 space-y-2 bg-black/20 rounded-lg p-3 border border-purple-500/10">
-                <p className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-fuchsia-400" />
-                  <span className="text-gray-300">
-                    {new Date(item.date_begin).toLocaleDateString()} - {new Date(item.date_end).toLocaleDateString()}
-                  </span>
+              </div>
+            )}
+
+            {/* ── Live tracking panel ── */}
+            {trackingStats && (
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+                  Live Tracking
                 </p>
+                <div
+                  className="relative overflow-hidden flex items-center gap-4 rounded-xl p-4"
+                  style={{
+                    background: `linear-gradient(135deg, rgb(${trackingStats.rgb} / 0.14), rgb(${trackingStats.rgb} / 0.03))`,
+                    border: `1px solid rgb(${trackingStats.rgb} / 0.28)`,
+                  }}
+                >
+                  <span
+                    className="flex items-center justify-center w-12 h-12 rounded-xl shrink-0"
+                    style={{ background: `rgb(${trackingStats.rgb} / 0.2)`, color: `rgb(${trackingStats.rgb})` }}
+                  >
+                    <trackingStats.Icon className="w-6 h-6" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-extrabold tabular-nums leading-none" style={{ color: "rgb(var(--text-primary))" }}>
+                        {trackingStats.count.toLocaleString()}
+                      </span>
+                      <span className="text-sm font-semibold" style={{ color: `rgb(${trackingStats.rgb})` }}>
+                        {trackingStats.label}
+                      </span>
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: "rgb(var(--text-muted))" }}>{trackingStats.note}</p>
+                  </div>
+                  <Activity className="w-14 h-14 absolute -right-2 -bottom-2 opacity-[0.07]" style={{ color: `rgb(${trackingStats.rgb})` }} />
+                </div>
+              </div>
+            )}
+
+            {/* ── Event Details ── */}
+            <div>
+              <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>Event Details</p>
+              <div
+                className="rounded-xl overflow-hidden divide-y divide-white/5"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}
+              >
+                <DetailRow
+                  icon={<Megaphone className="w-4 h-4" />}
+                  label="Promotion starts"
+                  value={item.promo_begin ? formatUTCDateTime(item.promo_begin) : null}
+                  iconColor="#f59e0b"
+                />
+                <DetailRow
+                  icon={<Calendar className="w-4 h-4" />}
+                  label="Hackathon starts"
+                  value={formatUTCDateTime(item.date_begin)}
+                  iconColor={"rgb(var(--text-muted))"}
+                />
+                <DetailRow
+                  icon={<Clock className="w-4 h-4" />}
+                  label="Ends"
+                  value={formatUTCDateTime(item.date_end)}
+                  iconColor={t.secondaryText}
+                />
                 {item.open_to && (
-                  <p className="text-gray-400">
-                    <span className="text-fuchsia-400 font-medium">Open to:</span> {item.open_to}
-                  </p>
+                  <DetailRow icon={<Users className="w-4 h-4" />} label="Open To" value={item.open_to} iconColor={t.labelText} />
                 )}
                 {item.countries && (
-                  <p className="text-gray-400">
-                    <span className="text-purple-400 font-medium">Location:</span> {item.countries}
-                  </p>
+                  <DetailRow icon={<MapPin className="w-4 h-4" />} label="Location" value={item.countries} iconColor="#60a5fa" />
                 )}
-                <p className="text-gray-400">
-                  <span className="text-pink-400 font-medium">By:</span> {item.author}
-                </p>
+                <DetailRow
+                  icon={<Lock className="w-4 h-4" />}
+                  label="Access"
+                  value={isInvite ? "Invite only — a code is required to join" : null}
+                  iconColor="#818cf8"
+                />
+                <DetailRow
+                  icon={<Rocket className="w-4 h-4" />}
+                  label="Registration"
+                  value={native ? "Join directly on Byteon — solo, with a team code, or looking for a team" : null}
+                  iconColor="#d946ef"
+                />
+                <DetailRow icon={<Award className="w-4 h-4" />} label="Organized By" value={item.author} iconColor={t.labelText} />
               </div>
             </div>
-            
-            <div className="flex gap-2 ml-4">
-              <AnnouncementEdit announcement={item} onUpdate={onUpdate}>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  className="bg-purple-600/20 border-purple-500/30 hover:bg-purple-600/40 text-purple-200 hover:text-purple-100"
-                >
-                  <Edit className="w-4 h-4" />
-                </Button>
-              </AnnouncementEdit>
-              
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDeleteClick}
-                disabled={isDeleting}
-                className="cursor-pointer bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 border-0 shadow-lg shadow-red-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-          
-          {(item.website_link || item.dev_link) && (
-            <div className="flex gap-3 mt-5 pt-4 border-t border-purple-500/10">
-              {item.website_link && (
-                <a href={item.website_link} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button 
-                    size="sm" 
-                    className="w-full cursor-pointer bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white border-0 shadow-lg shadow-fuchsia-500/30 transition-all duration-300"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 mr-2" />
-                    Website
-                  </Button>
-                </a>
-              )}
-              {item.dev_link && (
-                <a href={item.dev_link} target="_blank" rel="noopener noreferrer" className="flex-1">
-                  <Button 
-                    size="sm" 
-                    className="w-full cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-0 shadow-lg shadow-purple-500/30 transition-all duration-300"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5 mr-2" />
-                    DevPost
-                  </Button>
-                </a>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-gradient-to-br from-slate-900 via-red-900/50 to-rose-900 border-red-500/30">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-red-200 text-xl">Delete Announcement</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              Are you sure you want to delete <strong className="text-red-300">"{item.title}"</strong>? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              className="bg-gray-700 hover:bg-gray-600 text-white border-gray-600"
-              disabled={isDeleting}
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={isDeleting}
-              className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white disabled:opacity-50"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+            {/* ── Sync error notice ── */}
+            {trackingStats?.hasError && (
+              <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-xs uppercase tracking-wide mb-0.5">Sync Error</p>
+                  <p className="text-xs text-red-400/70">{item.sync_error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Registration: not open yet / invite gate / join on Byteon / links ── */}
+            {registrationClosedYet && (
+              <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-500 text-sm">
+                <Megaphone className="w-4 h-4 shrink-0 mt-0.5" />
+                <p className="text-xs leading-relaxed">
+                  Registration opens on {formatUTCDateTime(item.promo_begin)}. Check back then to join.
+                </p>
+              </div>
+            )}
+            {needsCode && <InviteCodeGate announcementId={item.id} onUnlock={setUnlockedLinks} />}
+
+            {canJoinNow && (
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+                  Join on Byteon
+                </p>
+                {isLoggedIn && user ? (
+                  <ParticipationPanel
+                    announcement={panelAnnouncement}
+                    userId={user.id}
+                    displayName={displayName}
+                  />
+                ) : (
+                  <div
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl p-4"
+                    style={{ background: "rgba(217,70,239,0.08)", border: "1px solid rgba(217,70,239,0.28)" }}
+                  >
+                    <span className="flex items-center justify-center w-10 h-10 rounded-lg shrink-0 bg-fuchsia-500/15 text-fuchsia-500">
+                      <LogIn className="w-5 h-5" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: "rgb(var(--text-primary))" }}>Sign in to join</p>
+                      <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>
+                        You need a Byteon account to join solo, create a team, or enter a team code.
+                      </p>
+                    </div>
+                    <a
+                      href="/log-in"
+                      className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-bold text-white"
+                      style={{ background: t.buttonGradient ?? "linear-gradient(135deg,#c026d3,#db2777)" }}
+                    >
+                      Sign in
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {showLinks && renderLinkButtons("lg")}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

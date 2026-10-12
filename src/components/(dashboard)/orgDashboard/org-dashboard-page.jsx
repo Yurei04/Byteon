@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
@@ -27,6 +27,8 @@ import {
   ChevronDown,
   Sun,
   Moon,
+  // ── added for Participants ──
+  Users, UsersRound, User, Crown, Search, RefreshCw,
 } from "lucide-react"
 import {
   Pagination, PaginationContent, PaginationItem,
@@ -59,6 +61,7 @@ import OrgViewableSection from "./org-view-section"
 import WebsitePreviewSection, { WEBSITE_PAGES } from "@/components/preview/website-preview-section"
 import OrgPendingApproval from "./org-pending-approval"
 import PosterHistory from "@/components/poster-maker/poster-history"
+import OrgParticipantsTab from "./orgParticipantsTab"
 
 const ITEMS_PER_PAGE = 6
 
@@ -450,6 +453,205 @@ function SidebarNavItem({ value, icon, label, isActive, onClick, p, s, uiT, badg
   )
 }
 
+// ── Participants (solo + teams) ──────────────────────────────────────────────
+// Reads announcement_participants / announcement_teams (see team-feature.sql).
+// RLS only returns rows for announcements that belong to the signed-in org.
+function ParticipantsSection({ announcements = [], addToast, uiT, p }) {
+  const [selectedId, setSelectedId] = useState(announcements[0]?.id ?? null)
+  const [people, setPeople]   = useState([])
+  const [teams, setTeams]     = useState([])
+  const [loading, setLoading] = useState(false)
+  const [view, setView]       = useState("teams")   // "teams" | "all"
+  const [query, setQuery]     = useState("")
+
+  // keep latest addToast without re-triggering the fetch effect
+  const toastRef = useRef(addToast)
+  toastRef.current = addToast
+
+  useEffect(() => {
+    if (!announcements.length) { setSelectedId(null); return }
+    if (!announcements.some(a => a.id === selectedId)) setSelectedId(announcements[0].id)
+  }, [announcements, selectedId])
+
+  const selected = announcements.find(a => a.id === selectedId)
+  const maxSize  = selected?.max_team_size ?? 4
+
+  const load = useCallback(async () => {
+    if (!selectedId) return
+    setLoading(true)
+    const [pr, tr] = await Promise.all([
+      supabase.from("announcement_participants")
+        .select("id, user_id, display_name, email, participation_type, team_id, role, joined_at")
+        .eq("announcement_id", selectedId).order("joined_at"),
+      supabase.from("announcement_teams")
+        .select("id, name, leader_id, created_at")
+        .eq("announcement_id", selectedId).order("created_at"),
+    ])
+    if (pr.error || tr.error) toastRef.current?.("error", (pr.error || tr.error).message)
+    setPeople(pr.data ?? []); setTeams(tr.data ?? [])
+    setLoading(false)
+  }, [selectedId])
+
+  useEffect(() => { load() }, [load])
+
+  const q = query.trim().toLowerCase()
+  const match = (s) => (s ?? "").toLowerCase().includes(q)
+
+  const { teamCards, solos, stats } = useMemo(() => {
+    const byTeam = new Map(teams.map(t => [t.id, { ...t, members: [] }]))
+    const solos = []
+    people.forEach(pp => {
+      if (pp.team_id && byTeam.has(pp.team_id)) byTeam.get(pp.team_id).members.push(pp)
+      else if (pp.participation_type === "solo") solos.push(pp)
+    })
+    const all = [...byTeam.values()].map(t => ({
+      ...t,
+      members: t.members.sort((a, b) => (a.role === "leader" ? -1 : b.role === "leader" ? 1 : 0)),
+    }))
+    return {
+      teamCards: all, solos,
+      stats: { total: people.length, teams: all.length, grouped: people.length - solos.length, solo: solos.length },
+    }
+  }, [people, teams])
+
+  const filteredTeams = teamCards.filter(t => !q || match(t.name) || t.members.some(m => match(m.display_name) || match(m.email)))
+  const filteredSolos = solos.filter(s => !q || match(s.display_name) || match(s.email))
+  const filteredAll   = people.filter(pp => !q || match(pp.display_name) || match(pp.email) || match(teamCards.find(t => t.id === pp.team_id)?.name))
+
+  const card    = { background: uiT.surfaceBg,  border: `1px solid ${uiT.borderBase}` }
+  const card2   = { background: uiT.surfaceBg2, border: `1px solid ${uiT.borderBase}` }
+  const heading = { color: uiT.headingText }
+  const muted   = { color: uiT.mutedText }
+
+  const Person = ({ pp, showTeam }) => (
+    <div className="flex items-center gap-2.5 py-2 min-w-0">
+      {pp.role === "leader"
+        ? <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+        : <User className="w-3.5 h-3.5 shrink-0" style={muted} />}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm truncate" style={heading}>{pp.display_name || "Unnamed participant"}</p>
+        {pp.email && <p className="text-[11px] truncate" style={muted}>{pp.email}</p>}
+      </div>
+      {showTeam && (
+        <span className="text-[11px] px-2 py-0.5 rounded-full border shrink-0" style={{ ...muted, borderColor: uiT.borderSubtle }}>
+          {pp.participation_type === "solo" ? "Solo" : (teamCards.find(t => t.id === pp.team_id)?.name ?? "Team")}
+        </span>
+      )}
+    </div>
+  )
+
+  const Stat = ({ label, value }) => (
+    <div className="rounded-xl px-4 py-3" style={card2}>
+      <p className="text-xl font-semibold tabular-nums" style={heading}>{value}</p>
+      <p className="text-xs" style={muted}>{label}</p>
+    </div>
+  )
+
+  if (!announcements.length) {
+    return (
+      <div className="rounded-2xl p-10 text-center" style={card}>
+        <UsersRound className="w-8 h-8 mx-auto mb-3" style={muted} />
+        <p className="text-sm" style={muted}>No approved announcements yet. Participants appear here once people register through the platform.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <select
+          value={selectedId ?? ""} onChange={(e) => setSelectedId(Number(e.target.value))}
+          className="text-sm rounded-xl px-3 py-2 outline-none cursor-pointer sm:max-w-xs w-full"
+          style={{ background: uiT.inputBg, border: `1px solid ${uiT.borderSubtle}`, color: uiT.headingText }}
+        >
+          {announcements.map(a => <option key={a.id} value={a.id} style={{ background: uiT.inputBg }}>{a.title}</option>)}
+        </select>
+
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={muted} />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, email or team"
+            className="pl-9 rounded-xl" style={{ background: uiT.inputBg, borderColor: uiT.borderSubtle, color: uiT.headingText }} />
+        </div>
+
+        <div className="inline-flex rounded-xl p-0.5" style={{ background: uiT.inlineBg }}>
+          {[["teams", "Grouped"], ["all", "All"]].map(([k, l]) => (
+            <button key={k} type="button" onClick={() => setView(k)}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={view === k ? { background: `${p}25`, color: uiT.headingText } : muted}>{l}</button>
+          ))}
+        </div>
+
+        <Button type="button" variant="outline" size="icon" className="rounded-xl shrink-0" onClick={load} title="Refresh" disabled={loading}>
+          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <Stat label="Participants" value={stats.total} />
+        <Stat label="Teams" value={stats.teams} />
+        <Stat label="In a team" value={stats.grouped} />
+        <Stat label="Solo" value={stats.solo} />
+      </div>
+
+      {loading && !people.length ? (
+        <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" style={{ color: p }} /></div>
+      ) : stats.total === 0 ? (
+        <div className="rounded-2xl p-10 text-center" style={card}>
+          <p className="text-sm" style={muted}>Nobody has told us whether they're solo or in a team yet.</p>
+        </div>
+      ) : view === "all" ? (
+        <div className="rounded-2xl px-4 divide-y" style={card}>
+          {filteredAll.length
+            ? filteredAll.map(pp => <Person key={pp.id} pp={pp} showTeam />)
+            : <p className="py-6 text-sm text-center" style={muted}>No matches.</p>}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredTeams.length > 0 && (
+            <div className="grid gap-3 md:grid-cols-2">
+              {filteredTeams.map(t => {
+                const full = t.members.length >= maxSize
+                return (
+                  <div key={t.id} className="rounded-2xl p-4" style={card}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Users className="w-4 h-4 shrink-0" style={{ color: p }} />
+                        <p className="text-sm font-semibold truncate" style={heading}>{t.name}</p>
+                      </div>
+                      <span className="text-[11px] px-2 py-0.5 rounded-full border shrink-0"
+                        style={full ? { color: "#10b981", borderColor: "rgba(16,185,129,0.35)" } : { ...muted, borderColor: uiT.borderSubtle }}>
+                        {t.members.length}/{maxSize}{full ? " · full" : ""}
+                      </span>
+                    </div>
+                    <div className="divide-y">{t.members.map(m => <Person key={m.id} pp={m} />)}</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {filteredSolos.length > 0 && (
+            <div className="rounded-2xl p-4" style={card}>
+              <div className="flex items-center gap-2 mb-1">
+                <User className="w-4 h-4" style={muted} />
+                <p className="text-sm font-semibold" style={heading}>Solo participants</p>
+                <span className="text-[11px]" style={muted}>{filteredSolos.length}</span>
+              </div>
+              <div className="divide-y">{filteredSolos.map(s => <Person key={s.id} pp={s} />)}</div>
+            </div>
+          )}
+
+          {!filteredTeams.length && !filteredSolos.length && (
+            <p className="py-6 text-sm text-center" style={muted}>No matches.</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function OrgDashboardPage() {
   const router = useRouter()
@@ -722,6 +924,7 @@ const [tick, setTick] = useState(0)
     { value: "overview",       icon: <LayoutDashboard className="w-4 h-4" />, label: "Overview"      },
     { value: "view",           icon: <FileText         className="w-4 h-4" />, label: "All Content"   },
     { value: "create",         icon: <Plus             className="w-4 h-4" />, label: "Create"        },
+    { value: "participants",   icon: <UsersRound       className="w-4 h-4" />, label: "Participants"  },
     { value: "posters",        icon: <Sparkles         className="w-4 h-4" />, label: "Poster Maker"  },
     { value: "profile",        icon: <Settings         className="w-4 h-4" />, label: "Settings"      },
     { value: "notifications",  icon: <Bell             className="w-4 h-4" />, label: "Notifications", badge: unreadCount },
@@ -744,6 +947,7 @@ const [tick, setTick] = useState(0)
     overview:      { title: "Overview",          sub: "Your organization at a glance" },
     view:          { title: "All Content",        sub: "Browse and manage published content" },
     create:        { title: "Create",             sub: "Publish new announcements, blogs & resources" },
+    participants:  { title: "Participants",       sub: "See who joined solo or in a team, per hackathon" },
     posters:       { title: "Poster Maker",       sub: "Design promotional materials" },
     profile:       { title: "Settings",           sub: "Manage your organization profile & branding" },
     website:       { title: "Website Preview",    sub: "View-only preview — navigation via sidebar" },
@@ -1158,6 +1362,17 @@ const [tick, setTick] = useState(0)
                           <TabsContent key={tab} value={tab}>{content}</TabsContent>
                         ))}
                       </Tabs>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ════ PARTICIPANTS ════ */}
+              {activeTab === "participants" && (
+                <motion.div key="participants" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+                  <div className="rounded-2xl overflow-hidden" style={{ background: uiT.surfaceBg, border: `1px solid ${p}18` }}>
+                    <div className="p-5">
+                      <OrgParticipantsTab announcements={announcements} addToast={addToast} uiT={uiT} p={p} />
                     </div>
                   </div>
                 </motion.div>
