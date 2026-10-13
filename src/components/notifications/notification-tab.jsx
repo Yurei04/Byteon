@@ -1,27 +1,51 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNotifications } from "./use-notification"
+import { supabase } from "@/lib/supabase"
+import { respondRequest } from "@/lib/teamApi"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import {
   Bell, BellRing, CheckCheck, Trash2, X, Loader2,
   ShieldOff, ShieldCheck, CheckCircle, XCircle,
-  Trash, Building2, FileText, Inbox, Clock, Hash,
-  MailOpen, Mail,
+  Trash, Building2, FileText, Clock, Hash,
+  MailOpen, Mail, UserPlus, UserCheck, UserX, Crown, Users, PauseCircle, PlayCircle,
 } from "lucide-react"
 
 const TYPE_CONFIG = {
-  account_suspended:      { Icon: ShieldOff,   color: "#fbbf24", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.22)",  label: "Account Suspended"   },
-  account_reactivated:    { Icon: ShieldCheck, color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.22)",  label: "Account Reactivated" },
-  post_approved:          { Icon: CheckCircle, color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.22)",  label: "Post Approved"       },
-  post_rejected:          { Icon: XCircle,     color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.22)", label: "Post Rejected"       },
-  post_deleted_by_admin:  { Icon: Trash,       color: "#fb7185", bg: "rgba(251,113,133,0.1)", border: "rgba(251,113,133,0.22)", label: "Content Removed"     },
-  content_deleted_by_org: { Icon: Building2,   color: "#38bdf8", bg: "rgba(56,189,248,0.1)",  border: "rgba(56,189,248,0.22)",  label: "Org Deleted Content" },
-  blog_deleted_by_user:   { Icon: FileText,    color: "#a78bfa", bg: "rgba(167,139,250,0.1)", border: "rgba(167,139,250,0.22)", label: "User Deleted Blog"   },
+  account_suspended:          { Icon: ShieldOff,   color: "#fbbf24", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.22)",  label: "Account Suspended"   },
+  account_reactivated:        { Icon: ShieldCheck, color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.22)",  label: "Account Reactivated" },
+  post_approved:              { Icon: CheckCircle, color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.22)",  label: "Post Approved"       },
+  post_rejected:              { Icon: XCircle,     color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.22)", label: "Post Rejected"       },
+  post_deleted_by_admin:      { Icon: Trash,       color: "#fb7185", bg: "rgba(251,113,133,0.1)", border: "rgba(251,113,133,0.22)", label: "Content Removed"     },
+  content_deleted_by_org:     { Icon: Building2,   color: "#38bdf8", bg: "rgba(56,189,248,0.1)",  border: "rgba(56,189,248,0.22)",  label: "Org Deleted Content" },
+  blog_deleted_by_user:       { Icon: FileText,    color: "#a78bfa", bg: "rgba(167,139,250,0.1)", border: "rgba(167,139,250,0.22)", label: "User Deleted Blog"   },
+  content_suspended_by_org:   { Icon: PauseCircle, color: "#fbbf24", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.22)",  label: "Content Suspended"   },
+  content_reactivated_by_org: { Icon: PlayCircle,  color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.22)",  label: "Content Reactivated" },
+  announcement_approved:      { Icon: CheckCircle, color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.22)",  label: "Announcement Live"   },
+  announcement_rejected:      { Icon: XCircle,     color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.22)", label: "Announcement Rejected" },
+  team_join_request:          { Icon: UserPlus,    color: "#e879f9", bg: "rgba(232,121,249,0.1)", border: "rgba(232,121,249,0.22)", label: "Join Request"        },
+  team_request_accepted:      { Icon: UserCheck,   color: "#34d399", bg: "rgba(52,211,153,0.1)",  border: "rgba(52,211,153,0.22)",  label: "Request Accepted"    },
+  team_request_declined:      { Icon: UserX,       color: "#f87171", bg: "rgba(248,113,113,0.1)", border: "rgba(248,113,113,0.22)", label: "Request Declined"    },
+  team_member_joined:         { Icon: Users,       color: "#38bdf8", bg: "rgba(56,189,248,0.1)",  border: "rgba(56,189,248,0.22)",  label: "Teammate Joined"     },
+  team_member_left:           { Icon: UserX,       color: "#fbbf24", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.22)",  label: "Teammate Left"       },
+  team_leader_changed:        { Icon: Crown,       color: "#fbbf24", bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.22)",  label: "New Leader"          },
 }
 
 const DEFAULT_CONFIG = TYPE_CONFIG.post_approved
+
+// Extra details can live in the `metadata` and/or `meta` jsonb columns (or legacy top-level fields).
+const metaOf = (n) => ({ ...(n?.metadata || {}), ...(n?.meta || {}) })
+const detailOf = (n) => {
+  const m = metaOf(n)
+  return {
+    content_type:  n.content_type  ?? m.content_type  ?? null,
+    content_title: n.content_title ?? m.content_title ?? null,
+    reason:        n.reason        ?? m.reason        ?? null,
+    request_id:    m.request_id    ?? null,
+  }
+}
 
 function relativeTime(dateStr) {
   const diff  = Date.now() - new Date(dateStr).getTime()
@@ -136,20 +160,13 @@ export default function NotificationsTab({ userId, role }) {
         <div className="flex-1 flex flex-col items-center justify-center gap-4 py-20 select-none">
           <div
             className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{
-              border: "1px solid rgb(var(--surface-border) / 0.3)",
-              background: "rgb(var(--surface-raised) / 0.3)",
-            }}
+            style={{ border: "1px solid rgb(var(--surface-border) / 0.3)", background: "rgb(var(--surface-raised) / 0.3)" }}
           >
             <Bell className="w-7 h-7 opacity-40" style={{ color: "rgb(var(--text-faint))" }} />
           </div>
           <div className="text-center">
-            <p className="text-sm font-medium" style={{ color: "rgb(var(--text-faint))" }}>
-              No notifications yet
-            </p>
-            <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint) / 0.5)" }}>
-              Activity and alerts will appear here
-            </p>
+            <p className="text-sm font-medium" style={{ color: "rgb(var(--text-faint))" }}>No notifications yet</p>
+            <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint) / 0.5)" }}>Activity and alerts will appear here</p>
           </div>
         </div>
       ) : (
@@ -168,17 +185,11 @@ export default function NotificationsTab({ userId, role }) {
                 : "none",
             }}
           >
-            {/* Panel header */}
             <div
               className="px-4 py-3 flex items-center justify-between shrink-0"
               style={{ borderBottom: "1px solid rgb(var(--surface-border) / 0.2)" }}
             >
-              <span
-                className="text-xs font-bold uppercase tracking-widest"
-                style={{ color: "rgb(var(--brand-400))" }}
-              >
-                Inbox
-              </span>
+              <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgb(var(--brand-400))" }}>Inbox</span>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <span
@@ -199,7 +210,7 @@ export default function NotificationsTab({ userId, role }) {
             </div>
 
             <ScrollArea className="flex-1 min-h-0 overflow-hidden">
-              <div style={{ borderTop: "none" }}>
+              <div>
                 {notifications.map((n) => {
                   const read       = isReadByMe(n)
                   const cfg        = TYPE_CONFIG[n.type] || DEFAULT_CONFIG
@@ -207,9 +218,13 @@ export default function NotificationsTab({ userId, role }) {
                   const isSelected = selected === n.id
 
                   return (
-                    <button
+                    // div (not button) so the nested dismiss <button> is valid HTML
+                    <div
                       key={n.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleSelect(n)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleSelect(n) } }}
                       className="w-full cursor-pointer text-left group relative flex items-start gap-3 px-4 py-3.5 transition-all duration-150 border-l-2"
                       style={{
                         background: isSelected ? `${cfg.color}10` : read ? "transparent" : "rgb(var(--surface-raised) / 0.3)",
@@ -219,18 +234,13 @@ export default function NotificationsTab({ userId, role }) {
                       onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = `${cfg.color}08` }}
                       onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = read ? "transparent" : "rgb(var(--surface-raised) / 0.3)" }}
                     >
-                      {/* Unread dot */}
                       {!read && (
                         <span
                           className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
-                          style={{
-                            background: "rgb(var(--brand-400))",
-                            boxShadow: "0 0 6px rgb(var(--accent-400) / 0.8)",
-                          }}
+                          style={{ background: "rgb(var(--brand-400))", boxShadow: "0 0 6px rgb(var(--accent-400) / 0.8)" }}
                         />
                       )}
 
-                      {/* Icon tile */}
                       <div
                         className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center mt-0.5"
                         style={{ background: cfg.bg, border: `1px solid ${cfg.border}` }}
@@ -238,17 +248,12 @@ export default function NotificationsTab({ userId, role }) {
                         <Icon className="w-4 h-4" style={{ color: cfg.color }} />
                       </div>
 
-                      {/* Content */}
                       <div className="flex-1 min-w-0 space-y-0.5">
                         <div className="flex items-start justify-between gap-2">
                           <p
                             className="text-xs font-semibold leading-snug truncate"
                             style={{
-                              color: isSelected
-                                ? "rgb(var(--text-primary))"
-                                : read
-                                  ? "rgb(var(--text-faint))"
-                                  : "rgb(var(--text-secondary))",
+                              color: isSelected ? "rgb(var(--text-primary))" : read ? "rgb(var(--text-faint))" : "rgb(var(--text-secondary))",
                             }}
                           >
                             {n.title}
@@ -271,20 +276,15 @@ export default function NotificationsTab({ userId, role }) {
                             {cfg.label}
                           </span>
                           {!read && (
-                            <span
-                              className="text-[10px] font-medium"
-                              style={{ color: "rgb(var(--brand-400) / 0.6)" }}
-                            >
-                              ● Unread
-                            </span>
+                            <span className="text-[10px] font-medium" style={{ color: "rgb(var(--brand-400) / 0.6)" }}>● Unread</span>
                           )}
                         </div>
                       </div>
 
-                      {/* Dismiss */}
                       <button
+                        type="button"
                         onClick={(e) => handleDelete(e, n.id)}
-                        className="shrink-0 opacity-0 group-hover:opacity-100 h-6 w-6 flex items-center justify-center rounded-lg transition-all duration-150 mt-0.5"
+                        className="shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 h-6 w-6 flex items-center justify-center rounded-lg transition-all duration-150 mt-0.5"
                         style={{ color: "rgb(var(--text-faint))" }}
                         onMouseEnter={e => {
                           e.currentTarget.style.color = "#f87171"
@@ -294,10 +294,11 @@ export default function NotificationsTab({ userId, role }) {
                           e.currentTarget.style.color = "rgb(var(--text-faint))"
                           e.currentTarget.style.background = "transparent"
                         }}
+                        aria-label="Dismiss notification"
                       >
                         <X className="w-3 h-3" />
                       </button>
-                    </button>
+                    </div>
                   )
                 })}
               </div>
@@ -320,26 +321,20 @@ export default function NotificationsTab({ userId, role }) {
             {selectedNotif
               ? <NotificationDetail
                   notif={selectedNotif}
+                  read={isReadByMe(selectedNotif)}
                   onDelete={() => { setSelected(null); deleteOne(selectedNotif.id) }}
                 />
               : (
                 <div className="h-full flex flex-col items-center justify-center gap-4 select-none">
                   <div
                     className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                    style={{
-                      border: "1px solid rgb(var(--surface-border) / 0.25)",
-                      background: "rgb(var(--surface-raised) / 0.3)",
-                    }}
+                    style={{ border: "1px solid rgb(var(--surface-border) / 0.25)", background: "rgb(var(--surface-raised) / 0.3)" }}
                   >
                     <MailOpen className="w-6 h-6 opacity-40" style={{ color: "rgb(var(--text-faint))" }} />
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-medium" style={{ color: "rgb(var(--text-faint))" }}>
-                      No notification selected
-                    </p>
-                    <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint) / 0.5)" }}>
-                      Pick a notification from the left to read it
-                    </p>
+                    <p className="text-sm font-medium" style={{ color: "rgb(var(--text-faint))" }}>No notification selected</p>
+                    <p className="text-xs mt-1" style={{ color: "rgb(var(--text-faint) / 0.5)" }}>Pick a notification from the left to read it</p>
                   </div>
                 </div>
               )
@@ -353,17 +348,14 @@ export default function NotificationsTab({ userId, role }) {
 }
 
 // ── Detail pane ───────────────────────────────────────────────────────────────
-function NotificationDetail({ notif, onDelete }) {
+function NotificationDetail({ notif, read, onDelete }) {
   const cfg      = TYPE_CONFIG[notif.type] || DEFAULT_CONFIG
   const { Icon } = cfg
+  const d        = detailOf(notif)
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
-      <div
-        className="px-6 pt-6 pb-5 shrink-0"
-        style={{ borderBottom: "1px solid rgb(var(--surface-border) / 0.2)" }}
-      >
+      <div className="px-6 pt-6 pb-5 shrink-0" style={{ borderBottom: "1px solid rgb(var(--surface-border) / 0.2)" }}>
         <div
           className="h-px mb-4 -mx-6 -mt-6 rounded-t-2xl"
           style={{ background: `linear-gradient(to right, transparent, ${cfg.color}60, transparent)` }}
@@ -379,12 +371,7 @@ function NotificationDetail({ notif, onDelete }) {
             </div>
 
             <div className="flex-1 min-w-0 space-y-1.5">
-              <h2
-                className="text-base font-bold leading-snug"
-                style={{ color: "rgb(var(--text-primary))" }}
-              >
-                {notif.title}
-              </h2>
+              <h2 className="text-base font-bold leading-snug" style={{ color: "rgb(var(--text-primary))" }}>{notif.title}</h2>
               <div className="flex flex-wrap items-center gap-2">
                 <span
                   className="text-[11px] px-2 py-0.5 rounded-full font-medium"
@@ -392,25 +379,17 @@ function NotificationDetail({ notif, onDelete }) {
                 >
                   {cfg.label}
                 </span>
-                <span
-                  className="flex items-center gap-1 text-[11px]"
-                  style={{ color: "rgb(var(--text-faint))" }}
-                >
-                  <MailOpen className="w-3 h-3" />Read
+                <span className="flex items-center gap-1 text-[11px]" style={{ color: "rgb(var(--text-faint))" }}>
+                  {read ? <MailOpen className="w-3 h-3" /> : <Mail className="w-3 h-3" />}{read ? "Read" : "Unread"}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Dismiss */}
           <button
             onClick={onDelete}
             className="shrink-0 h-8 px-3 flex items-center gap-1.5 rounded-xl text-xs transition-all duration-150"
-            style={{
-              color: "rgb(var(--text-faint))",
-              border: "1px solid rgb(var(--surface-border) / 0.3)",
-              background: "transparent",
-            }}
+            style={{ color: "rgb(var(--text-faint))", border: "1px solid rgb(var(--surface-border) / 0.3)", background: "transparent" }}
             onMouseEnter={e => {
               e.currentTarget.style.color = "#f87171"
               e.currentTarget.style.background = "rgba(248,113,113,0.08)"
@@ -427,16 +406,11 @@ function NotificationDetail({ notif, onDelete }) {
         </div>
       </div>
 
-      {/* Body */}
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-6 py-5 space-y-5">
 
-          {/* Message */}
           <div>
-            <p
-              className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2"
-              style={{ color: "rgb(var(--text-faint))" }}
-            >
+            <p className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: "rgb(var(--text-faint))" }}>
               <Mail className="w-3.5 h-3.5 opacity-70" />Message
             </p>
             <div
@@ -451,45 +425,34 @@ function NotificationDetail({ notif, onDelete }) {
             </div>
           </div>
 
-          {/* Timestamp */}
           <div>
-            <p
-              className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2"
-              style={{ color: "rgb(var(--text-faint))" }}
-            >
+            <p className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: "rgb(var(--text-faint))" }}>
               <Clock className="w-3.5 h-3.5 opacity-70" />Received
             </p>
-            <p className="text-sm" style={{ color: "rgb(var(--text-muted))" }}>
-              {fullDate(notif.created_at)}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>
-              {relativeTime(notif.created_at)}
-            </p>
+            <p className="text-sm" style={{ color: "rgb(var(--text-muted))" }}>{fullDate(notif.created_at)}</p>
+            <p className="text-xs mt-0.5" style={{ color: "rgb(var(--text-faint))" }}>{relativeTime(notif.created_at)}</p>
           </div>
 
-          {/* Metadata */}
-          {(notif.content_type || notif.content_title || notif.reason) && (
+          {/* Join request actions (request id may be stored in `meta` or `metadata`) */}
+          {notif.type === "team_join_request" && d.request_id && (
+            <JoinRequestActions requestId={d.request_id} />
+          )}
+
+          {(d.content_type || d.content_title || d.reason) && (
             <div>
-              <p
-                className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2"
-                style={{ color: "rgb(var(--text-faint))" }}
-              >
+              <p className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: "rgb(var(--text-faint))" }}>
                 <Hash className="w-3.5 h-3.5 opacity-70" />Details
               </p>
               <div className="space-y-2">
-                {notif.content_type  && <MetaRow label="Content type"  value={notif.content_type}  />}
-                {notif.content_title && <MetaRow label="Content title" value={notif.content_title} />}
-                {notif.reason        && <MetaRow label="Reason"        value={notif.reason}        highlight />}
+                {d.content_type  && <MetaRow label="Content type"  value={d.content_type}  />}
+                {d.content_title && <MetaRow label="Content title" value={d.content_title} />}
+                {d.reason        && <MetaRow label="Reason"        value={d.reason}        highlight />}
               </div>
             </div>
           )}
 
-          {/* ID */}
           <div className="pt-1 pb-2">
-            <p
-              className="flex items-center gap-1.5 text-[11px] font-mono"
-              style={{ color: "rgb(var(--text-faint) / 0.4)" }}
-            >
+            <p className="flex items-center gap-1.5 text-[11px] font-mono" style={{ color: "rgb(var(--text-faint) / 0.4)" }}>
               <Hash className="w-3 h-3" />{notif.id}
             </p>
           </div>
@@ -503,20 +466,77 @@ function MetaRow({ label, value, highlight = false }) {
   return (
     <div
       className="flex items-start gap-3 px-3.5 py-2.5 rounded-xl"
-      style={{
-        background: "rgb(var(--surface-raised) / 0.3)",
-        border: "1px solid rgb(var(--surface-border) / 0.2)",
-      }}
+      style={{ background: "rgb(var(--surface-raised) / 0.3)", border: "1px solid rgb(var(--surface-border) / 0.2)" }}
     >
-      <span className="text-[11px] shrink-0 w-24" style={{ color: "rgb(var(--text-faint))" }}>
-        {label}
-      </span>
-      <span
-        className="text-[11px] font-medium break-words"
-        style={{ color: highlight ? "#fbbf24" : "rgb(var(--text-muted))" }}
-      >
-        {value}
-      </span>
+      <span className="text-[11px] shrink-0 w-24" style={{ color: "rgb(var(--text-faint))" }}>{label}</span>
+      <span className="text-[11px] font-medium break-words" style={{ color: highlight ? "#fbbf24" : "rgb(var(--text-muted))" }}>{value}</span>
+    </div>
+  )
+}
+
+// ── Accept / decline a request to join your team ─────────────────────────────
+function JoinRequestActions({ requestId }) {
+  const [req, setReq]     = useState(null)   // { status, display_name, message } | false (not found)
+  const [busy, setBusy]   = useState("")
+  const [error, setError] = useState("")
+
+  const fetchReq = async () => {
+    const { data } = await supabase.from("team_join_requests")
+      .select("status, display_name, message")
+      .eq("id", requestId).maybeSingle()
+    return data ?? false
+  }
+
+  useEffect(() => {
+    let alive = true
+    setReq(null); setError("")
+    fetchReq().then(r => { if (alive) setReq(r) })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestId])
+
+  const answer = async (accept) => {
+    setBusy(accept ? "accept" : "decline"); setError("")
+    const res = await respondRequest(requestId, accept)
+    setBusy("")
+    if (!res.ok) { setError(res.error); setReq(await fetchReq()); return }
+    setReq(prev => ({ ...(prev || {}), status: res.status }))
+  }
+
+  const pending = req && req.status === "pending"
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 mb-2" style={{ color: "rgb(var(--text-faint))" }}>
+        <UserPlus className="w-3.5 h-3.5 opacity-70" />Request
+      </p>
+      <div className="px-4 py-3.5 rounded-xl space-y-3"
+        style={{ background: "rgb(var(--surface-raised) / 0.4)", border: "1px solid rgb(var(--surface-border) / 0.25)" }}>
+        {req === null ? (
+          <Loader2 className="w-4 h-4 animate-spin" style={{ color: "rgb(var(--text-faint))" }} />
+        ) : req === false ? (
+          <p className="text-xs" style={{ color: "rgb(var(--text-faint))" }}>This request no longer exists (the team may have been deleted).</p>
+        ) : (
+          <>
+            {req.display_name && <p className="text-xs font-semibold" style={{ color: "rgb(var(--text-primary))" }}>{req.display_name}</p>}
+            {req.message && <p className="text-sm" style={{ color: "rgb(var(--text-secondary))" }}>“{req.message}”</p>}
+            {pending ? (
+              <div className="flex items-center gap-2">
+                <Button size="sm" disabled={!!busy} onClick={() => answer(true)} className="h-8 px-4 text-xs gap-1.5 text-white" style={{ background: "linear-gradient(135deg,#c026d3,#db2777)" }}>
+                  {busy === "accept" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}Accept
+                </Button>
+                <Button size="sm" variant="outline" disabled={!!busy} onClick={() => answer(false)} className="h-8 px-4 text-xs gap-1.5">
+                  {busy === "decline" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}Decline
+                </Button>
+              </div>
+            ) : (
+              <p className="text-xs font-semibold" style={{ color: req.status === "accepted" ? "#34d399" : "rgb(var(--text-faint))" }}>
+                {req.status === "accepted" ? "Accepted — they’re now on your team." : req.status === "declined" ? "Declined." : "Cancelled."}
+              </p>
+            )}
+          </>
+        )}
+        {error && <p className="text-xs text-red-400">{error}</p>}
+      </div>
     </div>
   )
 }

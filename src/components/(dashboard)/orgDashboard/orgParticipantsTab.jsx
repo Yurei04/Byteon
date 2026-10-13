@@ -3,28 +3,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Users, User, Crown, Search, RefreshCw, Loader2, UsersRound, Download,
-  FileSpreadsheet, Upload, Database, AlertTriangle,
+  FileSpreadsheet, Upload, Database, AlertTriangle, ClipboardList, UserX,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { formatAnswer } from "@/lib/registration-form"
 
 /**
  * Org dashboard → "Participants" tab.
  *
- * Two sources:
- *  1. "Platform"  – people who chose solo / team / looking-for-team on the site (database).
- *  2. "Sheet CSV" – the announcement's Google Sheet (any share/edit/published link, or an uploaded .csv).
- *                   Rows are grouped by the "Team (resolved)" column when present.
+ * Sources:
+ *  - "Platform"       – people who joined on the site (solo / team / looking-for-team).
+ *  - "Form responses" – answers to the organizer's custom registration form.
+ *  - "Sheet CSV"      – the announcement's Google Sheet or an uploaded .csv.
  *
- * FIXES in this version
- *  - Google Sheet links (…/edit, …/pubhtml, …/pub) are converted to a real CSV endpoint.
- *    Previously the page HTML/CSS was parsed as CSV, which produced garbage headers.
- *  - HTML responses (private sheet / login page) are detected and reported clearly.
- *  - Column auto-detection matches the Byteon sheet: Full Name, Email, Team (resolved),
- *    Status, Role, Department, Student ID.
- *  - Solo / Looking-for-team / problem rows (Team forming, Code not found) get their own sections.
- *  - Exported CSV keeps all useful columns.
+ * Changes in this version
+ *  - Realtime: the Platform + Form responses lists refresh automatically when people join,
+ *    leave, create teams or submit the form.
+ *  - Group members whose team row can't be loaded are no longer silently dropped; they show
+ *    in a "Team unavailable" section and are counted.
+ *  - "In a team" is counted from real team members (not total − solo − looking).
+ *  - Display-name fallback to the email's local part.
+ *  - `groupByOrg` (super-admin): dropdown is grouped by organization and CSV exports get an
+ *    extra "Organization" column.
  */
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
@@ -55,7 +57,7 @@ const safeCell = (v) => {
   return `"${s.replace(/"/g, '""')}"`
 }
 function downloadCsv(filename, rows) {
-  const csv  = "\uFEFF" + rows.map(r => r.map(safeCell).join(",")).join("\r\n")   // BOM → Excel reads UTF-8
+  const csv  = "\uFEFF" + rows.map(r => r.map(safeCell).join(",")).join("\r\n")
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
   const url  = URL.createObjectURL(blob)
   const a    = document.createElement("a")
@@ -66,17 +68,15 @@ function downloadCsv(filename, rows) {
 const slug = (s) => (s || "participants").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "participants"
 
 // ── Google Sheets URL → CSV URL ───────────────────────────────────────────────
-// Accepts: …/spreadsheets/d/<ID>/edit?gid=N, …/d/e/<KEY>/pubhtml, …/d/e/<KEY>/pub?output=csv, or a plain CSV link.
 function toCsvUrl(raw) {
   const url = String(raw || "").trim()
   if (!/^https:\/\//i.test(url)) throw new Error("bad url")
   let u
   try { u = new URL(url) } catch { throw new Error("bad url") }
-  if (u.hostname !== "docs.google.com") return url                      // non-Google link: assume it's already CSV
+  if (u.hostname !== "docs.google.com") return url
 
   const gid = u.searchParams.get("gid") || (u.hash.match(/gid=(\d+)/) || [])[1]
 
-  // Published-to-web link: /spreadsheets/d/e/<KEY>/pubhtml  or  /pub
   const pub = u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)/)
   if (pub) {
     const out = new URL(`https://docs.google.com/spreadsheets/d/e/${pub[1]}/pub`)
@@ -86,7 +86,6 @@ function toCsvUrl(raw) {
     return out.toString()
   }
 
-  // Normal share/edit link: /spreadsheets/d/<ID>/…  (gviz endpoint sends CORS headers for link-shared sheets)
   const m = u.pathname.match(/\/spreadsheets\/d\/([^/]+)/)
   if (m) {
     const out = new URL(`https://docs.google.com/spreadsheets/d/${m[1]}/gviz/tq`)
@@ -98,10 +97,10 @@ function toCsvUrl(raw) {
 }
 const looksLikeHtml = (t) => /^\s*<(!doctype|html|head|body|\?xml)/i.test(t) || /<\/?(html|script|style|body)\b/i.test(t.slice(0, 2000))
 
-// ── Column detection (tuned for the Byteon registration sheet) ────────────────
+// ── Column detection ──────────────────────────────────────────────────────────
 const clean = (v) => {
   const s = String(v ?? "").trim()
-  return /^[—–-]+$/.test(s) ? "" : s          // treat "—" placeholders as empty
+  return /^[—–-]+$/.test(s) ? "" : s
 }
 function detectColumns(headers) {
   const H = headers.map(h => String(h).toLowerCase().trim())
@@ -127,7 +126,6 @@ function detectColumns(headers) {
 
 const MAX_SHEET_ROWS_SHOWN = 300
 
-// status → colour (keeps the sheet's own colour meaning)
 const STATUS_STYLE = (s) => {
   const v = (s || "").toLowerCase()
   if (v === "grouped")        return { color: "#10b981", borderColor: "rgba(16,185,129,0.35)" }
@@ -137,9 +135,11 @@ const STATUS_STYLE = (s) => {
   return null
 }
 
-export default function OrgParticipantsTab({ announcements = [], addToast, uiT }) {
+const displayName = (name, email) => name || (email ? email.split("@")[0] : "") || "Unnamed participant"
+
+export default function OrgParticipantsTab({ announcements = [], addToast, uiT, groupByOrg = false }) {
   const [selectedId, setSelectedId] = useState(announcements[0]?.id ?? null)
-  const [source, setSource]   = useState("platform")   // "platform" | "sheet"
+  const [source, setSource]   = useState("platform")   // "platform" | "responses" | "sheet"
   const [people, setPeople]   = useState([])
   const [teams, setTeams]     = useState([])
   const [loading, setLoading] = useState(false)
@@ -147,11 +147,15 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
   const [query, setQuery]     = useState("")
 
   // sheet state
-  const [sheet, setSheet]               = useState(null)   // { headers, rows, label }
+  const [sheet, setSheet]               = useState(null)
   const [map, setMap]                   = useState({ name: -1, email: -1, team: -1, status: -1, role: -1, dept: -1 })
   const [sheetLoading, setSheetLoading] = useState(false)
   const [sheetError, setSheetError]     = useState("")
   const fileRef = useRef(null)
+
+  // registration-form responses
+  const [answers, setAnswers]       = useState([])
+  const [ansLoading, setAnsLoading] = useState(false)
 
   const toastRef = useRef(addToast)
   toastRef.current = addToast
@@ -166,9 +170,10 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
   const sheetUrl = selected?.google_sheet_csv_url
 
   // ── platform data ──────────────────────────────────────────────────────────
-  const load = useCallback(async () => {
+  // `silent` = background refresh (realtime) → no spinner flash
+  const load = useCallback(async (silent = false) => {
     if (!selectedId) return
-    setLoading(true)
+    if (!silent) setLoading(true)
     const [pr, tr] = await Promise.all([
       supabase.from("announcement_participants")
         .select("id, user_id, display_name, email, participation_type, team_id, role, joined_at")
@@ -179,10 +184,46 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
     ])
     if (pr.error || tr.error) toastRef.current?.("error", (pr.error || tr.error).message)
     setPeople(pr.data ?? []); setTeams(tr.data ?? [])
-    setLoading(false)
+    if (!silent) setLoading(false)
   }, [selectedId])
 
   useEffect(() => { load() }, [load]) // eslint-disable-line react-hooks/set-state-in-effect
+
+  // ── registration-form responses ────────────────────────────────────────────
+  const loadAnswers = useCallback(async (silent = false) => {
+    if (!selectedId) return
+    if (!silent) setAnsLoading(true)
+    const { data, error } = await supabase.from("announcement_registration_answers")
+      .select("id, user_id, answers, submitted_at, updated_at")
+      .eq("announcement_id", selectedId).order("submitted_at")
+    if (error) toastRef.current?.("error", error.message)
+    setAnswers(data ?? [])
+    if (!silent) setAnsLoading(false)
+  }, [selectedId])
+
+  useEffect(() => { if (source === "responses") loadAnswers() }, [source, loadAnswers]) // eslint-disable-line react-hooks/set-state-in-effect
+
+  // ── realtime: refresh when people join / leave / create teams / submit the form ──
+  const reloadRef = useRef({ load, loadAnswers })
+  reloadRef.current = { load, loadAnswers }
+  useEffect(() => {
+    if (!selectedId) return
+    let timer = null
+    const refresh = () => {            // debounce bursts (e.g. seeding many rows at once)
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        reloadRef.current.load(true)
+        reloadRef.current.loadAnswers(true)
+      }, 400)
+    }
+    const filter = `announcement_id=eq.${selectedId}`
+    const channel = supabase.channel(`org-participants-${selectedId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "announcement_participants",         filter }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "announcement_teams",                filter }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "announcement_registration_answers", filter }, refresh)
+      .subscribe()
+    return () => { clearTimeout(timer); supabase.removeChannel(channel) }
+  }, [selectedId])
 
   // ── sheet data ─────────────────────────────────────────────────────────────
   const applySheet = useCallback((text, label) => {
@@ -231,21 +272,23 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
   const q = query.trim().toLowerCase()
   const match = (s) => (s ?? "").toLowerCase().includes(q)
 
-  const { teamCards, solos, lookers, stats } = useMemo(() => {
+  const { teamCards, solos, lookers, orphans, stats } = useMemo(() => {
     const byTeam = new Map(teams.map(t => [t.id, { ...t, members: [] }]))
-    const solos = [], lookers = []
+    const solos = [], lookers = [], orphans = []
     people.forEach(pp => {
       if (pp.team_id && byTeam.has(pp.team_id)) byTeam.get(pp.team_id).members.push(pp)
       else if (pp.participation_type === "looking") lookers.push(pp)
       else if (pp.participation_type === "solo") solos.push(pp)
+      else orphans.push(pp)                                   // group member whose team couldn't be loaded
     })
     const all = [...byTeam.values()].map(t => ({
       ...t,
       members: t.members.sort((a, b) => (a.role === "leader" ? -1 : b.role === "leader" ? 1 : 0)),
     }))
+    const grouped = all.reduce((n, t) => n + t.members.length, 0)
     return {
-      teamCards: all, solos, lookers,
-      stats: { total: people.length, teams: all.length, grouped: people.length - solos.length - lookers.length, solo: solos.length, looking: lookers.length },
+      teamCards: all, solos, lookers, orphans,
+      stats: { total: people.length, teams: all.length, grouped, solo: solos.length, looking: lookers.length, orphan: orphans.length },
     }
   }, [people, teams])
 
@@ -253,16 +296,54 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
   const filteredTeams   = teamCards.filter(t => !q || match(t.name) || t.members.some(m => match(m.display_name) || match(m.email)))
   const filteredSolos   = solos.filter(s => !q || match(s.display_name) || match(s.email))
   const filteredLookers = lookers.filter(s => !q || match(s.display_name) || match(s.email))
+  const filteredOrphans = orphans.filter(s => !q || match(s.display_name) || match(s.email))
   const filteredAll     = people.filter(pp => !q || match(pp.display_name) || match(pp.email) || match(pp.team_id ? teamName(pp.team_id) : ""))
 
   const typeLabel = (pp) => pp.participation_type === "solo" ? "Solo" : pp.participation_type === "looking" ? "Looking for team" : teamName(pp.team_id)
 
+  // ── derived: form responses ────────────────────────────────────────────────
+  const formFields = Array.isArray(selected?.registration_form) ? selected.registration_form : []
+  const responseRows = answers.map(a => {
+    const pp = people.find(x => x.user_id === a.user_id)
+    return {
+      id: a.id,
+      // announcement_registration_answers has no name/email columns → take them from the participant row
+      name: pp ? displayName(pp.display_name, pp.email) : `Form only · ${String(a.user_id).slice(0, 8)}`,
+      email: pp?.email || "",
+      participation: pp ? typeLabel(pp) : "Form only",
+      formOnly: !pp,
+      submitted_at: a.submitted_at,
+      answers: a.answers || {},
+    }
+  })
+  const filteredResponses = responseRows.filter(r =>
+    !q || match(r.name) || match(r.email) || Object.values(r.answers).some(v => match(formatAnswer(v))))
+  const missingForm = formFields.length
+    ? people.filter(pp => !answers.some(a => a.user_id === pp.user_id)).length
+    : 0
+
+  // super-admin: prepend an "Organization" column to every export
+  const saveCsv = (filename, rows) => downloadCsv(
+    filename,
+    groupByOrg ? rows.map((r, i) => [i === 0 ? "Organization" : (selected?.organization || ""), ...r]) : rows,
+  )
+
+  const exportResponses = () => {
+    const rows = [["Name", "Email", "Participation", "Submitted", ...formFields.map(f => f.label)]]
+    responseRows.forEach(r => rows.push([
+      r.name, r.email, r.participation, r.submitted_at,
+      ...formFields.map(f => formatAnswer(r.answers[f.id])),
+    ]))
+    saveCsv(`${slug(selected?.title)}-form-responses.csv`, rows)
+  }
+
   const exportPlatform = () => {
     const rows = [["Team", "Name", "Email", "Role", "Participation", "Joined"]]
     teamCards.forEach(t => t.members.forEach(m => rows.push([t.name, m.display_name, m.email, m.role, "Group", m.joined_at])))
+    orphans.forEach(m => rows.push(["(team unavailable)", m.display_name, m.email, m.role, "Group", m.joined_at]))
     lookers.forEach(m => rows.push(["", m.display_name, m.email, "", "Looking for team", m.joined_at]))
     solos.forEach(m => rows.push(["", m.display_name, m.email, "", "Solo", m.joined_at]))
-    downloadCsv(`${slug(selected?.title)}-participants.csv`, rows)
+    saveCsv(`${slug(selected?.title)}-participants.csv`, rows)
   }
 
   // ── derived: sheet ─────────────────────────────────────────────────────────
@@ -284,7 +365,6 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
       if (/forming|not found/i.test(status)) attention++
       const team = get(r, map.team)
 
-      // Solo / looking-for-team rows have no team even if the sheet has stray values
       const noTeam = !team || /^(solo|looking)/i.test(status)
       if (noTeam) {
         const label = status || "No group"
@@ -320,8 +400,20 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
     const rows = [["Team", "Name", "Email", "Department", "Role", "Status"]]
     sheetGroups.groups.forEach(g => g.members.forEach(m => rows.push([g.name, m.name, m.email, m.dept, m.role, m.status])))
     sheetGroups.buckets.forEach(b => b.members.forEach(m => rows.push(["", m.name, m.email, m.dept, m.role, m.status || b.label])))
-    downloadCsv(`${slug(selected?.title)}-sheet-groups.csv`, rows)
+    saveCsv(`${slug(selected?.title)}-sheet-groups.csv`, rows)
   }
+
+  // super-admin: announcements grouped by organization (A→Z)
+  const orgGroups = useMemo(() => {
+    if (!groupByOrg) return []
+    const m = new Map()
+    announcements.forEach(a => {
+      const k = a.organization || "Unknown organization"
+      if (!m.has(k)) m.set(k, [])
+      m.get(k).push(a)
+    })
+    return [...m.entries()].sort((x, y) => x[0].localeCompare(y[0]))
+  }, [announcements, groupByOrg])
 
   // ── styles ─────────────────────────────────────────────────────────────────
   const card    = { background: uiT?.surfaceBg  ?? "rgba(255,255,255,0.03)", border: `1px solid ${uiT?.borderBase ?? "rgba(255,255,255,0.07)"}` }
@@ -334,7 +426,7 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
     <div className="flex items-center gap-2.5 py-2 min-w-0">
       {/leader/i.test(role || "") ? <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" /> : <User className="w-3.5 h-3.5 shrink-0" style={muted} />}
       <div className="min-w-0 flex-1">
-        <p className="text-sm truncate" style={heading}>{name || "Unnamed participant"}</p>
+        <p className="text-sm truncate" style={heading}>{displayName(name, email)}</p>
         {(email || sub) && <p className="text-[11px] truncate" style={muted}>{[email, sub].filter(Boolean).join(" · ")}</p>}
       </div>
       {badge && (
@@ -391,6 +483,7 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
   }
 
   const bucketIcon = (label) => /looking/i.test(label) ? Search : User
+  const refreshing = source === "platform" ? loading : source === "responses" ? ansLoading : sheetLoading
 
   return (
     <div className="space-y-4">
@@ -398,11 +491,17 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
       <div className="flex flex-col lg:flex-row gap-2 lg:items-center">
         <select value={selectedId ?? ""} onChange={(e) => setSelectedId(Number(e.target.value))}
           className="text-sm rounded-xl px-3 py-2 outline-none cursor-pointer lg:max-w-xs w-full" style={selStyle}>
-          {announcements.map(a => <option key={a.id} value={a.id} style={{ background: uiT?.inputBg }}>{a.title}</option>)}
+          {groupByOrg
+            ? orgGroups.map(([org, list]) => (
+                <optgroup key={org} label={org} style={{ background: uiT?.inputBg }}>
+                  {list.map(a => <option key={a.id} value={a.id} style={{ background: uiT?.inputBg }}>{a.title}</option>)}
+                </optgroup>
+              ))
+            : announcements.map(a => <option key={a.id} value={a.id} style={{ background: uiT?.inputBg }}>{a.title}</option>)}
         </select>
 
         <div className="inline-flex rounded-xl p-0.5 shrink-0" style={{ background: uiT?.inlineBg ?? "rgba(255,255,255,0.05)" }}>
-          {[["platform", "Platform", Database], ["sheet", "Sheet CSV", FileSpreadsheet]].map(([k, l, Icon]) => (
+          {[["platform", "Platform", Database], ["responses", "Form responses", ClipboardList], ["sheet", "Sheet CSV", FileSpreadsheet]].map(([k, l, Icon]) => (
             <button key={k} type="button" onClick={() => setSource(k)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${source === k ? "bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-300" : ""}`}
               style={source === k ? undefined : muted}>
@@ -428,14 +527,14 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
         )}
 
         <Button type="button" variant="outline" size="sm" className="rounded-xl shrink-0 h-9"
-          onClick={source === "platform" ? exportPlatform : exportSheet}
-          disabled={source === "platform" ? stats.total === 0 : !sheet}>
+          onClick={source === "platform" ? exportPlatform : source === "responses" ? exportResponses : exportSheet}
+          disabled={source === "platform" ? stats.total === 0 : source === "responses" ? responseRows.length === 0 : !sheet}>
           <Download className="w-4 h-4 mr-1.5" /> Export CSV
         </Button>
         <Button type="button" variant="outline" size="icon" className="rounded-xl shrink-0"
-          onClick={source === "platform" ? load : loadSheet} title="Refresh"
-          disabled={source === "platform" ? loading : (sheetLoading || !sheetUrl)}>
-          <RefreshCw className={`w-4 h-4 ${(source === "platform" ? loading : sheetLoading) ? "animate-spin" : ""}`} />
+          onClick={() => (source === "platform" ? load() : source === "responses" ? loadAnswers() : loadSheet())} title="Refresh"
+          disabled={source === "sheet" ? (sheetLoading || !sheetUrl) : refreshing}>
+          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
         </Button>
       </div>
 
@@ -481,12 +580,61 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
                 <LooseCard icon={User} title="Solo participants" items={filteredSolos}
                   renderItem={s => <Person key={s.id} name={s.display_name} email={s.email} />} />
               )}
-              {!filteredTeams.length && !filteredSolos.length && !filteredLookers.length && (
+              {filteredOrphans.length > 0 && (
+                <LooseCard icon={UserX} title="Team unavailable (team missing or not readable)" items={filteredOrphans}
+                  renderItem={s => <Person key={s.id} name={s.display_name} email={s.email} role={s.role} />} />
+              )}
+              {!filteredTeams.length && !filteredSolos.length && !filteredLookers.length && !filteredOrphans.length && (
                 <p className="py-6 text-sm text-center" style={muted}>No matches.</p>
               )}
             </div>
           )}
         </>
+      )}
+
+      {/* ═════════ FORM RESPONSES ═════════ */}
+      {source === "responses" && (
+        <div className="space-y-4">
+          {formFields.length === 0 ? (
+            <div className="rounded-2xl p-10 text-center" style={card}>
+              <ClipboardList className="w-8 h-8 mx-auto mb-3" style={muted} />
+              <p className="text-sm" style={muted}>This announcement has no custom registration form.</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <Stat label="Responses" value={responseRows.length} />
+                <Stat label="Questions" value={formFields.length} />
+                <Stat label="Joined, no form yet" value={missingForm} warn />
+                <Stat label="Form only (not joined)" value={responseRows.filter(r => r.formOnly).length} />
+              </div>
+
+              {ansLoading && !answers.length ? (
+                <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin" style={muted} /></div>
+              ) : filteredResponses.length === 0 ? (
+                <div className="rounded-2xl p-10 text-center" style={card}>
+                  <p className="text-sm" style={muted}>{answers.length ? "No matches." : "Nobody has submitted the form yet."}</p>
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {filteredResponses.map(r => (
+                    <div key={r.id} className="rounded-2xl p-4" style={card}>
+                      <Person name={r.name} email={r.email} badge={r.participation} />
+                      <dl className="mt-2 pt-3 space-y-2.5 border-t" style={{ borderColor: uiT?.borderBase }}>
+                        {formFields.map(f => (
+                          <div key={f.id}>
+                            <dt className="text-[10px] font-medium uppercase tracking-widest" style={muted}>{f.label}</dt>
+                            <dd className="text-sm whitespace-pre-line break-words" style={heading}>{formatAnswer(r.answers[f.id]) || "—"}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       )}
 
       {/* ═════════ SHEET CSV ═════════ */}
@@ -518,7 +666,6 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT }
 
           {sheet && (
             <>
-              {/* column mapping (auto-detected, adjustable) */}
               <details className="rounded-2xl p-4" style={card} open={map.name === -1 || map.team === -1}>
                 <summary className="text-xs font-medium cursor-pointer select-none" style={muted}>
                   Column mapping (auto-detected) — click to adjust

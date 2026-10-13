@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -9,12 +9,18 @@ import {
   Calendar, Award, Users, AlertCircle, MousePointerClick, Trophy, Clock,
   ChevronRight, MapPin, Sparkles, Megaphone, Lock,
   Globe, Code2, MessageCircle, FileText, ArrowUpRight, Activity,
+  Rocket, LogIn, ClipboardList,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
 import { getPhase, daysUntil } from "@/lib/announcement-config"
+import { useAuth } from "@/components/(auth)/authContext"
 import AnnouncementTrackingBadge from "./announce-tracking-badge"
 import InviteCodeGate from "./invite-code-gate"
+import ParticipationPanel from "./participationPanel"
+import RegistrationFormFill from "./registration-form-fill"
+import TeamDirectory from "./team-directory"
+import { getFieldType } from "@/lib/registration-form"
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -68,9 +74,10 @@ const LINK_DEFS = [
     hint: "Chat with organizers & teammates",
   },
   {
+    // Optional alternative to joining on Byteon
     key: "google_forms_url", Icon: FileText, rgb: "245 158 11",
-    sm: () => "Form", lg: () => "Open Form",
-    hint: "Registration / application form",
+    sm: () => "Google Form", lg: () => "Register with Google Form",
+    hint: "Optional — an alternative way to register",
   },
 ]
 
@@ -158,12 +165,67 @@ function DetailRow({ icon, label, value, iconColor }) {
   )
 }
 
+// Read-only look at the organizer's registration form (shown when it can't be filled in yet:
+// signed-out visitors, or before registration opens).
+function RegistrationFormPreview({ fields, note }) {
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+        Registration form
+      </p>
+      <div className="rounded-xl p-4 space-y-3" style={{ background: "rgba(14,165,233,0.06)", border: "1px solid rgba(14,165,233,0.25)" }}>
+        <div className="flex items-center gap-2">
+          <ClipboardList className="w-4 h-4 text-sky-500" />
+          <p className="text-sm font-semibold" style={{ color: "rgb(var(--text-primary))" }}>
+            What you’ll be asked · {fields.length} question{fields.length !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <ol className="space-y-2.5">
+          {fields.map((f, i) => (
+            <li key={f.id} className="flex gap-2.5">
+              <span className="text-[11px] font-semibold tabular-nums w-5 shrink-0 pt-0.5" style={{ color: "rgb(var(--text-muted))" }}>{i + 1}.</span>
+              <div className="min-w-0">
+                <p className="text-sm" style={{ color: "rgb(var(--text-primary))" }}>
+                  {f.label} {f.required && <span className="text-red-400">*</span>}
+                </p>
+                <p className="text-[11px] break-words" style={{ color: "rgb(var(--text-muted))" }}>
+                  {getFieldType(f.type).label}
+                  {Array.isArray(f.options) && f.options.length > 0 && ` · ${f.options.join(" / ")}`}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ol>
+        <p className="text-[11px]" style={{ color: "rgb(var(--text-muted))" }}>
+          Your name and email are filled in from your Byteon account.{note ? ` ${note}` : ""}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 
 export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [unlockedLinks, setUnlockedLinks] = useState(null) // set after a valid invite code
+  const [formDone, setFormDone] = useState(false)           // organizer's registration form submitted?
+  const [extra, setExtra] = useState(null)                  // fields the parent list did not include
+  const { session, isLoggedIn } = useAuth()
   const t = theme || FALLBACK_THEME
+
+  // If the parent's query left out the registration form / team settings, load them when the dialog opens.
+  useEffect(() => {
+    if (!isDialogOpen || !item.native_registration) return
+    if (item.registration_form !== undefined && item.allow_teams !== undefined && item.max_team_size !== undefined) return
+    let alive = true
+    supabase.from("announcements")
+      .select("registration_form, allow_teams, max_team_size")
+      .eq("id", item.id).maybeSingle()
+      .then(({ data }) => { if (alive && data) setExtra(data) })
+    return () => { alive = false }
+  }, [isDialogOpen, item.id, item.native_registration, item.registration_form, item.allow_teams, item.max_team_size])
+  const ann = extra ? { ...item, ...extra } : item
 
   const phase    = getPhase(item)
   const prizes   = item.prizes || []
@@ -184,8 +246,25 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
       }
   const activeLinks = LINK_DEFS.filter((d) => links[d.key])
 
-  const showLinks = activeLinks.length > 0
-  const needsCode = isInvite && !unlockedLinks
+  const registrationClosedYet = phase === "upcoming"
+  const showLinks = !registrationClosedYet && activeLinks.length > 0
+  const needsCode = isInvite && !unlockedLinks && !registrationClosedYet
+
+  // ── Join directly on Byteon (native registration) ──
+  const native     = !!item.native_registration
+  const showNative = native && !registrationClosedYet && phase !== "ended"
+  // For invite-only events the join panel only appears after the code has been accepted.
+  const canJoinNow = showNative && !needsCode
+  const user       = session?.user
+  const displayName =
+    user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || ""
+  // Community link is passed to the panel even for invite-only events once unlocked.
+  const panelAnnouncement = { ...ann, community_link: links.community_link ?? item.community_link }
+  // Organizer-defined registration questions: must be answered before choosing solo / team.
+  const regForm   = Array.isArray(ann.registration_form) ? ann.registration_form : []
+  const needsForm = regForm.length > 0
+  // Show a read-only preview whenever the live form is not on screen (signed out, or not open yet).
+  const showFormPreview = native && needsForm && !needsCode && phase !== "ended" && !(canJoinNow && isLoggedIn && user)
 
   const handleLinkClick = async (e, key) => {
     e.stopPropagation()
@@ -200,6 +279,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   }
 
   const getTrackingStats = () => {
+    if (registrationClosedYet) return null // nothing to track before promotion starts
     if (isManual)
       return {
         Icon: MousePointerClick, label: "Clicks", rgb: "139 92 246",
@@ -223,7 +303,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
       return (
         <div>
           <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
-            Links
+            {native ? "More ways to join & follow" : "Links"}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {activeLinks.map(({ key, Icon, rgb, lg, hint }, i) => (
@@ -335,12 +415,25 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
             <span className="text-xs font-medium" style={{ color: "rgb(var(--text-secondary))" }}>{formatUTCDateShort(item.date_end)}</span>
           </div>
 
+
           {/* ── Meta chips ── */}
           <div className="flex flex-wrap items-center gap-1.5 text-xs">
             {isInvite && (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-indigo-100/90 border-indigo-400/50 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/25 dark:text-indigo-300">
                 <Lock className="w-3 h-3" />
                 Invite only
+              </span>
+            )}
+            {native && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-fuchsia-100/90 border-fuchsia-400/50 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:border-fuchsia-500/25 dark:text-fuchsia-300">
+                <Rocket className="w-3 h-3" />
+                Join on Byteon
+              </span>
+            )}
+            {native && needsForm && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-sky-100/90 border-sky-400/50 text-sky-600 dark:bg-sky-500/10 dark:border-sky-500/25 dark:text-sky-300">
+                <ClipboardList className="w-3 h-3" />
+                Registration form
               </span>
             )}
             {item.open_to && (
@@ -362,7 +455,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
               </span>
             )}
             {/* Gate on tracking method, not on the sheet URL (which is not public) */}
-            {isAuto && (
+            {isAuto && !registrationClosedYet && (
               <AnnouncementTrackingBadge announcementId={item.id} />
             )}
             {trackingStats?.hasError && (
@@ -410,6 +503,18 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
               Invite code required · tap to enter
             </div>
           )}
+          {/* tapping bubbles up to the card, which opens the dialog where the join panel lives */}
+          {canJoinNow && (
+            <div className="pt-3" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <span
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-bold text-white"
+                style={{ background: t.buttonGradient ?? "linear-gradient(135deg,#c026d3,#db2777)", boxShadow: t.buttonShadow }}
+              >
+                <Rocket className="w-3.5 h-3.5" />
+                Join on Byteon
+              </span>
+            </div>
+          )}
           {showLinks && renderLinkButtons("sm")}
         </CardContent>
       </Card>
@@ -452,6 +557,12 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-indigo-100/90 border-indigo-400/50 text-indigo-600 dark:bg-indigo-500/10 dark:border-indigo-500/25 dark:text-indigo-300">
                     <Lock className="w-3 h-3" />
                     Invite only
+                  </span>
+                )}
+                {native && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-fuchsia-100/90 border-fuchsia-400/50 text-fuchsia-600 dark:bg-fuchsia-500/10 dark:border-fuchsia-500/25 dark:text-fuchsia-300">
+                    <Rocket className="w-3 h-3" />
+                    Join on Byteon
                   </span>
                 )}
                 {prizes.length > 0 && (
@@ -580,6 +691,12 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   value={isInvite ? "Invite only — a code is required to join" : null}
                   iconColor="#818cf8"
                 />
+                <DetailRow
+                  icon={<Rocket className="w-4 h-4" />}
+                  label="Registration"
+                  value={native ? `Join directly on Byteon${needsForm ? " — fill in the registration form, then" : " —"} solo, as a project leader, with a team code, or request to join a team` : null}
+                  iconColor="#d946ef"
+                />
                 <DetailRow icon={<Award className="w-4 h-4" />} label="Organized By" value={item.author} iconColor={t.labelText} />
               </div>
             </div>
@@ -595,6 +712,68 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
               </div>
             )}
             {needsCode && <InviteCodeGate announcementId={item.id} onUnlock={setUnlockedLinks} />}
+
+            {showFormPreview && (
+              <RegistrationFormPreview
+                fields={regForm}
+                note={registrationClosedYet ? "Registration opens when promotion starts." : "Sign in below to fill it in."}
+              />
+            )}
+
+            {canJoinNow && (
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+                  Join on Byteon
+                </p>
+                {isLoggedIn && user ? (
+                  <div className="space-y-4">
+                    {needsForm && (
+                      <RegistrationFormFill
+                        announcement={panelAnnouncement}
+                        userId={user.id}
+                        displayName={displayName}
+                        email={user.email}
+                        onDone={setFormDone}
+                      />
+                    )}
+                    {(!needsForm || formDone) && (
+                      <ParticipationPanel
+                        announcement={panelAnnouncement}
+                        userId={user.id}
+                        displayName={displayName}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                  <div
+                    className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl p-4"
+                    style={{ background: "rgba(217,70,239,0.08)", border: "1px solid rgba(217,70,239,0.28)" }}
+                  >
+                    <span className="flex items-center justify-center w-10 h-10 rounded-lg shrink-0 bg-fuchsia-500/15 text-fuchsia-500">
+                      <LogIn className="w-5 h-5" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: "rgb(var(--text-primary))" }}>Sign in to join</p>
+                      <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>
+                        You need a Byteon account to join solo, create a team, or enter a team code.
+                      </p>
+                    </div>
+                    <a
+                      href="/log-in"
+                      className="inline-flex items-center justify-center px-4 py-2 rounded-lg text-xs font-bold text-white"
+                      style={{ background: t.buttonGradient ?? "linear-gradient(135deg,#c026d3,#db2777)" }}
+                    >
+                      Sign in
+                    </a>
+                  </div>
+                  {/* everyone can see the groups that already exist; requesting needs an account */}
+                  {ann.allow_teams && <TeamDirectory announcementId={item.id} title="Teams already formed" />}
+                  </div>
+                )}
+              </div>
+            )}
+
             {showLinks && renderLinkButtons("lg")}
           </div>
         </DialogContent>

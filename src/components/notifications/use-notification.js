@@ -1,4 +1,4 @@
-// components/notifications/useNotifications.js
+// components/notifications/use-notification.js
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
@@ -7,25 +7,30 @@ import { supabase } from "@/lib/supabase"
 /**
  * @param {string} userId   - auth.users UUID (session.user.id)
  * @param {string} role     - 'user' | 'org_admin' | 'super_admin'
+ *
+ * Fixes vs. previous version
+ *  - INSERT events are de-duplicated (a notification could show twice if the initial fetch
+ *    and the realtime event raced).
+ *  - UPDATE events for rows that aren't in my list are ignored (previously harmless, but
+ *    wasted renders) and never add foreign rows.
+ *  - Realtime channel name includes the role so switching role re-subscribes cleanly.
+ *  - Realtime reconnect triggers a refetch so nothing is missed while offline.
  */
 export function useNotifications({ userId, role }) {
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading]             = useState(true)
   const channelRef                        = useRef(null)
 
-  // ── Helper: is this notification considered "read" by the current user? ──
   const isReadByMe = useCallback((n) => {
     if (n.recipient_user_id === null) {
-      // broadcast: check read_by array
       return Array.isArray(n.read_by) && n.read_by.includes(userId)
     }
     return n.is_read
   }, [userId])
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (silent = false) => {
     if (!userId || !role) return
-    setLoading(true)
+    if (!silent) setLoading(true)
     try {
       let query = supabase
         .from("notifications")
@@ -34,7 +39,6 @@ export function useNotifications({ userId, role }) {
         .limit(60)
 
       if (role === "super_admin") {
-        // targeted to me OR broadcasts to super_admin role
         query = query.or(`recipient_user_id.eq.${userId},and(recipient_user_id.is.null,recipient_role.eq.super_admin)`)
       } else {
         query = query.eq("recipient_user_id", userId)
@@ -46,57 +50,42 @@ export function useNotifications({ userId, role }) {
     } catch (err) {
       console.error("[useNotifications] fetch error:", err.message)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [userId, role])
 
-  useEffect(() => {
-    fetchNotifications()
-  }, [fetchNotifications])
+  useEffect(() => { fetchNotifications() }, [fetchNotifications])
 
-  // ── Realtime subscription (free tier — no filter, client-side guard) ──────
+  // ── Realtime (no server filter on the free tier → client-side guard) ──────
   useEffect(() => {
     if (!userId || !role) return
 
-    // Tear down old channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current)
-    }
+    if (channelRef.current) supabase.removeChannel(channelRef.current)
 
+    let hasConnectedBefore = false
     channelRef.current = supabase
-      .channel(`notifications-${userId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
-        (payload) => {
-          const n = payload.new
-          // Is this notification meant for me?
-          const isForMe =
-            n.recipient_user_id === userId ||
-            (n.recipient_user_id === null && n.recipient_role === role)
-          if (isForMe) {
-            setNotifications((prev) => [n, ...prev])
-          }
+      .channel(`notifications-${role}-${userId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, (payload) => {
+        const n = payload.new
+        const isForMe =
+          n.recipient_user_id === userId ||
+          (n.recipient_user_id === null && n.recipient_role === role)
+        if (!isForMe) return
+        setNotifications((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]))
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "notifications" }, (payload) => {
+        const n = payload.new
+        setNotifications((prev) => (prev.some((x) => x.id === n.id) ? prev.map((x) => (x.id === n.id ? n : x)) : prev))
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "notifications" }, (payload) => {
+        setNotifications((prev) => prev.filter((x) => x.id !== payload.old.id))
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          if (hasConnectedBefore) fetchNotifications(true)   // reconnected → catch up
+          hasConnectedBefore = true
         }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "notifications" },
-        (payload) => {
-          const n = payload.new
-          setNotifications((prev) =>
-            prev.map((item) => (item.id === n.id ? n : item))
-          )
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "notifications" },
-        (payload) => {
-          setNotifications((prev) => prev.filter((item) => item.id !== payload.old.id))
-        }
-      )
-      .subscribe()
+      })
 
     return () => {
       if (channelRef.current) {
@@ -104,7 +93,7 @@ export function useNotifications({ userId, role }) {
         channelRef.current = null
       }
     }
-  }, [userId, role])
+  }, [userId, role, fetchNotifications])
 
   // ── Mark single notification as read ─────────────────────────────────────
   const markRead = useCallback(async (id) => {
@@ -112,27 +101,12 @@ export function useNotifications({ userId, role }) {
     if (!notif || isReadByMe(notif)) return
 
     if (notif.recipient_user_id === null) {
-      // Broadcast: append current userId to read_by array
       const newReadBy = [...(notif.read_by || []), userId]
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read_by: newReadBy })
-        .eq("id", id)
-      if (!error) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, read_by: newReadBy } : n))
-        )
-      }
+      const { error } = await supabase.from("notifications").update({ read_by: newReadBy }).eq("id", id)
+      if (!error) setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read_by: newReadBy } : n)))
     } else {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ is_read: true })
-        .eq("id", id)
-      if (!error) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-        )
-      }
+      const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", id)
+      if (!error) setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)))
     }
   }, [notifications, userId, isReadByMe])
 
@@ -141,41 +115,24 @@ export function useNotifications({ userId, role }) {
     const unread = notifications.filter((n) => !isReadByMe(n))
     if (unread.length === 0) return
 
-    // Targeted notifications
-    const targetedIds = unread
-      .filter((n) => n.recipient_user_id !== null)
-      .map((n) => n.id)
-
-    // Broadcast notifications
-    const broadcastIds = unread
-      .filter((n) => n.recipient_user_id === null)
-      .map((n) => n.id)
+    const targetedIds  = unread.filter((n) => n.recipient_user_id !== null).map((n) => n.id)
+    const broadcastIds = unread.filter((n) => n.recipient_user_id === null).map((n) => n.id)
 
     const promises = []
-
     if (targetedIds.length > 0) {
-      promises.push(
-        supabase.from("notifications").update({ is_read: true }).in("id", targetedIds)
-      )
+      promises.push(supabase.from("notifications").update({ is_read: true }).in("id", targetedIds))
     }
-
     for (const id of broadcastIds) {
       const notif = notifications.find((n) => n.id === id)
       const newReadBy = [...(notif?.read_by || []), userId]
-      promises.push(
-        supabase.from("notifications").update({ read_by: newReadBy }).eq("id", id)
-      )
+      promises.push(supabase.from("notifications").update({ read_by: newReadBy }).eq("id", id))
     }
-
     await Promise.all(promises)
 
-    // Update local state
     setNotifications((prev) =>
       prev.map((n) => {
         if (targetedIds.includes(n.id)) return { ...n, is_read: true }
-        if (broadcastIds.includes(n.id)) {
-          return { ...n, read_by: [...(n.read_by || []), userId] }
-        }
+        if (broadcastIds.includes(n.id)) return { ...n, read_by: [...(n.read_by || []), userId] }
         return n
       })
     )
@@ -195,7 +152,6 @@ export function useNotifications({ userId, role }) {
     setNotifications((prev) => prev.filter((n) => n.recipient_user_id !== userId))
   }, [notifications, userId])
 
-  // ── Derived counts ────────────────────────────────────────────────────────
   const unreadCount = notifications.filter((n) => !isReadByMe(n)).length
 
   return {

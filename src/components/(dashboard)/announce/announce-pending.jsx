@@ -25,6 +25,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { PostingTermsDialog } from "@/components/terms-and-condition/posting-condition"
+import RegistrationFormBuilder from "./registration-form-builder"
+import { sanitizeForm, validateFormDefinition } from "@/lib/registration-form"
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FALLBACK_THEME = buildTheme("#c026d3", "#db2777")
@@ -34,6 +36,7 @@ const STORAGE_KEY   = "pending_announce_form_draft"
 const PRIZES_KEY    = "pending_announce_form_prizes"
 const LINKS_KEY     = "pending_announce_form_links"
 const COUNTRIES_KEY = "pending_announce_form_countries"
+const REGFORM_KEY   = "pending_announce_form_regform"
 
 const MAX_RETRIES    = 5
 const RETRY_DELAY_MS = 800
@@ -126,8 +129,10 @@ const saveDraft     = (d) => { try { localStorage.setItem(STORAGE_KEY,   JSON.st
 const savePrizes    = (p) => { try { localStorage.setItem(PRIZES_KEY,    JSON.stringify(p)) } catch {} }
 const saveLinks     = (l) => { try { localStorage.setItem(LINKS_KEY,     JSON.stringify(l)) } catch {} }
 const saveCountries = (c) => { try { localStorage.setItem(COUNTRIES_KEY, JSON.stringify(c)) } catch {} }
+const loadRegForm   = () => { try { const s = localStorage.getItem(REGFORM_KEY);   const v = s ? JSON.parse(s) : []; return Array.isArray(v) ? v : [] } catch { return [] } }
+const saveRegForm   = (f) => { try { localStorage.setItem(REGFORM_KEY,   JSON.stringify(f)) } catch {} }
 const clearDraft    = ()  => { try {
-  [STORAGE_KEY, PRIZES_KEY, LINKS_KEY, COUNTRIES_KEY].forEach(k => localStorage.removeItem(k))
+  [STORAGE_KEY, PRIZES_KEY, LINKS_KEY, COUNTRIES_KEY, REGFORM_KEY].forEach(k => localStorage.removeItem(k))
 } catch {} }
 
 const COMMUNITY_DOMAINS = ["discord.gg", "discord.com", "t.me", "telegram.me", "chat.whatsapp.com", "wa.me"]
@@ -873,8 +878,8 @@ function RegistrationSection({ enabled, onToggle, uiT }) {
         <div>
           <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>Join directly on Byteon</Label>
           <p className="text-[11px] mt-0.5" style={{ color: uiT?.mutedText }}>
-            Participants register on Byteon (solo, with a team code, or looking for a team) and see your community link.
-            A Google Form or other link is then optional.
+            Participants register on Byteon (solo, as a project leader, with a team code, or by requesting to join a team) and see your community link.
+            Build your own registration form below — a Google Form or other link is then optional.
           </p>
         </div>
       </div>
@@ -903,7 +908,7 @@ function TeamSettingsSection({ enabled, size, onToggle, onSize, uiT }) {
           <div>
             <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>Team participation</Label>
             <p className="text-[11px] mt-0.5" style={{ color: uiT?.mutedText }}>
-              Let participants join solo or as a group. A project leader creates the team and shares a 6-digit code with groupmates.
+              Let participants join solo or as a group. A project leader names the team and gets a unique 6-digit code to share with groupmates; people looking for a team can also browse the group names and send join requests, which the leader accepts or declines.
             </p>
           </div>
         </div>
@@ -1017,6 +1022,7 @@ function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfir
     { key: "prizes", label: "The prizes (amounts, currency and items) are real and will be honored." },
     { key: "links",  label: "My links work and point to the right pages." },
     ...(payload.is_invite_only ? [{ key: "invite", label: "I’ve saved the invite code and know who I’ll share it with." }] : []),
+    ...(payload.registration_form?.length ? [{ key: "regform", label: "My registration form questions are correct, and I only ask for information I need." }] : []),
     { key: "review", label: "I understand the super admin may approve, reject or ask for changes." },
   ]
   const done = checklist.filter(c => checks[c.key]).length
@@ -1066,7 +1072,7 @@ function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfir
             ? <>Invite only · code <span className="font-mono tracking-widest font-semibold">{payload.invite_code}</span></>
             : "Public")}
           {row("Registration", payload.native_registration
-            ? `Join on Byteon${linkCount ? " + external links" : ""}`
+            ? `Join on Byteon${linkCount ? " + external links" : ""} · ${payload.registration_form?.length || 0} custom question${payload.registration_form?.length === 1 ? "" : "s"}`
             : "External links only")}
           {row("Teams", payload.allow_teams
             ? `Solo or group · up to ${payload.max_team_size} per team`
@@ -1134,6 +1140,8 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   const [prizes, setPrizes]                 = useState(() => loadPrizes())
   const [links, setLinks]                   = useState(() => loadLinks())
   const [countries, setCountries]           = useState(() => loadCountries())
+  const [regFields, setRegFields]           = useState(() => loadRegForm())   // custom registration questions
+  const [formError, setFormError]           = useState("")
   const [linkError, setLinkError]           = useState(false)
   const [countriesError, setCountriesError] = useState(false)
   const [inviteError, setInviteError]       = useState(false)
@@ -1157,6 +1165,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
   useEffect(() => { savePrizes(prizes)       }, [prizes])
   useEffect(() => { saveLinks(links)         }, [links])
   useEffect(() => { saveCountries(countries) }, [countries])
+  useEffect(() => { saveRegForm(regFields); setFormError("") }, [regFields]) // eslint-disable-line react-hooks/set-state-in-effect
 
   const resetForm = () => {
     clearDraft()
@@ -1164,6 +1173,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
     setPrizes([newPrize()])
     setLinks([])
     setCountries({ ...EMPTY_COUNTRIES })
+    setRegFields([]); setFormError("")
     setPromoDate(null); setStartDate(null); setEndDate(null)
     setTimes({ promo: DEFAULT_TIME, start: DEFAULT_TIME, end: DEFAULT_TIME })
     setHasDraft(false); setDraftDismissed(false)
@@ -1261,6 +1271,12 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
     if (countries.mode !== "global" && countries.list.length === 0) { setCountriesError(true); errors.push("Please select at least one country.") }
     else setCountriesError(false)
 
+    // registration form (only when people join on Byteon)
+    if (formData.native_registration) {
+      const fe = validateFormDefinition(regFields)
+      if (fe) { setFormError(fe); errors.push(fe) } else setFormError("")
+    }
+
     // invite code
     if (formData.is_invite_only && !isValidInviteCode(formData.invite_code)) { setInviteError(true); errors.push("Please set a valid invite code (6–16 letters or numbers).") }
     else setInviteError(false)
@@ -1299,6 +1315,7 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       native_registration:  !!formData.native_registration,
       allow_teams:          !!formData.native_registration && !!formData.allow_teams,
       max_team_size:        formData.native_registration && formData.allow_teams ? Number(formData.max_team_size) || 4 : 4,
+      registration_form:    formData.native_registration ? sanitizeForm(regFields) : [],
       website_link:         linkFields.website_link         || null,
       dev_link:             linkFields.dev_link             || null,
       community_link:       linkFields.community_link       || null,
@@ -1572,6 +1589,13 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
             onSize={(n) => setFormData(prev => ({ ...prev, max_team_size: n }))}
             uiT={uiT}
           />
+        </Section>
+      )}
+
+      {/* ── Registration form builder (only when joining on Byteon) ── */}
+      {formData.native_registration && (
+        <Section uiT={uiT}>
+          <RegistrationFormBuilder fields={regFields} setFields={setRegFields} hasError={formError} uiT={uiT} />
         </Section>
       )}
 
