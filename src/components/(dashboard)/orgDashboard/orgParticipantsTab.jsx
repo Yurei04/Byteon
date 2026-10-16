@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Users, User, Crown, Search, RefreshCw, Loader2, UsersRound, Download,
-  FileSpreadsheet, Upload, Database, AlertTriangle, ClipboardList, UserX,
+  FileSpreadsheet, Upload, Database, AlertTriangle, ClipboardList, UserX, Shuffle,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,9 @@ import { formatAnswer } from "@/lib/registration-form"
  *    in a "Team unavailable" section and are counted.
  *  - "In a team" is counted from real team members (not total − solo − looking).
  *  - Display-name fallback to the email's local part.
+ *  - Random team formation: when announcement.team_formation === "random" a "Randomize teams"
+ *    button calls the randomize_announcement_teams RPC (see random-teams.sql).
+ *    Make sure the announcements query that feeds this tab selects `team_formation`.
  *  - `groupByOrg` (super-admin): dropdown is grouped by organization and CSV exports get an
  *    extra "Organization" column.
  */
@@ -188,6 +191,24 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
   }, [selectedId])
 
   useEffect(() => { load() }, [load]) // eslint-disable-line react-hooks/set-state-in-effect
+
+  // ── random team formation ──────────────────────────────────────────────────
+  const isRandom = selected?.team_formation === "random"
+  const [rand, setRand] = useState({ open: false, solo: false, reshuffle: false, busy: false })
+  const runRandomize = async () => {
+    setRand(r => ({ ...r, busy: true }))
+    const { data, error } = await supabase.rpc("randomize_announcement_teams", {
+      p_announcement_id: selectedId, p_include_solo: rand.solo, p_reshuffle: rand.reshuffle,
+    })
+    setRand(r => ({ ...r, busy: false }))
+    if (error) { toastRef.current?.("error", error.message); return }
+    toastRef.current?.("success",
+      data?.teams
+        ? `Created ${data.teams} team${data.teams === 1 ? "" : "s"} · placed ${data.assigned} participant${data.assigned === 1 ? "" : "s"}${data.leftover ? ` · ${data.leftover} left unassigned` : ""}.`
+        : "Not enough people to form a team yet (need at least 2).")
+    setRand(r => ({ ...r, open: false, reshuffle: false }))
+    load(true)
+  }
 
   // ── registration-form responses ────────────────────────────────────────────
   const loadAnswers = useCallback(async (silent = false) => {
@@ -526,6 +547,13 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
           </div>
         )}
 
+        {source === "platform" && isRandom && (
+          <Button type="button" size="sm" className="rounded-xl shrink-0 h-9 text-white border-0"
+            style={{ background: "linear-gradient(135deg,#c026d3,#db2777)" }}
+            onClick={() => setRand(r => ({ ...r, open: !r.open }))}>
+            <Shuffle className="w-4 h-4 mr-1.5" /> Randomize teams
+          </Button>
+        )}
         <Button type="button" variant="outline" size="sm" className="rounded-xl shrink-0 h-9"
           onClick={source === "platform" ? exportPlatform : source === "responses" ? exportResponses : exportSheet}
           disabled={source === "platform" ? stats.total === 0 : source === "responses" ? responseRows.length === 0 : !sheet}>
@@ -537,6 +565,49 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
           <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
         </Button>
       </div>
+
+      {/* ═════════ RANDOM TEAMS PANEL ═════════ */}
+      {source === "platform" && isRandom && (
+        <div className="rounded-2xl p-4 space-y-3" style={card}>
+          <div className="flex items-start gap-3">
+            <Shuffle className="w-4 h-4 mt-0.5 shrink-0 text-fuchsia-500" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold" style={heading}>Teams are assigned randomly</p>
+              <p className="text-[11px] mt-0.5" style={muted}>
+                Participants register without picking a team. Press “Randomize teams” when registration is done and everyone
+                waiting is split into balanced teams of up to {maxSize}; each team gets a random leader and everyone is notified.
+                {" "}{lookers.length} waiting for a team{solos.length ? ` · ${solos.length} solo` : ""}.
+              </p>
+            </div>
+          </div>
+          {rand.open && (
+            <div className="rounded-xl p-3 space-y-2.5" style={card2}>
+              <label className="flex items-center gap-2 text-xs cursor-pointer" style={heading}>
+                <input type="checkbox" checked={rand.solo} onChange={e => setRand(r => ({ ...r, solo: e.target.checked }))} />
+                Also place solo participants ({solos.length})
+              </label>
+              <label className="flex items-center gap-2 text-xs cursor-pointer" style={heading}>
+                <input type="checkbox" checked={rand.reshuffle} onChange={e => setRand(r => ({ ...r, reshuffle: e.target.checked }))} />
+                Re-shuffle everyone — dissolves all {stats.teams} existing team{stats.teams === 1 ? "" : "s"} first
+              </label>
+              {rand.reshuffle && (
+                <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                  Existing teams and their codes will be deleted and everyone is drawn again. This can’t be undone.
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button type="button" size="sm" disabled={rand.busy} onClick={runRandomize}
+                  className="rounded-xl h-8 text-xs text-white border-0" style={{ background: "linear-gradient(135deg,#c026d3,#db2777)" }}>
+                  {rand.busy ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Shuffle className="w-3.5 h-3.5 mr-1.5" />}
+                  {rand.reshuffle ? "Re-shuffle all" : "Create random teams"}
+                </Button>
+                <Button type="button" size="sm" variant="outline" disabled={rand.busy} className="rounded-xl h-8 text-xs"
+                  onClick={() => setRand(r => ({ ...r, open: false, reshuffle: false }))}>Cancel</Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ═════════ PLATFORM ═════════ */}
       {source === "platform" && (

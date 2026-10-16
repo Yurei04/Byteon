@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -9,7 +9,7 @@ import {
   Calendar, Award, Users, AlertCircle, MousePointerClick, Trophy, Clock,
   ChevronRight, MapPin, Sparkles, Megaphone, Lock,
   Globe, Code2, MessageCircle, FileText, ArrowUpRight, Activity,
-  Rocket, LogIn, ClipboardList,
+  Rocket, LogIn, ClipboardList, Shuffle, Crown,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
@@ -45,6 +45,15 @@ function formatUTCDateShort(dateString) {
     month: "short", day: "numeric", year: "numeric",
     timeZone: "UTC",
   }).format(date)
+}
+
+// registration_form should be a jsonb array, but tolerate a JSON string and drop malformed fields
+// so one bad question can never hide (or crash) the whole form.
+function parseRegForm(v) {
+  let list = v
+  if (typeof v === "string") { try { list = JSON.parse(v) } catch { list = [] } }
+  if (!Array.isArray(list)) return []
+  return list.filter((f) => f && typeof f === "object" && f.id != null && f.label)
 }
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
@@ -124,11 +133,13 @@ const getPrizeColorScheme = (prizeName, prizeType) => {
 /* ─── Sub-components ─────────────────────────────────────────────────────── */
 
 // phase: "upcoming" | "open" | "live" | "ended"  (see getPhase)
+// Registration opens as soon as the super admin approves, so "upcoming" now means
+// "open for sign-up, event starts later" rather than "not open yet".
 function StatusPill({ phase, item, t }) {
   const fixed = {
-    ended:    { text: "Ended",                                       cls: "bg-red-500/15 border border-red-500/30 text-red-400",             dot: "bg-red-400",     pulse: false },
-    upcoming: { text: `Opens in ${daysUntil(item.promo_begin)}d`,    cls: "bg-amber-500/15 border border-amber-500/30 text-amber-500",       dot: "bg-amber-400",   pulse: false },
-    live:     { text: `Live · ${daysUntil(item.date_end)}d left`,    cls: "bg-emerald-500/15 border border-emerald-500/30 text-emerald-500", dot: "bg-emerald-400", pulse: true  },
+    ended:    { text: "Ended",                                              cls: "bg-red-500/15 border border-red-500/30 text-red-400",             dot: "bg-red-400",     pulse: false },
+    upcoming: { text: `Open · starts in ${daysUntil(item.date_begin)}d`,    cls: "bg-amber-500/15 border border-amber-500/30 text-amber-500",       dot: "bg-amber-400",   pulse: true  },
+    live:     { text: `Live · ${daysUntil(item.date_end)}d left`,           cls: "bg-emerald-500/15 border border-emerald-500/30 text-emerald-500", dot: "bg-emerald-400", pulse: true  },
   }[phase]
 
   if (fixed) {
@@ -189,7 +200,7 @@ function RegistrationFormPreview({ fields, note }) {
                   {f.label} {f.required && <span className="text-red-400">*</span>}
                 </p>
                 <p className="text-[11px] break-words" style={{ color: "rgb(var(--text-muted))" }}>
-                  {getFieldType(f.type).label}
+                  {getFieldType(f.type)?.label ?? f.type ?? "Text"}
                   {Array.isArray(f.options) && f.options.length > 0 && ` · ${f.options.join(" / ")}`}
                 </p>
               </div>
@@ -204,6 +215,203 @@ function RegistrationFormPreview({ fields, note }) {
   )
 }
 
+// ─── Random-team mode: register once, the organizer draws the teams ──────────
+// Shown instead of ParticipationPanel when announcement.team_formation === "random".
+// NOTE: this inserts straight into announcement_participants as the signed-in user.
+// If your RLS only allows joining through an RPC (teamApi), call that here instead —
+// what matters is participation_type = "looking", role = "looking".
+function RandomJoinPanel({ announcement, userId, displayName, email }) {
+  const [me, setMe]       = useState(undefined)   // undefined = loading, null = not registered
+  const [team, setTeam]   = useState(null)        // { name, members }
+  const [busy, setBusy]   = useState(false)
+  const [error, setError] = useState("")
+
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("announcement_participants")
+      .select("participation_type, team_id, role")
+      .eq("announcement_id", announcement.id).eq("user_id", userId).maybeSingle()
+    setMe(data ?? null)
+    if (data?.team_id) {
+      const [tm, mem] = await Promise.all([
+        supabase.from("announcement_teams").select("name").eq("id", data.team_id).maybeSingle(),
+        supabase.from("announcement_participants").select("display_name, role").eq("team_id", data.team_id),
+      ])
+      setTeam({ name: tm.data?.name ?? "Your team", members: mem.data ?? [] })
+    } else setTeam(null)
+  }, [announcement.id, userId])
+
+  useEffect(() => {
+    load()
+    // when the organizer draws the teams, show the result immediately
+    const ch = supabase.channel(`my-participation-${announcement.id}-${userId}`)
+      .on("postgres_changes",
+        { event: "UPDATE", schema: "public", table: "announcement_participants", filter: `announcement_id=eq.${announcement.id}` },
+        (p) => { if (p.new?.user_id === userId) load() })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [load, announcement.id, userId])
+
+  const join = async () => {
+    setBusy(true); setError("")
+    const { error } = await supabase.from("announcement_participants").insert({
+      announcement_id: announcement.id, user_id: userId,
+      participation_type: "looking", role: "looking",
+      display_name: displayName || null, email: email || null,
+    })
+    setBusy(false)
+    if (error && error.code !== "23505") { setError(error.message); return }   // 23505 = already registered
+    load()
+  }
+
+  const leave = async () => {
+    setBusy(true); setError("")
+    const { error } = await supabase.from("announcement_participants").delete()
+      .eq("announcement_id", announcement.id).eq("user_id", userId).is("team_id", null)
+    setBusy(false)
+    if (error) { setError(error.message); return }
+    load()
+  }
+
+  const grad = { background: "linear-gradient(135deg,#c026d3,#db2777)" }
+
+  return (
+    <div className="space-y-3">
+      <div
+        className="flex items-start gap-2.5 rounded-xl p-3.5"
+        style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.28)" }}
+      >
+        <Shuffle className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" />
+        <div>
+          <p className="text-sm font-semibold" style={{ color: "rgb(var(--text-primary))" }}>Teams are assigned randomly</p>
+          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "rgb(var(--text-muted))" }}>
+            You don’t choose or create a team. Register now and the organizer will draw balanced random teams
+            (up to {announcement.max_team_size ?? 4} people each) once registration is done. You’ll get a notification
+            with your team as soon as it’s drawn.
+          </p>
+        </div>
+      </div>
+
+      {me === undefined ? (
+        <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>Loading…</p>
+      ) : me === null ? (
+        <button
+          type="button" onClick={join} disabled={busy}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-60"
+          style={grad}
+        >
+          <Rocket className="w-4 h-4" />{busy ? "Registering…" : "Register — assign me to a team later"}
+        </button>
+      ) : team ? (
+        <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <p className="text-[11px] uppercase tracking-wider font-semibold" style={{ color: "rgb(var(--text-muted))" }}>Your team</p>
+          <p className="text-base font-bold" style={{ color: "rgb(var(--text-primary))" }}>{team.name}</p>
+          <ul className="space-y-1">
+            {team.members.map((m, i) => (
+              <li key={i} className="text-sm flex items-center gap-2" style={{ color: "rgb(var(--text-secondary))" }}>
+                {m.display_name || "Teammate"}
+                {m.role === "leader" && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 border border-amber-500/30">Leader</span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {announcement.community_link && (
+            <a href={announcement.community_link} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-500 hover:underline">
+              <MessageCircle className="w-3.5 h-3.5" />Join the community to meet your team
+            </a>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <p className="text-sm font-semibold text-emerald-500">You’re registered ✓</p>
+          <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>Waiting for the organizer to draw the teams.</p>
+          {announcement.community_link && (
+            <a href={announcement.community_link} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-500 hover:underline">
+              <MessageCircle className="w-3.5 h-3.5" />Join the community
+            </a>
+          )}
+          <div>
+            <button type="button" onClick={leave} disabled={busy} className="text-xs underline" style={{ color: "rgb(var(--text-muted))" }}>
+              {busy ? "Leaving…" : "Cancel my registration"}
+            </button>
+          </div>
+        </div>
+      )}
+      {error && <p className="text-xs text-red-400">{error}</p>}
+    </div>
+  )
+}
+
+// ─── All groups, visible to everyone (random-team mode) ──────────────────────
+// Uses the get_public_teams RPC (public-teams.sql): team names + member display names + roles only,
+// never emails. Refreshes while the dialog is open so the draw appears without a reload.
+function PublicTeams({ announcementId, maxSize, active }) {
+  const [rows, setRows] = useState(null)
+  const [err, setErr]   = useState("")
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc("get_public_teams", { p_announcement_id: announcementId })
+    if (error) { setErr(error.message); setRows([]); return }
+    setErr(""); setRows(data ?? [])
+  }, [announcementId])
+
+  useEffect(() => {
+    if (!active) return
+    load()
+    const id = setInterval(load, 20000)
+    return () => clearInterval(id)
+  }, [active, load])
+
+  const teams = []
+  const byId = new Map()
+  ;(rows ?? []).forEach((r) => {
+    if (!byId.has(r.team_id)) { const tm = { id: r.team_id, name: r.team_name, members: [] }; byId.set(r.team_id, tm); teams.push(tm) }
+    if (r.member_name) byId.get(r.team_id).members.push({ name: r.member_name, leader: r.member_role === "leader" })
+  })
+
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-wider font-semibold mb-3" style={{ color: "rgb(var(--text-muted))" }}>
+        Teams{teams.length ? ` · ${teams.length}` : ""}
+      </p>
+      {rows === null ? (
+        <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>Loading…</p>
+      ) : err ? (
+        <p className="text-xs text-amber-500">Couldn’t load teams ({err}). Run public-teams.sql in Supabase.</p>
+      ) : teams.length === 0 ? (
+        <div className="rounded-xl p-4 text-xs flex items-center gap-2"
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "rgb(var(--text-muted))" }}>
+          <Shuffle className="w-4 h-4 shrink-0" />Teams haven’t been drawn yet. They’ll all appear here once the organizer randomizes them.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {teams.map((tm) => (
+            <div key={tm.id} className="rounded-xl p-3.5" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-sm font-bold truncate" style={{ color: "rgb(var(--text-primary))" }}>{tm.name}</p>
+                <span className="text-[11px] px-2 py-0.5 rounded-full border shrink-0"
+                  style={{ color: "rgb(var(--text-muted))", borderColor: "rgb(var(--surface-border) / 0.5)" }}>
+                  {tm.members.length}{maxSize ? `/${maxSize}` : ""}
+                </span>
+              </div>
+              <ul className="space-y-1">
+                {tm.members.map((m, i) => (
+                  <li key={i} className="text-xs flex items-center gap-1.5" style={{ color: "rgb(var(--text-secondary))" }}>
+                    {m.leader ? <Crown className="w-3 h-3 text-amber-500 shrink-0" /> : <Users className="w-3 h-3 shrink-0" style={{ color: "rgb(var(--text-muted))" }} />}
+                    <span className="truncate">{m.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 
 export default function AnnouncementPublicCard({ item, theme, onDelete }) {
@@ -214,18 +422,23 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const { session, isLoggedIn } = useAuth()
   const t = theme || FALLBACK_THEME
 
-  // If the parent's query left out the registration form / team settings, load them when the dialog opens.
+  // If the parent's query left out the registration form / team settings, load them right away
+  // (the card chips and the form preview both depend on them, not just the dialog).
   useEffect(() => {
-    if (!isDialogOpen || !item.native_registration) return
-    if (item.registration_form !== undefined && item.allow_teams !== undefined && item.max_team_size !== undefined) return
+    if (!item.native_registration) return
+    if (
+      item.registration_form !== undefined && item.allow_teams !== undefined &&
+      item.max_team_size !== undefined && item.team_formation !== undefined
+    ) return
     let alive = true
     supabase.from("announcements")
-      .select("registration_form, allow_teams, max_team_size")
+      .select("registration_form, allow_teams, max_team_size, team_formation")
       .eq("id", item.id).maybeSingle()
       .then(({ data }) => { if (alive && data) setExtra(data) })
     return () => { alive = false }
-  }, [isDialogOpen, item.id, item.native_registration, item.registration_form, item.allow_teams, item.max_team_size])
+  }, [item.id, item.native_registration, item.registration_form, item.allow_teams, item.max_team_size, item.team_formation])
   const ann = extra ? { ...item, ...extra } : item
+  const isRandom = ann.team_formation === "random"
 
   const phase    = getPhase(item)
   const prizes   = item.prizes || []
@@ -233,7 +446,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const isManual = (item.tracking_method || "manual") === "manual"
   const isAuto   = item.tracking_method === "automatic"
 
-  // Links are only exposed once the schedule allows it and, for invite-only events, once the code is verified.
+  // Links are exposed once the invite code (if any) is verified.
   // NOTE: for invite-only events, the unlock RPC should return
   // { website_link, dev_link, community_link, google_forms_url }.
   const links = isInvite
@@ -246,7 +459,9 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
       }
   const activeLinks = LINK_DEFS.filter((d) => links[d.key])
 
-  const registrationClosedYet = phase === "upcoming"
+  // Registration opens as soon as the super admin approves (the card only exists once status is active).
+  // promo_begin / date_begin now only affect the status badge, not whether people can join.
+  const registrationClosedYet = false
   const showLinks = !registrationClosedYet && activeLinks.length > 0
   const needsCode = isInvite && !unlockedLinks && !registrationClosedYet
 
@@ -258,11 +473,11 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const user       = session?.user
   const displayName =
     user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || ""
-  // Community link is passed to the panel even for invite-only events once unlocked.
-  const panelAnnouncement = { ...ann, community_link: links.community_link ?? item.community_link }
   // Organizer-defined registration questions: must be answered before choosing solo / team.
-  const regForm   = Array.isArray(ann.registration_form) ? ann.registration_form : []
+  const regForm   = parseRegForm(ann.registration_form)
   const needsForm = regForm.length > 0
+  // Community link is passed to the panel even for invite-only events once unlocked.
+  const panelAnnouncement = { ...ann, registration_form: regForm, community_link: links.community_link ?? item.community_link }
   // Show a read-only preview whenever the live form is not on screen (signed out, or not open yet).
   const showFormPreview = native && needsForm && !needsCode && phase !== "ended" && !(canJoinNow && isLoggedIn && user)
 
@@ -430,6 +645,12 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                 Join on Byteon
               </span>
             )}
+            {native && isRandom && (
+              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-emerald-100/90 border-emerald-400/50 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/25 dark:text-emerald-300">
+                <Shuffle className="w-3 h-3" />
+                Random teams
+              </span>
+            )}
             {native && needsForm && (
               <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md border bg-sky-100/90 border-sky-400/50 text-sky-600 dark:bg-sky-500/10 dark:border-sky-500/25 dark:text-sky-300">
                 <ClipboardList className="w-3 h-3" />
@@ -565,6 +786,12 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                     Join on Byteon
                   </span>
                 )}
+                {native && isRandom && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-emerald-100/90 border-emerald-400/50 text-emerald-600 dark:bg-emerald-500/10 dark:border-emerald-500/25 dark:text-emerald-300">
+                    <Shuffle className="w-3 h-3" />
+                    Random teams
+                  </span>
+                )}
                 {prizes.length > 0 && (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100/90 border-amber-500/50 text-amber-600 dark:bg-amber-500/10 border dark:border-amber-500/20 dark:text-amber-400/80">
                     <Trophy className="w-3 h-3" />
@@ -694,7 +921,11 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                 <DetailRow
                   icon={<Rocket className="w-4 h-4" />}
                   label="Registration"
-                  value={native ? `Join directly on Byteon${needsForm ? " — fill in the registration form, then" : " —"} solo, as a project leader, with a team code, or request to join a team` : null}
+                  value={native
+                    ? (isRandom
+                        ? `Join directly on Byteon${needsForm ? " — fill in the registration form, then register" : " — register"}; teams are assigned randomly by the organizer after registration`
+                        : `Join directly on Byteon${needsForm ? " — fill in the registration form, then" : " —"} solo, as a project leader, with a team code, or request to join a team`)
+                    : null}
                   iconColor="#d946ef"
                 />
                 <DetailRow icon={<Award className="w-4 h-4" />} label="Organized By" value={item.author} iconColor={t.labelText} />
@@ -731,21 +962,40 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                       <RegistrationFormFill
                         announcement={panelAnnouncement}
                         userId={user.id}
-                        displayName={displayName}
-                        email={user.email}
-                        onDone={setFormDone}
+                        onSubmitted={() => setFormDone(true)}
                       />
                     )}
                     {(!needsForm || formDone) && (
-                      <ParticipationPanel
-                        announcement={panelAnnouncement}
-                        userId={user.id}
-                        displayName={displayName}
-                      />
+                      isRandom ? (
+                        <RandomJoinPanel
+                          announcement={panelAnnouncement}
+                          userId={user.id}
+                          displayName={displayName}
+                          email={user.email}
+                        />
+                      ) : (
+                        <ParticipationPanel
+                          announcement={panelAnnouncement}
+                          userId={user.id}
+                          displayName={displayName}
+                        />
+                      )
                     )}
                   </div>
                 ) : (
                   <div className="space-y-4">
+                  {isRandom && (
+                    <div
+                      className="flex items-start gap-2.5 rounded-xl p-3.5"
+                      style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.28)" }}
+                    >
+                      <Shuffle className="w-4 h-4 mt-0.5 shrink-0 text-emerald-500" />
+                      <p className="text-xs leading-relaxed" style={{ color: "rgb(var(--text-muted))" }}>
+                        <span className="font-semibold" style={{ color: "rgb(var(--text-primary))" }}>Teams are assigned randomly.</span>{" "}
+                        You don’t need a team to register — the organizer draws balanced random teams once registration is done.
+                      </p>
+                    </div>
+                  )}
                   <div
                     className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl p-4"
                     style={{ background: "rgba(217,70,239,0.08)", border: "1px solid rgba(217,70,239,0.28)" }}
@@ -756,7 +1006,9 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold" style={{ color: "rgb(var(--text-primary))" }}>Sign in to join</p>
                       <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>
-                        You need a Byteon account to join solo, create a team, or enter a team code.
+                        {isRandom
+                          ? "You need a Byteon account to register. Your team is assigned for you."
+                          : "You need a Byteon account to join solo, create a team, or enter a team code."}
                       </p>
                     </div>
                     <a
@@ -767,11 +1019,17 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                       Sign in
                     </a>
                   </div>
-                  {/* everyone can see the groups that already exist; requesting needs an account */}
-                  {ann.allow_teams && <TeamDirectory announcementId={item.id} title="Teams already formed" />}
+                  {/* everyone can see the groups that already exist; requesting needs an account.
+                      In random mode teams only appear after the organizer draws them. */}
+                  {ann.allow_teams && !isRandom && <TeamDirectory announcementId={item.id} title="Teams already formed" />}
                   </div>
                 )}
               </div>
+            )}
+
+            {/* random mode: everybody can see every group once the organizer has drawn them */}
+            {native && isRandom && ann.allow_teams !== false && !needsCode && (
+              <PublicTeams announcementId={item.id} maxSize={ann.max_team_size} active={isDialogOpen} />
             )}
 
             {showLinks && renderLinkButtons("lg")}

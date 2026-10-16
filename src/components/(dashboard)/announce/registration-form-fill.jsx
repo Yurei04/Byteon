@@ -10,6 +10,10 @@ import { validateAnswers } from "@/lib/registration-form"
  * Name / email come from the Byteon account, so they are not asked again.
  * Answers are stored once per user per announcement and shown to the organizer
  * in the dashboard's Participants → Form responses view.
+ *
+ * Only change vs. the original: `onSubmitted` is ALSO called when saved answers are found on
+ * load. Before, a returning participant who had already submitted never triggered it, so the
+ * parent kept hiding the "choose how you take part" panel.
  */
 export default function RegistrationFormFill({ announcement, userId, onSubmitted }) {
   const fields = Array.isArray(announcement.registration_form) ? announcement.registration_form : []
@@ -27,10 +31,11 @@ export default function RegistrationFormFill({ announcement, userId, onSubmitted
       const { data } = await supabase.from("announcement_registration_answers")
         .select("answers").eq("announcement_id", announcement.id).eq("user_id", userId).maybeSingle()
       if (!alive) return
-      if (data?.answers) { setAnswers(data.answers); setSaved(true) }
+      if (data?.answers) { setAnswers(data.answers); setSaved(true); onSubmitted?.() }
       setLoading(false)
     })()
     return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [announcement.id, userId])
 
   if (fields.length === 0) return null

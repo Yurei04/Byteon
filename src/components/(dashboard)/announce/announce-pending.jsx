@@ -8,7 +8,7 @@ import {
   Globe, Code2, FileSpreadsheet, ClipboardList,
   Search, Check, ChevronUp, ShieldCheck,
   MessageCircle, Megaphone, Gift, Banknote, Lock, Copy, RefreshCw,
-  Users, Rocket,
+  Users, Rocket, Shuffle,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
@@ -61,6 +61,7 @@ const EMPTY_FORM = {
   native_registration: true,
   allow_teams: true,
   max_team_size: 4,
+  team_formation: "self",          // "self" = teams form themselves · "random" = organizer randomizes
 }
 
 const newPrize = (over = {}) => ({ id: Date.now() + Math.random(), type: "cash", name: "", value: "", description: "", ...over })
@@ -895,9 +896,10 @@ function RegistrationSection({ enabled, onToggle, uiT }) {
 }
 
 // ─── TeamSettingsSection ──────────────────────────────────────────────────────
-// Lets the organizer allow solo/group participation. Participants then register
-// solo or create/join a team with a 6-digit code (see ParticipationPanel).
-function TeamSettingsSection({ enabled, size, onToggle, onSize, uiT }) {
+// Lets the organizer allow solo/group participation and choose HOW teams form:
+//  • "self"   – a project leader names the team and shares a 6-digit code (see ParticipationPanel)
+//  • "random" – everyone registers, the organizer draws balanced random teams (Participants tab)
+function TeamSettingsSection({ enabled, size, formation, onToggle, onSize, onFormation, uiT }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
@@ -908,7 +910,7 @@ function TeamSettingsSection({ enabled, size, onToggle, onSize, uiT }) {
           <div>
             <Label className="font-semibold leading-none" style={{ color: uiT?.headingText }}>Team participation</Label>
             <p className="text-[11px] mt-0.5" style={{ color: uiT?.mutedText }}>
-              Let participants join solo or as a group. A project leader names the team and gets a unique 6-digit code to share with groupmates; people looking for a team can also browse the group names and send join requests, which the leader accepts or declines.
+              Let participants join solo or as a group. Choose whether teams form themselves or you randomize them.
             </p>
           </div>
         </div>
@@ -922,24 +924,55 @@ function TeamSettingsSection({ enabled, size, onToggle, onSize, uiT }) {
       </div>
 
       {enabled && (
-        <div className="flex items-center gap-3">
-          <Label className="text-sm" style={{ color: uiT?.mutedText }}>Max team size</Label>
-          <select
-            value={size}
-            onChange={(e) => onSize(Number(e.target.value))}
-            className="text-sm rounded-lg px-2 py-1.5 outline-none cursor-pointer"
-            style={{
-              background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
-              border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
-              color: uiT?.headingText ?? "#fff",
-            }}
-          >
-            {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-              <option key={n} value={n} style={{ background: uiT?.inputBg ?? "#1a1a2e" }}>{n}</option>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {[
+              ["self",   "Teams form themselves", "A leader names the team and shares a 6-digit code; others can request to join.", Users],
+              ["random", "Randomize teams",       "Everyone registers, then you draw balanced random teams in one click.", Shuffle],
+            ].map(([key, label, sub, Icon]) => (
+              <button key={key} type="button" onClick={() => onFormation(key)}
+                className={`text-left rounded-xl border p-3 transition-all ${formation === key ? "ring-1 ring-emerald-400/50 bg-emerald-400/10 border-transparent" : ""}`}
+                style={formation !== key ? { background: uiT?.surfaceBg2, borderColor: uiT?.borderSubtle } : {}}>
+                <p className="text-xs font-semibold flex items-center gap-1.5" style={{ color: uiT?.headingText }}>
+                  <Icon className="w-3.5 h-3.5" />{label}
+                </p>
+                <p className="text-[10px] mt-1 leading-snug" style={{ color: uiT?.mutedText }}>{sub}</p>
+              </button>
             ))}
-          </select>
-          <span className="text-[11px]" style={{ color: uiT?.mutedText }}>members including the leader</span>
-        </div>
+          </div>
+
+          {formation === "random" && (
+            <div className="flex items-start gap-2.5 p-3 rounded-xl"
+              style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.22)" }}>
+              <Shuffle className="w-4 h-4 text-amber-700 dark:text-amber-300 shrink-0 mt-0.5" />
+              <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+                <span className="font-semibold">Teams are not drawn automatically.</span> Participants register without choosing a team
+                (they can’t create or join teams themselves). When registration is done, open the <span className="font-semibold">Participants</span> tab
+                and press <span className="font-semibold">Randomize teams</span>: everyone waiting is split into balanced teams of up to {size},
+                each with a random leader, and everyone is notified. You can re-shuffle later if needed.
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3">
+            <Label className="text-sm" style={{ color: uiT?.mutedText }}>Max team size</Label>
+            <select
+              value={size}
+              onChange={(e) => onSize(Number(e.target.value))}
+              className="text-sm rounded-lg px-2 py-1.5 outline-none cursor-pointer"
+              style={{
+                background: uiT?.inputBg ?? "rgba(255,255,255,0.06)",
+                border: `1px solid ${uiT?.borderSubtle ?? "rgba(255,255,255,0.12)"}`,
+                color: uiT?.headingText ?? "#fff",
+              }}
+            >
+              {[2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                <option key={n} value={n} style={{ background: uiT?.inputBg ?? "#1a1a2e" }}>{n}</option>
+              ))}
+            </select>
+            <span className="text-[11px]" style={{ color: uiT?.mutedText }}>members including the leader</span>
+          </div>
+        </>
       )}
     </div>
   )
@@ -1016,6 +1049,7 @@ const fmtUTC   = (iso) => new Intl.DateTimeFormat("en-GB", { dateStyle: "medium"
 
 function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfirm, uiT }) {
   if (!payload) return null
+  const isRandom = payload.team_formation === "random"
   const checklist = [
     { key: "info",   label: "The title, description, author and eligibility are accurate." },
     { key: "dates",  label: `The dates and times are correct. I understand promotion can’t go live until approved (up to ${APPROVAL_BUFFER_DAYS} days).` },
@@ -1023,6 +1057,7 @@ function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfir
     { key: "links",  label: "My links work and point to the right pages." },
     ...(payload.is_invite_only ? [{ key: "invite", label: "I’ve saved the invite code and know who I’ll share it with." }] : []),
     ...(payload.registration_form?.length ? [{ key: "regform", label: "My registration form questions are correct, and I only ask for information I need." }] : []),
+    ...(isRandom ? [{ key: "random", label: "I understand teams are NOT drawn automatically — I must press “Randomize teams” in the Participants tab once registration is done." }] : []),
     { key: "review", label: "I understand the super admin may approve, reject or ask for changes." },
   ]
   const done = checklist.filter(c => checks[c.key]).length
@@ -1075,7 +1110,7 @@ function ReviewDialog({ open, onOpenChange, payload, checks, setChecks, onConfir
             ? `Join on Byteon${linkCount ? " + external links" : ""} · ${payload.registration_form?.length || 0} custom question${payload.registration_form?.length === 1 ? "" : "s"}`
             : "External links only")}
           {row("Teams", payload.allow_teams
-            ? `Solo or group · up to ${payload.max_team_size} per team`
+            ? `${isRandom ? "Randomized by organizer" : "Self-formed"} · up to ${payload.max_team_size} per team`
             : "Solo only")}
           {row("Links", `${linkCount} added`)}
         </div>
@@ -1299,6 +1334,8 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       return { ...base, type: "non_cash", value: p.value.trim() }
     })
 
+    const teamsOn = !!formData.native_registration && !!formData.allow_teams
+
     const payload = {
       title:                formData.title.trim(),
       des:                  formData.des.trim(),
@@ -1313,8 +1350,9 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
       is_invite_only:       formData.is_invite_only,
       invite_code:          formData.is_invite_only ? normalizeInviteCode(formData.invite_code) : null,
       native_registration:  !!formData.native_registration,
-      allow_teams:          !!formData.native_registration && !!formData.allow_teams,
-      max_team_size:        formData.native_registration && formData.allow_teams ? Number(formData.max_team_size) || 4 : 4,
+      allow_teams:          teamsOn,
+      max_team_size:        teamsOn ? Number(formData.max_team_size) || 4 : 4,
+      team_formation:       teamsOn && formData.team_formation === "random" ? "random" : "self",
       registration_form:    formData.native_registration ? sanitizeForm(regFields) : [],
       website_link:         linkFields.website_link         || null,
       dev_link:             linkFields.dev_link             || null,
@@ -1585,8 +1623,10 @@ export default function PendingAnnounceForm({ onSuccess, currentOrg, authUserId,
           <TeamSettingsSection
             enabled={formData.allow_teams}
             size={formData.max_team_size}
+            formation={formData.team_formation}
             onToggle={(v) => setFormData(prev => ({ ...prev, allow_teams: v }))}
             onSize={(n) => setFormData(prev => ({ ...prev, max_team_size: n }))}
+            onFormation={(f) => setFormData(prev => ({ ...prev, team_formation: f }))}
             uiT={uiT}
           />
         </Section>
