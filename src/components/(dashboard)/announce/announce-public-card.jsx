@@ -227,9 +227,8 @@ function RegistrationFormPreview({ fields, note }) {
 
 // ─── Random-team mode: register once, the organizer draws the teams ──────────
 // Shown instead of ParticipationPanel when announcement.team_formation === "random".
-// NOTE: this inserts straight into announcement_participants as the signed-in user.
-// If your RLS only allows joining through an RPC (teamApi), call that here instead —
-// what matters is participation_type = "looking", role = "looking".
+// Joining/leaving go through the join_random_announcement / leave_random_announcement RPCs
+// (join-random-announcement.sql) so RLS on announcement_participants doesn't block them.
 //
 // autoJoin: pass true when the announcement has a registration form. The panel only renders after
 // the form is submitted, so the person is registered automatically (once) and form-only
@@ -271,20 +270,16 @@ function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = 
 
   const join = async () => {
     setBusy(true); setError("")
-    const { error } = await supabase.from("announcement_participants").insert({
-      announcement_id: announcement.id, user_id: userId,
-      participation_type: "looking", role: "looking",
-      display_name: displayName || null, email: email || null,
-    })
+    const { error } = await supabase.rpc("join_random_announcement", { p_announcement_id: announcement.id })
     setBusy(false)
-    if (error && error.code !== "23505") { setError(error.message); return }   // 23505 = already registered
+    if (error) { setError(error.message); return false }
     load()
+    return true
   }
 
   const leave = async () => {
     setBusy(true); setError("")
-    const { error } = await supabase.from("announcement_participants").delete()
-      .eq("announcement_id", announcement.id).eq("user_id", userId).is("team_id", null)
+    const { error } = await supabase.rpc("leave_random_announcement", { p_announcement_id: announcement.id })
     setBusy(false)
     if (error) { setError(error.message); return }
     load()
@@ -315,7 +310,7 @@ function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = 
         </div>
       </div>
 
-      {me === undefined || (autoJoin && me === null) ? (
+      {me === undefined || (autoJoin && me === null && !error) ? (
         <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>
           {autoJoin && me === null ? "Finishing your registration…" : "Loading…"}
         </p>
@@ -325,7 +320,7 @@ function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = 
           className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white disabled:opacity-60"
           style={grad}
         >
-          <Rocket className="w-4 h-4" />{busy ? "Registering…" : "Register — assign me to a team later"}
+          <Rocket className="w-4 h-4" />{busy ? "Registering…" : error ? "Try again" : "Register — assign me to a team later"}
         </button>
       ) : team ? (
         <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
