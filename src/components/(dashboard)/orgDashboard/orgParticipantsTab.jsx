@@ -19,17 +19,13 @@ import { formatAnswer } from "@/lib/registration-form"
  *  - "Sheet CSV"      – the announcement's Google Sheet or an uploaded .csv.
  *
  * Changes in this version
- *  - Realtime: the Platform + Form responses lists refresh automatically when people join,
- *    leave, create teams or submit the form.
- *  - Group members whose team row can't be loaded are no longer silently dropped; they show
- *    in a "Team unavailable" section and are counted.
- *  - "In a team" is counted from real team members (not total − solo − looking).
- *  - Display-name fallback to the email's local part.
- *  - Random team formation: when announcement.team_formation === "random" a "Randomize teams"
- *    button calls the randomize_announcement_teams RPC (see random-teams.sql).
- *    Make sure the announcements query that feeds this tab selects `team_formation`.
- *  - `groupByOrg` (super-admin): dropdown is grouped by organization and CSV exports get an
- *    extra "Organization" column.
+ *  - "Randomize teams" is now available on BOTH the Platform and Form responses tabs.
+ *    On the Form responses tab it calls randomize_form_registrants (randomize-form-registrants.sql),
+ *    which first enrolls form-only respondents as "looking" and then runs the normal randomizer.
+ *  - Realtime refresh of Platform + Form responses lists.
+ *  - Group members whose team row can't be loaded show in a "Team unavailable" section.
+ *  - `groupByOrg` (super-admin): grouped dropdown + "Organization" CSV column.
+ *  Make sure the announcements query feeding this tab selects `team_formation`.
  */
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
@@ -192,24 +188,6 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
 
   useEffect(() => { load() }, [load]) // eslint-disable-line react-hooks/set-state-in-effect
 
-  // ── random team formation ──────────────────────────────────────────────────
-  const isRandom = selected?.team_formation === "random"
-  const [rand, setRand] = useState({ open: false, solo: false, reshuffle: false, busy: false })
-  const runRandomize = async () => {
-    setRand(r => ({ ...r, busy: true }))
-    const { data, error } = await supabase.rpc("randomize_announcement_teams", {
-      p_announcement_id: selectedId, p_include_solo: rand.solo, p_reshuffle: rand.reshuffle,
-    })
-    setRand(r => ({ ...r, busy: false }))
-    if (error) { toastRef.current?.("error", error.message); return }
-    toastRef.current?.("success",
-      data?.teams
-        ? `Created ${data.teams} team${data.teams === 1 ? "" : "s"} · placed ${data.assigned} participant${data.assigned === 1 ? "" : "s"}${data.leftover ? ` · ${data.leftover} left unassigned` : ""}.`
-        : "Not enough people to form a team yet (need at least 2).")
-    setRand(r => ({ ...r, open: false, reshuffle: false }))
-    load(true)
-  }
-
   // ── registration-form responses ────────────────────────────────────────────
   const loadAnswers = useCallback(async (silent = false) => {
     if (!selectedId) return
@@ -223,6 +201,28 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
   }, [selectedId])
 
   useEffect(() => { if (source === "responses") loadAnswers() }, [source, loadAnswers]) // eslint-disable-line react-hooks/set-state-in-effect
+
+  // ── random team formation (Platform + Form responses tabs) ─────────────────
+  const isRandom    = selected?.team_formation === "random"
+  const showRandom  = (source === "platform" || source === "responses") && isRandom
+  const [rand, setRand] = useState({ open: false, solo: false, reshuffle: false, busy: false })
+
+  const runRandomize = async () => {
+    setRand(r => ({ ...r, busy: true }))
+    // On the Form responses tab, form-only respondents are enrolled first (SQL wrapper).
+    const fn = source === "responses" ? "randomize_form_registrants" : "randomize_announcement_teams"
+    const { data, error } = await supabase.rpc(fn, {
+      p_announcement_id: selectedId, p_include_solo: rand.solo, p_reshuffle: rand.reshuffle,
+    })
+    setRand(r => ({ ...r, busy: false }))
+    if (error) { toastRef.current?.("error", error.message); return }
+    toastRef.current?.("success",
+      data?.teams
+        ? `Created ${data.teams} team${data.teams === 1 ? "" : "s"} · placed ${data.assigned} participant${data.assigned === 1 ? "" : "s"}${data.leftover ? ` · ${data.leftover} left unassigned` : ""}${data.enrolled ? ` · ${data.enrolled} form-only added` : ""}.`
+        : "Not enough people to form a team yet (need at least 2).")
+    setRand(r => ({ ...r, open: false, reshuffle: false }))
+    load(true); loadAnswers(true)
+  }
 
   // ── realtime: refresh when people join / leave / create teams / submit the form ──
   const reloadRef = useRef({ load, loadAnswers })
@@ -337,8 +337,9 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
       answers: a.answers || {},
     }
   })
+  const formOnlyCount = responseRows.filter(r => r.formOnly).length
   const filteredResponses = responseRows.filter(r =>
-    !q || match(r.name) || match(r.email) || Object.values(r.answers).some(v => match(formatAnswer(v))))
+    !q || match(r.name) || match(r.email) || match(r.participation) || Object.values(r.answers).some(v => match(formatAnswer(v))))
   const missingForm = formFields.length
     ? people.filter(pp => !answers.some(a => a.user_id === pp.user_id)).length
     : 0
@@ -350,7 +351,7 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
   )
 
   const exportResponses = () => {
-    const rows = [["Name", "Email", "Participation", "Submitted", ...formFields.map(f => f.label)]]
+    const rows = [["Name", "Email", "Team / Participation", "Submitted", ...formFields.map(f => f.label)]]
     responseRows.forEach(r => rows.push([
       r.name, r.email, r.participation, r.submitted_at,
       ...formFields.map(f => formatAnswer(r.answers[f.id])),
@@ -506,6 +507,9 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
   const bucketIcon = (label) => /looking/i.test(label) ? Search : User
   const refreshing = source === "platform" ? loading : source === "responses" ? ansLoading : sheetLoading
 
+  // people waiting to be drawn: already "looking" + (on the form tab) form-only respondents
+  const waitingCount = lookers.length + (source === "responses" ? formOnlyCount : 0)
+
   return (
     <div className="space-y-4">
       {/* Controls */}
@@ -547,7 +551,7 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
           </div>
         )}
 
-        {source === "platform" && isRandom && (
+        {showRandom && (
           <Button type="button" size="sm" className="rounded-xl shrink-0 h-9 text-white border-0"
             style={{ background: "linear-gradient(135deg,#c026d3,#db2777)" }}
             onClick={() => setRand(r => ({ ...r, open: !r.open }))}>
@@ -566,8 +570,8 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
         </Button>
       </div>
 
-      {/* ═════════ RANDOM TEAMS PANEL ═════════ */}
-      {source === "platform" && isRandom && (
+      {/* ═════════ RANDOM TEAMS PANEL (Platform + Form responses) ═════════ */}
+      {showRandom && (
         <div className="rounded-2xl p-4 space-y-3" style={card}>
           <div className="flex items-start gap-3">
             <Shuffle className="w-4 h-4 mt-0.5 shrink-0 text-fuchsia-500" />
@@ -576,7 +580,9 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
               <p className="text-[11px] mt-0.5" style={muted}>
                 Participants register without picking a team. Press “Randomize teams” when registration is done and everyone
                 waiting is split into balanced teams of up to {maxSize}; each team gets a random leader and everyone is notified.
-                {" "}{lookers.length} waiting for a team{solos.length ? ` · ${solos.length} solo` : ""}.
+                {" "}{waitingCount} waiting for a team{solos.length ? ` · ${solos.length} solo` : ""}.
+                {source === "responses" && formOnlyCount > 0 &&
+                  ` ${formOnlyCount} form-only respondent${formOnlyCount === 1 ? "" : "s"} will be registered automatically.`}
               </p>
             </div>
           </div>
@@ -677,7 +683,7 @@ export default function OrgParticipantsTab({ announcements = [], addToast, uiT, 
                 <Stat label="Responses" value={responseRows.length} />
                 <Stat label="Questions" value={formFields.length} />
                 <Stat label="Joined, no form yet" value={missingForm} warn />
-                <Stat label="Form only (not joined)" value={responseRows.filter(r => r.formOnly).length} />
+                <Stat label="Form only (not joined)" value={formOnlyCount} />
               </div>
 
               {ansLoading && !answers.length ? (

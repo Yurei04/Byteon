@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -21,6 +21,16 @@ import ParticipationPanel from "./participationPanel"
 import RegistrationFormFill from "./registration-form-fill"
 import TeamDirectory from "./team-directory"
 import { getFieldType } from "@/lib/registration-form"
+
+/**
+ * Changes in this version (random-team mode)
+ *  - RandomJoinPanel: when the organizer's registration form exists, submitting it registers the
+ *    person automatically (autoJoin) – no second "Register" click, no form-only dead end.
+ *  - RandomJoinPanel: teammates are read through the get_public_teams RPC (RLS-safe) and the panel
+ *    updates on INSERT / UPDATE / DELETE (+ 20 s polling fallback).
+ *  - formDone is restored for returning users who already submitted the form.
+ *  - PublicTeams is always shown in random mode (no longer hidden by allow_teams === false).
+ */
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
@@ -220,7 +230,12 @@ function RegistrationFormPreview({ fields, note }) {
 // NOTE: this inserts straight into announcement_participants as the signed-in user.
 // If your RLS only allows joining through an RPC (teamApi), call that here instead —
 // what matters is participation_type = "looking", role = "looking".
-function RandomJoinPanel({ announcement, userId, displayName, email }) {
+//
+// autoJoin: pass true when the announcement has a registration form. The panel only renders after
+// the form is submitted, so the person is registered automatically (once) and form-only
+// respondents can't get stuck. Because of that, "Cancel my registration" is hidden in that case
+// (it would just re-register them).
+function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = false }) {
   const [me, setMe]       = useState(undefined)   // undefined = loading, null = not registered
   const [team, setTeam]   = useState(null)        // { name, members }
   const [busy, setBusy]   = useState(false)
@@ -232,11 +247,13 @@ function RandomJoinPanel({ announcement, userId, displayName, email }) {
       .eq("announcement_id", announcement.id).eq("user_id", userId).maybeSingle()
     setMe(data ?? null)
     if (data?.team_id) {
-      const [tm, mem] = await Promise.all([
-        supabase.from("announcement_teams").select("name").eq("id", data.team_id).maybeSingle(),
-        supabase.from("announcement_participants").select("display_name, role").eq("team_id", data.team_id),
-      ])
-      setTeam({ name: tm.data?.name ?? "Your team", members: mem.data ?? [] })
+      // public RPC → works even when RLS hides other people's participant rows
+      const { data: rows } = await supabase.rpc("get_public_teams", { p_announcement_id: announcement.id })
+      const mine = (rows ?? []).filter((r) => r.team_id === data.team_id)
+      setTeam({
+        name: mine[0]?.team_name ?? "Your team",
+        members: mine.filter((r) => r.member_name).map((r) => ({ display_name: r.member_name, role: r.member_role })),
+      })
     } else setTeam(null)
   }, [announcement.id, userId])
 
@@ -245,10 +262,11 @@ function RandomJoinPanel({ announcement, userId, displayName, email }) {
     // when the organizer draws the teams, show the result immediately
     const ch = supabase.channel(`my-participation-${announcement.id}-${userId}`)
       .on("postgres_changes",
-        { event: "UPDATE", schema: "public", table: "announcement_participants", filter: `announcement_id=eq.${announcement.id}` },
-        (p) => { if (p.new?.user_id === userId) load() })
+        { event: "*", schema: "public", table: "announcement_participants", filter: `announcement_id=eq.${announcement.id}` },
+        (p) => { if ((p.new?.user_id ?? p.old?.user_id) === userId) load() })
       .subscribe()
-    return () => { supabase.removeChannel(ch) }
+    const poll = setInterval(load, 20000)          // fallback if realtime is off
+    return () => { clearInterval(poll); supabase.removeChannel(ch) }
   }, [load, announcement.id, userId])
 
   const join = async () => {
@@ -272,6 +290,12 @@ function RandomJoinPanel({ announcement, userId, displayName, email }) {
     load()
   }
 
+  // form submitted → register automatically (once)
+  const autoRef = useRef(false)
+  useEffect(() => {
+    if (autoJoin && me === null && !autoRef.current) { autoRef.current = true; join() }
+  }, [autoJoin, me]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const grad = { background: "linear-gradient(135deg,#c026d3,#db2777)" }
 
   return (
@@ -291,8 +315,10 @@ function RandomJoinPanel({ announcement, userId, displayName, email }) {
         </div>
       </div>
 
-      {me === undefined ? (
-        <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>Loading…</p>
+      {me === undefined || (autoJoin && me === null) ? (
+        <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>
+          {autoJoin && me === null ? "Finishing your registration…" : "Loading…"}
+        </p>
       ) : me === null ? (
         <button
           type="button" onClick={join} disabled={busy}
@@ -332,11 +358,13 @@ function RandomJoinPanel({ announcement, userId, displayName, email }) {
               <MessageCircle className="w-3.5 h-3.5" />Join the community
             </a>
           )}
-          <div>
-            <button type="button" onClick={leave} disabled={busy} className="text-xs underline" style={{ color: "rgb(var(--text-muted))" }}>
-              {busy ? "Leaving…" : "Cancel my registration"}
-            </button>
-          </div>
+          {!autoJoin && (
+            <div>
+              <button type="button" onClick={leave} disabled={busy} className="text-xs underline" style={{ color: "rgb(var(--text-muted))" }}>
+                {busy ? "Leaving…" : "Cancel my registration"}
+              </button>
+            </div>
+          )}
         </div>
       )}
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -367,6 +395,7 @@ function PublicTeams({ announcementId, maxSize, active }) {
   const teams = []
   const byId = new Map()
   ;(rows ?? []).forEach((r) => {
+    if (r.team_id == null) return
     if (!byId.has(r.team_id)) { const tm = { id: r.team_id, name: r.team_name, members: [] }; byId.set(r.team_id, tm); teams.push(tm) }
     if (r.member_name) byId.get(r.team_id).members.push({ name: r.member_name, leader: r.member_role === "leader" })
   })
@@ -420,6 +449,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const [formDone, setFormDone] = useState(false)           // organizer's registration form submitted?
   const [extra, setExtra] = useState(null)                  // fields the parent list did not include
   const { session, isLoggedIn } = useAuth()
+  const user = session?.user
   const t = theme || FALLBACK_THEME
 
   // If the parent's query left out the registration form / team settings, load them right away
@@ -439,6 +469,16 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   }, [item.id, item.native_registration, item.registration_form, item.allow_teams, item.max_team_size, item.team_formation])
   const ann = extra ? { ...item, ...extra } : item
   const isRandom = ann.team_formation === "random"
+
+  // Returning users who already submitted the form shouldn't see it again.
+  useEffect(() => {
+    if (!user?.id || !item.native_registration) return
+    let alive = true
+    supabase.from("announcement_registration_answers").select("id")
+      .eq("announcement_id", item.id).eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => { if (alive && data) setFormDone(true) })
+    return () => { alive = false }
+  }, [item.id, item.native_registration, user?.id])
 
   const phase    = getPhase(item)
   const prizes   = item.prizes || []
@@ -470,7 +510,6 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const showNative = native && !registrationClosedYet && phase !== "ended"
   // For invite-only events the join panel only appears after the code has been accepted.
   const canJoinNow = showNative && !needsCode
-  const user       = session?.user
   const displayName =
     user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || ""
   // Organizer-defined registration questions: must be answered before choosing solo / team.
@@ -923,7 +962,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   label="Registration"
                   value={native
                     ? (isRandom
-                        ? `Join directly on Byteon${needsForm ? " — fill in the registration form, then register" : " — register"}; teams are assigned randomly by the organizer after registration`
+                        ? `Join directly on Byteon${needsForm ? " — fill in the registration form to register" : " — register"}; teams are assigned randomly by the organizer after registration`
                         : `Join directly on Byteon${needsForm ? " — fill in the registration form, then" : " —"} solo, as a project leader, with a team code, or request to join a team`)
                     : null}
                   iconColor="#d946ef"
@@ -958,7 +997,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                 </p>
                 {isLoggedIn && user ? (
                   <div className="space-y-4">
-                    {needsForm && (
+                    {needsForm && !formDone && (
                       <RegistrationFormFill
                         announcement={panelAnnouncement}
                         userId={user.id}
@@ -972,6 +1011,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                           userId={user.id}
                           displayName={displayName}
                           email={user.email}
+                          autoJoin={needsForm}
                         />
                       ) : (
                         <ParticipationPanel
@@ -1020,15 +1060,16 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                     </a>
                   </div>
                   {/* everyone can see the groups that already exist; requesting needs an account.
-                      In random mode teams only appear after the organizer draws them. */}
+                      In random mode teams only appear after the organizer draws them (see PublicTeams below). */}
                   {ann.allow_teams && !isRandom && <TeamDirectory announcementId={item.id} title="Teams already formed" />}
                   </div>
                 )}
               </div>
             )}
 
-            {/* random mode: everybody can see every group once the organizer has drawn them */}
-            {native && isRandom && ann.allow_teams !== false && !needsCode && (
+            {/* random mode: everybody can see every group once the organizer has drawn them
+                (not gated by allow_teams, which is usually false in random mode) */}
+            {native && isRandom && !needsCode && (
               <PublicTeams announcementId={item.id} maxSize={ann.max_team_size} active={isDialogOpen} />
             )}
 
