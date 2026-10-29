@@ -9,7 +9,7 @@ import {
   Calendar, Award, Users, AlertCircle, MousePointerClick, Trophy, Clock,
   ChevronRight, MapPin, Sparkles, Megaphone, Lock,
   Globe, Code2, MessageCircle, FileText, ArrowUpRight, Activity,
-  Rocket, LogIn, ClipboardList, Shuffle, Crown,
+  Rocket, LogIn, LogOut, ClipboardList, Shuffle, Crown,
 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { buildTheme } from "@/lib/blog-color"
@@ -234,20 +234,37 @@ function RegistrationFormPreview({ fields, note }) {
 // the form is submitted, so the person is registered automatically (once) and form-only
 // respondents can't get stuck. Because of that, "Cancel my registration" is hidden in that case
 // (it would just re-register them).
-function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = false }) {
+function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = false, onLeft }) {
   const [me, setMe]       = useState(undefined)   // undefined = loading, null = not registered
   const [team, setTeam]   = useState(null)        // { name, members }
   const [busy, setBusy]   = useState(false)
   const [error, setError] = useState("")
+  const autoRef = useRef(false)                   // guards the one-time auto-registration
+  const seqRef  = useRef(0)                       // ignore responses that belong to a previous account
+  const [mismatch, setMismatch] = useState(false) // UI user != the user the Supabase client is signed in as
+
+  // The join/leave RPCs act as the Supabase session user (auth.uid()). If the app's auth context and the
+  // Supabase client disagree (stale session after switching accounts), registering would hit the WRONG
+  // account — so detect it and ask for a clean sign-in instead.
+  useEffect(() => {
+    let alive = true
+    supabase.auth.getUser().then(({ data }) => {
+      if (alive) setMismatch(!!data?.user?.id && data.user.id !== userId)
+    })
+    return () => { alive = false }
+  }, [userId])
 
   const load = useCallback(async () => {
+    const seq = ++seqRef.current
     const { data } = await supabase.from("announcement_participants")
       .select("participation_type, team_id, role")
       .eq("announcement_id", announcement.id).eq("user_id", userId).maybeSingle()
+    if (seq !== seqRef.current) return
     setMe(data ?? null)
     if (data?.team_id) {
       // public RPC → works even when RLS hides other people's participant rows
       const { data: rows } = await supabase.rpc("get_public_teams", { p_announcement_id: announcement.id })
+      if (seq !== seqRef.current) return
       const mine = (rows ?? []).filter((r) => r.team_id === data.team_id)
       setTeam({
         name: mine[0]?.team_name ?? "Your team",
@@ -278,18 +295,23 @@ function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = 
   }
 
   const leave = async () => {
+    const msg = autoJoin
+      ? "Unregister from this event? Your registration form answers will be removed too, and you can register again later."
+      : "Unregister from this event? You can register again later."
+    if (typeof window !== "undefined" && !window.confirm(msg)) return
     setBusy(true); setError("")
     const { error } = await supabase.rpc("leave_random_announcement", { p_announcement_id: announcement.id })
     setBusy(false)
     if (error) { setError(error.message); return }
-    load()
+    autoRef.current = true            // don't auto-register again in this session
+    setMe(null); setTeam(null)
+    onLeft?.()                        // parent shows the form / register button again
   }
 
   // form submitted → register automatically (once)
-  const autoRef = useRef(false)
   useEffect(() => {
-    if (autoJoin && me === null && !autoRef.current) { autoRef.current = true; join() }
-  }, [autoJoin, me]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (autoJoin && me === null && !mismatch && !autoRef.current) { autoRef.current = true; join() }
+  }, [autoJoin, me, mismatch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const grad = { background: "linear-gradient(135deg,#c026d3,#db2777)" }
 
@@ -310,7 +332,19 @@ function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = 
         </div>
       </div>
 
-      {me === undefined || (autoJoin && me === null && !error) ? (
+      {mismatch ? (
+        <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)" }}>
+          <p className="text-sm font-semibold text-amber-500">Your session looks out of sync</p>
+          <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>
+            The account shown here isn’t the one currently signed in, so registering could attach to the wrong account.
+            Sign out and sign in again to continue.
+          </p>
+          <button type="button" className="text-xs font-semibold px-3 py-1.5 rounded-lg text-white" style={grad}
+            onClick={async () => { await supabase.auth.signOut(); window.location.reload() }}>
+            Sign out &amp; reload
+          </button>
+        </div>
+      ) : me === undefined || (autoJoin && me === null && !error) ? (
         <p className="text-xs" style={{ color: "rgb(var(--text-muted))" }}>
           {autoJoin && me === null ? "Finishing your registration…" : "Loading…"}
         </p>
@@ -342,6 +376,9 @@ function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = 
               <MessageCircle className="w-3.5 h-3.5" />Join the community to meet your team
             </a>
           )}
+          <p className="text-[11px]" style={{ color: "rgb(var(--text-muted))" }}>
+            Teams are final once drawn. To drop out, contact the organizer.
+          </p>
         </div>
       ) : (
         <div className="rounded-xl p-4 space-y-2" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}>
@@ -353,13 +390,13 @@ function RandomJoinPanel({ announcement, userId, displayName, email, autoJoin = 
               <MessageCircle className="w-3.5 h-3.5" />Join the community
             </a>
           )}
-          {!autoJoin && (
-            <div>
-              <button type="button" onClick={leave} disabled={busy} className="text-xs underline" style={{ color: "rgb(var(--text-muted))" }}>
-                {busy ? "Leaving…" : "Cancel my registration"}
-              </button>
-            </div>
-          )}
+          <div>
+            <button type="button" onClick={leave} disabled={busy}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg disabled:opacity-60"
+              style={{ color: "#ef4444", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.28)" }}>
+              <LogOut className="w-3.5 h-3.5" />{busy ? "Unregistering…" : "Unregister"}
+            </button>
+          </div>
         </div>
       )}
       {error && <p className="text-xs text-red-400">{error}</p>}
@@ -466,12 +503,14 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
   const isRandom = ann.team_formation === "random"
 
   // Returning users who already submitted the form shouldn't see it again.
+  // Reset on every account switch so one account's "form done" never leaks into the next one.
   useEffect(() => {
+    setFormDone(false)
     if (!user?.id || !item.native_registration) return
     let alive = true
     supabase.from("announcement_registration_answers").select("id")
       .eq("announcement_id", item.id).eq("user_id", user.id).maybeSingle()
-      .then(({ data }) => { if (alive && data) setFormDone(true) })
+      .then(({ data }) => { if (alive) setFormDone(!!data) })
     return () => { alive = false }
   }, [item.id, item.native_registration, user?.id])
 
@@ -994,6 +1033,7 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                   <div className="space-y-4">
                     {needsForm && !formDone && (
                       <RegistrationFormFill
+                        key={user.id}
                         announcement={panelAnnouncement}
                         userId={user.id}
                         onSubmitted={() => setFormDone(true)}
@@ -1002,14 +1042,17 @@ export default function AnnouncementPublicCard({ item, theme, onDelete }) {
                     {(!needsForm || formDone) && (
                       isRandom ? (
                         <RandomJoinPanel
+                          key={user.id}
                           announcement={panelAnnouncement}
                           userId={user.id}
                           displayName={displayName}
                           email={user.email}
                           autoJoin={needsForm}
+                          onLeft={() => setFormDone(false)}
                         />
                       ) : (
                         <ParticipationPanel
+                          key={user.id}
                           announcement={panelAnnouncement}
                           userId={user.id}
                           displayName={displayName}
